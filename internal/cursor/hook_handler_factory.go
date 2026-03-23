@@ -29,5 +29,5 @@ func (HookHandlerFactory) HookHandlerFromJSON(hookEventJSON []byte) (core.HookHa
 	if !found {
 		return nil, fmt.Errorf("cursor event %q is not supported yet", hookData.HookEventName)
 	}
-	return builder(hookData)
+	return builder(hookEventJSON, hookData)
 }
