@@ -1,4 +1,4 @@
-package cursor
+package cursorcore
 
 import (
 	"bytes"
@@ -24,21 +24,21 @@ func TestNewHookDataCommon_fullPayload(t *testing.T) {
 	}`
 
 	// session_id, cwd, tool_name, command, and path appear in some Cursor payloads but are not
-	// fields on hookDataCommon yet; encoding/json ignores them until we model them explicitly.
+	// fields on HookDataCommon yet; encoding/json ignores them until we model them explicitly.
 	raw := []byte(input)
-	hookData, err := newHookDataCommon(raw)
+	hookData, err := NewHookDataCommon(raw)
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
 	if string(raw) != input {
-		t.Fatalf("newHookDataCommon must not replace rawJSON bytes")
+		t.Fatalf("NewHookDataCommon must not replace rawJSON bytes")
 	}
 
-	assertEqual(t, "conv-1", hookData.ConversationID)
-	assertEqual(t, "gen-1", hookData.GenerationID)
-	assertEqual(t, "claude-sonnet-4", hookData.Model)
-	assertEqual(t, "afterFileEdit", hookData.HookEventName)
-	assertEqual(t, "1.7.2", hookData.CursorVersion)
+	assertStringEqual(t, "conv-1", hookData.ConversationID)
+	assertStringEqual(t, "gen-1", hookData.GenerationID)
+	assertStringEqual(t, "claude-sonnet-4", hookData.Model)
+	assertStringEqual(t, "afterFileEdit", hookData.HookEventName)
+	assertStringEqual(t, "1.7.2", hookData.CursorVersion)
 	wantRoots := []string{"/repo", "/repo-2"}
 	if !reflect.DeepEqual(wantRoots, hookData.WorkspaceRoots) {
 		t.Fatalf("WorkspaceRoots: want %#v, got %#v", wantRoots, hookData.WorkspaceRoots)
@@ -59,9 +59,9 @@ func TestNewHookDataCommon_nullOptionalStrings(t *testing.T) {
 		"transcript_path": null
 	}`
 
-	hookData, err := newHookDataCommon([]byte(input))
+	hookData, err := NewHookDataCommon([]byte(input))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
 	if hookData.UserEmail != nil || hookData.TranscriptPath != nil {
 		t.Fatalf("want nil optional pointers, got user=%#v path=%#v", hookData.UserEmail, hookData.TranscriptPath)
@@ -69,22 +69,22 @@ func TestNewHookDataCommon_nullOptionalStrings(t *testing.T) {
 }
 
 func TestNewHookDataCommon_hookEventName(t *testing.T) {
-	hookData, err := newHookDataCommon([]byte(`{"hook_event_name":"afterFileEdit"}`))
+	hookData, err := NewHookDataCommon([]byte(`{"hook_event_name":"afterFileEdit"}`))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	assertEqual(t, "afterFileEdit", hookData.HookEventName)
+	assertStringEqual(t, "afterFileEdit", hookData.HookEventName)
 }
 
 func TestNewHookDataCommon_malformedJSON(t *testing.T) {
 	raw := []byte(`not json`)
 	before := append([]byte(nil), raw...)
-	hookData, err := newHookDataCommon(raw)
+	hookData, err := NewHookDataCommon(raw)
 	if err == nil {
 		t.Fatal("expected error for malformed JSON")
 	}
 	if !bytes.Equal(before, raw) {
-		t.Fatalf("newHookDataCommon must not modify rawJSON bytes")
+		t.Fatalf("NewHookDataCommon must not modify rawJSON bytes")
 	}
 	assertHookDataCommonZero(t, hookData)
 }
@@ -92,12 +92,12 @@ func TestNewHookDataCommon_malformedJSON(t *testing.T) {
 func TestNewHookDataCommon_emptyInput(t *testing.T) {
 	raw := []byte{}
 	before := append([]byte(nil), raw...)
-	hookData, err := newHookDataCommon(raw)
+	hookData, err := NewHookDataCommon(raw)
 	if err == nil {
 		t.Fatal("expected error for empty JSON input")
 	}
 	if !bytes.Equal(before, raw) {
-		t.Fatalf("newHookDataCommon must not modify rawJSON bytes")
+		t.Fatalf("NewHookDataCommon must not modify rawJSON bytes")
 	}
 	assertHookDataCommonZero(t, hookData)
 }
@@ -106,18 +106,18 @@ func TestNewHookDataCommon_emptyObject(t *testing.T) {
 	// Valid object with no conversation_id, hook_event_name, or other known keys — json leaves zero values.
 	input := `{}`
 	raw := []byte(input)
-	hookData, err := newHookDataCommon(raw)
+	hookData, err := NewHookDataCommon(raw)
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
 	if string(raw) != input {
-		t.Fatalf("newHookDataCommon must not replace rawJSON bytes")
+		t.Fatalf("NewHookDataCommon must not replace rawJSON bytes")
 	}
-	assertEqual(t, "", hookData.HookEventName)
-	assertEqual(t, "", hookData.ConversationID)
-	assertEqual(t, "", hookData.GenerationID)
-	assertEqual(t, "", hookData.Model)
-	assertEqual(t, "", hookData.CursorVersion)
+	assertStringEqual(t, "", hookData.HookEventName)
+	assertStringEqual(t, "", hookData.ConversationID)
+	assertStringEqual(t, "", hookData.GenerationID)
+	assertStringEqual(t, "", hookData.Model)
+	assertStringEqual(t, "", hookData.CursorVersion)
 	if hookData.WorkspaceRoots != nil {
 		t.Fatalf("WorkspaceRoots: want nil, got %#v", hookData.WorkspaceRoots)
 	}
@@ -126,18 +126,17 @@ func TestNewHookDataCommon_emptyObject(t *testing.T) {
 	}
 }
 
-func assertEqual(t *testing.T, want, got string) {
+func assertStringEqual(t *testing.T, want, got string) {
 	t.Helper()
 	if want != got {
 		t.Fatalf("want %q, got %q", want, got)
 	}
 }
 
-// assertHookDataCommonZero checks the hookDataCommon zero value returned on Unmarshal error.
-func assertHookDataCommonZero(t *testing.T, hookData hookDataCommon) {
+func assertHookDataCommonZero(t *testing.T, hookData HookDataCommon) {
 	t.Helper()
-	want := hookDataCommon{}
+	want := HookDataCommon{}
 	if !reflect.DeepEqual(want, hookData) {
-		t.Fatalf("want zero hookDataCommon, got %#v", hookData)
+		t.Fatalf("want zero HookDataCommon, got %#v", hookData)
 	}
 }

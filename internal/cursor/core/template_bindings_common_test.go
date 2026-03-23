@@ -1,4 +1,4 @@
-package cursor
+package cursorcore
 
 import "testing"
 
@@ -39,9 +39,9 @@ func TestTemplateBindingsCommon_templateValueAllCommonFields(t *testing.T) {
 		"user_email": "dev@example.com",
 		"transcript_path": "/tmp/transcript.jsonl"
 	}`
-	hookData, err := newHookDataCommon([]byte(input))
+	hookData, err := NewHookDataCommon([]byte(input))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
 	bindings := newTemplateBindingsCommon(hookData)
 
@@ -63,9 +63,9 @@ func TestTemplateBindingsCommon_templateValueAllCommonFields(t *testing.T) {
 }
 
 func TestTemplateBindingsCommon_unknownKey(t *testing.T) {
-	hookData, err := newHookDataCommon([]byte(`{"hook_event_name":"afterFileEdit"}`))
+	hookData, err := NewHookDataCommon([]byte(`{"hook_event_name":"afterFileEdit"}`))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
 	bindings := newTemplateBindingsCommon(hookData)
 	_, ok := bindings.TemplateValue("SESSION_ID")
@@ -81,9 +81,9 @@ func TestTemplateBindingsCommon_nullOptionalJSONStillDefined(t *testing.T) {
 		"user_email": null,
 		"transcript_path": null
 	}`
-	hookData, err := newHookDataCommon([]byte(input))
+	hookData, err := NewHookDataCommon([]byte(input))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
 	bindings := newTemplateBindingsCommon(hookData)
 	assertTemplateBindingValue(t, bindings, "USER_EMAIL", "")

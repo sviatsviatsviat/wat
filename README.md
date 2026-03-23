@@ -105,7 +105,11 @@ Fires after MCP execution.
 
 Fires after a file edit.
 
-**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders) plus:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `__FILE_PATH__` | Absolute path of the edited file; taken from `file_path`. |
 
 **Returns** `{}`.
 
@@ -148,9 +152,15 @@ Requires Go 1.26+ (see `go.mod`).
 ```bash
 go test ./...
 go vet ./...
-go build ./cmd/wat
-go build -o ./bin/ ./cmd/wat
+
+# Local hook binary at repo root (gitignored; use a stable path in `.cursor/hooks.json`)
+go build -o wat ./cmd/wat
+
+# Build under bin/ for tests or to keep the tree clean
+go build -o bin/wat ./cmd/wat
 ```
+
+On Windows, `go build -o wat …` still produces `wat.exe` at the repo root; `go build -o bin/wat …` produces `bin/wat.exe`.
 
 CI runs `go test ./...`, `go vet ./...`, and `go build ./cmd/wat` across multiple `GOOS`/`GOARCH` targets.
 
@@ -200,7 +210,7 @@ sequenceDiagram
   Note over A: Write Output to hook stdout,<br/>return Code
 ```
 
-### Cursor hook factory and handler (`internal/cursor`)
+### Cursor hook factory and handler (`internal/cursor`, `internal/cursor/core`)
 
 This is how the **`HookHandlerFactory`** and **`HookHandler`** from the execution flow are implemented for Cursor today.
 
@@ -256,5 +266,5 @@ sequenceDiagram
 ### Extending wat
 
 - **New host** — Add a package (like `internal/cursor`) implementing `HookHandlerFactory`, own JSON types, default hook stdout lines, and stdin policy. Register the factory in `app.newHookHandlerFactory`. Keep host protocol strings out of `internal/cli`.
-- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s handler-builder map (e.g. `cursorHookHandlerBuilders` in `internal/cursor/hook_handler_builders.go`), wiring an existing or new builder to a `HookHandler`. If the JSON shape or placeholders differ, extend the host’s payload types and `TemplateBindings` as needed; document the event in the README.
+- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s handler-builder map (e.g. `cursorHookHandlerBuilders` in `internal/cursor/hook_handler_builders.go`), wiring an existing or new builder to a `HookHandler`. Shared Cursor stdin + generic event plumbing live in `internal/cursor/core` (`cursorcore`); per-event field structs and extractors stay in `internal/cursor`. If the JSON shape or placeholders differ, extend payload types and `TemplateBindings` as needed; document the event in the README.
 - **New subcommand** — Implement `core.Command` in `internal/commands` and wire argv construction in `app.newHookCommand`.

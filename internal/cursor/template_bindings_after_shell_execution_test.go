@@ -1,6 +1,10 @@
 package cursor
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/cursor/core"
+)
 
 func TestAfterShellExecutionPlaceholderExtractors_registry(t *testing.T) {
 	wantKeys := map[string]struct{}{
@@ -28,15 +32,15 @@ func TestTemplateBindingsAfterShellExecution_templateValueEventAndCommonFields(t
 		"duration": 1234,
 		"sandbox": true
 	}`
-	commonData, err := newHookDataCommon([]byte(input))
+	commonData, err := cursorcore.NewHookDataCommon([]byte(input))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := newHookDataAfterShellExecution([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(input), commonData)
 	if err != nil {
-		t.Fatalf("newHookDataAfterShellExecution: %v", err)
+		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
-	bindings := newTemplateBindingsAfterShellExecution(hookData)
+	bindings := cursorcore.NewTemplateBindingsEvent(hookData.HookDataCommon, hookData.Fields, afterShellExecutionPlaceholderExtractors)
 
 	assertTemplateBindingValue(t, bindings, "HOOK_EVENT_NAME", "afterShellExecution")
 	assertTemplateBindingValue(t, bindings, "CONVERSATION_ID", "conv-1")
@@ -54,29 +58,29 @@ func TestTemplateBindingsAfterShellExecution_decimalDuration(t *testing.T) {
 		"duration": 2841.805,
 		"sandbox": false
 	}`
-	commonData, err := newHookDataCommon([]byte(input))
+	commonData, err := cursorcore.NewHookDataCommon([]byte(input))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := newHookDataAfterShellExecution([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(input), commonData)
 	if err != nil {
-		t.Fatalf("newHookDataAfterShellExecution: %v", err)
+		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
-	bindings := newTemplateBindingsAfterShellExecution(hookData)
+	bindings := cursorcore.NewTemplateBindingsEvent(hookData.HookDataCommon, hookData.Fields, afterShellExecutionPlaceholderExtractors)
 	assertTemplateBindingValue(t, bindings, "DURATION", "2841.805")
 }
 
 func TestTemplateBindingsAfterShellExecution_unknownKey(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"afterShellExecution"}`)
-	commonData, err := newHookDataCommon(raw)
+	commonData, err := cursorcore.NewHookDataCommon(raw)
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := newHookDataAfterShellExecution(raw, commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields](raw, commonData)
 	if err != nil {
-		t.Fatalf("newHookDataAfterShellExecution: %v", err)
+		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
-	bindings := newTemplateBindingsAfterShellExecution(hookData)
+	bindings := cursorcore.NewTemplateBindingsEvent(hookData.HookDataCommon, hookData.Fields, afterShellExecutionPlaceholderExtractors)
 	_, ok := bindings.TemplateValue("TOOL_NAME")
 	if ok {
 		t.Fatal("TOOL_NAME must not be a defined placeholder")

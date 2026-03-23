@@ -1,9 +1,9 @@
-package cursor
+package cursorcore
 
 import "encoding/json"
 
-// hookDataCommon is the shared JSON shape for Cursor hook stdin payloads.
-type hookDataCommon struct {
+// HookDataCommon is the shared JSON shape for Cursor hook stdin payloads.
+type HookDataCommon struct {
 	ConversationID string   `json:"conversation_id"`
 	GenerationID   string   `json:"generation_id"`
 	Model          string   `json:"model"`
@@ -14,11 +14,11 @@ type hookDataCommon struct {
 	TranscriptPath *string  `json:"transcript_path"`
 }
 
-// newHookDataCommon unmarshals rawJSON into hookDataCommon.
-func newHookDataCommon(rawJSON []byte) (hookDataCommon, error) {
-	var hookData hookDataCommon
+// NewHookDataCommon unmarshals rawJSON into HookDataCommon.
+func NewHookDataCommon(rawJSON []byte) (HookDataCommon, error) {
+	var hookData HookDataCommon
 	if err := json.Unmarshal(rawJSON, &hookData); err != nil {
-		return hookDataCommon{}, err
+		return HookDataCommon{}, err
 	}
 	return hookData, nil
 }
