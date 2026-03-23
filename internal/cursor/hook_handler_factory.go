@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/core"
+	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
 // HookHandlerFactory constructs [core.HookHandler] instances for registered Cursor hook events.
@@ -21,7 +22,7 @@ func (HookHandlerFactory) HookHandlerFromJSON(hookEventJSON []byte) (core.HookHa
 	if len(hookEventJSON) == 0 {
 		return nil, fmt.Errorf("cursor hook stdin is empty or missing JSON object")
 	}
-	hookData, err := newHookDataCommon(hookEventJSON)
+	hookData, err := cursorcore.NewHookDataCommon(hookEventJSON)
 	if err != nil {
 		return nil, fmt.Errorf("invalid cursor hook JSON: %w", err)
 	}

@@ -1,4 +1,4 @@
-package cursor
+package cursorcore
 
 import (
 	"testing"
@@ -7,13 +7,13 @@ import (
 )
 
 func TestNewDefaultHookHandler_success(t *testing.T) {
-	hookData, err := newHookDataCommon([]byte(`{"hook_event_name":"afterFileEdit"}`))
+	hookData, err := NewHookDataCommon([]byte(`{"hook_event_name":"afterFileEdit"}`))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := newDefaultHookHandler(hookData)
+	handler, err := NewDefaultHookHandler(hookData)
 	if err != nil {
-		t.Fatalf("newDefaultHookHandler: %v", err)
+		t.Fatalf("NewDefaultHookHandler: %v", err)
 	}
 	if handler == nil {
 		t.Fatal("expected non-nil HookHandler")
@@ -21,11 +21,11 @@ func TestNewDefaultHookHandler_success(t *testing.T) {
 }
 
 func TestDefaultHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
-	hookData, err := newHookDataCommon([]byte(`{"hook_event_name":"afterFileEdit","conversation_id":"cid-1"}`))
+	hookData, err := NewHookDataCommon([]byte(`{"hook_event_name":"afterFileEdit","conversation_id":"cid-1"}`))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := newDefaultHookHandler(hookData)
+	handler, err := NewDefaultHookHandler(hookData)
 	if err != nil {
 		t.Fatal(err)
 	}

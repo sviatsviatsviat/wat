@@ -1,19 +1,14 @@
-package cursor
+package cursorcore
 
-import (
-	"github.com/sviatsviatsviat/wat/internal/core"
-)
-
-// defaultHookResponseLine is the default hook stdout line (JSON object and newline).
-const defaultHookResponseLine = "{}\n"
+import "github.com/sviatsviatsviat/wat/internal/core"
 
 // defaultHookHandler runs cmd with template bindings derived from hookData.
 type defaultHookHandler struct {
-	hookData hookDataCommon
+	hookData HookDataCommon
 }
 
-// newDefaultHookHandler returns a [core.HookHandler] that uses hookData for placeholders.
-func newDefaultHookHandler(hookData hookDataCommon) (core.HookHandler, error) {
+// NewDefaultHookHandler returns a [core.HookHandler] that uses hookData for common placeholders only.
+func NewDefaultHookHandler(hookData HookDataCommon) (core.HookHandler, error) {
 	return defaultHookHandler{hookData: hookData}, nil
 }
 

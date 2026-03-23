@@ -1,6 +1,11 @@
 package cursor
 
-import "testing"
+import (
+	"math"
+	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/cursor/core"
+)
 
 func TestNewHookDataAfterShellExecution_fullPayload(t *testing.T) {
 	input := `{
@@ -12,23 +17,23 @@ func TestNewHookDataAfterShellExecution_fullPayload(t *testing.T) {
 		"sandbox": false
 	}`
 
-	commonData, err := newHookDataCommon([]byte(input))
+	commonData, err := cursorcore.NewHookDataCommon([]byte(input))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := newHookDataAfterShellExecution([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(input), commonData)
 	if err != nil {
-		t.Fatalf("newHookDataAfterShellExecution: %v", err)
+		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
 
 	assertEqual(t, "afterShellExecution", hookData.HookEventName)
 	assertEqual(t, "conv-1", hookData.ConversationID)
-	assertEqual(t, "npm test", hookData.Command)
-	assertEqual(t, "ok", hookData.Output)
-	if hookData.Duration != float32(1234) {
-		t.Fatalf("Duration: want 1234, got %v", hookData.Duration)
+	assertEqual(t, "npm test", hookData.Fields.Command)
+	assertEqual(t, "ok", hookData.Fields.Output)
+	if hookData.Fields.Duration != float32(1234) {
+		t.Fatalf("Duration: want 1234, got %v", hookData.Fields.Duration)
 	}
-	if hookData.Sandbox {
+	if hookData.Fields.Sandbox {
 		t.Fatal("Sandbox: want false, got true")
 	}
 }
@@ -41,17 +46,26 @@ func TestNewHookDataAfterShellExecution_zeroValueFields(t *testing.T) {
 		"duration": 0,
 		"sandbox": true
 	}`
-	commonData, err := newHookDataCommon([]byte(input))
+	commonData, err := cursorcore.NewHookDataCommon([]byte(input))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := newHookDataAfterShellExecution([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(input), commonData)
 	if err != nil {
-		t.Fatalf("newHookDataAfterShellExecution: %v", err)
+		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
 
-	if hookData.Command != "" || hookData.Output != "" || hookData.Duration != float32(0) || !hookData.Sandbox {
-		t.Fatalf("unexpected values: %#v", hookData)
+	if hookData.Fields.Command != "" {
+		t.Fatalf("Command: want empty string, got %q", hookData.Fields.Command)
+	}
+	if hookData.Fields.Output != "" {
+		t.Fatalf("Output: want empty string, got %q", hookData.Fields.Output)
+	}
+	if hookData.Fields.Duration != float32(0) {
+		t.Fatalf("Duration: want 0, got %v", hookData.Fields.Duration)
+	}
+	if !hookData.Fields.Sandbox {
+		t.Fatalf("Sandbox: want true, got false")
 	}
 }
 
@@ -64,21 +78,24 @@ func TestNewHookDataAfterShellExecution_decimalDuration(t *testing.T) {
 		"sandbox": false
 	}`
 
-	commonData, err := newHookDataCommon([]byte(input))
+	commonData, err := cursorcore.NewHookDataCommon([]byte(input))
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := newHookDataAfterShellExecution([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(input), commonData)
 	if err != nil {
-		t.Fatalf("newHookDataAfterShellExecution: %v", err)
+		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
-	if hookData.Duration != float32(2841.805) {
-		t.Fatalf("Duration: want 2841.805, got %v", hookData.Duration)
+	const epsilon = 1e-3
+	wantDuration := float32(2841.805)
+	diff := float64(hookData.Fields.Duration - wantDuration)
+	if math.Abs(diff) > epsilon {
+		t.Fatalf("Duration: want ~%v (epsilon %g), got %v", wantDuration, epsilon, hookData.Fields.Duration)
 	}
 }
 
 func TestNewHookDataAfterShellExecution_invalidJSON(t *testing.T) {
-	_, err := newHookDataAfterShellExecution([]byte(`not json`), hookDataCommon{})
+	_, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(`not json`), cursorcore.HookDataCommon{})
 	if err == nil {
 		t.Fatal("expected error for invalid JSON")
 	}

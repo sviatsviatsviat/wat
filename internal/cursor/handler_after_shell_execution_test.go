@@ -4,17 +4,19 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/core"
+	"github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
-func TestNewAfterShellExecutionHookHandler_success(t *testing.T) {
+func TestNewCursorEventHookHandlerBuilder_afterShellExecution_success(t *testing.T) {
+	build := cursorcore.NewCursorEventHookHandlerBuilder(afterShellExecutionPlaceholderExtractors)
 	raw := []byte(`{"hook_event_name":"afterShellExecution","command":"npm test","output":"ok","duration":1,"sandbox":false}`)
-	hookDataCommon, err := newHookDataCommon(raw)
+	common, err := cursorcore.NewHookDataCommon(raw)
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := newAfterShellExecutionHookHandler(raw, hookDataCommon)
+	handler, err := build(raw, common)
 	if err != nil {
-		t.Fatalf("newAfterShellExecutionHookHandler: %v", err)
+		t.Fatalf("hookHandlerBuilder: %v", err)
 	}
 	if handler == nil {
 		t.Fatal("expected non-nil HookHandler")
@@ -22,14 +24,15 @@ func TestNewAfterShellExecutionHookHandler_success(t *testing.T) {
 }
 
 func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
+	build := cursorcore.NewCursorEventHookHandlerBuilder(afterShellExecutionPlaceholderExtractors)
 	raw := []byte(`{"hook_event_name":"afterShellExecution","conversation_id":"cid-1","command":"npm test","output":"all good","duration":1234,"sandbox":true}`)
-	hookDataCommon, err := newHookDataCommon(raw)
+	common, err := cursorcore.NewHookDataCommon(raw)
 	if err != nil {
-		t.Fatalf("newHookDataCommon: %v", err)
+		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := newAfterShellExecutionHookHandler(raw, hookDataCommon)
+	handler, err := build(raw, common)
 	if err != nil {
-		t.Fatalf("newAfterShellExecutionHookHandler: %v", err)
+		t.Fatalf("hookHandlerBuilder: %v", err)
 	}
 
 	var seenCtx *core.HookContext
@@ -55,8 +58,8 @@ func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.
 	if seenCtx == nil {
 		t.Fatal("Command.Execute was not called")
 	}
-	if result.Output != defaultHookResponseLine {
-		t.Fatalf("output: want %q, got %q", defaultHookResponseLine, result.Output)
+	if result.Output != "{}\n" {
+		t.Fatalf("output: want %q, got %q", "{}\n", result.Output)
 	}
 }
 
@@ -68,7 +71,7 @@ func TestHookHandlerFactory_afterShellExecutionUsesDedicatedHandler(t *testing.T
 	if err != nil {
 		t.Fatalf("HookHandlerFromJSON: %v", err)
 	}
-	if _, ok := handler.(afterShellExecutionHookHandler); !ok {
-		t.Fatalf("handler type: want afterShellExecutionHookHandler, got %T", handler)
+	if _, ok := handler.(cursorcore.EventHookHandler[cursorcore.HookDataWithCommon[hookDataAfterShellExecutionFields]]); !ok {
+		t.Fatalf("handler type: want EventHookHandler for afterShellExecution fields, got %T", handler)
 	}
 }
