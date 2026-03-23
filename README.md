@@ -41,7 +41,7 @@ Options:
 
 Put **`-H` / `--host` and its value after `run` and before the subprocess command** (for example `wat run -H cursor …`). The short form is **`-H`** (not `-h`). If the same option is passed more than once, **the last value wins**.
 
-**Command template** — Everything after the optional flags is one command template: the subprocess program and its arguments. Use only `__PLACEHOLDER__` tokens from [Common Cursor placeholders](#common-cursor-placeholders); any other `__TOKEN__` in the template is an error (exit code `2`).
+**Command template** — Everything after the optional flags is one command template: the subprocess program and its arguments. Use only `__PLACEHOLDER__` tokens documented for the current hook event in [Supported Cursor hook types](#supported-cursor-hook-types); any other `__TOKEN__` in the template is an error (exit code `2`).
 
 **Exit status** — If the subprocess is started, wat exits with **that process’s exit code**. Otherwise wat uses own standard [Exit codes](#exit-codes).
 
@@ -78,11 +78,18 @@ Cursor supplies hook JSON on stdin. Register hook commands in **`.cursor/hooks.j
 
 ### Supported Cursor hook types
 
-For `wat run`, the default handler runs your templated subprocess; placeholders are only those in [Common Cursor placeholders](#common-cursor-placeholders).
-
 #### `afterShellExecution`
 
 Fires after a shell command runs in Cursor.
+
+**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders) plus the additional placeholders below.
+
+| Placeholder | Description |
+|-------------|-------------|
+| `__COMMAND__` | Full terminal command that Cursor executed; taken from `command`. |
+| `__OUTPUT__` | Full terminal output captured by Cursor; taken from `output`. |
+| `__DURATION__` | Duration in milliseconds spent executing the shell command; taken from `duration`. |
+| `__SANDBOX__` | Whether the command ran in a sandboxed environment (`true` or `false`); taken from `sandbox`. |
 
 **Returns** `{}`.
 
@@ -90,11 +97,15 @@ Fires after a shell command runs in Cursor.
 
 Fires after MCP execution.
 
+**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+
 **Returns** `{}`.
 
 #### `afterFileEdit`
 
 Fires after a file edit.
+
+**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
 
 **Returns** `{}`.
 
@@ -102,11 +113,15 @@ Fires after a file edit.
 
 Fires after a tab file edit.
 
+**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+
 **Returns** `{}`.
 
 #### `afterAgentResponse`
 
 Fires after an agent response.
+
+**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
 
 **Returns** `{}`.
 
@@ -114,11 +129,15 @@ Fires after an agent response.
 
 Fires after agent thought.
 
+**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+
 **Returns** `{}`.
 
 #### `sessionEnd`
 
 Fires when the session ends.
+
+**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
 
 **Returns** `{}`.
 
