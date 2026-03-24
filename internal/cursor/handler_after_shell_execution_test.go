@@ -14,7 +14,8 @@ func TestNewCursorEventHookHandlerBuilder_afterShellExecution_success(t *testing
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := build(raw, common)
+	execCtx := core.NewWatExecutionContext("cursor").WithSubcommand("run")
+	handler, err := build(raw, common, execCtx)
 	if err != nil {
 		t.Fatalf("hookHandlerBuilder: %v", err)
 	}
@@ -30,7 +31,8 @@ func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := build(raw, common)
+	execCtx := core.NewWatExecutionContext("cursor").WithSubcommand("run")
+	handler, err := build(raw, common, execCtx)
 	if err != nil {
 		t.Fatalf("hookHandlerBuilder: %v", err)
 	}
@@ -58,20 +60,20 @@ func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.
 	if seenCtx == nil {
 		t.Fatal("Command.Execute was not called")
 	}
-	if result.Output != "{}\n" {
-		t.Fatalf("output: want %q, got %q", "{}\n", result.Output)
+	if result.Output != cursorcore.DefaultHookResponseLine {
+		t.Fatalf("output: want %q, got %q", cursorcore.DefaultHookResponseLine, result.Output)
 	}
 }
 
 func TestHookHandlerFactory_afterShellExecutionUsesDedicatedHandler(t *testing.T) {
-	factory := NewHookHandlerFactory()
+	factory := NewHookHandlerFactory(core.NewWatExecutionContext("cursor").WithSubcommand("run"))
 	raw := []byte(`{"hook_event_name":"afterShellExecution","command":"x","output":"","duration":0,"sandbox":false}`)
 
 	handler, err := factory.HookHandlerFromJSON(raw)
 	if err != nil {
 		t.Fatalf("HookHandlerFromJSON: %v", err)
 	}
-	if _, ok := handler.(cursorcore.EventHookHandler[cursorcore.HookDataWithCommon[hookDataAfterShellExecutionFields]]); !ok {
-		t.Fatalf("handler type: want EventHookHandler for afterShellExecution fields, got %T", handler)
+	if _, ok := handler.(*cursorcore.EventHookHandler); !ok {
+		t.Fatalf("handler type: want *EventHookHandler, got %T", handler)
 	}
 }

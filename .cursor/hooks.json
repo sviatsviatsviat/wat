@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "./wat run \"--file-pattern=[.]go$\" gofmt -w __FILE_PATH__"
+      }
+    ]
+  }
+}

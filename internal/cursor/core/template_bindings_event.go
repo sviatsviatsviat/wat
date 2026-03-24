@@ -18,7 +18,7 @@ func NewTemplateBindingsEvent[T any](
 	eventFields T,
 	extractors map[string]EventFieldExtractor[T],
 ) core.TemplateBindings {
-	return templateBindingsEvent[T]{
+	return &templateBindingsEvent[T]{
 		commonBindings: newTemplateBindingsCommon(commonData),
 		eventFields:    eventFields,
 		extractors:     extractors,
@@ -26,7 +26,7 @@ func NewTemplateBindingsEvent[T any](
 }
 
 // TemplateValue returns the bound string for placeholderKey and whether it is a known key.
-func (bindings templateBindingsEvent[T]) TemplateValue(placeholderKey string) (string, bool) {
+func (bindings *templateBindingsEvent[T]) TemplateValue(placeholderKey string) (string, bool) {
 	extractString, found := bindings.extractors[placeholderKey]
 	if found && extractString != nil {
 		return extractString(bindings.eventFields), true

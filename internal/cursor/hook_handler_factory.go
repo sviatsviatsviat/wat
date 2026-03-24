@@ -8,17 +8,15 @@ import (
 	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
-// HookHandlerFactory constructs [core.HookHandler] instances for registered Cursor hook events.
-type HookHandlerFactory struct{}
-
-// NewHookHandlerFactory returns an empty [HookHandlerFactory].
-func NewHookHandlerFactory() HookHandlerFactory {
-	return HookHandlerFactory{}
+type HookHandlerFactory struct {
+	execCtx core.WatExecutionContext
 }
 
-// HookHandlerFromJSON implements [core.HookHandlerFactory].
-// It returns an error when hookEventJSON is empty, the event name is unknown, or construction fails.
-func (HookHandlerFactory) HookHandlerFromJSON(hookEventJSON []byte) (core.HookHandler, error) {
+func NewHookHandlerFactory(execCtx core.WatExecutionContext) HookHandlerFactory {
+	return HookHandlerFactory{execCtx: execCtx}
+}
+
+func (f HookHandlerFactory) HookHandlerFromJSON(hookEventJSON []byte) (core.HookHandler, error) {
 	if len(hookEventJSON) == 0 {
 		return nil, fmt.Errorf("cursor hook stdin is empty or missing JSON object")
 	}
@@ -30,5 +28,5 @@ func (HookHandlerFactory) HookHandlerFromJSON(hookEventJSON []byte) (core.HookHa
 	if !found {
 		return nil, fmt.Errorf("cursor event %q is not supported yet", hookData.HookEventName)
 	}
-	return builder(hookEventJSON, hookData)
+	return builder(hookEventJSON, hookData, f.execCtx)
 }

@@ -26,12 +26,13 @@ func TestNewHookDataCommon_fullPayload(t *testing.T) {
 	// session_id, cwd, tool_name, command, and path appear in some Cursor payloads but are not
 	// fields on HookDataCommon yet; encoding/json ignores them until we model them explicitly.
 	raw := []byte(input)
+	before := append([]byte(nil), raw...)
 	hookData, err := NewHookDataCommon(raw)
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	if string(raw) != input {
-		t.Fatalf("NewHookDataCommon must not replace rawJSON bytes")
+	if !bytes.Equal(before, raw) {
+		t.Fatalf("NewHookDataCommon must not modify rawJSON bytes")
 	}
 
 	assertStringEqual(t, "conv-1", hookData.ConversationID)
@@ -106,12 +107,13 @@ func TestNewHookDataCommon_emptyObject(t *testing.T) {
 	// Valid object with no conversation_id, hook_event_name, or other known keys — json leaves zero values.
 	input := `{}`
 	raw := []byte(input)
+	before := append([]byte(nil), raw...)
 	hookData, err := NewHookDataCommon(raw)
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	if string(raw) != input {
-		t.Fatalf("NewHookDataCommon must not replace rawJSON bytes")
+	if !bytes.Equal(before, raw) {
+		t.Fatalf("NewHookDataCommon must not modify rawJSON bytes")
 	}
 	assertStringEqual(t, "", hookData.HookEventName)
 	assertStringEqual(t, "", hookData.ConversationID)

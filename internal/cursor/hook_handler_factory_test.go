@@ -3,7 +3,13 @@ package cursor
 import (
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/core"
 )
+
+func newTestHookHandlerFactory() HookHandlerFactory {
+	return NewHookHandlerFactory(core.NewWatExecutionContext("cursor").WithSubcommand("run"))
+}
 
 func TestHookHandlerFactory_documentedEvents(t *testing.T) {
 	want := []string{
@@ -18,7 +24,7 @@ func TestHookHandlerFactory_documentedEvents(t *testing.T) {
 	if len(cursorHookHandlerBuilders) != len(want) {
 		t.Fatalf("factory has %d keys, want %d", len(cursorHookHandlerBuilders), len(want))
 	}
-	factory := NewHookHandlerFactory()
+	factory := newTestHookHandlerFactory()
 	for _, eventName := range want {
 		t.Run(eventName, func(t *testing.T) {
 			body := []byte(`{"hook_event_name":"` + eventName + `"}`)
@@ -34,7 +40,7 @@ func TestHookHandlerFactory_documentedEvents(t *testing.T) {
 }
 
 func TestHookHandlerFactory_unknownEvent(t *testing.T) {
-	factory := NewHookHandlerFactory()
+	factory := newTestHookHandlerFactory()
 	_, err := factory.HookHandlerFromJSON([]byte(`{"hook_event_name":"preToolUse"}`))
 	if err == nil {
 		t.Fatal("expected error for unsupported event")
@@ -45,7 +51,7 @@ func TestHookHandlerFactory_unknownEvent(t *testing.T) {
 }
 
 func TestHookHandlerFactory_emptyStdinJSON(t *testing.T) {
-	factory := NewHookHandlerFactory()
+	factory := newTestHookHandlerFactory()
 	for _, body := range [][]byte{nil, {}} {
 		_, err := factory.HookHandlerFromJSON(body)
 		if err == nil {
@@ -55,7 +61,7 @@ func TestHookHandlerFactory_emptyStdinJSON(t *testing.T) {
 }
 
 func TestHookHandlerFactory_invalidJSON(t *testing.T) {
-	factory := NewHookHandlerFactory()
+	factory := newTestHookHandlerFactory()
 	_, err := factory.HookHandlerFromJSON([]byte(`not json`))
 	if err == nil {
 		t.Fatal("expected error for invalid JSON")
