@@ -8,26 +8,28 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
-func TestNewCursorEventHookHandlerBuilder_afterFileEdit_success(t *testing.T) {
-	build := cursorcore.NewCursorEventHookHandlerBuilder(afterFileEditPlaceholderExtractors)
+func testWatExecCtx() core.WatExecutionContext {
+	return core.NewWatExecutionContext("cursor").WithSubcommand("run")
+}
+
+func TestNewAfterFileEditHookHandler_success(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"afterFileEdit","file_path":"D:/repo/file.go","edits":[{"old_string":"a","new_string":"b"}]}`)
 	common, err := cursorcore.NewHookDataCommon(raw)
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := build(raw, common)
+	handler, err := newAfterFileEditHookHandler(raw, common, testWatExecCtx())
 	if err != nil {
-		t.Fatalf("hookHandlerBuilder: %v", err)
+		t.Fatalf("newAfterFileEditHookHandler: %v", err)
 	}
 	if handler == nil {
 		t.Fatal("expected non-nil HookHandler")
 	}
 }
 
-func TestNewCursorEventHookHandlerBuilder_afterFileEdit_invalidPayload(t *testing.T) {
-	build := cursorcore.NewCursorEventHookHandlerBuilder(afterFileEditPlaceholderExtractors)
+func TestNewAfterFileEditHookHandler_invalidPayload(t *testing.T) {
 	common := cursorcore.HookDataCommon{HookEventName: "afterFileEdit"}
-	_, err := build([]byte(`not json`), common)
+	_, err := newAfterFileEditHookHandler([]byte(`not json`), common, testWatExecCtx())
 	if err == nil {
 		t.Fatal("expected error for invalid payload")
 	}
@@ -37,15 +39,14 @@ func TestNewCursorEventHookHandlerBuilder_afterFileEdit_invalidPayload(t *testin
 }
 
 func TestAfterFileEditHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
-	build := cursorcore.NewCursorEventHookHandlerBuilder(afterFileEditPlaceholderExtractors)
 	raw := []byte(`{"hook_event_name":"afterFileEdit","conversation_id":"cid-1","file_path":"D:/repo/file.go","edits":[{"old_string":"a","new_string":"b"}]}`)
 	common, err := cursorcore.NewHookDataCommon(raw)
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := build(raw, common)
+	handler, err := newAfterFileEditHookHandler(raw, common, testWatExecCtx())
 	if err != nil {
-		t.Fatalf("hookHandlerBuilder: %v", err)
+		t.Fatalf("newAfterFileEditHookHandler: %v", err)
 	}
 
 	var seenCtx *core.HookContext
@@ -68,20 +69,91 @@ func TestAfterFileEditHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
 	if seenCtx == nil {
 		t.Fatal("Command.Execute was not called")
 	}
-	if result.Output != "{}\n" {
-		t.Fatalf("output: want %q, got %q", "{}\n", result.Output)
+	if result.Output != cursorcore.DefaultHookResponseLine {
+		t.Fatalf("output: want %q, got %q", cursorcore.DefaultHookResponseLine, result.Output)
 	}
 }
 
 func TestHookHandlerFactory_afterFileEditUsesDedicatedHandler(t *testing.T) {
-	factory := NewHookHandlerFactory()
+	factory := NewHookHandlerFactory(testWatExecCtx())
 	raw := []byte(`{"hook_event_name":"afterFileEdit","file_path":"D:/repo/file.go","edits":[{"old_string":"a","new_string":"b"}]}`)
 
 	handler, err := factory.HookHandlerFromJSON(raw)
 	if err != nil {
 		t.Fatalf("HookHandlerFromJSON: %v", err)
 	}
-	if _, ok := handler.(cursorcore.EventHookHandler[cursorcore.HookDataWithCommon[hookDataAfterFileEditFields]]); !ok {
-		t.Fatalf("handler type: want EventHookHandler for afterFileEdit fields, got %T", handler)
+	if _, ok := handler.(afterFileEditHookHandler); !ok {
+		t.Fatalf("handler type: want afterFileEditHookHandler, got %T", handler)
+	}
+}
+
+func TestAfterFileEditHookHandler_Handle_filePatternNoMatchSkipsCommand(t *testing.T) {
+	raw := []byte(`{"hook_event_name":"afterFileEdit","file_path":"D:/repo/file.txt","edits":[{"old_string":"a","new_string":"b"}]}`)
+	common, err := cursorcore.NewHookDataCommon(raw)
+	if err != nil {
+		t.Fatalf("NewHookDataCommon: %v", err)
+	}
+	handler, err := newAfterFileEditHookHandler(raw, common, testWatExecCtx().WithFilePattern(`[.]go$`))
+	if err != nil {
+		t.Fatalf("newAfterFileEditHookHandler: %v", err)
+	}
+
+	executed := false
+	cmd := stubHookCommand{execute: func(_ *core.HookContext) int {
+		executed = true
+		return 99
+	}}
+	result := handler.Handle(cmd)
+	if executed {
+		t.Fatal("Command.Execute should be skipped when file path does not match regexp")
+	}
+	if result.Code != 0 {
+		t.Fatalf("result code: want 0, got %d", result.Code)
+	}
+	if result.Output != cursorcore.DefaultHookResponseLine {
+		t.Fatalf("output: want %q, got %q", cursorcore.DefaultHookResponseLine, result.Output)
+	}
+}
+
+func TestAfterFileEditHookHandler_Handle_filePatternMatchExecutesCommand(t *testing.T) {
+	raw := []byte(`{"hook_event_name":"afterFileEdit","file_path":"D:/repo/file.go","edits":[{"old_string":"a","new_string":"b"}]}`)
+	common, err := cursorcore.NewHookDataCommon(raw)
+	if err != nil {
+		t.Fatalf("NewHookDataCommon: %v", err)
+	}
+	handler, err := newAfterFileEditHookHandler(raw, common, testWatExecCtx().WithFilePattern(`[.]go$`))
+	if err != nil {
+		t.Fatalf("newAfterFileEditHookHandler: %v", err)
+	}
+
+	executed := false
+	cmd := stubHookCommand{execute: func(ctx *core.HookContext) int {
+		executed = true
+		if ctx.TemplateBindings == nil {
+			t.Fatal("HookContext.TemplateBindings must be set")
+		}
+		return 7
+	}}
+	result := handler.Handle(cmd)
+	if !executed {
+		t.Fatal("Command.Execute should run when file path matches regexp")
+	}
+	if result.Code != 7 {
+		t.Fatalf("result code: want 7, got %d", result.Code)
+	}
+}
+
+func TestNewAfterFileEditHookHandler_invalidFilePatternRegexp(t *testing.T) {
+	raw := []byte(`{"hook_event_name":"afterFileEdit","file_path":"D:/repo/file.go","edits":[{"old_string":"a","new_string":"b"}]}`)
+	common, err := cursorcore.NewHookDataCommon(raw)
+	if err != nil {
+		t.Fatalf("NewHookDataCommon: %v", err)
+	}
+	_, err = newAfterFileEditHookHandler(raw, common, testWatExecCtx().WithFilePattern(`(`))
+	if err == nil {
+		t.Fatal("expected error for invalid --file-pattern regexp")
+	}
+	if !strings.Contains(err.Error(), "invalid --file-pattern regexp") {
+		t.Fatalf("error should mention invalid file-pattern regexp: %v", err)
 	}
 }

@@ -12,7 +12,6 @@ import (
 // hook protocol output on stdout, and diagnostics on stderr. It returns a process exit code
 // ([cli.ExitSuccess], [cli.ExitGeneral], or [cli.ExitBadInput]).
 func Execute(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) int {
-
 	console := cli.NewConsole(stderr, stdout)
 	subprocessRunner := watexec.NewRunner(stderr, console)
 
@@ -21,20 +20,20 @@ func Execute(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer)
 		return cli.ExitBadInput
 	}
 
-	subcommand, host, subcommandArgs, parseErr := parseCommandAndCommonParameters(args)
-	if parseErr != nil {
-		_ = console.WriteError(parseErr.Error())
+	watExecCtx, subcommandArgs, initErr := initializeContext(args)
+	if initErr != nil {
+		_ = console.WriteError(initErr.Error())
 		cli.PrintRootHelp(console)
 		return cli.ExitBadInput
 	}
 
-	hookHandlerFactory, hookHandlerFactoryErr := newHookHandlerFactory(host)
+	hookHandlerFactory, hookHandlerFactoryErr := newHookHandlerFactory(watExecCtx)
 	if hookHandlerFactoryErr != nil {
 		_ = console.WriteError(hookHandlerFactoryErr.Error())
 		return cli.ExitBadInput
 	}
 
-	hookCommand, hookCommandErr := newHookCommand(subcommand, console, subprocessRunner, subcommandArgs)
+	hookCommand, hookCommandErr := newHookCommand(watExecCtx.Subcommand(), console, subprocessRunner, subcommandArgs)
 	if hookCommandErr != nil {
 		return cli.ExitBadInput
 	}

@@ -18,7 +18,9 @@ func validCursorHookJSON() string {
 		"cursor_version": "1.0",
 		"workspace_roots": ["/a"],
 		"user_email": "a@b.com",
-		"transcript_path": "/t"
+		"transcript_path": "/t",
+		"file_path": "/repo/main.go",
+		"edits": [{"old_string": "a", "new_string": "b"}]
 	}`
 }
 
@@ -226,8 +228,8 @@ func TestExecute_ParseErrorMissingHostValue(t *testing.T) {
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
-	if !strings.Contains(stderr.String(), "missing host value after --host") {
-		t.Fatalf("expected missing host value message, got %q", stderr.String())
+	if !strings.Contains(stderr.String(), "needs an argument: -host") {
+		t.Fatalf("expected flag needs-an-argument for host, got %q", stderr.String())
 	}
 	if !strings.Contains(stderr.String(), "wat <command>") {
 		t.Fatalf("expected root help after parse error, got %q", stderr.String())
@@ -256,7 +258,56 @@ func TestExecute_ParseErrorMissingHostValueDashCapitalH(t *testing.T) {
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
-	if !strings.Contains(stderr.String(), "missing host value after -H") {
-		t.Fatalf("expected missing host value message, got %q", stderr.String())
+	if !strings.Contains(stderr.String(), "needs an argument: -H") {
+		t.Fatalf("expected flag needs-an-argument for -H, got %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "wat <command>") {
+		t.Fatalf("expected root help after parse error, got %q", stderr.String())
+	}
+}
+
+func TestExecute_ParseErrorMissingFilePatternValue(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Execute([]string{"run", "--file-pattern"}, strings.NewReader(""), &stdout, &stderr)
+	if code != cli.ExitBadInput {
+		t.Fatalf("expected cli.ExitBadInput, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "needs an argument: -file-pattern") {
+		t.Fatalf("expected flag needs-an-argument for file-pattern, got %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "wat <command>") {
+		t.Fatalf("expected root help after parse error, got %q", stderr.String())
+	}
+}
+
+func TestExecute_ParseErrorEmptyFilePatternEquals(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Execute([]string{"run", "--file-pattern="}, strings.NewReader(""), &stdout, &stderr)
+	if code != cli.ExitBadInput {
+		t.Fatalf("expected cli.ExitBadInput, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "file-pattern value cannot be empty") {
+		t.Fatalf("expected empty pattern message, got %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "wat <command>") {
+		t.Fatalf("expected root help after parse error, got %q", stderr.String())
+	}
+}
+
+func TestExecute_RunWithFilePatternStillRunsSubprocess(t *testing.T) {
+	base := goVersionToStderrArgs()
+	args := append([]string{base[0], "-f", `[.]go$`}, base[1:]...)
+	stdin := strings.NewReader(validCursorHookJSON())
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Execute(args, stdin, &stdout, &stderr)
+	if code != cli.ExitSuccess {
+		t.Fatalf("expected cli.ExitSuccess, got %d, stderr=%q", code, stderr.String())
+	}
+	assertHookStdoutJSON(t, stdout.String())
+	if !strings.Contains(stderr.String(), "go version") {
+		t.Fatalf("expected go version on stderr, got %q", stderr.String())
 	}
 }

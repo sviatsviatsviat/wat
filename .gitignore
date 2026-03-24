@@ -9,7 +9,7 @@
 *.dylib
 /bin/
 
-# Local hook build at repo root (`go build -o wat ./cmd/wat`; `*.exe` already ignores `wat.exe` on Windows)
+# Extensionless binary if someone used `go build -o wat` on Windows (prefer `go build ./cmd/wat` → wat.exe)
 /wat
 
 # Test binary, built with `go test -c`

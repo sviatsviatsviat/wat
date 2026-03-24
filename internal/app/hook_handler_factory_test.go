@@ -3,10 +3,13 @@ package app
 import (
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/core"
 )
 
 func TestNewHookHandlerFactory_Cursor(t *testing.T) {
-	factory, err := newHookHandlerFactory("cursor")
+	execCtx := core.NewWatExecutionContext("cursor").WithSubcommand("run")
+	factory, err := newHookHandlerFactory(execCtx)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -16,7 +19,8 @@ func TestNewHookHandlerFactory_Cursor(t *testing.T) {
 }
 
 func TestNewHookHandlerFactory_UnsupportedHost(t *testing.T) {
-	factory, err := newHookHandlerFactory("other")
+	execCtx := core.NewWatExecutionContext("other")
+	factory, err := newHookHandlerFactory(execCtx)
 	if err == nil {
 		t.Fatal("expected error")
 	}

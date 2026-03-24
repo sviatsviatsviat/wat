@@ -9,13 +9,13 @@ import (
 var cursorHookHandlerBuilders = map[string]cursorcore.HookHandlerBuilder{
 	"afterShellExecution": cursorcore.NewCursorEventHookHandlerBuilder(afterShellExecutionPlaceholderExtractors),
 	"afterMCPExecution":   newDefaultHookHandlerBuilder,
-	"afterFileEdit":       cursorcore.NewCursorEventHookHandlerBuilder(afterFileEditPlaceholderExtractors),
+	"afterFileEdit":       newAfterFileEditHookHandler,
 	"afterTabFileEdit":    newDefaultHookHandlerBuilder,
 	"afterAgentResponse":  newDefaultHookHandlerBuilder,
 	"afterAgentThought":   newDefaultHookHandlerBuilder,
 	"sessionEnd":          newDefaultHookHandlerBuilder,
 }
 
-func newDefaultHookHandlerBuilder(_ []byte, hookData cursorcore.HookDataCommon) (core.HookHandler, error) {
+func newDefaultHookHandlerBuilder(_ []byte, hookData cursorcore.HookDataCommon, _ core.WatExecutionContext) (core.HookHandler, error) {
 	return cursorcore.NewDefaultHookHandler(hookData)
 }

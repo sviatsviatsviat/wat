@@ -1,51 +1,64 @@
 package app
 
 import (
+	"flag"
 	"fmt"
-	"strings"
+	"io"
+
+	"github.com/sviatsviatsviat/wat/internal/core"
 )
 
-// parseCommandAndCommonParameters returns the subcommand from args[0], the resolved host, and
-// remaining argv after leading --host/-H pairs following the subcommand.
-func parseCommandAndCommonParameters(args []string) (subcommand string, host string, subcommandArgs []string, err error) {
+// defaultHookHost is the hook host when -H/--host is omitted.
+const defaultHookHost = "cursor"
+
+// defaultFilePatternFlagValue is the StringVar default for -f/--file-pattern. It is not compiled as
+// a regexp: after Parse, this value becomes a nil FilePattern (no filter). Pass -f/--file-pattern
+// with any other value to filter (Go regexp syntax).
+const defaultFilePatternFlagValue = "*"
+
+func initializeContext(args []string) (core.WatExecutionContext, []string, error) {
 	if len(args) == 0 {
-		return "", "", nil, fmt.Errorf("internal: empty args")
+		return core.WatExecutionContext{}, nil, fmt.Errorf("internal: empty args")
 	}
-	subcommand = args[0]
-	host, subcommandArgs, err = consumeSubcommandHostFlags(args[1:])
-	return subcommand, host, subcommandArgs, err
+	subcommand := args[0]
+	host, filePattern, subcommandArgs, err := consumeSubcommandSharedFlags(args[1:])
+	if err != nil {
+		return core.WatExecutionContext{}, nil, err
+	}
+	execCtx := core.NewWatExecutionContext(host).WithSubcommand(subcommand)
+	if filePattern != nil {
+		execCtx = execCtx.WithFilePattern(*filePattern)
+	}
+	return execCtx, subcommandArgs, nil
 }
 
-// consumeSubcommandHostFlags parses leading --host or -H flags in afterSubcommand
-// (--host value, -H value, --host=value). Short -H does not accept -H=value.
-// The default host name is "cursor"; later pairs override earlier ones.
-func consumeSubcommandHostFlags(afterSubcommand []string) (host string, subcommandArgs []string, err error) {
-	host = "cursor"
-	subcommandArgs = afterSubcommand
-	for {
-		if len(subcommandArgs) == 0 {
-			return host, subcommandArgs, nil
-		}
-		flagOrArg := subcommandArgs[0]
-		if hostValue, ok := strings.CutPrefix(flagOrArg, "--host="); ok {
-			if hostValue == "" {
-				return "", nil, fmt.Errorf("host value cannot be empty after %s", flagOrArg)
-			}
-			host = hostValue
-			subcommandArgs = subcommandArgs[1:]
-			continue
-		}
-		if flagOrArg != "--host" && flagOrArg != "-H" {
-			return host, subcommandArgs, nil
-		}
-		if len(subcommandArgs) < 2 {
-			return "", nil, fmt.Errorf("missing host value after %s", flagOrArg)
-		}
-		hostValue := subcommandArgs[1]
-		if hostValue == "" {
-			return "", nil, fmt.Errorf("host value cannot be empty after %s", flagOrArg)
-		}
-		host = hostValue
-		subcommandArgs = subcommandArgs[2:]
+func consumeSubcommandSharedFlags(afterSubcommand []string) (host string, filePattern *string, subcommandArgs []string, err error) {
+	host = defaultHookHost
+	var patternStr string
+
+	fs := flag.NewFlagSet("wat", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+
+	fs.StringVar(&host, "host", defaultHookHost, "hook host")
+	fs.StringVar(&host, "H", defaultHookHost, "hook host (shorthand)")
+	fs.StringVar(&patternStr, "file-pattern", defaultFilePatternFlagValue, "optional regexp for afterFileEdit file_path filter; default * means no filter")
+	fs.StringVar(&patternStr, "f", defaultFilePatternFlagValue, "shorthand for file-pattern")
+
+	if err := fs.Parse(afterSubcommand); err != nil {
+		return "", nil, nil, err
 	}
+
+	if host == "" {
+		return "", nil, nil, fmt.Errorf("host value cannot be empty after --host")
+	}
+
+	if patternStr == "" {
+		return "", nil, nil, fmt.Errorf("file-pattern value cannot be empty")
+	}
+
+	if patternStr == defaultFilePatternFlagValue {
+		return host, nil, fs.Args(), nil
+	}
+	v := patternStr
+	return host, &v, fs.Args(), nil
 }

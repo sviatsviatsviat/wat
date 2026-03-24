@@ -14,10 +14,13 @@ Supported commands:
 
 	run        Run a templated hook subprocess
 
-Flags:
+Flags (after the subcommand, before the command template for run):
 
-	-H, --host <name>    Hook host that handles stdin and hook protocol
-	                      output (default: cursor)
+	-H, --host <name>           Hook host that handles stdin and hook protocol
+	                             output (default: cursor)
+	-f, --file-pattern <re>     Optional; used by Cursor afterFileEdit to filter by
+	                             file path (Go regexp). Omit for no filter; if set,
+	                             <re> must be non-empty.
 
 If equivalent flags repeated, the last value wins.`
 
@@ -29,15 +32,15 @@ Run wat with no arguments to print this text; run wat run without a subprocess c
 	runHelpText = `Usage:
 
 	wat run <command> [templated arguments]
+	wat run [-f <re>] <command> [templated arguments]
+	wat run [--file-pattern <re>] <command> [templated arguments]
+	wat run [--file-pattern=<re>] <command> [templated arguments]
 	wat run --host <name> <command> [templated arguments]
 	wat run -H <name> <command> [templated arguments]
 
-Host flags (after run, before the subprocess command) match root usage:
-
-	-H, --host <name>    Hook host that handles stdin and hook protocol
-	                      output (default: cursor)
-
-If equivalent flags repeated, the last value wins.
+Shared flags (after run, before the subprocess command) match root usage
+(-H/--host and -f/--file-pattern; either order). If equivalent flags repeat,
+the last value wins.
 
 The hook JSON on stdin supplies template values. Only these placeholders are allowed:
 
@@ -59,6 +62,6 @@ Windows:
 Unix / macOS:
 
 	wat run sh -c "go version 1>&2"
-	wat run sh -c 'echo __HOOK_EVENT_NAME__ 1>&2'
+	wat run sh -c 'echo __HOOK_EVENT_NAME__ >&2'
 	wat run -H cursor sh -c "go version 1>&2"`
 )

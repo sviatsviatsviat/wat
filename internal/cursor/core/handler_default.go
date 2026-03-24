@@ -18,5 +18,5 @@ func (handler defaultHookHandler) Handle(cmd core.Command) core.HookHandlerResul
 		TemplateBindings: newTemplateBindingsCommon(handler.hookData),
 	}
 	code := cmd.Execute(ctx)
-	return core.HookHandlerResult{Code: code, Output: defaultHookResponseLine}
+	return core.HookHandlerResult{Code: code, Output: DefaultHookResponseLine}
 }

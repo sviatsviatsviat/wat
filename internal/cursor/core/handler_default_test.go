@@ -55,8 +55,8 @@ func TestDefaultHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
 	if seenCtx == nil {
 		t.Fatal("Command.Execute was not called")
 	}
-	if result.Output != defaultHookResponseLine {
-		t.Fatalf("output: want %q, got %q", defaultHookResponseLine, result.Output)
+	if result.Output != DefaultHookResponseLine {
+		t.Fatalf("output: want %q, got %q", DefaultHookResponseLine, result.Output)
 	}
 }
 
