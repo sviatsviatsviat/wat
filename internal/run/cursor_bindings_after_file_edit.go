@@ -1,7 +1,7 @@
 package run
 
-import cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
+import "github.com/sviatsviatsviat/wat/internal/cursor"
 
-var afterFileEditPlaceholderExtractors = map[string]eventFieldExtractor[cursorcore.AfterFileEditFields]{
-	"FILE_PATH": func(hookData cursorcore.AfterFileEditFields) string { return hookData.FilePath },
+var afterFileEditPlaceholderExtractors = map[string]eventFieldExtractor[cursor.AfterFileEditFields]{
+	"FILE_PATH": func(hookData cursor.AfterFileEditFields) string { return hookData.FilePath },
 }

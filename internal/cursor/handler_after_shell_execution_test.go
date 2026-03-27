@@ -4,16 +4,15 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/core"
-	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
 func TestNewAfterShellExecutionHookHandler_success(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"afterShellExecution","command":"npm test","output":"ok","duration":1,"sandbox":false}`)
-	common, err := cursorcore.NewHookDataCommon(raw)
+	common, err := NewHookDataCommon(raw)
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := cursorcore.NewHookHandlerFromEventFields[cursorcore.AfterShellExecutionFields](raw, common)
+	handler, err := NewHookHandlerFromEventFields[AfterShellExecutionFields](raw, common)
 	if err != nil {
 		t.Fatalf("NewHookHandlerFromEventFields: %v", err)
 	}
@@ -24,11 +23,11 @@ func TestNewAfterShellExecutionHookHandler_success(t *testing.T) {
 
 func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"afterShellExecution","conversation_id":"cid-1","command":"npm test","output":"all good","duration":1234,"sandbox":true}`)
-	common, err := cursorcore.NewHookDataCommon(raw)
+	common, err := NewHookDataCommon(raw)
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := cursorcore.NewHookHandlerFromEventFields[cursorcore.AfterShellExecutionFields](raw, common)
+	handler, err := NewHookHandlerFromEventFields[AfterShellExecutionFields](raw, common)
 	if err != nil {
 		t.Fatalf("NewHookHandlerFromEventFields: %v", err)
 	}
@@ -36,10 +35,10 @@ func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.
 	var seenCtx *core.HookContext
 	hookCommand := stubHookCommand{execute: func(ctx *core.HookContext) int {
 		seenCtx = ctx
-		if ctx.HookHost != cursorcore.HookHostCursor {
-			t.Errorf("HookHost: want %q, got %q", cursorcore.HookHostCursor, ctx.HookHost)
+		if ctx.HookHost != HookHostCursor {
+			t.Errorf("HookHost: want %q, got %q", HookHostCursor, ctx.HookHost)
 		}
-		rd, ok := ctx.ParsedData.(*cursorcore.CursorHookRunData[cursorcore.AfterShellExecutionFields])
+		rd, ok := ctx.ParsedData.(*CursorHookRunData[AfterShellExecutionFields])
 		if !ok || rd == nil {
 			t.Fatalf("ParsedData must be *CursorHookRunData[AfterShellExecutionFields], got %T", ctx.ParsedData)
 		}
@@ -74,8 +73,8 @@ func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.
 	if seenCtx == nil {
 		t.Fatal("Command.Execute was not called")
 	}
-	if result.Output != cursorcore.DefaultHookResponseLine {
-		t.Fatalf("output: want %q, got %q", cursorcore.DefaultHookResponseLine, result.Output)
+	if result.Output != cursorHookStdoutSuccessLine {
+		t.Fatalf("output: want %q, got %q", cursorHookStdoutSuccessLine, result.Output)
 	}
 }
 
@@ -87,7 +86,7 @@ func TestHookHandlerFactory_afterShellExecutionUsesCursorHookHandler(t *testing.
 	if err != nil {
 		t.Fatalf("HookHandlerFromJSON: %v", err)
 	}
-	if _, ok := handler.(cursorcore.CursorHookHandler[cursorcore.AfterShellExecutionFields]); !ok {
+	if _, ok := handler.(CursorHookHandler[AfterShellExecutionFields]); !ok {
 		t.Fatalf("handler type: want CursorHookHandler[AfterShellExecutionFields], got %T", handler)
 	}
 }

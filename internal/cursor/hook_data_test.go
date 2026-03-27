@@ -1,4 +1,4 @@
-package cursorcore
+package cursor
 
 import (
 	"bytes"
@@ -35,11 +35,11 @@ func TestNewHookDataCommon_fullPayload(t *testing.T) {
 		t.Fatalf("NewHookDataCommon must not modify rawJSON bytes")
 	}
 
-	assertStringEqual(t, "conv-1", hookData.ConversationID)
-	assertStringEqual(t, "gen-1", hookData.GenerationID)
-	assertStringEqual(t, "claude-sonnet-4", hookData.Model)
-	assertStringEqual(t, "afterFileEdit", hookData.HookEventName)
-	assertStringEqual(t, "1.7.2", hookData.CursorVersion)
+	assertEqual(t, "conv-1", hookData.ConversationID)
+	assertEqual(t, "gen-1", hookData.GenerationID)
+	assertEqual(t, "claude-sonnet-4", hookData.Model)
+	assertEqual(t, "afterFileEdit", hookData.HookEventName)
+	assertEqual(t, "1.7.2", hookData.CursorVersion)
 	wantRoots := []string{"/repo", "/repo-2"}
 	if !reflect.DeepEqual(wantRoots, hookData.WorkspaceRoots) {
 		t.Fatalf("WorkspaceRoots: want %#v, got %#v", wantRoots, hookData.WorkspaceRoots)
@@ -74,7 +74,7 @@ func TestNewHookDataCommon_hookEventName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	assertStringEqual(t, "afterFileEdit", hookData.HookEventName)
+	assertEqual(t, "afterFileEdit", hookData.HookEventName)
 }
 
 func TestNewHookDataCommon_malformedJSON(t *testing.T) {
@@ -115,23 +115,16 @@ func TestNewHookDataCommon_emptyObject(t *testing.T) {
 	if !bytes.Equal(before, raw) {
 		t.Fatalf("NewHookDataCommon must not modify rawJSON bytes")
 	}
-	assertStringEqual(t, "", hookData.HookEventName)
-	assertStringEqual(t, "", hookData.ConversationID)
-	assertStringEqual(t, "", hookData.GenerationID)
-	assertStringEqual(t, "", hookData.Model)
-	assertStringEqual(t, "", hookData.CursorVersion)
+	assertEqual(t, "", hookData.HookEventName)
+	assertEqual(t, "", hookData.ConversationID)
+	assertEqual(t, "", hookData.GenerationID)
+	assertEqual(t, "", hookData.Model)
+	assertEqual(t, "", hookData.CursorVersion)
 	if hookData.WorkspaceRoots != nil {
 		t.Fatalf("WorkspaceRoots: want nil, got %#v", hookData.WorkspaceRoots)
 	}
 	if hookData.UserEmail != nil || hookData.TranscriptPath != nil {
 		t.Fatalf("optional pointers: want nil, got user=%#v path=%#v", hookData.UserEmail, hookData.TranscriptPath)
-	}
-}
-
-func assertStringEqual(t *testing.T, want, got string) {
-	t.Helper()
-	if want != got {
-		t.Fatalf("want %q, got %q", want, got)
 	}
 }
 

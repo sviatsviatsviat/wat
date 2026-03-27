@@ -1,4 +1,4 @@
-package cursorcore
+package cursor
 
 import "github.com/sviatsviatsviat/wat/internal/core"
 
@@ -6,6 +6,9 @@ import "github.com/sviatsviatsviat/wat/internal/core"
 type CursorHookHandler[T any] struct {
 	runData CursorHookRunData[T]
 }
+
+// DefaultHookResponseLine is the Cursor hook stdout line (JSON object and newline).
+const defaultHookResponseLine = "{}\n"
 
 // NewDefaultHookHandler returns a [core.HookHandler] with common fields only (no event-specific payload).
 func NewDefaultHookHandler(hookData HookDataCommon) (core.HookHandler, error) {
@@ -30,5 +33,5 @@ func (handler CursorHookHandler[T]) Handle(cmd core.Command) core.HookHandlerRes
 		ParsedData: &rd,
 	}
 	code := cmd.Execute(ctx)
-	return core.HookHandlerResult{Code: code, Output: DefaultHookResponseLine}
+	return core.HookHandlerResult{Code: code, Output: defaultHookResponseLine}
 }

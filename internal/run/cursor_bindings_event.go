@@ -3,7 +3,7 @@ package run
 import (
 	"errors"
 
-	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
+	"github.com/sviatsviatsviat/wat/internal/cursor"
 	"github.com/sviatsviatsviat/wat/internal/template"
 )
 
@@ -16,7 +16,7 @@ type templateBindingsEvent[T any] struct {
 }
 
 func newTemplateBindingsEvent[T any](
-	commonData cursorcore.HookDataCommon,
+	commonData cursor.HookDataCommon,
 	eventFields T,
 	extractors map[string]eventFieldExtractor[T],
 ) template.TemplateBindings {
@@ -28,7 +28,7 @@ func newTemplateBindingsEvent[T any](
 }
 
 func templateBindingsFromCursorEventPayload[T any](
-	data *cursorcore.CursorHookRunData[T],
+	data *cursor.CursorHookRunData[T],
 	extractors map[string]eventFieldExtractor[T],
 	nilEventSpecificErr string,
 ) (template.TemplateBindings, error) {

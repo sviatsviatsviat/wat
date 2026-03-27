@@ -192,7 +192,7 @@ These types define the host-neutral contract:
 - **`HookHandlerFactory`** — Builds a `HookHandler` from raw hook stdin JSON bytes. The host chooses parsing, validation, and which events exist.
 - **`HookHandler`** — Handles one invocation: receives the subcommand `Command`, fills `HookContext` (`HookHost`, host-specific `ParsedData`), calls `Command.Execute`, and returns `HookHandlerResult` (process exit `Code` and hook stdout `Output` string).
 - **`Command`** — Subcommand implementation (`run` today): `Execute(ctx *HookContext) int`, returning the process exit code.
-- **`TemplateBindings`** (`internal/template`) — `TemplateValue(key) (value, ok)` for keys matching the inner part of `__KEY__` in argv. If `ok` is false, `run` reports an unknown placeholder error. For Cursor, `run` builds this from `HookContext.ParsedData` (`*cursorcore.CursorHookRunData[T]` per event type `T`, or `T == struct{}` for common-only hooks).
+- **`TemplateBindings`** (`internal/template`) — `TemplateValue(key) (value, ok)` for keys matching the inner part of `__KEY__` in argv. If `ok` is false, `run` reports an unknown placeholder error. For Cursor, `run` builds this from `HookContext.ParsedData` (`*cursor.CursorHookRunData[T]` per event type `T`, or `T == struct{}` for common-only hooks).
 - **`HookContext`** — Carries `HookHost` and `ParsedData` (`any`) into `Command.Execute`; the host handler sets both before `Execute`.
 
 ### Execution flow
@@ -224,7 +224,7 @@ sequenceDiagram
   Note over A: Write Output to hook stdout,<br/>return Code
 ```
 
-### Cursor hook factory and handler (`internal/cursor`, `internal/cursor/core`)
+### Cursor hook factory and handler (`internal/cursor`)
 
 This is how the **`HookHandlerFactory`** and **`HookHandler`** from the execution flow are implemented for Cursor today.
 
@@ -232,7 +232,7 @@ This is how the **`HookHandlerFactory`** and **`HookHandler`** from the executio
 2. **`HookHandlerFromJSON`** — Rejects empty stdin (Cursor expects a JSON body). **`NewHookDataCommon`** unmarshals bytes into **`HookDataCommon`** (shared envelope: `conversation_id`, `hook_event_name`, etc.—see `hook_data.go`).
 3. **Per-event dispatch** — **`hook_event_name`** selects an entry in **`cursorHookHandlerBuilders`** (`hook_handler_builders.go`). Missing events return an error (“not supported yet”).
 4. **Building the handler** — Each registered builder is a **`HookHandlerBuilder`** `func(rawJSON []byte, hookData HookDataCommon) (core.HookHandler, error)`. Most events use **`NewDefaultHookHandler`** ( **`CursorHookRunData[struct{}]`** , no event payload) or **`NewHookHandlerFromEventFields[T]`** (parses **`HookDataWithCommon[T]`** and builds **`CursorHookRunData[T]`** with **`EventSpecific: &Fields`**).
-5. **`CursorHookHandler[T].Handle`** — Builds **`HookContext`** with **`HookHost`** (**`cursorcore.HookHostCursor`**) and **`ParsedData`** pointing at **`CursorHookRunData[T]`**, calls **`cmd.Execute(ctx)`**, and returns **`HookHandlerResult`** with the subprocess exit **`Code`** and fixed hook stdout **`Output`** (**`cursorcore.DefaultHookResponseLine`**, i.e. `{}` plus newline).
+5. **`CursorHookHandler[T].Handle`** — Builds **`HookContext`** with **`HookHost`** (**`cursor.HookHostCursor`**) and **`ParsedData`** pointing at **`CursorHookRunData[T]`**, calls **`cmd.Execute(ctx)`**, and returns **`HookHandlerResult`** with the subprocess exit **`Code`** and fixed hook stdout **`Output`** (**`cursor.DefaultHookResponseLine`**, i.e. `{}` plus newline).
 6. **`TemplateBindings` in `internal/run`** (`cursor_bindings.go` plus `cursor_bindings_common.go`, `cursor_bindings_event.go`, and per-event files) — For Cursor, **`templateBindingsForCursor`** type-switches on **`*CursorHookRunData[T]`** and maps to **`template.TemplateBindings`**: common placeholders mirror shared stdin fields (**`CONVERSATION_ID`**, **`HOOK_EVENT_NAME`**, …—the inner names **`internal/template`** extracts from **`__KEY__`**). Event-specific keys (**`FILE_PATH`**, **`COMMAND`**, …) merge with common lookups. Optional JSON uses **`helpers.StringFromPtr`**; **`workspace_roots`** is joined with **`;`**. Missing map keys mean **`ok == false`** (unknown placeholder); known keys return **`ok == true`** even when the value is empty. Adding a new event type **`T`** adds a **`case`** branch (no change to **`CursorHookRunData`**’s shape).
 7. **Where bindings run** — For **`wat <host> run`**, **`runCommand.Execute`** optionally filters on **`FILE_PATH`** when a **`-f`** pattern is set, then calls **`template.RenderTokens(argvTemplate, bindings)`**. **`RenderTokens`** scans each argv token for **`__KEY__`** substrings, calls **`TemplateValue`** per key, substitutes the returned string, and collects unknown keys; **`run`** turns any unknowns into a bad-input exit.
 
@@ -281,5 +281,5 @@ sequenceDiagram
 ### Extending wat
 
 - **New host** — Add a package (like `internal/cursor`) implementing `HookHandlerFactory`, own JSON types, default hook stdout lines, and stdin policy. Register the factory in `app.newHookHandlerFactory`. Keep host protocol strings out of `internal/cli`.
-- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s handler-builder map (e.g. `cursorHookHandlerBuilders` in `internal/cursor/hook_handler_builders.go`), wiring an existing or new builder to a `HookHandler`. Define a new event field struct **`T`** in `cursorcore`, build **`CursorHookRunData[T]`** in the builder, and add a **`templateBindingsForCursor`** case for **`*CursorHookRunData[T]`** when `run` must support new **`__KEY__`** tokens. Document the event in the README.
+- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s handler-builder map (e.g. `cursorHookHandlerBuilders` in `internal/cursor/hook_handler_builders.go`), wiring an existing or new builder to a `HookHandler`. Define a new event field struct **`T`** in `internal/cursor`, build **`CursorHookRunData[T]`** in the builder, and add a **`templateBindingsForCursor`** case for **`*CursorHookRunData[T]`** when `run` must support new **`__KEY__`** tokens. Document the event in the README.
 - **New subcommand** — Implement `core.Command` under `internal/<subcommand>` (today `internal/run`) and wire argv construction in `app.newHookCommand`.

@@ -5,16 +5,15 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/core"
-	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
 func TestAfterFileEditHookHandler_viaBuilder_success(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"afterFileEdit","file_path":"D:/repo/file.go","edits":[{"old_string":"a","new_string":"b"}]}`)
-	common, err := cursorcore.NewHookDataCommon(raw)
+	common, err := NewHookDataCommon(raw)
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := cursorcore.NewHookHandlerFromEventFields[cursorcore.AfterFileEditFields](raw, common)
+	handler, err := NewHookHandlerFromEventFields[AfterFileEditFields](raw, common)
 	if err != nil {
 		t.Fatalf("NewHookHandlerFromEventFields: %v", err)
 	}
@@ -24,8 +23,8 @@ func TestAfterFileEditHookHandler_viaBuilder_success(t *testing.T) {
 }
 
 func TestAfterFileEditHookHandler_viaBuilder_invalidPayload(t *testing.T) {
-	common := cursorcore.HookDataCommon{HookEventName: "afterFileEdit"}
-	_, err := cursorcore.NewHookHandlerFromEventFields[cursorcore.AfterFileEditFields]([]byte(`not json`), common)
+	common := HookDataCommon{HookEventName: "afterFileEdit"}
+	_, err := NewHookHandlerFromEventFields[AfterFileEditFields]([]byte(`not json`), common)
 	if err == nil {
 		t.Fatal("expected error for invalid payload")
 	}
@@ -36,11 +35,11 @@ func TestAfterFileEditHookHandler_viaBuilder_invalidPayload(t *testing.T) {
 
 func TestAfterFileEditHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"afterFileEdit","conversation_id":"cid-1","file_path":"D:/repo/file.go","edits":[{"old_string":"a","new_string":"b"}]}`)
-	common, err := cursorcore.NewHookDataCommon(raw)
+	common, err := NewHookDataCommon(raw)
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	handler, err := cursorcore.NewHookHandlerFromEventFields[cursorcore.AfterFileEditFields](raw, common)
+	handler, err := NewHookHandlerFromEventFields[AfterFileEditFields](raw, common)
 	if err != nil {
 		t.Fatalf("NewHookHandlerFromEventFields: %v", err)
 	}
@@ -48,10 +47,10 @@ func TestAfterFileEditHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
 	var seenCtx *core.HookContext
 	hookCommand := stubHookCommand{execute: func(ctx *core.HookContext) int {
 		seenCtx = ctx
-		if ctx.HookHost != cursorcore.HookHostCursor {
-			t.Errorf("HookHost: want %q, got %q", cursorcore.HookHostCursor, ctx.HookHost)
+		if ctx.HookHost != HookHostCursor {
+			t.Errorf("HookHost: want %q, got %q", HookHostCursor, ctx.HookHost)
 		}
-		rd, ok := ctx.ParsedData.(*cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields])
+		rd, ok := ctx.ParsedData.(*CursorHookRunData[AfterFileEditFields])
 		if !ok || rd == nil {
 			t.Fatalf("ParsedData must be *CursorHookRunData[AfterFileEditFields], got %T", ctx.ParsedData)
 		}
@@ -74,8 +73,8 @@ func TestAfterFileEditHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
 	if seenCtx == nil {
 		t.Fatal("Command.Execute was not called")
 	}
-	if result.Output != cursorcore.DefaultHookResponseLine {
-		t.Fatalf("output: want %q, got %q", cursorcore.DefaultHookResponseLine, result.Output)
+	if result.Output != cursorHookStdoutSuccessLine {
+		t.Fatalf("output: want %q, got %q", cursorHookStdoutSuccessLine, result.Output)
 	}
 }
 
@@ -87,7 +86,7 @@ func TestHookHandlerFactory_afterFileEditUsesCursorHookHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HookHandlerFromJSON: %v", err)
 	}
-	if _, ok := handler.(cursorcore.CursorHookHandler[cursorcore.AfterFileEditFields]); !ok {
+	if _, ok := handler.(CursorHookHandler[AfterFileEditFields]); !ok {
 		t.Fatalf("handler type: want CursorHookHandler[AfterFileEditFields], got %T", handler)
 	}
 }

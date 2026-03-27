@@ -3,12 +3,12 @@ package run
 import (
 	"testing"
 
-	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
+	"github.com/sviatsviatsviat/wat/internal/cursor"
 	"github.com/sviatsviatsviat/wat/internal/template"
 )
 
 func TestTemplateBindingsCommon_templateValueAllCommonFields(t *testing.T) {
-	hookData := cursorcore.HookDataCommon{
+	hookData := cursor.HookDataCommon{
 		HookEventName:  "afterFileEdit",
 		ConversationID: "conv-1",
 		GenerationID:   "gen-1",
@@ -18,9 +18,9 @@ func TestTemplateBindingsCommon_templateValueAllCommonFields(t *testing.T) {
 		UserEmail:      ptr("dev@example.com"),
 		TranscriptPath: ptr("/tmp/transcript.jsonl"),
 	}
-	data := cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields]{
+	data := cursor.CursorHookRunData[cursor.AfterFileEditFields]{
 		Common:        hookData,
-		EventSpecific: &cursorcore.AfterFileEditFields{}, // event branch; common fields still tested
+		EventSpecific: &cursor.AfterFileEditFields{}, // event branch; common fields still tested
 	}
 	bindings, err := templateBindingsForCursor(&data)
 	if err != nil {
@@ -45,8 +45,8 @@ func TestTemplateBindingsCommon_templateValueAllCommonFields(t *testing.T) {
 }
 
 func TestTemplateBindingsCommon_unknownKey(t *testing.T) {
-	data := cursorcore.CursorHookRunData[struct{}]{
-		Common: cursorcore.HookDataCommon{HookEventName: "sessionEnd"},
+	data := cursor.CursorHookRunData[struct{}]{
+		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
 	}
 	bindings, err := templateBindingsForCursor(&data)
 	if err != nil {
@@ -59,8 +59,8 @@ func TestTemplateBindingsCommon_unknownKey(t *testing.T) {
 }
 
 func TestTemplateBindingsCommon_nullOptionalJSONStillDefined(t *testing.T) {
-	data := cursorcore.CursorHookRunData[struct{}]{
-		Common: cursorcore.HookDataCommon{
+	data := cursor.CursorHookRunData[struct{}]{
+		Common: cursor.HookDataCommon{
 			HookEventName:  "sessionEnd",
 			ConversationID: "c",
 			UserEmail:      nil,
@@ -90,12 +90,12 @@ func TestAfterFileEditPlaceholderExtractors_registry(t *testing.T) {
 }
 
 func TestTemplateBindingsAfterFileEdit_templateValueEventAndCommonFields(t *testing.T) {
-	data := cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields]{
-		Common: cursorcore.HookDataCommon{
+	data := cursor.CursorHookRunData[cursor.AfterFileEditFields]{
+		Common: cursor.HookDataCommon{
 			HookEventName:  "afterFileEdit",
 			ConversationID: "conv-1",
 		},
-		EventSpecific: &cursorcore.AfterFileEditFields{FilePath: "D:/repo/file.go"},
+		EventSpecific: &cursor.AfterFileEditFields{FilePath: "D:/repo/file.go"},
 	}
 	bindings, err := templateBindingsForCursor(&data)
 	if err != nil {
@@ -107,11 +107,11 @@ func TestTemplateBindingsAfterFileEdit_templateValueEventAndCommonFields(t *test
 }
 
 func TestTemplateBindingsAfterFileEdit_editsPlaceholderNotDefined(t *testing.T) {
-	data := cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields]{
-		Common: cursorcore.HookDataCommon{HookEventName: "afterFileEdit"},
-		EventSpecific: &cursorcore.AfterFileEditFields{
+	data := cursor.CursorHookRunData[cursor.AfterFileEditFields]{
+		Common: cursor.HookDataCommon{HookEventName: "afterFileEdit"},
+		EventSpecific: &cursor.AfterFileEditFields{
 			FilePath: "x",
-			Edits:    []cursorcore.AfterFileEditEditPair{{OldString: "a", NewString: "b"}},
+			Edits:    []cursor.AfterFileEditEditPair{{OldString: "a", NewString: "b"}},
 		},
 	}
 	bindings, err := templateBindingsForCursor(&data)
@@ -127,9 +127,9 @@ func TestTemplateBindingsAfterFileEdit_editsPlaceholderNotDefined(t *testing.T) 
 }
 
 func TestTemplateBindingsAfterFileEdit_unknownKey(t *testing.T) {
-	data := cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields]{
-		Common:        cursorcore.HookDataCommon{HookEventName: "afterFileEdit"},
-		EventSpecific: &cursorcore.AfterFileEditFields{FilePath: "x"},
+	data := cursor.CursorHookRunData[cursor.AfterFileEditFields]{
+		Common:        cursor.HookDataCommon{HookEventName: "afterFileEdit"},
+		EventSpecific: &cursor.AfterFileEditFields{FilePath: "x"},
 	}
 	bindings, err := templateBindingsForCursor(&data)
 	if err != nil {
@@ -159,12 +159,12 @@ func TestAfterShellExecutionPlaceholderExtractors_registry(t *testing.T) {
 }
 
 func TestTemplateBindingsAfterShellExecution_templateValueEventAndCommonFields(t *testing.T) {
-	data := cursorcore.CursorHookRunData[cursorcore.AfterShellExecutionFields]{
-		Common: cursorcore.HookDataCommon{
+	data := cursor.CursorHookRunData[cursor.AfterShellExecutionFields]{
+		Common: cursor.HookDataCommon{
 			HookEventName:  "afterShellExecution",
 			ConversationID: "conv-1",
 		},
-		EventSpecific: &cursorcore.AfterShellExecutionFields{
+		EventSpecific: &cursor.AfterShellExecutionFields{
 			Command:  "go test ./...",
 			Output:   "PASS",
 			Duration: 1234,
@@ -184,9 +184,9 @@ func TestTemplateBindingsAfterShellExecution_templateValueEventAndCommonFields(t
 }
 
 func TestTemplateBindingsAfterShellExecution_decimalDuration(t *testing.T) {
-	data := cursorcore.CursorHookRunData[cursorcore.AfterShellExecutionFields]{
-		Common: cursorcore.HookDataCommon{HookEventName: "afterShellExecution"},
-		EventSpecific: &cursorcore.AfterShellExecutionFields{
+	data := cursor.CursorHookRunData[cursor.AfterShellExecutionFields]{
+		Common: cursor.HookDataCommon{HookEventName: "afterShellExecution"},
+		EventSpecific: &cursor.AfterShellExecutionFields{
 			Command:  "go test ./...",
 			Output:   "PASS",
 			Duration: 2841.805,
@@ -201,9 +201,9 @@ func TestTemplateBindingsAfterShellExecution_decimalDuration(t *testing.T) {
 }
 
 func TestTemplateBindingsAfterShellExecution_unknownKey(t *testing.T) {
-	data := cursorcore.CursorHookRunData[cursorcore.AfterShellExecutionFields]{
-		Common:        cursorcore.HookDataCommon{HookEventName: "afterShellExecution"},
-		EventSpecific: &cursorcore.AfterShellExecutionFields{},
+	data := cursor.CursorHookRunData[cursor.AfterShellExecutionFields]{
+		Common:        cursor.HookDataCommon{HookEventName: "afterShellExecution"},
+		EventSpecific: &cursor.AfterShellExecutionFields{},
 	}
 	bindings, err := templateBindingsForCursor(&data)
 	if err != nil {

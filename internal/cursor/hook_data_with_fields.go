@@ -1,4 +1,4 @@
-package cursorcore
+package cursor
 
 import "encoding/json"
 

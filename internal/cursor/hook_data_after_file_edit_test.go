@@ -1,10 +1,6 @@
 package cursor
 
-import (
-	"testing"
-
-	"github.com/sviatsviatsviat/wat/internal/cursor/core"
-)
+import "testing"
 
 func TestNewHookDataAfterFileEdit_fullPayload(t *testing.T) {
 	input := `{
@@ -17,11 +13,11 @@ func TestNewHookDataAfterFileEdit_fullPayload(t *testing.T) {
 		]
 	}`
 
-	commonData, err := cursorcore.NewHookDataCommon([]byte(input))
+	commonData, err := NewHookDataCommon([]byte(input))
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterFileEditFields]([]byte(input), commonData)
+	hookData, err := NewHookDataWithCommon[AfterFileEditFields]([]byte(input), commonData)
 	if err != nil {
 		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
@@ -45,11 +41,11 @@ func TestNewHookDataAfterFileEdit_zeroValueFields(t *testing.T) {
 		"edits": []
 	}`
 
-	commonData, err := cursorcore.NewHookDataCommon([]byte(input))
+	commonData, err := NewHookDataCommon([]byte(input))
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterFileEditFields]([]byte(input), commonData)
+	hookData, err := NewHookDataWithCommon[AfterFileEditFields]([]byte(input), commonData)
 	if err != nil {
 		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
@@ -58,7 +54,7 @@ func TestNewHookDataAfterFileEdit_zeroValueFields(t *testing.T) {
 }
 
 func TestNewHookDataAfterFileEdit_invalidJSON(t *testing.T) {
-	_, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterFileEditFields]([]byte(`not json`), cursorcore.HookDataCommon{})
+	_, err := NewHookDataWithCommon[AfterFileEditFields]([]byte(`not json`), HookDataCommon{})
 	if err == nil {
 		t.Fatal("expected error for invalid JSON")
 	}
