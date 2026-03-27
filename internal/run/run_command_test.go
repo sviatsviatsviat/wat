@@ -8,22 +8,20 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cli"
 	"github.com/sviatsviatsviat/wat/internal/core"
 	"github.com/sviatsviatsviat/wat/internal/cursor"
-	"github.com/sviatsviatsviat/wat/internal/watexec"
 )
 
-func TestNewRunCommand_EmptyArgv(t *testing.T) {
+func TestNewRunCommand_EmptyArgs(t *testing.T) {
 	tests := []struct {
 		name string
-		argv []string
+		args []string
 	}{
-		{name: "nil", argv: nil},
-		{name: "empty", argv: []string{}},
+		{name: "nil", args: nil},
+		{name: "empty", args: []string{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockConsole := cli.NewMockConsole()
-			runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-			hookCommand, err := NewRunCommand(mockConsole, runner, tt.argv)
+			hookCommand, err := NewRunCommand(mockConsole, tt.args)
 			if err == nil {
 				t.Fatal("expected error")
 			}
@@ -42,8 +40,7 @@ func TestNewRunCommand_EmptyArgv(t *testing.T) {
 
 func TestNewRunCommand_OK(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"echo", "x"})
+	hookCommand, err := NewRunCommand(mockConsole, []string{"echo", "x"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -54,8 +51,7 @@ func TestNewRunCommand_OK(t *testing.T) {
 
 func TestRunCommand_Execute_NilHookContext(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"echo", "x"})
+	hookCommand, err := NewRunCommand(mockConsole, []string{"echo", "x"})
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
@@ -70,8 +66,7 @@ func TestRunCommand_Execute_NilHookContext(t *testing.T) {
 
 func TestRunCommand_Execute_UnknownPlaceholder(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"echo", "__NOT_A_SUPPORTED_KEY__"})
+	hookCommand, err := NewRunCommand(mockConsole, []string{"echo", "__NOT_A_SUPPORTED_KEY__"})
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
@@ -91,15 +86,14 @@ func TestRunCommand_Execute_UnknownPlaceholder(t *testing.T) {
 }
 
 func TestRunCommand_Execute_SubstitutionAndSuccess(t *testing.T) {
-	var argv []string
+	var cmdArgs []string
 	if runtime.GOOS == "windows" {
-		argv = []string{"cmd", "/C", "echo __CONVERSATION_ID__"}
+		cmdArgs = []string{"cmd", "/C", "echo __CONVERSATION_ID__"}
 	} else {
-		argv = []string{"sh", "-c", "echo __CONVERSATION_ID__"}
+		cmdArgs = []string{"sh", "-c", "echo __CONVERSATION_ID__"}
 	}
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := NewRunCommand(mockConsole, runner, argv)
+	hookCommand, err := NewRunCommand(mockConsole, cmdArgs)
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
@@ -116,15 +110,14 @@ func TestRunCommand_Execute_SubstitutionAndSuccess(t *testing.T) {
 }
 
 func TestRunCommand_Execute_SubprocessFailureExitCode(t *testing.T) {
-	var argv []string
+	var cmdArgs []string
 	if runtime.GOOS == "windows" {
-		argv = []string{"cmd", "/C", "exit 9"}
+		cmdArgs = []string{"cmd", "/C", "exit 9"}
 	} else {
-		argv = []string{"sh", "-c", "exit 9"}
+		cmdArgs = []string{"sh", "-c", "exit 9"}
 	}
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := NewRunCommand(mockConsole, runner, argv)
+	hookCommand, err := NewRunCommand(mockConsole, cmdArgs)
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
@@ -146,8 +139,7 @@ func testRunHookContext[T any](data cursor.CursorHookRunData[T]) *core.HookConte
 
 func TestNewRunCommand_InvalidFilePatternRegexp(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	_, err := NewRunCommand(mockConsole, runner, []string{"-f", `(`, "echo", "x"})
+	_, err := NewRunCommand(mockConsole, []string{"-f", `(`, "echo", "x"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -158,8 +150,7 @@ func TestNewRunCommand_InvalidFilePatternRegexp(t *testing.T) {
 
 func TestRunCommand_Execute_FilePatternNoMatchSkipsSubprocess(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"-f", `[.]go$`, "echo", "x"})
+	hookCommand, err := NewRunCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
@@ -177,8 +168,7 @@ func TestRunCommand_Execute_FilePatternNoMatchSkipsSubprocess(t *testing.T) {
 
 func TestRunCommand_Execute_FilePatternMatchRunsSubprocess(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"-f", `[.]go$`, "echo", "x"})
+	hookCommand, err := NewRunCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
@@ -196,8 +186,7 @@ func TestRunCommand_Execute_FilePatternMatchRunsSubprocess(t *testing.T) {
 
 func TestRunCommand_Execute_FilePatternIgnoredWithoutFilePathBinding(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"-f", `[.]go$`, "echo", "y"})
+	hookCommand, err := NewRunCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "y"})
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}

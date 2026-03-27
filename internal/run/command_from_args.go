@@ -1,4 +1,4 @@
-package watexec
+package run
 
 import (
 	"fmt"
@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-// commandForArgv returns an [exec.Cmd] for args. It returns an error if args is empty.
+// commandForArgs returns an [exec.Cmd] for args. It returns an error if args is empty.
 // If args[0] resolves with [exec.LookPath], the process is started directly; otherwise a shell
-// runs the same argv (shell builtins and non-PATH commands like Windows "echo").
-func commandForArgv(args []string) (*exec.Cmd, error) {
+// runs the same arguments (shell builtins and non-PATH commands like Windows "echo").
+func commandForArgs(args []string) (*exec.Cmd, error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("no command arguments provided")
 	}
@@ -103,7 +103,7 @@ func comspecOrCmd() string {
 	return "cmd.exe"
 }
 
-// posixShellLine joins argv into a string safe for sh -c using single-quote escaping.
+// posixShellLine joins arguments into a string safe for sh -c using single-quote escaping.
 func posixShellLine(args []string) string {
 	quoted := make([]string, len(args))
 	for i, a := range args {

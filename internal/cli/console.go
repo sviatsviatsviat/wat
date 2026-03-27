@@ -4,6 +4,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"os/exec"
 )
 
 // Console separates diagnostic output (errors, help) from hook protocol output on stdout.
@@ -17,6 +18,9 @@ type Console interface {
 	WriteErrorf(format string, args ...any) error
 	// Write writes s to the hook protocol stream without adding a newline.
 	Write(s string) error
+	// ConnectErrorsFrom sets cmd.Stderr to this console's diagnostic writer (same target as
+	// WriteError / WriteErrorf). It is a no-op when cmd is nil.
+	ConnectErrorsFrom(cmd *exec.Cmd)
 }
 
 // dualStreamConsole implements [Console] with separate diagnostic and hook writers.
@@ -46,6 +50,13 @@ func (c dualStreamConsole) WriteErrorf(format string, args ...any) error {
 func (c dualStreamConsole) Write(s string) error {
 	_, err := io.WriteString(c.hookStdout, s)
 	return err
+}
+
+func (c dualStreamConsole) ConnectErrorsFrom(cmd *exec.Cmd) {
+	if cmd == nil {
+		return
+	}
+	cmd.Stderr = c.stderr
 }
 
 // NewConsole returns a [Console] that writes diagnostics to stderr and hook output to hookStdout.

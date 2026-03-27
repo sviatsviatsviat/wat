@@ -4,13 +4,12 @@ import (
 	"errors"
 
 	"github.com/sviatsviatsviat/wat/internal/cursor"
-	"github.com/sviatsviatsviat/wat/internal/template"
 )
 
 type eventFieldExtractor[T any] func(T) string
 
 type templateBindingsEvent[T any] struct {
-	commonBindings template.TemplateBindings
+	commonBindings templateBindings
 	eventFields    T
 	extractors     map[string]eventFieldExtractor[T]
 }
@@ -19,7 +18,7 @@ func newTemplateBindingsEvent[T any](
 	commonData cursor.HookDataCommon,
 	eventFields T,
 	extractors map[string]eventFieldExtractor[T],
-) template.TemplateBindings {
+) templateBindings {
 	return &templateBindingsEvent[T]{
 		commonBindings: newTemplateBindingsCommon(commonData),
 		eventFields:    eventFields,
@@ -31,7 +30,7 @@ func templateBindingsFromCursorEventPayload[T any](
 	data *cursor.CursorHookRunData[T],
 	extractors map[string]eventFieldExtractor[T],
 	nilEventSpecificErr string,
-) (template.TemplateBindings, error) {
+) (templateBindings, error) {
 	if data.EventSpecific == nil {
 		return nil, errors.New(nilEventSpecificErr)
 	}

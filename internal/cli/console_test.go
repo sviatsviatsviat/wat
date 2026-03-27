@@ -3,6 +3,8 @@ package cli
 import (
 	"bytes"
 	"io"
+	"os/exec"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -61,6 +63,31 @@ func TestNewConsole_propagatesWriteError(t *testing.T) {
 	err := console.WriteError("fail")
 	if err == nil || !strings.Contains(err.Error(), "boom") {
 		t.Fatalf("expected write error, got %v", err)
+	}
+}
+
+func TestNewConsole_ConnectErrorsFrom_nilCmdNoPanic(t *testing.T) {
+	NewConsole(io.Discard, io.Discard).ConnectErrorsFrom(nil)
+}
+
+func TestNewConsole_ConnectErrorsFrom_childStderrToDiagnosticStream(t *testing.T) {
+	var diag, hook bytes.Buffer
+	console := NewConsole(&diag, &hook)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/C", "echo wat-connect-stderr-test 1>&2")
+	} else {
+		cmd = exec.Command("sh", "-c", "echo wat-connect-stderr-test >&2")
+	}
+	console.ConnectErrorsFrom(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("cmd: %v", err)
+	}
+	if !strings.Contains(diag.String(), "wat-connect-stderr-test") {
+		t.Fatalf("diagnostic buf: got %q", diag.String())
+	}
+	if hook.Len() != 0 {
+		t.Fatalf("hook stdout should stay empty, got %q", hook.String())
 	}
 }
 

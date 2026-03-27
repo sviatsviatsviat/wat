@@ -1,19 +1,19 @@
-package watexec
+package run
 
 import (
 	"strings"
 	"testing"
 )
 
-func TestCommandForArgv_emptyArgs(t *testing.T) {
-	_, err := commandForArgv(nil)
+func TestCommandForArgs_emptyArgs(t *testing.T) {
+	_, err := commandForArgs(nil)
 	if err == nil {
 		t.Fatal("expected error for nil args")
 	}
 	if !strings.Contains(err.Error(), "no command arguments provided") {
 		t.Fatalf("error %q should mention missing arguments", err.Error())
 	}
-	_, err = commandForArgv([]string{})
+	_, err = commandForArgs([]string{})
 	if err == nil {
 		t.Fatal("expected error for empty args")
 	}
@@ -60,7 +60,7 @@ func TestPosixShellLine_quoting(t *testing.T) {
 		want string
 	}{
 		{
-			name: "empty argv",
+			name: "empty args",
 			args: []string{},
 			want: "",
 		},
@@ -92,7 +92,6 @@ func TestPosixShellLine_quoting(t *testing.T) {
 		{
 			name: "echo its ok",
 			args: []string{"echo", "it's", "ok"},
-			// sh -c should run echo with two arguments: it's and ok
 			want: `'echo' 'it'\''s' 'ok'`,
 		},
 	}

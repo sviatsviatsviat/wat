@@ -4,10 +4,9 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/cursor"
-	"github.com/sviatsviatsviat/wat/internal/template"
 )
 
-func templateBindingsForCursor(parsed any) (template.TemplateBindings, error) {
+func templateBindingsForCursor(parsed any) (templateBindings, error) {
 	if parsed == nil {
 		return nil, fmt.Errorf("cursor hook run data is nil")
 	}

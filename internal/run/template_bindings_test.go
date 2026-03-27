@@ -1,4 +1,4 @@
-package template
+package run
 
 import "testing"
 
@@ -22,7 +22,7 @@ func (fake fakeBindings) TemplateValue(key string) (string, bool) {
 }
 
 func TestRenderTokens_ReplacesValues(t *testing.T) {
-	argvTokens := []string{"echo", "__HOOK_EVENT_NAME__", "__CONVERSATION_ID__"}
+	templateTokens := []string{"echo", "__HOOK_EVENT_NAME__", "__CONVERSATION_ID__"}
 	bindings := fakeBindings{
 		defined: map[string]struct{}{
 			"HOOK_EVENT_NAME": {}, "CONVERSATION_ID": {},
@@ -33,48 +33,47 @@ func TestRenderTokens_ReplacesValues(t *testing.T) {
 		},
 	}
 
-	renderedArgv, unknownPlaceholders := RenderTokens(argvTokens, bindings)
+	rendered, unknownPlaceholders := renderTokens(templateTokens, bindings)
 	if len(unknownPlaceholders) != 0 {
 		t.Fatalf("unknownPlaceholders = %v", unknownPlaceholders)
 	}
-	if renderedArgv[0] != "echo" {
-		t.Fatalf("literal token passthrough: want echo, got %q", renderedArgv[0])
+	if rendered[0] != "echo" {
+		t.Fatalf("literal token passthrough: want echo, got %q", rendered[0])
 	}
-	if renderedArgv[1] != "afterFileEdit" || renderedArgv[2] != "conv-9" {
-		t.Fatalf("unexpected rendered tokens: %v", renderedArgv)
+	if rendered[1] != "afterFileEdit" || rendered[2] != "conv-9" {
+		t.Fatalf("unexpected rendered tokens: %v", rendered)
 	}
 }
 
 func TestRenderTokens_UnknownPlaceholder(t *testing.T) {
-	argvTokens := []string{"echo", "__DOES_NOT_EXIST__", "__USER_EMAIL__"}
+	templateTokens := []string{"echo", "__DOES_NOT_EXIST__", "__USER_EMAIL__"}
 	bindings := fakeBindings{
 		defined: map[string]struct{}{"USER_EMAIL": {}},
 		values:  map[string]string{"USER_EMAIL": ""},
 	}
 
-	renderedArgv, unknownPlaceholders := RenderTokens(argvTokens, bindings)
+	rendered, unknownPlaceholders := renderTokens(templateTokens, bindings)
 	if len(unknownPlaceholders) != 1 || unknownPlaceholders[0] != "DOES_NOT_EXIST" {
 		t.Fatalf("unexpected unknownPlaceholders: %v", unknownPlaceholders)
 	}
-	// Undefined placeholders substitute to empty string in the argv token (see RenderTokens).
-	if renderedArgv[1] != "" {
-		t.Fatalf("unknown placeholder token should render empty, got %q", renderedArgv[1])
+	if rendered[1] != "" {
+		t.Fatalf("unknown placeholder token should render empty, got %q", rendered[1])
 	}
-	if renderedArgv[2] != "" {
-		t.Fatalf("empty defined placeholder should substitute empty string, got %q", renderedArgv[2])
+	if rendered[2] != "" {
+		t.Fatalf("empty defined placeholder should substitute empty string, got %q", rendered[2])
 	}
 }
 
 func TestRenderTokens_UndefinedKeyEvenWithValueMap(t *testing.T) {
-	argvTokens := []string{"__SECRET__"}
+	templateTokens := []string{"__SECRET__"}
 	bindings := fakeBindings{
 		defined: map[string]struct{}{"OTHER": {}},
 		values:  map[string]string{"SECRET": "x"},
 	}
-	_, unknownPlaceholders := RenderTokens(argvTokens, bindings)
+	_, unknownPlaceholders := renderTokens(templateTokens, bindings)
 	if len(unknownPlaceholders) != 1 || unknownPlaceholders[0] != "SECRET" {
 		t.Fatalf("want unknown SECRET, got %v", unknownPlaceholders)
 	}
 }
 
-var _ TemplateBindings = fakeBindings{}
+var _ templateBindings = fakeBindings{}
