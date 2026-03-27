@@ -8,15 +8,12 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cli"
 	"github.com/sviatsviatsviat/wat/internal/core"
 	"github.com/sviatsviatsviat/wat/internal/cursor"
-	"github.com/sviatsviatsviat/wat/internal/template"
-	"github.com/sviatsviatsviat/wat/internal/watexec"
 )
 
 type runCommand struct {
-	argvTemplate         []string
+	argsTemplate         []string
 	filePathFilterRegexp *regexp.Regexp
 	console              cli.Console
-	subprocess           watexec.SubprocessRunner
 }
 
 func (runCmd runCommand) Execute(hookContext *core.HookContext) int {
@@ -50,10 +47,10 @@ func (runCmd runCommand) Execute(hookContext *core.HookContext) int {
 		}
 	}
 
-	renderedArgv, unknownPlaceholderKeys := template.RenderTokens(runCmd.argvTemplate, bindings)
+	renderedArgs, unknownPlaceholderKeys := renderTokens(runCmd.argsTemplate, bindings)
 	if len(unknownPlaceholderKeys) > 0 {
 		_ = runCmd.console.WriteErrorf("unknown template placeholders: %s\n", strings.Join(unknownPlaceholderKeys, ", "))
 		return cli.ExitBadInput
 	}
-	return runCmd.subprocess.Run(renderedArgv)
+	return runSubprocess(runCmd.console, renderedArgs)
 }

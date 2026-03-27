@@ -3,7 +3,7 @@ package cli
 // RootHelpSummary is the canonical root usage text (commands and flags) for the wat binary.
 const RootHelpSummary = `Wat runs templated hook subprocesses for agent hosts.
 
-It reads hook event JSON from stdin, resolves argv placeholders, runs the
+It reads hook event JSON from stdin, resolves placeholders in the command template, runs the
 child process, and writes the hook protocol response to stdout.
 
 Usage:

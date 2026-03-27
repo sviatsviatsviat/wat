@@ -6,12 +6,12 @@ import (
 )
 
 func TestParseHost_minimal(t *testing.T) {
-	hookHostName, argvAfterHost, err := parseHost([]string{"cursor", "run", "echo"})
+	hookHostName, argsAfterHost, err := parseHost([]string{"cursor", "run", "echo"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if hookHostName != "cursor" || !reflect.DeepEqual(argvAfterHost, []string{"run", "echo"}) {
-		t.Fatalf("hookHostName=%q argvAfterHost=%v", hookHostName, argvAfterHost)
+	if hookHostName != "cursor" || !reflect.DeepEqual(argsAfterHost, []string{"run", "echo"}) {
+		t.Fatalf("hookHostName=%q argsAfterHost=%v", hookHostName, argsAfterHost)
 	}
 }
 
@@ -47,12 +47,12 @@ func TestParseSubcommand_emptyCommand(t *testing.T) {
 }
 
 func TestParseHostThenSubcommand_chain(t *testing.T) {
-	argv := []string{"cursor", "run", "echo", "hi"}
-	hookHostName, argvAfterHost, err := parseHost(argv)
+	programArgs := []string{"cursor", "run", "echo", "hi"}
+	hookHostName, argsAfterHost, err := parseHost(programArgs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	watSubcommand, subcommandArgs, err := parseSubcommand(argvAfterHost)
+	watSubcommand, subcommandArgs, err := parseSubcommand(argsAfterHost)
 	if err != nil {
 		t.Fatal(err)
 	}

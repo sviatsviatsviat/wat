@@ -23,9 +23,9 @@ func newRunFlagSet(filePatternFlagTarget *string) *flag.FlagSet {
 	return runFlagSet
 }
 
-// parseRunArgv parses run flags from programArgs and returns the subprocess argv template and the file-pattern flag string.
+// parseRunArgs parses run flags from programArgs and returns the subprocess argument template and the file-pattern flag string.
 // Flag or validation failures write to console and print run help where appropriate.
-func parseRunArgv(console cli.Console, programArgs []string) (argvTemplate []string, filePatternFromFlags string, err error) {
+func parseRunArgs(console cli.Console, programArgs []string) (argsTemplate []string, filePatternFromFlags string, err error) {
 	var filePatternFlagValue string
 	runFlagSet := newRunFlagSet(&filePatternFlagValue)
 	if parseErr := runFlagSet.Parse(programArgs); parseErr != nil {
@@ -38,13 +38,13 @@ func parseRunArgv(console cli.Console, programArgs []string) (argvTemplate []str
 		cli.PrintRunHelp(console)
 		return nil, "", fmt.Errorf("file-pattern value cannot be empty")
 	}
-	argvTemplate = runFlagSet.Args()
-	if len(argvTemplate) == 0 {
-		_ = console.WriteError("missing command to run (argv for the subprocess, e.g. go version)\n")
+	argsTemplate = runFlagSet.Args()
+	if len(argsTemplate) == 0 {
+		_ = console.WriteError("missing command to run (arguments for the subprocess, e.g. go version)\n")
 		cli.PrintRunHelp(console)
 		return nil, "", fmt.Errorf("missing command to run")
 	}
-	return argvTemplate, filePatternFlagValue, nil
+	return argsTemplate, filePatternFlagValue, nil
 }
 
 // compileRunFilePattern returns nil when filePatternFromFlags is the default (no filter); otherwise compiles it as a Go regexp.

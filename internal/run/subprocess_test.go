@@ -1,4 +1,4 @@
-package watexec
+package run
 
 import (
 	"runtime"
@@ -7,32 +7,27 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cli"
 )
 
-func TestRunner_Run_Success(t *testing.T) {
-	args := successCommand()
+func TestRunSubprocess_Success(t *testing.T) {
+	args := subprocessSuccessArgs()
 	mockConsole := cli.NewMockConsole()
-	runner := NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-
-	code := runner.Run(args)
+	code := runSubprocess(mockConsole, args)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d, stderr=%q", code, mockConsole.StderrString())
 	}
 }
 
-func TestRunner_Run_FailureExitCode(t *testing.T) {
-	args, expected := failureCommand()
+func TestRunSubprocess_FailureExitCode(t *testing.T) {
+	args, expected := subprocessFailureArgs()
 	mockConsole := cli.NewMockConsole()
-	runner := NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-
-	code := runner.Run(args)
+	code := runSubprocess(mockConsole, args)
 	if code != expected {
 		t.Fatalf("expected exit %d, got %d", expected, code)
 	}
 }
 
-func TestRunner_Run_NoCommandAfterTemplating(t *testing.T) {
+func TestRunSubprocess_NoCommandAfterTemplating(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	code := runner.Run([]string{})
+	code := runSubprocess(mockConsole, []string{})
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected exit cli.ExitBadInput, got %d, stderr=%q", code, mockConsole.StderrString())
 	}
@@ -41,12 +36,11 @@ func TestRunner_Run_NoCommandAfterTemplating(t *testing.T) {
 	}
 }
 
-func successCommand() []string {
-	// echo is a Windows shell builtin; on Unix it is usually a real binary on PATH.
+func subprocessSuccessArgs() []string {
 	return []string{"echo", "ok"}
 }
 
-func failureCommand() ([]string, int) {
+func subprocessFailureArgs() ([]string, int) {
 	if runtime.GOOS == "windows" {
 		return []string{"cmd", "/C", "exit 7"}, 7
 	}

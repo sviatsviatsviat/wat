@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/cursor"
-	"github.com/sviatsviatsviat/wat/internal/template"
 )
 
 func TestTemplateBindingsCommon_templateValueAllCommonFields(t *testing.T) {
@@ -217,7 +216,7 @@ func TestTemplateBindingsAfterShellExecution_unknownKey(t *testing.T) {
 
 func ptr(s string) *string { return &s }
 
-func assertTemplateBindingValue(t *testing.T, bindings template.TemplateBindings, key, want string) {
+func assertTemplateBindingValue(t *testing.T, bindings templateBindings, key, want string) {
 	t.Helper()
 	bindingValue, ok := bindings.TemplateValue(key)
 	if !ok {

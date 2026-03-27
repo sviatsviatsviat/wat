@@ -3,7 +3,6 @@ package run
 import (
 	"github.com/sviatsviatsviat/wat/internal/cursor"
 	"github.com/sviatsviatsviat/wat/internal/helpers"
-	"github.com/sviatsviatsviat/wat/internal/template"
 )
 
 type commonFieldExtractor func(cursor.HookDataCommon) string
@@ -25,7 +24,7 @@ type templateBindingsCommon struct {
 	hookData cursor.HookDataCommon
 }
 
-func newTemplateBindingsCommon(hookData cursor.HookDataCommon) template.TemplateBindings {
+func newTemplateBindingsCommon(hookData cursor.HookDataCommon) templateBindings {
 	return templateBindingsCommon{hookData: hookData}
 }
 

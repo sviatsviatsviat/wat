@@ -5,13 +5,11 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
-	"github.com/sviatsviatsviat/wat/internal/watexec"
 )
 
 func TestNewHookCommand_Run(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := newHookCommand("run", mockConsole, runner, []string{"echo", "hi"})
+	hookCommand, err := newHookCommand("run", mockConsole, []string{"echo", "hi"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -22,8 +20,7 @@ func TestNewHookCommand_Run(t *testing.T) {
 
 func TestNewHookCommand_RunWithFilePatternFlag(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := newHookCommand("run", mockConsole, runner, []string{"-f", `[.]go$`, "echo", "x"})
+	hookCommand, err := newHookCommand("run", mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -32,10 +29,9 @@ func TestNewHookCommand_RunWithFilePatternFlag(t *testing.T) {
 	}
 }
 
-func TestNewHookCommand_RunEmptyArgv(t *testing.T) {
+func TestNewHookCommand_RunEmptyArgs(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	hookCommand, err := newHookCommand("run", mockConsole, runner, []string{})
+	hookCommand, err := newHookCommand("run", mockConsole, []string{})
 	if err == nil {
 		t.Fatal("expected error from run.NewRunCommand")
 	}
@@ -52,7 +48,7 @@ func TestNewHookCommand_RunEmptyArgv(t *testing.T) {
 
 func TestNewHookCommand_UnknownSubcommand(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := newHookCommand("nope", mockConsole, nil, []string{})
+	hookCommand, err := newHookCommand("nope", mockConsole, []string{})
 	if err == nil {
 		t.Fatal("expected error")
 	}
