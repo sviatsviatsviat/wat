@@ -1,6 +1,8 @@
 package core
 
-// HookContext holds [TemplateBindings] for [Command.Execute].
+// HookContext carries host-specific parsed hook payload into [Command.Execute].
+// ParsedData is set by the host hook handler; subcommands interpret it (e.g. [internal/run] for templating).
 type HookContext struct {
-	TemplateBindings TemplateBindings
+	HookHost   string
+	ParsedData any
 }

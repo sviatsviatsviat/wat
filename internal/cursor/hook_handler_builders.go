@@ -7,9 +7,9 @@ import (
 
 // cursorHookHandlerBuilders maps hook_event_name to a builder.
 var cursorHookHandlerBuilders = map[string]cursorcore.HookHandlerBuilder{
-	"afterShellExecution": cursorcore.NewCursorEventHookHandlerBuilder(afterShellExecutionPlaceholderExtractors),
+	"afterShellExecution": cursorcore.NewHookHandlerFromEventFields[cursorcore.AfterShellExecutionFields],
 	"afterMCPExecution":   newDefaultHookHandlerBuilder,
-	"afterFileEdit":       cursorcore.NewCursorEventHookHandlerBuilder(afterFileEditPlaceholderExtractors),
+	"afterFileEdit":       cursorcore.NewHookHandlerFromEventFields[cursorcore.AfterFileEditFields],
 	"afterTabFileEdit":    newDefaultHookHandlerBuilder,
 	"afterAgentResponse":  newDefaultHookHandlerBuilder,
 	"afterAgentThought":   newDefaultHookHandlerBuilder,

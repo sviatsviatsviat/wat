@@ -21,7 +21,7 @@ func TestNewHookDataAfterShellExecution_fullPayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterShellExecutionFields]([]byte(input), commonData)
 	if err != nil {
 		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestNewHookDataAfterShellExecution_zeroValueFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterShellExecutionFields]([]byte(input), commonData)
 	if err != nil {
 		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestNewHookDataAfterShellExecution_decimalDuration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterShellExecutionFields]([]byte(input), commonData)
 	if err != nil {
 		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestNewHookDataAfterShellExecution_decimalDuration(t *testing.T) {
 }
 
 func TestNewHookDataAfterShellExecution_invalidJSON(t *testing.T) {
-	_, err := cursorcore.NewHookDataWithCommon[hookDataAfterShellExecutionFields]([]byte(`not json`), cursorcore.HookDataCommon{})
+	_, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterShellExecutionFields]([]byte(`not json`), cursorcore.HookDataCommon{})
 	if err == nil {
 		t.Fatal("expected error for invalid JSON")
 	}

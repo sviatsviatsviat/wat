@@ -7,6 +7,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
 	"github.com/sviatsviatsviat/wat/internal/core"
+	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
 	"github.com/sviatsviatsviat/wat/internal/watexec"
 )
 
@@ -74,7 +75,9 @@ func TestRunCommand_Execute_UnknownPlaceholder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	ctx := testHookContext(stubTemplateBindings{defined: map[string]struct{}{}})
+	ctx := testRunHookContext(cursorcore.CursorHookRunData[struct{}]{
+		Common: cursorcore.HookDataCommon{HookEventName: "sessionEnd"},
+	})
 	code := hookCommand.Execute(ctx)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected ExitBadInput, got %d, stderr=%q", code, mockConsole.StderrString())
@@ -100,11 +103,12 @@ func TestRunCommand_Execute_SubstitutionAndSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	bindings := stubTemplateBindings{
-		defined: map[string]struct{}{"CONVERSATION_ID": {}},
-		values:  map[string]string{"CONVERSATION_ID": "conv-test-1"},
-	}
-	ctx := testHookContext(bindings)
+	ctx := testRunHookContext(cursorcore.CursorHookRunData[struct{}]{
+		Common: cursorcore.HookDataCommon{
+			HookEventName:  "sessionEnd",
+			ConversationID: "conv-test-1",
+		},
+	})
 	code := hookCommand.Execute(ctx)
 	if code != cli.ExitSuccess {
 		t.Fatalf("expected success, got %d, stderr=%q", code, mockConsole.StderrString())
@@ -124,34 +128,19 @@ func TestRunCommand_Execute_SubprocessFailureExitCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	ctx := testHookContext(stubTemplateBindings{defined: map[string]struct{}{}})
+	ctx := testRunHookContext(cursorcore.CursorHookRunData[struct{}]{
+		Common: cursorcore.HookDataCommon{HookEventName: "sessionEnd"},
+	})
 	code := hookCommand.Execute(ctx)
 	if code != 9 {
 		t.Fatalf("expected subprocess exit 9, got %d, stderr=%q", code, mockConsole.StderrString())
 	}
 }
 
-type stubTemplateBindings struct {
-	defined map[string]struct{}
-	values  map[string]string
-}
-
-func (stub stubTemplateBindings) TemplateValue(key string) (string, bool) {
-	if stub.defined == nil {
-		return "", false
-	}
-	if _, ok := stub.defined[key]; !ok {
-		return "", false
-	}
-	if stub.values == nil {
-		return "", true
-	}
-	return stub.values[key], true
-}
-
-func testHookContext(bindings core.TemplateBindings) *core.HookContext {
+func testRunHookContext[T any](data cursorcore.CursorHookRunData[T]) *core.HookContext {
 	return &core.HookContext{
-		TemplateBindings: bindings,
+		HookHost:   cursorcore.HookHostCursor,
+		ParsedData: &data,
 	}
 }
 
@@ -174,11 +163,13 @@ func TestRunCommand_Execute_FilePatternNoMatchSkipsSubprocess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	bindings := stubTemplateBindings{
-		defined: map[string]struct{}{"FILE_PATH": {}},
-		values:  map[string]string{"FILE_PATH": `D:\repo\file.txt`},
+	data := cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields]{
+		Common: cursorcore.HookDataCommon{HookEventName: "afterFileEdit"},
+		EventSpecific: &cursorcore.AfterFileEditFields{
+			FilePath: `D:\repo\file.txt`,
+		},
 	}
-	code := hookCommand.Execute(testHookContext(bindings))
+	code := hookCommand.Execute(testRunHookContext(data))
 	if code != cli.ExitSuccess {
 		t.Fatalf("expected ExitSuccess when path does not match, got %d", code)
 	}
@@ -191,11 +182,13 @@ func TestRunCommand_Execute_FilePatternMatchRunsSubprocess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	bindings := stubTemplateBindings{
-		defined: map[string]struct{}{"FILE_PATH": {}},
-		values:  map[string]string{"FILE_PATH": `D:\repo\file.go`},
+	data := cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields]{
+		Common: cursorcore.HookDataCommon{HookEventName: "afterFileEdit"},
+		EventSpecific: &cursorcore.AfterFileEditFields{
+			FilePath: `D:\repo\file.go`,
+		},
 	}
-	code := hookCommand.Execute(testHookContext(bindings))
+	code := hookCommand.Execute(testRunHookContext(data))
 	if code != cli.ExitSuccess {
 		t.Fatalf("expected ExitSuccess from echo, got %d, stderr=%q", code, mockConsole.StderrString())
 	}
@@ -208,7 +201,10 @@ func TestRunCommand_Execute_FilePatternIgnoredWithoutFilePathBinding(t *testing.
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	code := hookCommand.Execute(testHookContext(stubTemplateBindings{defined: map[string]struct{}{}}))
+	ctx := testRunHookContext(cursorcore.CursorHookRunData[struct{}]{
+		Common: cursorcore.HookDataCommon{HookEventName: "sessionEnd"},
+	})
+	code := hookCommand.Execute(ctx)
 	if code != cli.ExitSuccess {
 		t.Fatalf("expected ExitSuccess, got %d", code)
 	}

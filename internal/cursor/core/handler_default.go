@@ -2,20 +2,32 @@ package cursorcore
 
 import "github.com/sviatsviatsviat/wat/internal/core"
 
-// defaultHookHandler runs cmd with template bindings derived from hookData.
-type defaultHookHandler struct {
-	hookData HookDataCommon
+// CursorHookHandler runs cmd with parsed hook data for subcommands.
+type CursorHookHandler[T any] struct {
+	runData CursorHookRunData[T]
 }
 
-// NewDefaultHookHandler returns a [core.HookHandler] that uses hookData for common placeholders only.
+// NewDefaultHookHandler returns a [core.HookHandler] with common fields only (no event-specific payload).
 func NewDefaultHookHandler(hookData HookDataCommon) (core.HookHandler, error) {
-	return defaultHookHandler{hookData: hookData}, nil
+	return CursorHookHandler[struct{}]{
+		runData: CursorHookRunData[struct{}]{
+			Common:        hookData,
+			EventSpecific: nil,
+		},
+	}, nil
 }
 
-// Handle runs cmd with [core.TemplateBindings] from hookData and fixed stdout payload.
-func (handler defaultHookHandler) Handle(cmd core.Command) core.HookHandlerResult {
+// NewHookHandler returns a [core.HookHandler] that passes runData into [core.HookContext.ParsedData].
+func NewHookHandler[T any](runData CursorHookRunData[T]) core.HookHandler {
+	return CursorHookHandler[T]{runData: runData}
+}
+
+// Handle runs cmd with [core.HookContext] and fixed stdout payload.
+func (handler CursorHookHandler[T]) Handle(cmd core.Command) core.HookHandlerResult {
+	rd := handler.runData
 	ctx := &core.HookContext{
-		TemplateBindings: newTemplateBindingsCommon(handler.hookData),
+		HookHost:   HookHostCursor,
+		ParsedData: &rd,
 	}
 	code := cmd.Execute(ctx)
 	return core.HookHandlerResult{Code: code, Output: DefaultHookResponseLine}
