@@ -15,38 +15,36 @@ Sample **Cursor** hook configuration (`.cursor/hooks.json`). Adjust the path to 
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "wat run echo __HOOK_EVENT_NAME__"
+        "command": "wat cursor run echo __HOOK_EVENT_NAME__"
       }
     ]
   }
 }
 ```
 
-### `wat run`
+### `wat <host> run`
 
-Run a templated hook subprocess: read hook JSON from stdin, substitute allowed `__PLACEHOLDER__` tokens in the command template, run that process, and write the host’s hook protocol line on success.
+Run a templated hook subprocess: read hook JSON from stdin, substitute allowed `__PLACEHOLDER__` tokens in the command template, run that process, and write the host’s hook protocol line on success. The **first** argv word is the hook host (e.g. `cursor`); the **second** is the wat subcommand (`run` today).
 
 ```text
 Usage:
 
-	wat run <command> [templated arguments]
-	wat run [-f <re>] <command> [templated arguments]
-	wat run [--file-pattern <re>] <command> [templated arguments]
-	wat run --host <name> <command> [templated arguments]
-	wat run -H <name> <command> [templated arguments]
+	wat <host> run <command> [templated arguments]
+	wat <host> run [-f <re>] <command> [templated arguments]
+	wat <host> run [--file-pattern <re>] <command> [templated arguments]
 
-Options:
+Options (only for run, before the subprocess template):
 
-	-H, --host <name>    Hook host that handles stdin and hook protocol
-	                      output (default: cursor)
 	-f, --file-pattern <re>
-	                      Optional; omit for no filter. If you pass this flag,
-	                      <re> must be non-empty (Go regexp syntax). Only the
-	                      afterFileEdit handler uses it: run the command only if
-	                      __FILE_PATH__ matches.
+	                      Optional; default * means no filter. If you pass a
+	                      non-* value, <re> must be non-empty (Go regexp syntax).
+	                      When stdin bindings include __FILE_PATH__ (Cursor
+	                      afterFileEdit), `run` skips the subprocess if the path
+	                      does not match <re>; other hook events ignore the flag
+	                      for matching purposes.
 ```
 
-Put shared flags after `run` and before the subprocess command (for example `wat run -H cursor -f '[.]go$' …`). They are parsed by **`initializeContext`** in `app` with the same rules as root help, not inside the `run` command constructor. The short host form is **`-H`** (not `-h`). If equivalent options are repeated, **the last value wins**.
+Put `-f` / `--file-pattern` after `run` and before the subprocess command (for example `wat cursor run -f '[.]go$' …`). Flags are parsed inside **`commands.NewRunCommand`**. If equivalent options are repeated, **the last value wins**.
 
 **Command template** — Everything after the optional flags is one command template: the subprocess program and its arguments. Use only `__PLACEHOLDER__` tokens documented for the current hook event in [Supported Cursor hook types](#supported-cursor-hook-types); any other `__TOKEN__` in the template is an error (exit code `2`).
 
@@ -56,7 +54,7 @@ Put shared flags after `run` and before the subprocess command (for example `wat
 
 | Code | Meaning |
 |------|---------|
-| `0` | Success. For `run`, this means the templated command exited `0`, or the Cursor `afterFileEdit` handler skipped invocation because `--file-pattern` did not match `__FILE_PATH__`. |
+| `0` | Success. For `run`, this means the templated command exited `0`, or `run` skipped the subprocess because `-f` / `--file-pattern` did not match `__FILE_PATH__`. |
 | `1` | General failure — e.g. stdin JSON parse error, host/event rejected the payload, or the subprocess failed to run. |
 | `2` | Bad input — invalid CLI usage, unknown host, unknown subcommand, missing `run` command, unknown `__PLACEHOLDER__`, or nothing left to execute after templating. |
 
@@ -120,7 +118,7 @@ Fires after a file edit.
 
 **Returns** `{}`.
 
-When `wat run` includes `-f` / `--file-pattern` with a Go regexp, this handler applies the filter before invoking the subprocess (other events ignore the flag). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
+When `wat cursor run …` includes `-f` / `--file-pattern` with a Go regexp, **`commands.runCommand.Execute`** applies the filter before invoking the subprocess when `__FILE_PATH__` is present in template bindings (other events omit that key, so the subprocess runs as usual). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
 
 #### `afterTabFileEdit`
 
@@ -192,20 +190,20 @@ wat is layered so **hosts** (Cursor today) stay separate from **shared** CLI, te
 These types define the host-neutral contract:
 
 - **`HookHandlerFactory`** — Builds a `HookHandler` from raw hook stdin JSON bytes. The host chooses parsing, validation, and which events exist.
-- **`HookHandler`** — Handles one invocation: receives the subcommand `Command`, fills `HookContext` (including `TemplateBindings`), calls `Command.Execute`, and returns `HookHandlerResult` (process exit `Code` and hook stdout `Output` string). **`WatExecutionContext`** is fixed when the handler is built (the factory was created with that context).
+- **`HookHandler`** — Handles one invocation: receives the subcommand `Command`, fills `HookContext` (including `TemplateBindings`), calls `Command.Execute`, and returns `HookHandlerResult` (process exit `Code` and hook stdout `Output` string).
 - **`Command`** — Subcommand implementation (`run` today): `Execute(ctx *HookContext) int` using `ctx.TemplateBindings`, returning the process exit code.
 - **`TemplateBindings`** — `TemplateValue(key) (value, ok)` for keys matching the inner part of `__KEY__` in argv (see `internal/template`). If `ok` is false, `run` reports an unknown placeholder error.
 - **`HookContext`** — Carries `TemplateBindings` into `Command.Execute`; the handler must set bindings before `Execute`.
-- **`WatExecutionContext`** — CLI-level data for the invocation (`Host()`, `Subcommand()`, `FilePattern()` as `*string` — `nil` when no filter — …) produced by **`initializeContext`** in `app` and passed when constructing the host **`HookHandlerFactory`** (not into **`newHookCommand`** / **`NewRunCommand`**).
 
 ### Execution flow
 
 1. **Entry** — **`cmd/wat`** `main` calls **`app.Execute`** with argv (minus program name), stdin, stdout, and stderr; **`Execute`** constructs **`cli.Console`** and **`watexec`** runner for the rest of the run.
-2. **Setup inside `app.Execute`** (same scope as the diagram note over **`app.Execute`**) — **`initializeContext`** parses argv and returns **`WatExecutionContext`** plus command-template argv; **`newHookHandlerFactory(watExecCtx)`** picks the host factory and passes **`watExecCtx`** into it; **`newHookCommand(watExecCtx.Subcommand(), …)`** builds **`hookCommand`** (`core.Command` only, e.g. **`commands.NewRunCommand`**); **`cli.ReadHookStdinJSON`** reads hook event bytes from stdin.
-3. **`app.Execute` → `HookHandlerFactory` → `app.Execute`** — **`HookHandlerFromJSON(hook event bytes)`**; factory parses/validates the event and returns **`HookHandler`** to **`app.Execute`** (the factory already holds **`watExecCtx`**).
-4. **`app.Execute` → `HookHandler`** — **`Handle(hookCommand)`**; the handler sets **`HookContext`** / **`TemplateBindings`**.
-5. **`HookHandler` → `hookCommand` → `HookHandler` → `app.Execute`** — **`Execute(HookContext)`** (template render, **`watexec`** child, …) returns the subprocess exit code; **`HookHandler`** returns **`HookHandlerResult`** (**`Output`**, **`Code`**) to **`app.Execute`**.
-6. **Finish** (diagram note over **`app.Execute`**) — write **`result.Output`** to hook stdout, return **`result.Code`** as the process exit code.
+2. **Host side** — The first argv word selects the hook host; **`app`** builds a host **`HookHandlerFactory`** and keeps the remaining argv slice for the wat subcommand.
+3. **Hook handler** — **`cli.ReadHookStdinJSON`** reads hook event bytes from stdin, then **`HookHandlerFromJSON`** returns a **`HookHandler`** for that event (before the wat subcommand argv is turned into a **`Command`**).
+4. **Command** — **`newHookCommand(subcommand, …, rest)`** builds **`hookCommand`** (`core.Command`, e.g. **`commands.NewRunCommand`**, which parses **`run`** flags such as **`-f`** from **`rest`**).
+5. **`app.Execute` → `HookHandler`** — **`Handle(hookCommand)`**; the handler sets **`HookContext`** / **`TemplateBindings`**.
+6. **`HookHandler` → `hookCommand` → `HookHandler` → `app.Execute`** — **`Execute(HookContext)`** (template render, **`watexec`** child, …) returns the subprocess exit code; **`HookHandler`** returns **`HookHandlerResult`** (**`Output`**, **`Code`**) to **`app.Execute`**.
+7. **Finish** (diagram note over **`app.Execute`**) — write **`result.Output`** to hook stdout, return **`result.Code`** as the process exit code.
 
 ```mermaid
 sequenceDiagram
@@ -215,7 +213,7 @@ sequenceDiagram
   participant H as HookHandler
   participant C as hookCommand
 
-  Note over A: Parse argv, newHookHandlerFactory,<br/>newHookCommand, ReadHookStdinJSON
+  Note over A: Host factory, ReadHookStdinJSON,<br/>HookHandlerFromJSON, newHookCommand
   A->>F: HookHandlerFromJSON(hook event bytes)
   F-->>A: HookHandler
   A->>H: Handle(hookCommand)
@@ -230,13 +228,13 @@ sequenceDiagram
 
 This is how the **`HookHandlerFactory`** and **`HookHandler`** from the execution flow are implemented for Cursor today.
 
-1. **Factory value** — **`cursor.NewHookHandlerFactory(watExecCtx)`** returns **`cursor.HookHandlerFactory`** holding **`watExecCtx`** for **`HookHandlerFromJSON`** / event builders.
+1. **Factory value** — **`cursor.NewHookHandlerFactory()`** returns **`cursor.HookHandlerFactory`** for **`HookHandlerFromJSON`** / event builders.
 2. **`HookHandlerFromJSON`** — Rejects empty stdin (Cursor expects a JSON body). **`newHookDataCommon`** unmarshals bytes into **`hookDataCommon`** (shared envelope: `conversation_id`, `hook_event_name`, etc.—see `hook_data_common.go`).
 3. **Per-event dispatch** — **`hook_event_name`** selects an entry in **`cursorHookHandlerBuilders`** (`hook_handler_builders.go`). Missing events return an error (“not supported yet”).
-4. **Building the handler** — Each registered builder is a **`hookHandlerBuilder`** `func(hookData hookDataCommon) (core.HookHandler, error)`. Today every supported event uses **`newDefaultHookHandler`**, which returns **`defaultHookHandler`** (`handler_default.go`) holding the parsed **`hookDataCommon`**.
+4. **Building the handler** — Each registered builder is a **`HookHandlerBuilder`** `func(rawJSON []byte, hookData HookDataCommon) (core.HookHandler, error)`. Most events use **`newDefaultHookHandler`** → **`defaultHookHandler`** (`handler_default.go`) or **`NewCursorEventHookHandlerBuilder`** for events with extra fields (e.g. **`afterFileEdit`**, **`afterShellExecution`**).
 5. **`defaultHookHandler.Handle`** — Builds **`HookContext`** whose **`TemplateBindings`** come from **`newTemplateBindingsCommon(hookData)`**, calls **`cmd.Execute(ctx)`**, and returns **`HookHandlerResult`** with the subprocess exit **`Code`** and fixed hook stdout **`Output`** (**`cursorcore.DefaultHookResponseLine`**, i.e. `{}` plus newline).
 6. **`TemplateBindings` wiring (`template_bindings_common.go`)** — **`newTemplateBindingsCommon`** wraps **`hookDataCommon`** in **`templateBindingsCommon`**, which implements **`core.TemplateBindings`**. **`TemplateValue(placeholderKey)`** looks up **`placeholderKey`** in **`commonPlaceholderExtractors`**: keys are the **inner** names only (**`CONVERSATION_ID`**, **`HOOK_EVENT_NAME`**, …—the same strings **`internal/template`** extracts from **`__KEY__`** tokens). Each map entry is a small function that reads one field from the embedded **`hookDataCommon`** (optional JSON uses **`helpers.StringFromPtr`**; **`workspace_roots`** is joined with **`;`**). If the key is missing from the map, **`TemplateValue`** returns **`ok == false`** (unknown placeholder for `run`). If the key is known, **`ok == true`** even when the substituted string is empty (e.g. null optional fields).
-7. **Where bindings run** — For **`wat run`**, **`commands.runCommand.Execute`** calls **`template.RenderTokens(argvTemplate, ctx.TemplateBindings)`** (`internal/template`). **`RenderTokens`** scans each argv token for **`__KEY__`** substrings, calls **`TemplateValue`** per key, substitutes the returned string, and collects unknown keys; **`run`** turns any unknowns into a bad-input exit.
+7. **Where bindings run** — For **`wat <host> run`**, **`commands.runCommand.Execute`** optionally filters on **`FILE_PATH`** when a **`-f`** pattern is set, then calls **`template.RenderTokens(argvTemplate, ctx.TemplateBindings)`** (`internal/template`). **`RenderTokens`** scans each argv token for **`__KEY__`** substrings, calls **`TemplateValue`** per key, substitutes the returned string, and collects unknown keys; **`run`** turns any unknowns into a bad-input exit.
 
 ```mermaid
 sequenceDiagram

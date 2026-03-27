@@ -8,12 +8,12 @@ import (
 	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
-type HookHandlerFactory struct {
-	execCtx core.WatExecutionContext
-}
+// HookHandlerFactory builds Cursor hook handlers from stdin JSON.
+type HookHandlerFactory struct{}
 
-func NewHookHandlerFactory(execCtx core.WatExecutionContext) HookHandlerFactory {
-	return HookHandlerFactory{execCtx: execCtx}
+// NewHookHandlerFactory returns a factory for Cursor hook stdin and protocol.
+func NewHookHandlerFactory() HookHandlerFactory {
+	return HookHandlerFactory{}
 }
 
 func (f HookHandlerFactory) HookHandlerFromJSON(hookEventJSON []byte) (core.HookHandler, error) {
@@ -28,5 +28,5 @@ func (f HookHandlerFactory) HookHandlerFromJSON(hookEventJSON []byte) (core.Hook
 	if !found {
 		return nil, fmt.Errorf("cursor event %q is not supported yet", hookData.HookEventName)
 	}
-	return builder(hookEventJSON, hookData, f.execCtx)
+	return builder(hookEventJSON, hookData)
 }

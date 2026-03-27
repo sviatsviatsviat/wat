@@ -51,13 +51,13 @@ func newEventHookHandlerFromFields[T any](
 	return NewEventHookHandlerFromExtractedFields(hookData.HookDataCommon, hookData.Fields, extractors), nil
 }
 
-// HookHandlerBuilder builds a [core.HookHandler] from parsed hook fields and [core.WatExecutionContext].
-type HookHandlerBuilder func(rawJSON []byte, hookData HookDataCommon, execCtx core.WatExecutionContext) (core.HookHandler, error)
+// HookHandlerBuilder builds a [core.HookHandler] from parsed hook fields.
+type HookHandlerBuilder func(rawJSON []byte, hookData HookDataCommon) (core.HookHandler, error)
 
 // NewCursorEventHookHandlerBuilder returns a [HookHandlerBuilder] that parses event-specific JSON fields
 // and wires [core.TemplateBindings] from extractors plus common placeholders.
 func NewCursorEventHookHandlerBuilder[T any](extractors map[string]EventFieldExtractor[T]) HookHandlerBuilder {
-	return func(rawJSON []byte, hookData HookDataCommon, _ core.WatExecutionContext) (core.HookHandler, error) {
+	return func(rawJSON []byte, hookData HookDataCommon) (core.HookHandler, error) {
 		return newEventHookHandlerFromFields(rawJSON, hookData, extractors)
 	}
 }

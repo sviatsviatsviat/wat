@@ -3,7 +3,7 @@
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "./wat run \"--file-pattern=[.]go$\" gofmt -w __FILE_PATH__"
+        "command": "./wat cursor run --file-pattern=[.]go$ gofmt -w __FILE_PATH__"
       }
     ]
   }
