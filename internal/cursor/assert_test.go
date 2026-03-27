@@ -20,20 +20,6 @@ func assertIntEqual(t *testing.T, want, got int) {
 	}
 }
 
-func assertTemplateBindingValue(t *testing.T, bindings interface {
-	TemplateValue(key string) (string, bool)
-}, key, want string,
-) {
-	t.Helper()
-	bindingValue, ok := bindings.TemplateValue(key)
-	if !ok {
-		t.Fatalf("TemplateValue(%q): expected ok true", key)
-	}
-	if bindingValue != want {
-		t.Fatalf("TemplateValue(%q): want %q, got %q", key, want, bindingValue)
-	}
-}
-
 // stubHookCommand implements [core.Command] for hook handler tests.
 type stubHookCommand struct {
 	execute func(*core.HookContext) int

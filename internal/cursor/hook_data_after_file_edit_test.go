@@ -21,7 +21,7 @@ func TestNewHookDataAfterFileEdit_fullPayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterFileEditFields]([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterFileEditFields]([]byte(input), commonData)
 	if err != nil {
 		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
@@ -49,7 +49,7 @@ func TestNewHookDataAfterFileEdit_zeroValueFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	hookData, err := cursorcore.NewHookDataWithCommon[hookDataAfterFileEditFields]([]byte(input), commonData)
+	hookData, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterFileEditFields]([]byte(input), commonData)
 	if err != nil {
 		t.Fatalf("NewHookDataWithCommon: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestNewHookDataAfterFileEdit_zeroValueFields(t *testing.T) {
 }
 
 func TestNewHookDataAfterFileEdit_invalidJSON(t *testing.T) {
-	_, err := cursorcore.NewHookDataWithCommon[hookDataAfterFileEditFields]([]byte(`not json`), cursorcore.HookDataCommon{})
+	_, err := cursorcore.NewHookDataWithCommon[cursorcore.AfterFileEditFields]([]byte(`not json`), cursorcore.HookDataCommon{})
 	if err == nil {
 		t.Fatal("expected error for invalid JSON")
 	}

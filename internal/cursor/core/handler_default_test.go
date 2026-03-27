@@ -33,17 +33,21 @@ func TestDefaultHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
 	var seenCtx *core.HookContext
 	hookCommand := stubHookCommand{execute: func(ctx *core.HookContext) int {
 		seenCtx = ctx
-		if ctx.TemplateBindings == nil {
-			t.Error("HookContext.TemplateBindings must be set")
-			return 1
+		if ctx.HookHost != HookHostCursor {
+			t.Errorf("HookHost: want %q, got %q", HookHostCursor, ctx.HookHost)
 		}
-		hookEventName, ok := ctx.TemplateBindings.TemplateValue("HOOK_EVENT_NAME")
-		if !ok || hookEventName != "afterFileEdit" {
-			t.Errorf("HOOK_EVENT_NAME: want afterFileEdit, ok=%v got=%q", ok, hookEventName)
+		rd, ok := ctx.ParsedData.(*CursorHookRunData[struct{}])
+		if !ok || rd == nil {
+			t.Fatalf("ParsedData must be *CursorHookRunData[struct{}], got %T", ctx.ParsedData)
 		}
-		conversationID, ok := ctx.TemplateBindings.TemplateValue("CONVERSATION_ID")
-		if !ok || conversationID != "cid-1" {
-			t.Errorf("CONVERSATION_ID: want cid-1, ok=%v got=%q", ok, conversationID)
+		if rd.Common.HookEventName != "afterFileEdit" {
+			t.Errorf("HOOK_EVENT_NAME: want afterFileEdit, got %q", rd.Common.HookEventName)
+		}
+		if rd.Common.ConversationID != "cid-1" {
+			t.Errorf("CONVERSATION_ID: want cid-1, got %q", rd.Common.ConversationID)
+		}
+		if rd.EventSpecific != nil {
+			t.Error("default handler must leave EventSpecific nil")
 		}
 		return 42
 	}}

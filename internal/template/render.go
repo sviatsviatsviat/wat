@@ -1,10 +1,9 @@
-// Package template expands __KEY__ placeholders in argv tokens using [core.TemplateBindings].
+// Package template expands __KEY__ placeholders in argv tokens using [TemplateBindings].
 package template
 
 import (
 	"regexp"
 
-	"github.com/sviatsviatsviat/wat/internal/core"
 	"github.com/sviatsviatsviat/wat/internal/helpers"
 )
 
@@ -12,7 +11,7 @@ var placeholderRE = regexp.MustCompile(`__([A-Z_]+)__`)
 
 // RenderTokens replaces each __KEY__ substring in tokens using bindings.
 // It returns the rendered argv slice and placeholder keys that were not defined by bindings, sorted.
-func RenderTokens(tokens []string, bindings core.TemplateBindings) ([]string, []string) {
+func RenderTokens(tokens []string, bindings TemplateBindings) ([]string, []string) {
 	unknownKeysSet := map[string]struct{}{}
 	renderedTokens := make([]string, 0, len(tokens))
 

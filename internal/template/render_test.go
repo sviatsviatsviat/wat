@@ -1,10 +1,6 @@
 package template
 
-import (
-	"testing"
-
-	"github.com/sviatsviatsviat/wat/internal/core"
-)
+import "testing"
 
 // fakeBindings marks which keys exist for the host; values may be empty when defined.
 type fakeBindings struct {
@@ -81,4 +77,4 @@ func TestRenderTokens_UndefinedKeyEvenWithValueMap(t *testing.T) {
 	}
 }
 
-var _ core.TemplateBindings = fakeBindings{}
+var _ TemplateBindings = fakeBindings{}

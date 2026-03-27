@@ -1,3 +1,4 @@
-// Package cursorcore holds shared Cursor hook stdin models, template bindings, and generic event hook handlers.
+// Package cursorcore holds shared Cursor hook stdin models, generic CursorHookRunData (Common + EventSpecific),
+// and CursorHookHandler.
 // Host-facing wiring stays in package internal/cursor.
 package cursorcore
