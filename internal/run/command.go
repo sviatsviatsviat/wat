@@ -7,7 +7,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
 	"github.com/sviatsviatsviat/wat/internal/core"
-	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
+	"github.com/sviatsviatsviat/wat/internal/cursor"
 	"github.com/sviatsviatsviat/wat/internal/template"
 	"github.com/sviatsviatsviat/wat/internal/watexec"
 )
@@ -24,7 +24,7 @@ func (runCmd runCommand) Execute(hookContext *core.HookContext) int {
 		_ = runCmd.console.WriteError("internal error: HookContext is nil before Execute")
 		return cli.ExitGeneral
 	}
-	if hookContext.HookHost != cursorcore.HookHostCursor {
+	if hookContext.HookHost != cursor.HookHostCursor {
 		_ = runCmd.console.WriteError("internal error: run command only supports Cursor hooks (unexpected HookHost)\n")
 		return cli.ExitGeneral
 	}

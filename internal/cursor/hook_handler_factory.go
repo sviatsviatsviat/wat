@@ -1,11 +1,11 @@
-// Package cursor builds [core.HookHandler] values from Cursor hook stdin JSON.
+// Package cursor implements Cursor hook stdin models (HookDataCommon, CursorHookRunData, event field types),
+// generic CursorHookHandler and HookHandlerBuilder plumbing, and builds [core.HookHandler] values from stdin JSON.
 package cursor
 
 import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/core"
-	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
 // HookHandlerFactory builds Cursor hook handlers from stdin JSON.
@@ -20,7 +20,7 @@ func (f HookHandlerFactory) HookHandlerFromJSON(hookEventJSON []byte) (core.Hook
 	if len(hookEventJSON) == 0 {
 		return nil, fmt.Errorf("cursor hook stdin is empty or missing JSON object")
 	}
-	hookData, err := cursorcore.NewHookDataCommon(hookEventJSON)
+	hookData, err := NewHookDataCommon(hookEventJSON)
 	if err != nil {
 		return nil, fmt.Errorf("invalid cursor hook JSON: %w", err)
 	}

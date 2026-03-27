@@ -7,7 +7,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
 	"github.com/sviatsviatsviat/wat/internal/core"
-	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
+	"github.com/sviatsviatsviat/wat/internal/cursor"
 	"github.com/sviatsviatsviat/wat/internal/watexec"
 )
 
@@ -75,8 +75,8 @@ func TestRunCommand_Execute_UnknownPlaceholder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	ctx := testRunHookContext(cursorcore.CursorHookRunData[struct{}]{
-		Common: cursorcore.HookDataCommon{HookEventName: "sessionEnd"},
+	ctx := testRunHookContext(cursor.CursorHookRunData[struct{}]{
+		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
 	})
 	code := hookCommand.Execute(ctx)
 	if code != cli.ExitBadInput {
@@ -103,8 +103,8 @@ func TestRunCommand_Execute_SubstitutionAndSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	ctx := testRunHookContext(cursorcore.CursorHookRunData[struct{}]{
-		Common: cursorcore.HookDataCommon{
+	ctx := testRunHookContext(cursor.CursorHookRunData[struct{}]{
+		Common: cursor.HookDataCommon{
 			HookEventName:  "sessionEnd",
 			ConversationID: "conv-test-1",
 		},
@@ -128,8 +128,8 @@ func TestRunCommand_Execute_SubprocessFailureExitCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	ctx := testRunHookContext(cursorcore.CursorHookRunData[struct{}]{
-		Common: cursorcore.HookDataCommon{HookEventName: "sessionEnd"},
+	ctx := testRunHookContext(cursor.CursorHookRunData[struct{}]{
+		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
 	})
 	code := hookCommand.Execute(ctx)
 	if code != 9 {
@@ -137,9 +137,9 @@ func TestRunCommand_Execute_SubprocessFailureExitCode(t *testing.T) {
 	}
 }
 
-func testRunHookContext[T any](data cursorcore.CursorHookRunData[T]) *core.HookContext {
+func testRunHookContext[T any](data cursor.CursorHookRunData[T]) *core.HookContext {
 	return &core.HookContext{
-		HookHost:   cursorcore.HookHostCursor,
+		HookHost:   cursor.HookHostCursor,
 		ParsedData: &data,
 	}
 }
@@ -163,9 +163,9 @@ func TestRunCommand_Execute_FilePatternNoMatchSkipsSubprocess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	data := cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields]{
-		Common: cursorcore.HookDataCommon{HookEventName: "afterFileEdit"},
-		EventSpecific: &cursorcore.AfterFileEditFields{
+	data := cursor.CursorHookRunData[cursor.AfterFileEditFields]{
+		Common: cursor.HookDataCommon{HookEventName: "afterFileEdit"},
+		EventSpecific: &cursor.AfterFileEditFields{
 			FilePath: `D:\repo\file.txt`,
 		},
 	}
@@ -182,9 +182,9 @@ func TestRunCommand_Execute_FilePatternMatchRunsSubprocess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	data := cursorcore.CursorHookRunData[cursorcore.AfterFileEditFields]{
-		Common: cursorcore.HookDataCommon{HookEventName: "afterFileEdit"},
-		EventSpecific: &cursorcore.AfterFileEditFields{
+	data := cursor.CursorHookRunData[cursor.AfterFileEditFields]{
+		Common: cursor.HookDataCommon{HookEventName: "afterFileEdit"},
+		EventSpecific: &cursor.AfterFileEditFields{
 			FilePath: `D:\repo\file.go`,
 		},
 	}
@@ -201,8 +201,8 @@ func TestRunCommand_Execute_FilePatternIgnoredWithoutFilePathBinding(t *testing.
 	if err != nil {
 		t.Fatalf("NewRunCommand: %v", err)
 	}
-	ctx := testRunHookContext(cursorcore.CursorHookRunData[struct{}]{
-		Common: cursorcore.HookDataCommon{HookEventName: "sessionEnd"},
+	ctx := testRunHookContext(cursor.CursorHookRunData[struct{}]{
+		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
 	})
 	code := hookCommand.Execute(ctx)
 	if code != cli.ExitSuccess {

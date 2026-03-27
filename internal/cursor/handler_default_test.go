@@ -1,4 +1,4 @@
-package cursorcore
+package cursor
 
 import (
 	"testing"
@@ -59,18 +59,7 @@ func TestDefaultHookHandler_Handle_wiresContextAndOutput(t *testing.T) {
 	if seenCtx == nil {
 		t.Fatal("Command.Execute was not called")
 	}
-	if result.Output != DefaultHookResponseLine {
-		t.Fatalf("output: want %q, got %q", DefaultHookResponseLine, result.Output)
+	if result.Output != cursorHookStdoutSuccessLine {
+		t.Fatalf("output: want %q, got %q", cursorHookStdoutSuccessLine, result.Output)
 	}
-}
-
-type stubHookCommand struct {
-	execute func(*core.HookContext) int
-}
-
-func (stub stubHookCommand) Execute(ctx *core.HookContext) int {
-	if stub.execute == nil {
-		return 0
-	}
-	return stub.execute(ctx)
 }
