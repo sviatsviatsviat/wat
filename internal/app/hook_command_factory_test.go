@@ -11,11 +11,7 @@ import (
 func TestNewHookCommand_Run(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
 	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	_, subArgs, err := initializeContext([]string{"run", "echo", "hi"})
-	if err != nil {
-		t.Fatalf("initializeContext: %v", err)
-	}
-	hookCommand, err := newHookCommand("run", mockConsole, runner, subArgs)
+	hookCommand, err := newHookCommand("run", mockConsole, runner, []string{"echo", "hi"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -24,26 +20,24 @@ func TestNewHookCommand_Run(t *testing.T) {
 	}
 }
 
-func TestInitializeContext_FilePattern(t *testing.T) {
-	execCtx, _, err := initializeContext([]string{"run", "-f", `[.]go$`, "echo", "x"})
+func TestNewHookCommand_RunWithFilePatternFlag(t *testing.T) {
+	mockConsole := cli.NewMockConsole()
+	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
+	hookCommand, err := newHookCommand("run", mockConsole, runner, []string{"-f", `[.]go$`, "echo", "x"})
 	if err != nil {
-		t.Fatalf("initializeContext: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if execCtx.FilePattern() == nil || *execCtx.FilePattern() != `[.]go$` {
-		t.Fatalf("FilePattern: want [.]go$, got %#v", execCtx.FilePattern())
+	if hookCommand == nil {
+		t.Fatal("expected non-nil command")
 	}
 }
 
 func TestNewHookCommand_RunEmptyArgv(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
 	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
-	_, subArgs, err := initializeContext([]string{"run"})
-	if err != nil {
-		t.Fatalf("initializeContext: %v", err)
-	}
-	hookCommand, err := newHookCommand("run", mockConsole, runner, subArgs)
+	hookCommand, err := newHookCommand("run", mockConsole, runner, []string{})
 	if err == nil {
-		t.Fatal("expected error from commands.NewRunCommand")
+		t.Fatal("expected error from run.NewRunCommand")
 	}
 	if hookCommand != nil {
 		t.Fatal("expected nil command")
@@ -58,11 +52,7 @@ func TestNewHookCommand_RunEmptyArgv(t *testing.T) {
 
 func TestNewHookCommand_UnknownSubcommand(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	_, subArgs, err := initializeContext([]string{"nope"})
-	if err != nil {
-		t.Fatalf("initializeContext: %v", err)
-	}
-	hookCommand, err := newHookCommand("nope", mockConsole, nil, subArgs)
+	hookCommand, err := newHookCommand("nope", mockConsole, nil, []string{})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -75,7 +65,7 @@ func TestNewHookCommand_UnknownSubcommand(t *testing.T) {
 	if !mockConsole.StderrContains(`unknown command "nope"`) {
 		t.Fatalf("expected unknown command on stderr, got %q", mockConsole.StderrString())
 	}
-	if !mockConsole.StderrContains("wat <command>") {
+	if !mockConsole.StderrContains("wat <host>") {
 		t.Fatalf("expected root help on stderr, got %q", mockConsole.StderrString())
 	}
 }

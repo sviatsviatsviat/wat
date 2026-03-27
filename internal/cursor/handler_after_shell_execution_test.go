@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/core"
-	"github.com/sviatsviatsviat/wat/internal/cursor/core"
+	cursorcore "github.com/sviatsviatsviat/wat/internal/cursor/core"
 )
 
 func TestNewCursorEventHookHandlerBuilder_afterShellExecution_success(t *testing.T) {
@@ -14,8 +14,7 @@ func TestNewCursorEventHookHandlerBuilder_afterShellExecution_success(t *testing
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	execCtx := core.NewWatExecutionContext("cursor").WithSubcommand("run")
-	handler, err := build(raw, common, execCtx)
+	handler, err := build(raw, common)
 	if err != nil {
 		t.Fatalf("hookHandlerBuilder: %v", err)
 	}
@@ -31,8 +30,7 @@ func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	execCtx := core.NewWatExecutionContext("cursor").WithSubcommand("run")
-	handler, err := build(raw, common, execCtx)
+	handler, err := build(raw, common)
 	if err != nil {
 		t.Fatalf("hookHandlerBuilder: %v", err)
 	}
@@ -66,7 +64,7 @@ func TestAfterShellExecutionHookHandler_Handle_wiresContextAndOutput(t *testing.
 }
 
 func TestHookHandlerFactory_afterShellExecutionUsesDedicatedHandler(t *testing.T) {
-	factory := NewHookHandlerFactory(core.NewWatExecutionContext("cursor").WithSubcommand("run"))
+	factory := NewHookHandlerFactory()
 	raw := []byte(`{"hook_event_name":"afterShellExecution","command":"x","output":"","duration":0,"sandbox":false}`)
 
 	handler, err := factory.HookHandlerFromJSON(raw)

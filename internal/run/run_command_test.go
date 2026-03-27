@@ -1,7 +1,8 @@
-package commands
+package run
 
 import (
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
@@ -151,5 +152,64 @@ func (stub stubTemplateBindings) TemplateValue(key string) (string, bool) {
 func testHookContext(bindings core.TemplateBindings) *core.HookContext {
 	return &core.HookContext{
 		TemplateBindings: bindings,
+	}
+}
+
+func TestNewRunCommand_InvalidFilePatternRegexp(t *testing.T) {
+	mockConsole := cli.NewMockConsole()
+	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
+	_, err := NewRunCommand(mockConsole, runner, []string{"-f", `(`, "echo", "x"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "invalid --file-pattern regexp") {
+		t.Fatalf("error: %v", err)
+	}
+}
+
+func TestRunCommand_Execute_FilePatternNoMatchSkipsSubprocess(t *testing.T) {
+	mockConsole := cli.NewMockConsole()
+	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
+	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"-f", `[.]go$`, "echo", "x"})
+	if err != nil {
+		t.Fatalf("NewRunCommand: %v", err)
+	}
+	bindings := stubTemplateBindings{
+		defined: map[string]struct{}{"FILE_PATH": {}},
+		values:  map[string]string{"FILE_PATH": `D:\repo\file.txt`},
+	}
+	code := hookCommand.Execute(testHookContext(bindings))
+	if code != cli.ExitSuccess {
+		t.Fatalf("expected ExitSuccess when path does not match, got %d", code)
+	}
+}
+
+func TestRunCommand_Execute_FilePatternMatchRunsSubprocess(t *testing.T) {
+	mockConsole := cli.NewMockConsole()
+	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
+	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"-f", `[.]go$`, "echo", "x"})
+	if err != nil {
+		t.Fatalf("NewRunCommand: %v", err)
+	}
+	bindings := stubTemplateBindings{
+		defined: map[string]struct{}{"FILE_PATH": {}},
+		values:  map[string]string{"FILE_PATH": `D:\repo\file.go`},
+	}
+	code := hookCommand.Execute(testHookContext(bindings))
+	if code != cli.ExitSuccess {
+		t.Fatalf("expected ExitSuccess from echo, got %d, stderr=%q", code, mockConsole.StderrString())
+	}
+}
+
+func TestRunCommand_Execute_FilePatternIgnoredWithoutFilePathBinding(t *testing.T) {
+	mockConsole := cli.NewMockConsole()
+	runner := watexec.NewRunner(mockConsole.StderrBufferWriter(), mockConsole)
+	hookCommand, err := NewRunCommand(mockConsole, runner, []string{"-f", `[.]go$`, "echo", "y"})
+	if err != nil {
+		t.Fatalf("NewRunCommand: %v", err)
+	}
+	code := hookCommand.Execute(testHookContext(stubTemplateBindings{defined: map[string]struct{}{}}))
+	if code != cli.ExitSuccess {
+		t.Fatalf("expected ExitSuccess, got %d", code)
 	}
 }

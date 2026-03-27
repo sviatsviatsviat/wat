@@ -7,11 +7,11 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cursor"
 )
 
-func newHookHandlerFactory(execCtx core.WatExecutionContext) (core.HookHandlerFactory, error) {
-	switch execCtx.Host() {
+func newHookHandlerFactory(host string) (core.HookHandlerFactory, error) {
+	switch host {
 	case "cursor":
-		return cursor.NewHookHandlerFactory(execCtx), nil
+		return cursor.NewHookHandlerFactory(), nil
 	default:
-		return nil, fmt.Errorf("host %q is not supported yet", execCtx.Host())
+		return nil, fmt.Errorf("host %q is not supported yet", host)
 	}
 }

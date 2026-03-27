@@ -26,16 +26,16 @@ func validCursorHookJSON() string {
 
 func runEchoHookEventArgs() []string {
 	if runtime.GOOS == "windows" {
-		return []string{"run", "cmd", "/C", "echo __HOOK_EVENT_NAME__ 1>&2"}
+		return []string{"cursor", "run", "cmd", "/C", "echo __HOOK_EVENT_NAME__ 1>&2"}
 	}
-	return []string{"run", "sh", "-c", "echo __HOOK_EVENT_NAME__ >&2"}
+	return []string{"cursor", "run", "sh", "-c", "echo __HOOK_EVENT_NAME__ >&2"}
 }
 
 func goVersionToStderrArgs() []string {
 	if runtime.GOOS == "windows" {
-		return []string{"run", "cmd", "/C", "go version 1>&2"}
+		return []string{"cursor", "run", "cmd", "/C", "go version 1>&2"}
 	}
-	return []string{"run", "sh", "-c", "go version >&2"}
+	return []string{"cursor", "run", "sh", "-c", "go version >&2"}
 }
 
 func assertHookStdoutJSON(t *testing.T, stdout string) {
@@ -82,22 +82,6 @@ func TestExecute_RunRunsPlainCommand(t *testing.T) {
 	}
 }
 
-func TestExecute_RunExplicitHostCursorStillWorks(t *testing.T) {
-	stdin := strings.NewReader(validCursorHookJSON())
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	args := append([]string{"run", "-H", "cursor"}, goVersionToStderrArgs()[1:]...)
-	code := Execute(args, stdin, &stdout, &stderr)
-	if code != cli.ExitSuccess {
-		t.Fatalf("expected cli.ExitSuccess, got %d, stderr=%q", code, stderr.String())
-	}
-	assertHookStdoutJSON(t, stdout.String())
-	if !strings.Contains(stderr.String(), "go version") {
-		t.Fatalf("expected go version on stderr, got %q", stderr.String())
-	}
-}
-
 func TestExecute_Usage(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -105,8 +89,23 @@ func TestExecute_Usage(t *testing.T) {
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
-	if !strings.Contains(stderr.String(), "wat <command>") {
+	if !strings.Contains(stderr.String(), "wat <host>") {
 		t.Fatalf("expected root help output, got %q", stderr.String())
+	}
+}
+
+func TestExecute_TooFewArgs(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Execute([]string{"cursor"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
+	if code != cli.ExitBadInput {
+		t.Fatalf("expected cli.ExitBadInput, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "host") && !strings.Contains(stderr.String(), "command") {
+		t.Fatalf("expected host/command message, got %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "wat <host>") {
+		t.Fatalf("expected root help, got %q", stderr.String())
 	}
 }
 
@@ -126,7 +125,7 @@ func TestExecute_InvalidJSON(t *testing.T) {
 func TestExecute_RunHelpWhenNoCommand(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := Execute([]string{"run"}, strings.NewReader("{}"), &stdout, &stderr)
+	code := Execute([]string{"cursor", "run"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
@@ -138,32 +137,20 @@ func TestExecute_RunHelpWhenNoCommand(t *testing.T) {
 	}
 }
 
-func TestExecute_DefaultHostIsCursor(t *testing.T) {
+func TestExecute_CursorHostRuns(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	code := Execute(goVersionToStderrArgs(), strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitSuccess {
-		t.Fatalf("expected cli.ExitSuccess without --host, got %d, stderr=%q", code, stderr.String())
+		t.Fatalf("expected cli.ExitSuccess, got %d, stderr=%q", code, stderr.String())
 	}
 	assertHookStdoutJSON(t, stdout.String())
-}
-
-func TestExecute_MissingCommandAfterHost(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	code := Execute([]string{"run", "--host", "cursor"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
-	if code != cli.ExitBadInput {
-		t.Fatalf("expected cli.ExitBadInput, got %d", code)
-	}
-	if !strings.Contains(stderr.String(), "missing command to run") {
-		t.Fatalf("expected missing command message, got %q", stderr.String())
-	}
 }
 
 func TestExecute_UnsupportedHost(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	args := append([]string{"run", "--host", "other"}, goVersionToStderrArgs()[1:]...)
+	args := append([]string{"other", "run"}, goVersionToStderrArgs()[2:]...)
 	code := Execute(args, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput for unsupported host, got %d", code)
@@ -192,9 +179,9 @@ func TestExecute_UnknownTemplatePlaceholder(t *testing.T) {
 	var stderr bytes.Buffer
 	var args []string
 	if runtime.GOOS == "windows" {
-		args = []string{"run", "cmd", "/C", "echo __FILE__ 1>&2"}
+		args = []string{"cursor", "run", "cmd", "/C", "echo __FILE__ 1>&2"}
 	} else {
-		args = []string{"run", "sh", "-c", "echo __FILE__ >&2"}
+		args = []string{"cursor", "run", "sh", "-c", "echo __FILE__ >&2"}
 	}
 	code := Execute(args, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
@@ -206,99 +193,66 @@ func TestExecute_UnknownTemplatePlaceholder(t *testing.T) {
 	assertHookStdoutJSON(t, stdout.String())
 }
 
-func TestExecute_UnknownCommand(t *testing.T) {
+func TestExecute_UnknownSubcommand(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := Execute([]string{"nope"}, strings.NewReader(""), &stdout, &stderr)
+	code := Execute([]string{"cursor", "nope"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
 	if !strings.Contains(stderr.String(), `unknown command "nope"`) {
 		t.Fatalf("expected unknown command message, got %q", stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "wat <command>") {
+	if !strings.Contains(stderr.String(), "wat <host>") {
 		t.Fatalf("expected root help after unknown command, got %q", stderr.String())
-	}
-}
-
-func TestExecute_ParseErrorMissingHostValue(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	code := Execute([]string{"run", "--host"}, strings.NewReader(""), &stdout, &stderr)
-	if code != cli.ExitBadInput {
-		t.Fatalf("expected cli.ExitBadInput, got %d", code)
-	}
-	if !strings.Contains(stderr.String(), "needs an argument: -host") {
-		t.Fatalf("expected flag needs-an-argument for host, got %q", stderr.String())
-	}
-	if !strings.Contains(stderr.String(), "wat <command>") {
-		t.Fatalf("expected root help after parse error, got %q", stderr.String())
-	}
-}
-
-func TestExecute_ParseErrorEmptyHostValue(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	code := Execute([]string{"run", "--host", ""}, strings.NewReader(""), &stdout, &stderr)
-	if code != cli.ExitBadInput {
-		t.Fatalf("expected cli.ExitBadInput, got %d", code)
-	}
-	if !strings.Contains(stderr.String(), "host value cannot be empty") {
-		t.Fatalf("expected empty host message, got %q", stderr.String())
-	}
-	if !strings.Contains(stderr.String(), "wat <command>") {
-		t.Fatalf("expected root help after parse error, got %q", stderr.String())
-	}
-}
-
-func TestExecute_ParseErrorMissingHostValueDashCapitalH(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	code := Execute([]string{"run", "-H"}, strings.NewReader(""), &stdout, &stderr)
-	if code != cli.ExitBadInput {
-		t.Fatalf("expected cli.ExitBadInput, got %d", code)
-	}
-	if !strings.Contains(stderr.String(), "needs an argument: -H") {
-		t.Fatalf("expected flag needs-an-argument for -H, got %q", stderr.String())
-	}
-	if !strings.Contains(stderr.String(), "wat <command>") {
-		t.Fatalf("expected root help after parse error, got %q", stderr.String())
 	}
 }
 
 func TestExecute_ParseErrorMissingFilePatternValue(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := Execute([]string{"run", "--file-pattern"}, strings.NewReader(""), &stdout, &stderr)
+	code := Execute([]string{"cursor", "run", "--file-pattern"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
-	if !strings.Contains(stderr.String(), "needs an argument: -file-pattern") {
+	if !strings.Contains(stderr.String(), "needs an argument") {
 		t.Fatalf("expected flag needs-an-argument for file-pattern, got %q", stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "wat <command>") {
-		t.Fatalf("expected root help after parse error, got %q", stderr.String())
+	if !strings.Contains(stderr.String(), "__CONVERSATION_ID__") {
+		t.Fatalf("expected run help after parse error, got %q", stderr.String())
 	}
 }
 
 func TestExecute_ParseErrorEmptyFilePatternEquals(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := Execute([]string{"run", "--file-pattern="}, strings.NewReader(""), &stdout, &stderr)
+	code := Execute([]string{"cursor", "run", "--file-pattern="}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
 	if !strings.Contains(stderr.String(), "file-pattern value cannot be empty") {
 		t.Fatalf("expected empty pattern message, got %q", stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "wat <command>") {
-		t.Fatalf("expected root help after parse error, got %q", stderr.String())
+	if !strings.Contains(stderr.String(), "__CONVERSATION_ID__") {
+		t.Fatalf("expected run help after parse error, got %q", stderr.String())
+	}
+}
+
+func TestExecute_InvalidFilePatternRegexp(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Execute([]string{"cursor", "run", "-f", `(`, "echo", "x"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
+	if code != cli.ExitBadInput {
+		t.Fatalf("expected cli.ExitBadInput, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "invalid --file-pattern regexp") {
+		t.Fatalf("expected regexp error, got %q", stderr.String())
 	}
 }
 
 func TestExecute_RunWithFilePatternStillRunsSubprocess(t *testing.T) {
 	base := goVersionToStderrArgs()
-	args := append([]string{base[0], "-f", `[.]go$`}, base[1:]...)
+	args := append([]string{base[0], base[1], "-f", `[.]go$`}, base[2:]...)
 	stdin := strings.NewReader(validCursorHookJSON())
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -309,5 +263,41 @@ func TestExecute_RunWithFilePatternStillRunsSubprocess(t *testing.T) {
 	assertHookStdoutJSON(t, stdout.String())
 	if !strings.Contains(stderr.String(), "go version") {
 		t.Fatalf("expected go version on stderr, got %q", stderr.String())
+	}
+}
+
+func TestExecute_RunWithFilePatternSkipsWhenPathNoMatch(t *testing.T) {
+	jsonTxt := `{
+		"hook_event_name": "afterFileEdit",
+		"conversation_id": "c1",
+		"generation_id": "g1",
+		"model": "m",
+		"cursor_version": "1.0",
+		"workspace_roots": [],
+		"user_email": "",
+		"transcript_path": "",
+		"file_path": "/repo/file.txt",
+		"edits": [{"old_string": "a", "new_string": "b"}]
+	}`
+	if runtime.GOOS == "windows" {
+		var stdout, stderr bytes.Buffer
+		code := Execute([]string{"cursor", "run", "-f", `[.]go$`, "cmd", "/C", "echo", "ran", "1>&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
+		if code != cli.ExitSuccess {
+			t.Fatalf("expected ExitSuccess, got %d, stderr=%q", code, stderr.String())
+		}
+		assertHookStdoutJSON(t, stdout.String())
+		if strings.Contains(stderr.String(), "ran") {
+			t.Fatalf("subprocess should be skipped, stderr=%q", stderr.String())
+		}
+		return
+	}
+	var stdout, stderr bytes.Buffer
+	code := Execute([]string{"cursor", "run", "-f", `[.]go$`, "sh", "-c", "echo ran >&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
+	if code != cli.ExitSuccess {
+		t.Fatalf("expected ExitSuccess, got %d, stderr=%q", code, stderr.String())
+	}
+	assertHookStdoutJSON(t, stdout.String())
+	if strings.Contains(stderr.String(), "ran") {
+		t.Fatalf("subprocess should be skipped, stderr=%q", stderr.String())
 	}
 }

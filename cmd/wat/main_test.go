@@ -46,7 +46,7 @@ func TestMain_NoArgsUsageExitBadInput(t *testing.T) {
 	if exitErr.ExitCode() != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", exitErr.ExitCode())
 	}
-	if !strings.Contains(stderr.String(), "wat <command>") {
+	if !strings.Contains(stderr.String(), "wat <host>") {
 		t.Fatalf("expected help output, got %q", stderr.String())
 	}
 }

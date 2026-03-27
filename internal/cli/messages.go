@@ -8,45 +8,44 @@ child process, and writes the hook protocol response to stdout.
 
 Usage:
 
-	wat <command> [templated arguments]
+	wat <host> <command> [arguments…]
+
+The first word is the hook host (e.g. cursor). The second is the wat subcommand.
 
 Supported commands:
 
 	run        Run a templated hook subprocess
 
-Flags (after the subcommand, before the command template for run):
+For run, optional flags before the subprocess template:
 
-	-H, --host <name>           Hook host that handles stdin and hook protocol
-	                             output (default: cursor)
-	-f, --file-pattern <re>     Optional; used by Cursor afterFileEdit to filter by
-	                             file path (Go regexp). Omit for no filter; if set,
-	                             <re> must be non-empty.
+	-f, --file-pattern <re>     Optional; when stdin supplies __FILE_PATH__ (Cursor
+	                             afterFileEdit), skip the subprocess if the path does
+	                             not match <re> (Go regexp). Default * means no filter.
+	                             If set, <re> must be non-empty.
 
-If equivalent flags repeated, the last value wins.`
+If equivalent flags repeat, the last value wins.`
 
 const (
 	rootHelpText = RootHelpSummary + `
 
-Run wat with no arguments to print this text; run wat run without a subprocess command to print run usage.`
+Run wat with no arguments to print this text; run wat <host> run without a subprocess command to print run usage.`
 
 	runHelpText = `Usage:
 
-	wat run <command> [templated arguments]
-	wat run [-f <re>] <command> [templated arguments]
-	wat run [--file-pattern <re>] <command> [templated arguments]
-	wat run [--file-pattern=<re>] <command> [templated arguments]
-	wat run --host <name> <command> [templated arguments]
-	wat run -H <name> <command> [templated arguments]
+	wat <host> run <command> [templated arguments]
+	wat <host> run [-f <re>] <command> [templated arguments]
+	wat <host> run [--file-pattern <re>] <command> [templated arguments]
+	wat <host> run [--file-pattern=<re>] <command> [templated arguments]
 
-Shared flags (after run, before the subprocess command) match root usage
-(-H/--host and -f/--file-pattern; either order). If equivalent flags repeat,
-the last value wins.
+Put -f/--file-pattern (if any) after run and before the subprocess command. If equivalent flags repeat, the last value wins.
+
+When -f/--file-pattern is not the default (*), and the hook bindings include __FILE_PATH__, the subprocess runs only if the cleaned path matches the regexp.
 
 The hook JSON on stdin supplies template values. Only these placeholders are allowed:
 
 	__CONVERSATION_ID__  __GENERATION_ID__  __MODEL__
 	__HOOK_EVENT_NAME__  __CURSOR_VERSION__  __WORKSPACE_ROOTS__
-	__USER_EMAIL__       __TRANSCRIPT_PATH__
+	__USER_EMAIL__       __TRANSCRIPT_PATH__  __FILE_PATH__
 
 Wat prints {} on stdout for Cursor; the child's stderr is copied to wat's stderr
 (child stdout is discarded — redirect with 1>&2 or >&2 if you need logs).
@@ -55,13 +54,11 @@ Examples:
 
 Windows:
 
-	wat run cmd /c "go version 1>&2"
-	wat run cmd /c "echo __HOOK_EVENT_NAME__ 1>&2"
-	wat run -H cursor cmd /c "go version 1>&2"
+	wat cursor run cmd /c "go version 1>&2"
+	wat cursor run cmd /c "echo __HOOK_EVENT_NAME__ 1>&2"
 
 Unix / macOS:
 
-	wat run sh -c "go version 1>&2"
-	wat run sh -c 'echo __HOOK_EVENT_NAME__ >&2'
-	wat run -H cursor sh -c "go version 1>&2"`
+	wat cursor run sh -c "go version 1>&2"
+	wat cursor run sh -c 'echo __HOOK_EVENT_NAME__ >&2'`
 )

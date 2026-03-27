@@ -3,12 +3,10 @@ package cursor
 import (
 	"strings"
 	"testing"
-
-	"github.com/sviatsviatsviat/wat/internal/core"
 )
 
 func newTestHookHandlerFactory() HookHandlerFactory {
-	return NewHookHandlerFactory(core.NewWatExecutionContext("cursor").WithSubcommand("run"))
+	return NewHookHandlerFactory()
 }
 
 func TestHookHandlerFactory_documentedEvents(t *testing.T) {
