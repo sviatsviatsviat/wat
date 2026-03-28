@@ -37,12 +37,12 @@ func (a *cursorHookAdapter[T]) ReturnEmpty() {
 }
 
 // NewDefaultHookAdapter returns a [core.HookAdapter] with common fields only (no event-specific payload).
-func NewDefaultHookAdapter(console cli.Console, hookData HookDataCommon) (core.HookAdapter, error) {
+func NewDefaultHookAdapter(console cli.Console, hookData HookDataCommon) core.HookAdapter {
 	return &cursorHookAdapter[struct{}]{
 		CommonInput:        hookData,
 		EventSpecificInput: nil,
 		console:            console,
-	}, nil
+	}
 }
 
 // NewHookAdapter returns a [core.HookAdapter] with shared common fields and optional event-specific payload.

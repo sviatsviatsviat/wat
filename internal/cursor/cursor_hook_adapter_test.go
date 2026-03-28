@@ -12,10 +12,7 @@ func TestNewDefaultHookAdapter_success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	adapter, err := NewDefaultHookAdapter(mock, hookData)
-	if err != nil {
-		t.Fatalf("NewDefaultHookAdapter: %v", err)
-	}
+	adapter := NewDefaultHookAdapter(mock, hookData)
 	if adapter == nil {
 		t.Fatal("expected non-nil HookAdapter")
 	}
@@ -27,10 +24,7 @@ func TestDefaultHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
-	a, err := NewDefaultHookAdapter(mock, hookData)
-	if err != nil {
-		t.Fatal(err)
-	}
+	a := NewDefaultHookAdapter(mock, hookData)
 	adapter, ok := a.(*DefaultCursorHookAdapter)
 	if !ok || adapter == nil {
 		t.Fatalf("want *DefaultCursorHookAdapter, got %T", a)

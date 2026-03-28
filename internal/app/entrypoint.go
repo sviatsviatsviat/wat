@@ -65,7 +65,7 @@ func prepareHookAdapterFactory(console cli.Console, programArgs []string) (hookA
 }
 
 // prepareHookHandlerProvider parses the wat subcommand from argsAfterHost and builds [core.HookHandlerProvider]. On failure it writes to console:
-// subcommand parse errors also print root help; invalid --file-pattern regexp is written explicitly. If ok is false,
+// subcommand parse errors also print root help. Subcommand constructors (e.g. [execcommand.NewExecHookHandlerProvider]) write their own diagnostics. If ok is false,
 // the caller should return [cli.ExitBadInput].
 func prepareHookHandlerProvider(
 	console cli.Console,
@@ -79,9 +79,6 @@ func prepareHookHandlerProvider(
 	}
 	providerImpl, newHookHandlerProviderErr := newHookHandlerProvider(watSubcommand, console, subcommandArgs)
 	if newHookHandlerProviderErr != nil {
-		if strings.HasPrefix(newHookHandlerProviderErr.Error(), "invalid --file-pattern regexp") {
-			_ = console.WriteError(newHookHandlerProviderErr.Error())
-		}
 		return nil, false
 	}
 	return providerImpl, true

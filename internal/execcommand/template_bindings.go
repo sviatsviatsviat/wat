@@ -1,6 +1,7 @@
 package execcommand
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/sviatsviatsviat/wat/internal/helpers"
@@ -24,7 +25,7 @@ func renderTokens(tokens []string, bindings templateBindings) ([]string, []strin
 		renderedToken := placeholderRE.ReplaceAllStringFunc(token, func(fullPlaceholder string) string {
 			m := placeholderRE.FindStringSubmatch(fullPlaceholder)
 			if len(m) < 2 {
-				return ""
+				panic(fmt.Sprintf("execcommand: placeholder ReplaceAllStringFunc invariant broken: FindStringSubmatch(%q) with %v yielded %d groups (want ≥2)", fullPlaceholder, placeholderRE, len(m)))
 			}
 			placeholderKey := m[1]
 

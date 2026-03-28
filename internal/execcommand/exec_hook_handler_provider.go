@@ -58,6 +58,7 @@ func NewExecHookHandlerProvider(console cli.Console, programArgs []string) (core
 	}
 	filePathFilter, err := compileExecFilePattern(filePatternFromFlags)
 	if err != nil {
+		_ = console.WriteError(err.Error())
 		return nil, err
 	}
 	return &execHookHandlerProvider{

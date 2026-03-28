@@ -30,7 +30,7 @@ func hookAdapterFromEventFieldsAfterFileEdit(rawJSON []byte, hookData HookDataCo
 }
 
 func newDefaultHookAdapterBuilder(_ []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {
-	return NewDefaultHookAdapter(console, hookData)
+	return NewDefaultHookAdapter(console, hookData), nil
 }
 
 // NewHookAdapterFromEventFields parses rawJSON into [HookDataWithCommon] for T, then builds a
