@@ -2,7 +2,7 @@ package cursor
 
 import "encoding/json"
 
-// HookHostCursor is the program-argument host token and core.HookContext.HookHost value for Cursor hooks.
+// HookHostCursor is the program-argument host token returned by Cursor hook adapters' HookHost method.
 const HookHostCursor = "cursor"
 
 // CursorHookRunData is Cursor hook stdin parsed once for subcommands.

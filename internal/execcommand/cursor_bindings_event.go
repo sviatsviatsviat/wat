@@ -1,10 +1,6 @@
 package execcommand
 
-import (
-	"errors"
-
-	"github.com/sviatsviatsviat/wat/internal/cursor"
-)
+import "github.com/sviatsviatsviat/wat/internal/cursor"
 
 type eventFieldExtractor[T any] func(T) string
 
@@ -26,15 +22,14 @@ func newTemplateBindingsEvent[T any](
 	}
 }
 
+// templateBindingsFromCursorEventPayload builds bindings from common and event-specific fields.
+// event must be non-nil: Cursor event hook adapters always populate it from parsed stdin.
 func templateBindingsFromCursorEventPayload[T any](
-	data *cursor.CursorHookRunData[T],
+	common cursor.HookDataCommon,
+	event *T,
 	extractors map[string]eventFieldExtractor[T],
-	nilEventSpecificErr string,
-) (templateBindings, error) {
-	if data.EventSpecific == nil {
-		return nil, errors.New(nilEventSpecificErr)
-	}
-	return newTemplateBindingsEvent(data.Common, *data.EventSpecific, extractors), nil
+) templateBindings {
+	return newTemplateBindingsEvent(common, *event, extractors)
 }
 
 func (bindings *templateBindingsEvent[T]) TemplateValue(placeholderKey string) (string, bool) {

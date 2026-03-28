@@ -12,8 +12,8 @@ import (
 
 // Execute runs wat with program arguments programArgs (excluding the binary name), hook event bytes from stdin,
 // hook protocol output on stdout, and diagnostics on stderr. It returns a process exit code
-// ([cli.ExitSuccess], [cli.ExitGeneral], or [cli.ExitBadInput]). After the host is parsed and a [core.HookHandlerFactory] is ready,
-// stdin is read and a [core.HookHandler] is built before the [core.Command] is constructed from the remaining arguments.
+// ([cli.ExitSuccess], [cli.ExitGeneral], or [cli.ExitBadInput]). After the host is parsed and a [core.HookAdapterFactory] is ready,
+// stdin is read and a [core.HookAdapter] is built before the [core.HookHandlerProvider] is constructed from the remaining arguments.
 func Execute(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) int {
 	console := cli.NewConsole(stderr, stdout)
 
@@ -22,85 +22,89 @@ func Execute(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.
 		return cli.ExitBadInput
 	}
 
-	hookHandlerFactory, argsAfterHost, hostFactoryReady := prepareHookHandlerFactory(console, programArgs)
+	hookAdapterFactory, argsAfterHost, hostFactoryReady := prepareHookAdapterFactory(console, programArgs)
 	if !hostFactoryReady {
 		return cli.ExitBadInput
 	}
 
-	hookHandler, hookHandlerReady := prepareHookHandler(console, stdin, hookHandlerFactory)
-	if !hookHandlerReady {
+	hookAdapter, hookAdapterReady := prepareHookAdapter(console, stdin, hookAdapterFactory)
+	if !hookAdapterReady {
 		return cli.ExitGeneral
 	}
 
-	hookCommand, hookCommandReady := prepareHookCommand(console, argsAfterHost)
-	if !hookCommandReady {
+	hookHandlerProvider, hookHandlerProviderReady := prepareHookHandlerProvider(console, argsAfterHost)
+	if !hookHandlerProviderReady {
 		return cli.ExitBadInput
 	}
 
-	result := hookHandler.Handle(hookCommand)
-	_ = console.Write(result.Output)
+	hookHandler, hookHandlerErr := hookHandlerProvider.HookHandlerFor(hookAdapter)
+	if hookHandlerErr != nil {
+		_ = console.WriteError(hookHandlerErr.Error())
+		return cli.ExitGeneral
+	}
+	result := hookHandler.Handle()
 	return result.Code
 }
 
-// prepareHookHandlerFactory parses the hook host from programArgs, builds the host-specific [core.HookHandlerFactory],
+// prepareHookAdapterFactory parses the hook host from programArgs, builds the host-specific [core.HookAdapterFactory],
 // and returns the remaining arguments with the host token removed for subcommand parsing. On failure it writes to console:
 // host parse errors also print root help. If ok is false, the caller should return [cli.ExitBadInput].
-func prepareHookHandlerFactory(console cli.Console, programArgs []string) (hookHandlerFactory core.HookHandlerFactory, argsAfterHost []string, ok bool) {
+func prepareHookAdapterFactory(console cli.Console, programArgs []string) (hookAdapterFactory core.HookAdapterFactory, argsAfterHost []string, ok bool) {
 	hookHostName, argsAfterHost, parseHostErr := parseHost(programArgs)
 	if parseHostErr != nil {
-		_ = console.WriteError(parseHostErr.Error() + "\n")
+		_ = console.WriteError(parseHostErr.Error())
 		cli.PrintRootHelp(console)
 		return nil, nil, false
 	}
-	hostHookHandlerFactory, newHookHandlerFactoryErr := newHookHandlerFactory(hookHostName)
-	if newHookHandlerFactoryErr != nil {
-		_ = console.WriteError(newHookHandlerFactoryErr.Error() + "\n")
+	hostHookAdapterFactory, newHookAdapterFactoryErr := newHookAdapterFactory(hookHostName)
+	if newHookAdapterFactoryErr != nil {
+		_ = console.WriteError(newHookAdapterFactoryErr.Error())
 		return nil, nil, false
 	}
-	return hostHookHandlerFactory, argsAfterHost, true
+	return hostHookAdapterFactory, argsAfterHost, true
 }
 
-// prepareHookCommand parses the wat subcommand from argsAfterHost and builds [core.Command]. On failure it writes to console:
+// prepareHookHandlerProvider parses the wat subcommand from argsAfterHost and builds [core.HookHandlerProvider]. On failure it writes to console:
 // subcommand parse errors also print root help; invalid --file-pattern regexp is written explicitly. If ok is false,
 // the caller should return [cli.ExitBadInput].
-func prepareHookCommand(
+func prepareHookHandlerProvider(
 	console cli.Console,
 	argsAfterHost []string,
-) (hookCommand core.Command, ok bool) {
+) (hookHandlerProvider core.HookHandlerProvider, ok bool) {
 	watSubcommand, subcommandArgs, parseSubcommandErr := parseSubcommand(argsAfterHost)
 	if parseSubcommandErr != nil {
-		_ = console.WriteError(parseSubcommandErr.Error() + "\n")
+		_ = console.WriteError(parseSubcommandErr.Error())
 		cli.PrintRootHelp(console)
 		return nil, false
 	}
-	hookCommandImpl, newHookCommandErr := newHookCommand(watSubcommand, console, subcommandArgs)
-	if newHookCommandErr != nil {
-		if strings.HasPrefix(newHookCommandErr.Error(), "invalid --file-pattern regexp") {
-			_ = console.WriteError(newHookCommandErr.Error() + "\n")
+	providerImpl, newHookHandlerProviderErr := newHookHandlerProvider(watSubcommand, console, subcommandArgs)
+	if newHookHandlerProviderErr != nil {
+		if strings.HasPrefix(newHookHandlerProviderErr.Error(), "invalid --file-pattern regexp") {
+			_ = console.WriteError(newHookHandlerProviderErr.Error())
 		}
 		return nil, false
 	}
-	return hookCommandImpl, true
+	return providerImpl, true
 }
 
-// prepareHookHandler reads hook event JSON from stdin and builds [core.HookHandler] via the factory. On failure it writes
+// prepareHookAdapter reads hook event JSON from stdin and builds [core.HookAdapter] via the factory. On failure it writes
 // to stderr; if ok is false, the caller should return [cli.ExitGeneral].
-func prepareHookHandler(
+func prepareHookAdapter(
 	console cli.Console,
 	hookStdin io.Reader,
-	hookHandlerFactory core.HookHandlerFactory,
-) (hookHandler core.HookHandler, ok bool) {
+	hookAdapterFactory core.HookAdapterFactory,
+) (hookAdapter core.HookAdapter, ok bool) {
 	hookEventJSON, readHookStdinJSONErr := cli.ReadHookStdinJSON(hookStdin)
 	if readHookStdinJSONErr != nil {
 		_ = console.WriteErrorf("failed to parse stdin event JSON: %v\n", readHookStdinJSONErr)
 		return nil, false
 	}
-	builtHookHandler, hookHandlerFromJSONErr := hookHandlerFactory.HookHandlerFromJSON(hookEventJSON)
-	if hookHandlerFromJSONErr != nil {
-		_ = console.WriteError(hookHandlerFromJSONErr.Error() + "\n")
+	builtHookAdapter, hookAdapterFromJSONErr := hookAdapterFactory.HookAdapterFromJSON(hookEventJSON, console)
+	if hookAdapterFromJSONErr != nil {
+		_ = console.WriteError(hookAdapterFromJSONErr.Error())
 		return nil, false
 	}
-	return builtHookHandler, true
+	return builtHookAdapter, true
 }
 
 // splitFirstArg trims and returns the first element of args and the remainder, or an error when args is empty or the first token is blank after trim.
