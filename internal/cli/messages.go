@@ -14,9 +14,9 @@ The first word is the hook host (e.g. cursor). The second is the wat subcommand.
 
 Supported commands:
 
-	run        Run a templated hook subprocess
+	exec       Run a templated hook subprocess
 
-For run, optional flags before the subprocess template:
+For exec, optional flags before the subprocess template:
 
 	-f, --file-pattern <re>     Optional; when stdin supplies __FILE_PATH__ (Cursor
 	                             afterFileEdit), skip the subprocess if the path does
@@ -28,16 +28,16 @@ If equivalent flags repeat, the last value wins.`
 const (
 	rootHelpText = RootHelpSummary + `
 
-Run wat with no arguments to print this text; run wat <host> run without a subprocess command to print run usage.`
+Run wat with no arguments to print this text; run wat <host> exec without a subprocess command to print exec usage.`
 
-	runHelpText = `Usage:
+	execHelpText = `Usage:
 
-	wat <host> run <command> [templated arguments]
-	wat <host> run [-f <re>] <command> [templated arguments]
-	wat <host> run [--file-pattern <re>] <command> [templated arguments]
-	wat <host> run [--file-pattern=<re>] <command> [templated arguments]
+	wat <host> exec <command> [templated arguments]
+	wat <host> exec [-f <re>] <command> [templated arguments]
+	wat <host> exec [--file-pattern <re>] <command> [templated arguments]
+	wat <host> exec [--file-pattern=<re>] <command> [templated arguments]
 
-Put -f/--file-pattern (if any) after run and before the subprocess command. If equivalent flags repeat, the last value wins.
+Put -f/--file-pattern (if any) after exec and before the subprocess command. If equivalent flags repeat, the last value wins.
 
 When -f/--file-pattern is not the default (*), and the hook bindings include __FILE_PATH__, the subprocess runs only if the cleaned path matches the regexp.
 
@@ -54,11 +54,11 @@ Examples:
 
 Windows:
 
-	wat cursor run cmd /c "go version 1>&2"
-	wat cursor run cmd /c "echo __HOOK_EVENT_NAME__ 1>&2"
+	wat cursor exec cmd /c "go version 1>&2"
+	wat cursor exec cmd /c "echo __HOOK_EVENT_NAME__ 1>&2"
 
 Unix / macOS:
 
-	wat cursor run sh -c "go version 1>&2"
-	wat cursor run sh -c 'echo __HOOK_EVENT_NAME__ >&2'`
+	wat cursor exec sh -c "go version 1>&2"
+	wat cursor exec sh -c 'echo __HOOK_EVENT_NAME__ >&2'`
 )

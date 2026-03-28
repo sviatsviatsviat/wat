@@ -1,4 +1,4 @@
-package run
+package execcommand
 
 import (
 	"fmt"
@@ -20,6 +20,6 @@ func templateBindingsForCursor(parsed any) (templateBindings, error) {
 	case *cursor.CursorHookRunData[struct{}]:
 		return newTemplateBindingsCommon(data.Common), nil
 	default:
-		return nil, fmt.Errorf("unexpected cursor ParsedData type %T for run", parsed)
+		return nil, fmt.Errorf("unexpected cursor ParsedData type %T for exec", parsed)
 	}
 }

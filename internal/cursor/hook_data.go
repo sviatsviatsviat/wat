@@ -5,7 +5,7 @@ import "encoding/json"
 // HookHostCursor is the program-argument host token and core.HookContext.HookHost value for Cursor hooks.
 const HookHostCursor = "cursor"
 
-// CursorHookRunData is Cursor hook stdin parsed once for subcommands (e.g. wat run templating).
+// CursorHookRunData is Cursor hook stdin parsed once for subcommands.
 // T is the event-specific payload type; use struct{} for common-only hooks with EventSpecific nil.
 type CursorHookRunData[T any] struct {
 	Common        HookDataCommon

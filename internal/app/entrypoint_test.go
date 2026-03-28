@@ -26,16 +26,16 @@ func validCursorHookJSON() string {
 
 func runEchoHookEventArgs() []string {
 	if runtime.GOOS == "windows" {
-		return []string{"cursor", "run", "cmd", "/C", "echo __HOOK_EVENT_NAME__ 1>&2"}
+		return []string{"cursor", "exec", "cmd", "/C", "echo __HOOK_EVENT_NAME__ 1>&2"}
 	}
-	return []string{"cursor", "run", "sh", "-c", "echo __HOOK_EVENT_NAME__ >&2"}
+	return []string{"cursor", "exec", "sh", "-c", "echo __HOOK_EVENT_NAME__ >&2"}
 }
 
 func goVersionToStderrArgs() []string {
 	if runtime.GOOS == "windows" {
-		return []string{"cursor", "run", "cmd", "/C", "go version 1>&2"}
+		return []string{"cursor", "exec", "cmd", "/C", "go version 1>&2"}
 	}
-	return []string{"cursor", "run", "sh", "-c", "go version >&2"}
+	return []string{"cursor", "exec", "sh", "-c", "go version >&2"}
 }
 
 func assertHookStdoutJSON(t *testing.T, stdout string) {
@@ -122,18 +122,18 @@ func TestExecute_InvalidJSON(t *testing.T) {
 	assertStdoutEmpty(t, stdout.String())
 }
 
-func TestExecute_RunHelpWhenNoCommand(t *testing.T) {
+func TestExecute_ExecHelpWhenNoCommand(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := Execute([]string{"cursor", "run"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
+	code := Execute([]string{"cursor", "exec"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
-	if !strings.Contains(stderr.String(), "missing command to run") {
-		t.Fatalf("expected missing command message, got %q", stderr.String())
+	if !strings.Contains(stderr.String(), "missing subprocess command") {
+		t.Fatalf("expected missing subprocess command message, got %q", stderr.String())
 	}
 	if !strings.Contains(stderr.String(), "__CONVERSATION_ID__") {
-		t.Fatalf("expected run help with placeholder list, got %q", stderr.String())
+		t.Fatalf("expected exec help with placeholder list, got %q", stderr.String())
 	}
 }
 
@@ -150,7 +150,7 @@ func TestExecute_CursorHostRuns(t *testing.T) {
 func TestExecute_UnsupportedHost(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	args := append([]string{"other", "run"}, goVersionToStderrArgs()[2:]...)
+	args := append([]string{"other", "exec"}, goVersionToStderrArgs()[2:]...)
 	code := Execute(args, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput for unsupported host, got %d", code)
@@ -179,9 +179,9 @@ func TestExecute_UnknownTemplatePlaceholder(t *testing.T) {
 	var stderr bytes.Buffer
 	var args []string
 	if runtime.GOOS == "windows" {
-		args = []string{"cursor", "run", "cmd", "/C", "echo __FILE__ 1>&2"}
+		args = []string{"cursor", "exec", "cmd", "/C", "echo __FILE__ 1>&2"}
 	} else {
-		args = []string{"cursor", "run", "sh", "-c", "echo __FILE__ >&2"}
+		args = []string{"cursor", "exec", "sh", "-c", "echo __FILE__ >&2"}
 	}
 	code := Execute(args, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
@@ -211,7 +211,7 @@ func TestExecute_UnknownSubcommand(t *testing.T) {
 func TestExecute_ParseErrorMissingFilePatternValue(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := Execute([]string{"cursor", "run", "--file-pattern"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
+	code := Execute([]string{"cursor", "exec", "--file-pattern"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
@@ -219,14 +219,14 @@ func TestExecute_ParseErrorMissingFilePatternValue(t *testing.T) {
 		t.Fatalf("expected flag needs-an-argument for file-pattern, got %q", stderr.String())
 	}
 	if !strings.Contains(stderr.String(), "__CONVERSATION_ID__") {
-		t.Fatalf("expected run help after parse error, got %q", stderr.String())
+		t.Fatalf("expected exec help after parse error, got %q", stderr.String())
 	}
 }
 
 func TestExecute_ParseErrorEmptyFilePatternEquals(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := Execute([]string{"cursor", "run", "--file-pattern="}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
+	code := Execute([]string{"cursor", "exec", "--file-pattern="}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
@@ -234,14 +234,14 @@ func TestExecute_ParseErrorEmptyFilePatternEquals(t *testing.T) {
 		t.Fatalf("expected empty pattern message, got %q", stderr.String())
 	}
 	if !strings.Contains(stderr.String(), "__CONVERSATION_ID__") {
-		t.Fatalf("expected run help after parse error, got %q", stderr.String())
+		t.Fatalf("expected exec help after parse error, got %q", stderr.String())
 	}
 }
 
 func TestExecute_InvalidFilePatternRegexp(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := Execute([]string{"cursor", "run", "-f", `(`, "echo", "x"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
+	code := Execute([]string{"cursor", "exec", "-f", `(`, "echo", "x"}, strings.NewReader(validCursorHookJSON()), &stdout, &stderr)
 	if code != cli.ExitBadInput {
 		t.Fatalf("expected cli.ExitBadInput, got %d", code)
 	}
@@ -250,7 +250,7 @@ func TestExecute_InvalidFilePatternRegexp(t *testing.T) {
 	}
 }
 
-func TestExecute_RunWithFilePatternStillRunsSubprocess(t *testing.T) {
+func TestExecute_ExecWithFilePatternStillRunsSubprocess(t *testing.T) {
 	base := goVersionToStderrArgs()
 	args := append([]string{base[0], base[1], "-f", `[.]go$`}, base[2:]...)
 	stdin := strings.NewReader(validCursorHookJSON())
@@ -266,7 +266,7 @@ func TestExecute_RunWithFilePatternStillRunsSubprocess(t *testing.T) {
 	}
 }
 
-func TestExecute_RunWithFilePatternSkipsWhenPathNoMatch(t *testing.T) {
+func TestExecute_ExecWithFilePatternSkipsWhenPathNoMatch(t *testing.T) {
 	jsonTxt := `{
 		"hook_event_name": "afterFileEdit",
 		"conversation_id": "c1",
@@ -281,7 +281,7 @@ func TestExecute_RunWithFilePatternSkipsWhenPathNoMatch(t *testing.T) {
 	}`
 	if runtime.GOOS == "windows" {
 		var stdout, stderr bytes.Buffer
-		code := Execute([]string{"cursor", "run", "-f", `[.]go$`, "cmd", "/C", "echo", "ran", "1>&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
+		code := Execute([]string{"cursor", "exec", "-f", `[.]go$`, "cmd", "/C", "echo", "ran", "1>&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
 		if code != cli.ExitSuccess {
 			t.Fatalf("expected ExitSuccess, got %d, stderr=%q", code, stderr.String())
 		}
@@ -292,7 +292,7 @@ func TestExecute_RunWithFilePatternSkipsWhenPathNoMatch(t *testing.T) {
 		return
 	}
 	var stdout, stderr bytes.Buffer
-	code := Execute([]string{"cursor", "run", "-f", `[.]go$`, "sh", "-c", "echo ran >&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
+	code := Execute([]string{"cursor", "exec", "-f", `[.]go$`, "sh", "-c", "echo ran >&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
 	if code != cli.ExitSuccess {
 		t.Fatalf("expected ExitSuccess, got %d, stderr=%q", code, stderr.String())
 	}

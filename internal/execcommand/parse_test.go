@@ -1,4 +1,4 @@
-package run
+package execcommand
 
 import (
 	"slices"
@@ -8,11 +8,11 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cli"
 )
 
-func TestParseRunArgs_successDefaultFilePattern(t *testing.T) {
+func TestParseExecArgs_successDefaultFilePattern(t *testing.T) {
 	mock := cli.NewMockConsole()
-	args, pattern, err := parseRunArgs(mock, []string{"echo", "hi"})
+	args, pattern, err := parseExecArgs(mock, []string{"echo", "hi"})
 	if err != nil {
-		t.Fatalf("parseRunArgs: %v", err)
+		t.Fatalf("parseExecArgs: %v", err)
 	}
 	if pattern != defaultFilePatternFlagValue {
 		t.Fatalf("file pattern: got %q want default %q", pattern, defaultFilePatternFlagValue)
@@ -23,11 +23,11 @@ func TestParseRunArgs_successDefaultFilePattern(t *testing.T) {
 	}
 }
 
-func TestParseRunArgs_successWithFilePatternShorthand(t *testing.T) {
+func TestParseExecArgs_successWithFilePatternShorthand(t *testing.T) {
 	mock := cli.NewMockConsole()
-	args, pattern, err := parseRunArgs(mock, []string{"-f", `[.]go$`, "echo", "x"})
+	args, pattern, err := parseExecArgs(mock, []string{"-f", `[.]go$`, "echo", "x"})
 	if err != nil {
-		t.Fatalf("parseRunArgs: %v", err)
+		t.Fatalf("parseExecArgs: %v", err)
 	}
 	if pattern != `[.]go$` {
 		t.Fatalf("file pattern: got %q", pattern)
@@ -38,11 +38,11 @@ func TestParseRunArgs_successWithFilePatternShorthand(t *testing.T) {
 	}
 }
 
-func TestParseRunArgs_successWithFilePatternLongForm(t *testing.T) {
+func TestParseExecArgs_successWithFilePatternLongForm(t *testing.T) {
 	mock := cli.NewMockConsole()
-	args, pattern, err := parseRunArgs(mock, []string{"--file-pattern", `[.]go$`, "echo", "y"})
+	args, pattern, err := parseExecArgs(mock, []string{"--file-pattern", `[.]go$`, "echo", "y"})
 	if err != nil {
-		t.Fatalf("parseRunArgs: %v", err)
+		t.Fatalf("parseExecArgs: %v", err)
 	}
 	if pattern != `[.]go$` {
 		t.Fatalf("file pattern: got %q", pattern)
@@ -52,11 +52,11 @@ func TestParseRunArgs_successWithFilePatternLongForm(t *testing.T) {
 	}
 }
 
-func TestParseRunArgs_lastFilePatternFlagWins(t *testing.T) {
+func TestParseExecArgs_lastFilePatternFlagWins(t *testing.T) {
 	mock := cli.NewMockConsole()
-	args, pattern, err := parseRunArgs(mock, []string{"-f", `first`, "-f", `[.]go$`, "echo", "z"})
+	args, pattern, err := parseExecArgs(mock, []string{"-f", `first`, "-f", `[.]go$`, "echo", "z"})
 	if err != nil {
-		t.Fatalf("parseRunArgs: %v", err)
+		t.Fatalf("parseExecArgs: %v", err)
 	}
 	if pattern != `[.]go$` {
 		t.Fatalf("want last -f value, got %q", pattern)
@@ -66,37 +66,37 @@ func TestParseRunArgs_lastFilePatternFlagWins(t *testing.T) {
 	}
 }
 
-func TestParseRunArgs_nilProgramArgsMissingCommand(t *testing.T) {
+func TestParseExecArgs_nilProgramArgsMissingCommand(t *testing.T) {
 	mock := cli.NewMockConsole()
-	_, _, err := parseRunArgs(mock, nil)
+	_, _, err := parseExecArgs(mock, nil)
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !mock.StderrContains("missing command to run") {
+	if !mock.StderrContains("missing subprocess command") {
 		t.Fatalf("stderr: %q", mock.StderrString())
 	}
 	if !mock.StderrContains("Usage:") {
-		t.Fatalf("expected run help on stderr, got %q", mock.StderrString())
+		t.Fatalf("expected exec help on stderr, got %q", mock.StderrString())
 	}
 }
 
-func TestParseRunArgs_onlyFlagsMissingCommand(t *testing.T) {
+func TestParseExecArgs_onlyFlagsMissingCommand(t *testing.T) {
 	mock := cli.NewMockConsole()
-	_, _, err := parseRunArgs(mock, []string{"-f", "*.go"})
+	_, _, err := parseExecArgs(mock, []string{"-f", "*.go"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !mock.StderrContains("missing command to run") {
+	if !mock.StderrContains("missing subprocess command") {
 		t.Fatalf("stderr: %q", mock.StderrString())
 	}
 	if !mock.StderrContains("Usage:") {
-		t.Fatalf("expected run help, got %q", mock.StderrString())
+		t.Fatalf("expected exec help, got %q", mock.StderrString())
 	}
 }
 
-func TestParseRunArgs_emptyFilePatternValue(t *testing.T) {
+func TestParseExecArgs_emptyFilePatternValue(t *testing.T) {
 	mock := cli.NewMockConsole()
-	_, _, err := parseRunArgs(mock, []string{"-f=", "echo", "x"})
+	_, _, err := parseExecArgs(mock, []string{"-f=", "echo", "x"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -104,35 +104,35 @@ func TestParseRunArgs_emptyFilePatternValue(t *testing.T) {
 		t.Fatalf("stderr: %q", mock.StderrString())
 	}
 	if !mock.StderrContains("Usage:") {
-		t.Fatalf("expected run help, got %q", mock.StderrString())
+		t.Fatalf("expected exec help, got %q", mock.StderrString())
 	}
 }
 
-func TestParseRunArgs_unknownFlag(t *testing.T) {
+func TestParseExecArgs_unknownFlag(t *testing.T) {
 	mock := cli.NewMockConsole()
-	_, _, err := parseRunArgs(mock, []string{"-wat-not-a-flag", "echo"})
+	_, _, err := parseExecArgs(mock, []string{"-wat-not-a-flag", "echo"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
 	if !mock.StderrContains("Usage:") {
-		t.Fatalf("expected run help after flag error, got %q", mock.StderrString())
+		t.Fatalf("expected exec help after flag error, got %q", mock.StderrString())
 	}
 }
 
-func TestCompileRunFilePattern_defaultMeansNoFilter(t *testing.T) {
-	re, err := compileRunFilePattern(defaultFilePatternFlagValue)
+func TestCompileExecFilePattern_defaultMeansNoFilter(t *testing.T) {
+	re, err := compileExecFilePattern(defaultFilePatternFlagValue)
 	if err != nil {
-		t.Fatalf("compileRunFilePattern: %v", err)
+		t.Fatalf("compileExecFilePattern: %v", err)
 	}
 	if re != nil {
 		t.Fatal("expected nil regexp")
 	}
 }
 
-func TestCompileRunFilePattern_valid(t *testing.T) {
-	re, err := compileRunFilePattern(`\.go$`)
+func TestCompileExecFilePattern_valid(t *testing.T) {
+	re, err := compileExecFilePattern(`\.go$`)
 	if err != nil {
-		t.Fatalf("compileRunFilePattern: %v", err)
+		t.Fatalf("compileExecFilePattern: %v", err)
 	}
 	if re == nil {
 		t.Fatal("expected non-nil regexp")
@@ -142,8 +142,8 @@ func TestCompileRunFilePattern_valid(t *testing.T) {
 	}
 }
 
-func TestCompileRunFilePattern_invalid(t *testing.T) {
-	_, err := compileRunFilePattern(`(`)
+func TestCompileExecFilePattern_invalid(t *testing.T) {
+	_, err := compileExecFilePattern(`(`)
 	if err == nil {
 		t.Fatal("expected error")
 	}
