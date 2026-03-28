@@ -57,6 +57,19 @@ func windowsShellArg(s string) string {
 			}
 		}
 	}
+	if !needsQuotes {
+		for i := 0; i < len(s); i++ {
+			if s[i] != '%' {
+				continue
+			}
+			if i+1 < len(s) && s[i+1] == '%' {
+				i++
+				continue
+			}
+			needsQuotes = true
+			break
+		}
+	}
 
 	var b strings.Builder
 	b.Grow(len(s) + 8)

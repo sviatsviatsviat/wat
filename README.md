@@ -44,7 +44,7 @@ Options (only for exec, before the subprocess template):
 	                      for matching purposes.
 ```
 
-Put `-f` / `--file-pattern` after `exec` and before the subprocess command (for example `wat cursor exec -f '[.]go$' …`). Flags are parsed inside **`execcommand.NewExecCommand`**. If equivalent options are repeated, **the last value wins**.
+Put `-f` / `--file-pattern` after `exec` and before the subprocess command (for example `wat cursor exec -f '[.]go$' …`). Flags are parsed when **`execcommand.NewExecHookHandlerProvider`** builds the provider. If equivalent options are repeated, **the last value wins**.
 
 **Command template** — Everything after the optional flags is one command template: the subprocess program and its arguments. Use only `__PLACEHOLDER__` tokens documented for the current hook event in [Supported Cursor hook types](#supported-cursor-hook-types); any other `__TOKEN__` in the template is an error (exit code `2`).
 
@@ -118,7 +118,7 @@ Fires after a file edit.
 
 **Returns** `{}`.
 
-When `wat cursor exec …` includes `-f` / `--file-pattern` with a Go regexp, **`execCommand.Execute`** (in `internal/execcommand`) applies the filter before invoking the subprocess when `__FILE_PATH__` is present in template bindings (other events omit that key, so the subprocess runs as usual). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
+When `wat cursor exec …` includes `-f` / `--file-pattern` with a Go regexp, **`execcommand.NewExecHookHandlerProvider`** (in `internal/execcommand`) builds handlers whose **afterFileEdit** path applies the filter before invoking the subprocess when `__FILE_PATH__` is present in template bindings (other events omit that key, so the subprocess runs as usual). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
 
 #### `afterTabFileEdit`
 
@@ -200,7 +200,7 @@ These types define the host-neutral contract:
 1. **Entry** — **`cmd/wat`** `main` calls **`app.Execute`** with program arguments (minus binary name), stdin, stdout, and stderr; **`Execute`** constructs **`cli.Console`** for diagnostics and hook protocol output for the rest of the run.
 2. **Host side** — The first argument selects the hook host; **`app`** builds a host **`HookHandlerFactory`** and keeps the remaining arguments for the wat subcommand.
 3. **Hook handler** — **`cli.ReadHookStdinJSON`** reads hook event bytes from stdin, then **`HookHandlerFromJSON`** returns a **`HookHandler`** for that event (before the wat subcommand line is turned into a **`Command`**).
-4. **Command** — **`newHookCommand(subcommand, …, rest)`** builds **`hookCommand`** (`core.Command`, e.g. **`execcommand.NewExecCommand`**, which parses **`exec`** flags such as **`-f`** from **`rest`**).
+4. **Hook handler provider** — **`app.newHookHandlerProvider(subcommand, console, rest)`** builds a **`core.HookHandlerProvider`** (e.g. **`execcommand.NewExecHookHandlerProvider`**, which parses **`exec`** flags such as **`-f`** from **`rest`**).
 5. **`app.Execute` → `HookHandler`** — **`Handle(hookCommand)`**; the handler sets **`HookContext`** (**`HookHost`**, **`ParsedData`**).
 6. **`HookHandler` → `hookCommand` → `HookHandler` → `app.Execute`** — **`Execute(HookContext)`** (for **`exec`**: build placeholder bindings from **`ParsedData`**, expand template tokens, subprocess via **`runSubprocess`** with **`Console.ConnectErrorsFrom`**, …) returns the subprocess exit code; **`HookHandler`** returns **`HookHandlerResult`** (**`Output`**, **`Code`**) to **`app.Execute`**.
 7. **Finish** (diagram note over **`app.Execute`**) — write **`result.Output`** to hook stdout, return **`result.Code`** as the process exit code.
@@ -234,7 +234,7 @@ This is how the **`HookHandlerFactory`** and **`HookHandler`** from the executio
 4. **Building the handler** — Each registered builder is a **`HookHandlerBuilder`** `func(rawJSON []byte, hookData HookDataCommon) (core.HookHandler, error)`. Most events use **`NewDefaultHookHandler`** ( **`CursorHookRunData[struct{}]`** , no event payload) or **`NewHookHandlerFromEventFields[T]`** (parses **`HookDataWithCommon[T]`** and builds **`CursorHookRunData[T]`** with **`EventSpecific: &Fields`**).
 5. **`CursorHookHandler[T].Handle`** — Builds **`HookContext`** with **`HookHost`** (**`cursor.HookHostCursor`**) and **`ParsedData`** pointing at **`CursorHookRunData[T]`**, calls **`cmd.Execute(ctx)`**, and returns **`HookHandlerResult`** with the subprocess exit **`Code`** and fixed hook stdout **`Output`** (**`cursor.DefaultHookResponseLine`**, i.e. `{}` plus newline).
 6. **Placeholder bindings in `internal/execcommand`** (`cursor_bindings.go` plus `cursor_bindings_common.go`, `cursor_bindings_event.go`, and per-event files) — For Cursor, **`templateBindingsForCursor`** type-switches on **`*CursorHookRunData[T]`** and yields a bindings map: common placeholders mirror shared stdin fields (**`CONVERSATION_ID`**, **`HOOK_EVENT_NAME`**, …—the inner part of each **`__KEY__`** token in the template). Event-specific keys (**`FILE_PATH`**, **`COMMAND`**, …) merge with common lookups. Optional JSON uses **`helpers.StringFromPtr`**; **`workspace_roots`** is joined with **`;`**. Missing map keys mean the placeholder is unknown; known keys resolve even when the value is empty. Adding a new event type **`T`** adds a **`case`** branch (no change to **`CursorHookRunData`**’s shape).
-7. **Where bindings run** — For **`wat <host> exec`**, **`execCommand.Execute`** optionally filters on **`FILE_PATH`** when a **`-f`** pattern is set, then substitutes **`__KEY__`** segments in each template token using the bindings and collects any unknown keys; the exec subcommand turns unknowns into a bad-input exit.
+7. **Where bindings run** — For **`wat <host> exec`**, the exec **`HookHandler`** (from **`NewExecHookHandlerProvider`**) optionally filters on **`FILE_PATH`** when a **`-f`** pattern is set, then substitutes **`__KEY__`** segments in each template token using the bindings and collects any unknown keys; the exec subcommand turns unknowns into a bad-input exit.
 
 ```mermaid
 sequenceDiagram
@@ -254,11 +254,11 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant H as CursorHookHandler
-  participant Run as execCommand
+  participant Run as execHookHandler
   participant TB as templateBindingsForCursor
   participant R as placeholder_substitution
 
-  H->>Run: Execute(HookContext ParsedData)
+  H->>Run: Handle()
   Run->>TB: templateBindingsForCursor(CursorHookRunData)
   TB-->>Run: bindings
   Run->>R: substitute __KEY__ in argsTemplate
@@ -273,11 +273,11 @@ sequenceDiagram
 ### Other packages
 
 - **`internal/cli`** — Console (stderr vs hook stdout, including **`ConnectErrorsFrom`** for child stderr), help text, exit code constants, shared hook stdin JSON read.
-- **`internal/execcommand`** — Subcommand `exec` as `core.Command` (`NewExecCommand`), `__KEY__` placeholder expansion in the command template, and subprocess execution (PATH lookup, shell fallback, child stdout discarded).
+- **`internal/execcommand`** — Subcommand `exec` as **`core.HookHandlerProvider`** (`NewExecHookHandlerProvider`), `__KEY__` placeholder expansion in the command template, and subprocess execution (PATH lookup, shell fallback, child stdout discarded).
 - **`internal/helpers`** — Small shared utilities.
 
 ### Extending wat
 
 - **New host** — Add a package (like `internal/cursor`) implementing `HookHandlerFactory`, own JSON types, default hook stdout lines, and stdin policy. Register the factory in `app.newHookHandlerFactory`. Keep host protocol strings out of `internal/cli`.
 - **New hook (event)** — For an existing host, register `hook_event_name` in that host’s handler-builder map (e.g. `cursorHookHandlerBuilders` in `internal/cursor/hook_handler_builders.go`), wiring an existing or new builder to a `HookHandler`. Define a new event field struct **`T`** in `internal/cursor`, build **`CursorHookRunData[T]`** in the builder, and add a **`templateBindingsForCursor`** case for **`*CursorHookRunData[T]`** when `exec` must support new **`__KEY__`** tokens. Document the event in the README.
-- **New subcommand** — Implement `core.Command` under `internal/<subcommand>` (today `internal/execcommand`) and wire argument parsing in `app.newHookCommand`.
+- **New subcommand** — Implement `core.HookHandlerProvider` under `internal/<subcommand>` (today `internal/execcommand`) and wire it in `app.newHookHandlerProvider`.
