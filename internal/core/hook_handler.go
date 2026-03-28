@@ -1,6 +1,6 @@
 package core
 
-// HookHandler runs cmd for one hook event and returns exit code and hook protocol output.
+// HookHandler runs one hook invocation for a wat subcommand (e.g. exec).
 type HookHandler interface {
-	Handle(cmd Command) HookHandlerResult
+	Handle() HookHandlerResult
 }

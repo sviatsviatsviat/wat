@@ -7,10 +7,10 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cursor"
 )
 
-func newHookHandlerFactory(host string) (core.HookHandlerFactory, error) {
+func newHookAdapterFactory(host string) (core.HookAdapterFactory, error) {
 	switch host {
 	case "cursor":
-		return cursor.NewHookHandlerFactory(), nil
+		return cursor.NewHookAdapterFactory(), nil
 	default:
 		return nil, fmt.Errorf("host %q is not supported yet", host)
 	}

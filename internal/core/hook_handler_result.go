@@ -1,7 +1,7 @@
 package core
 
-// HookHandlerResult is the exit code and hook stdout payload from [HookHandler.Handle].
+// HookHandlerResult is the process exit code from [HookHandler.Handle].
+// Hook protocol output is written by [HookAdapter.ReturnEmpty] and is not carried here.
 type HookHandlerResult struct {
-	Code   int
-	Output string
+	Code int
 }

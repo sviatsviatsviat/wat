@@ -21,10 +21,7 @@ func TestTemplateBindingsCommon_templateValueAllCommonFields(t *testing.T) {
 		Common:        hookData,
 		EventSpecific: &cursor.AfterFileEditFields{}, // event branch; common fields still tested
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterFileEditPlaceholderExtractors)
 
 	want := map[string]string{
 		"CONVERSATION_ID": "conv-1",
@@ -47,10 +44,7 @@ func TestTemplateBindingsCommon_unknownKey(t *testing.T) {
 	data := cursor.CursorHookRunData[struct{}]{
 		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := newTemplateBindingsCommon(data.Common)
 	_, ok := bindings.TemplateValue("SESSION_ID")
 	if ok {
 		t.Fatal("SESSION_ID must not be a defined placeholder")
@@ -66,10 +60,7 @@ func TestTemplateBindingsCommon_nullOptionalJSONStillDefined(t *testing.T) {
 			TranscriptPath: nil,
 		},
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := newTemplateBindingsCommon(data.Common)
 	assertTemplateBindingValue(t, bindings, "USER_EMAIL", "")
 	assertTemplateBindingValue(t, bindings, "TRANSCRIPT_PATH", "")
 }
@@ -96,10 +87,7 @@ func TestTemplateBindingsAfterFileEdit_templateValueEventAndCommonFields(t *test
 		},
 		EventSpecific: &cursor.AfterFileEditFields{FilePath: "D:/repo/file.go"},
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterFileEditPlaceholderExtractors)
 	assertTemplateBindingValue(t, bindings, "HOOK_EVENT_NAME", "afterFileEdit")
 	assertTemplateBindingValue(t, bindings, "CONVERSATION_ID", "conv-1")
 	assertTemplateBindingValue(t, bindings, "FILE_PATH", "D:/repo/file.go")
@@ -113,10 +101,7 @@ func TestTemplateBindingsAfterFileEdit_editsPlaceholderNotDefined(t *testing.T) 
 			Edits:    []cursor.AfterFileEditEditPair{{OldString: "a", NewString: "b"}},
 		},
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterFileEditPlaceholderExtractors)
 	for _, key := range []string{"EDITS", "OLD_STRING", "NEW_STRING"} {
 		_, ok := bindings.TemplateValue(key)
 		if ok {
@@ -130,10 +115,7 @@ func TestTemplateBindingsAfterFileEdit_unknownKey(t *testing.T) {
 		Common:        cursor.HookDataCommon{HookEventName: "afterFileEdit"},
 		EventSpecific: &cursor.AfterFileEditFields{FilePath: "x"},
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterFileEditPlaceholderExtractors)
 	_, ok := bindings.TemplateValue("TOOL_NAME")
 	if ok {
 		t.Fatal("TOOL_NAME must not be a defined placeholder")
@@ -170,10 +152,7 @@ func TestTemplateBindingsAfterShellExecution_templateValueEventAndCommonFields(t
 			Sandbox:  true,
 		},
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterShellExecutionPlaceholderExtractors)
 	assertTemplateBindingValue(t, bindings, "HOOK_EVENT_NAME", "afterShellExecution")
 	assertTemplateBindingValue(t, bindings, "CONVERSATION_ID", "conv-1")
 	assertTemplateBindingValue(t, bindings, "COMMAND", "go test ./...")
@@ -192,10 +171,7 @@ func TestTemplateBindingsAfterShellExecution_decimalDuration(t *testing.T) {
 			Sandbox:  false,
 		},
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterShellExecutionPlaceholderExtractors)
 	assertTemplateBindingValue(t, bindings, "DURATION", "2841.805")
 }
 
@@ -204,10 +180,7 @@ func TestTemplateBindingsAfterShellExecution_unknownKey(t *testing.T) {
 		Common:        cursor.HookDataCommon{HookEventName: "afterShellExecution"},
 		EventSpecific: &cursor.AfterShellExecutionFields{},
 	}
-	bindings, err := templateBindingsForCursor(&data)
-	if err != nil {
-		t.Fatalf("templateBindingsForCursor: %v", err)
-	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterShellExecutionPlaceholderExtractors)
 	_, ok := bindings.TemplateValue("TOOL_NAME")
 	if ok {
 		t.Fatal("TOOL_NAME must not be a defined placeholder")
