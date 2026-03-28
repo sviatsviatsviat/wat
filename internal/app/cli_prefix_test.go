@@ -6,28 +6,28 @@ import (
 )
 
 func TestParseHost_minimal(t *testing.T) {
-	hookHostName, argsAfterHost, err := parseHost([]string{"cursor", "run", "echo"})
+	hookHostName, argsAfterHost, err := parseHost([]string{"cursor", "exec", "echo"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if hookHostName != "cursor" || !reflect.DeepEqual(argsAfterHost, []string{"run", "echo"}) {
+	if hookHostName != "cursor" || !reflect.DeepEqual(argsAfterHost, []string{"exec", "echo"}) {
 		t.Fatalf("hookHostName=%q argsAfterHost=%v", hookHostName, argsAfterHost)
 	}
 }
 
 func TestParseHost_emptyHost(t *testing.T) {
-	_, _, err := parseHost([]string{"", "run"})
+	_, _, err := parseHost([]string{"", "exec"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
 }
 
 func TestParseSubcommand_minimal(t *testing.T) {
-	watSubcommand, subcommandArgs, err := parseSubcommand([]string{"run", "echo", "hi"})
+	watSubcommand, subcommandArgs, err := parseSubcommand([]string{"exec", "echo", "hi"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if watSubcommand != "run" || !reflect.DeepEqual(subcommandArgs, []string{"echo", "hi"}) {
+	if watSubcommand != "exec" || !reflect.DeepEqual(subcommandArgs, []string{"echo", "hi"}) {
 		t.Fatalf("watSubcommand=%q subcommandArgs=%v", watSubcommand, subcommandArgs)
 	}
 }
@@ -40,14 +40,14 @@ func TestParseSubcommand_missing(t *testing.T) {
 }
 
 func TestParseSubcommand_emptyCommand(t *testing.T) {
-	_, _, err := parseSubcommand([]string{"", "run"})
+	_, _, err := parseSubcommand([]string{"", "exec"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
 }
 
 func TestParseHostThenSubcommand_chain(t *testing.T) {
-	programArgs := []string{"cursor", "run", "echo", "hi"}
+	programArgs := []string{"cursor", "exec", "echo", "hi"}
 	hookHostName, argsAfterHost, err := parseHost(programArgs)
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +56,7 @@ func TestParseHostThenSubcommand_chain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if hookHostName != "cursor" || watSubcommand != "run" || !reflect.DeepEqual(subcommandArgs, []string{"echo", "hi"}) {
+	if hookHostName != "cursor" || watSubcommand != "exec" || !reflect.DeepEqual(subcommandArgs, []string{"echo", "hi"}) {
 		t.Fatalf("hookHostName=%q watSubcommand=%q subcommandArgs=%v", hookHostName, watSubcommand, subcommandArgs)
 	}
 }

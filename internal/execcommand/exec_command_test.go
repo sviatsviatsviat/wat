@@ -1,4 +1,4 @@
-package run
+package execcommand
 
 import (
 	"runtime"
@@ -10,7 +10,7 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cursor"
 )
 
-func TestNewRunCommand_EmptyArgs(t *testing.T) {
+func TestNewExecCommand_EmptyArgs(t *testing.T) {
 	tests := []struct {
 		name string
 		args []string
@@ -21,26 +21,26 @@ func TestNewRunCommand_EmptyArgs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockConsole := cli.NewMockConsole()
-			hookCommand, err := NewRunCommand(mockConsole, tt.args)
+			hookCommand, err := NewExecCommand(mockConsole, tt.args)
 			if err == nil {
 				t.Fatal("expected error")
 			}
 			if hookCommand != nil {
 				t.Fatal("expected nil command")
 			}
-			if !mockConsole.StderrContains("missing command to run") {
+			if !mockConsole.StderrContains("missing subprocess command") {
 				t.Fatalf("stderr missing error line, got %q", mockConsole.StderrString())
 			}
 			if !mockConsole.StderrContains("Usage:") {
-				t.Fatalf("stderr missing run help, got %q", mockConsole.StderrString())
+				t.Fatalf("stderr missing exec help, got %q", mockConsole.StderrString())
 			}
 		})
 	}
 }
 
-func TestNewRunCommand_OK(t *testing.T) {
+func TestNewExecCommand_OK(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := NewRunCommand(mockConsole, []string{"echo", "x"})
+	hookCommand, err := NewExecCommand(mockConsole, []string{"echo", "x"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -49,11 +49,11 @@ func TestNewRunCommand_OK(t *testing.T) {
 	}
 }
 
-func TestRunCommand_Execute_NilHookContext(t *testing.T) {
+func TestExecCommand_Execute_NilHookContext(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := NewRunCommand(mockConsole, []string{"echo", "x"})
+	hookCommand, err := NewExecCommand(mockConsole, []string{"echo", "x"})
 	if err != nil {
-		t.Fatalf("NewRunCommand: %v", err)
+		t.Fatalf("NewExecCommand: %v", err)
 	}
 	code := hookCommand.Execute(nil)
 	if code != cli.ExitGeneral {
@@ -64,13 +64,13 @@ func TestRunCommand_Execute_NilHookContext(t *testing.T) {
 	}
 }
 
-func TestRunCommand_Execute_UnknownPlaceholder(t *testing.T) {
+func TestExecCommand_Execute_UnknownPlaceholder(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := NewRunCommand(mockConsole, []string{"echo", "__NOT_A_SUPPORTED_KEY__"})
+	hookCommand, err := NewExecCommand(mockConsole, []string{"echo", "__NOT_A_SUPPORTED_KEY__"})
 	if err != nil {
-		t.Fatalf("NewRunCommand: %v", err)
+		t.Fatalf("NewExecCommand: %v", err)
 	}
-	ctx := testRunHookContext(cursor.CursorHookRunData[struct{}]{
+	ctx := testExecHookContext(cursor.CursorHookRunData[struct{}]{
 		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
 	})
 	code := hookCommand.Execute(ctx)
@@ -85,7 +85,7 @@ func TestRunCommand_Execute_UnknownPlaceholder(t *testing.T) {
 	}
 }
 
-func TestRunCommand_Execute_SubstitutionAndSuccess(t *testing.T) {
+func TestExecCommand_Execute_SubstitutionAndSuccess(t *testing.T) {
 	var cmdArgs []string
 	if runtime.GOOS == "windows" {
 		cmdArgs = []string{"cmd", "/C", "echo __CONVERSATION_ID__"}
@@ -93,11 +93,11 @@ func TestRunCommand_Execute_SubstitutionAndSuccess(t *testing.T) {
 		cmdArgs = []string{"sh", "-c", "echo __CONVERSATION_ID__"}
 	}
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := NewRunCommand(mockConsole, cmdArgs)
+	hookCommand, err := NewExecCommand(mockConsole, cmdArgs)
 	if err != nil {
-		t.Fatalf("NewRunCommand: %v", err)
+		t.Fatalf("NewExecCommand: %v", err)
 	}
-	ctx := testRunHookContext(cursor.CursorHookRunData[struct{}]{
+	ctx := testExecHookContext(cursor.CursorHookRunData[struct{}]{
 		Common: cursor.HookDataCommon{
 			HookEventName:  "sessionEnd",
 			ConversationID: "conv-test-1",
@@ -109,7 +109,7 @@ func TestRunCommand_Execute_SubstitutionAndSuccess(t *testing.T) {
 	}
 }
 
-func TestRunCommand_Execute_SubprocessFailureExitCode(t *testing.T) {
+func TestExecCommand_Execute_SubprocessFailureExitCode(t *testing.T) {
 	var cmdArgs []string
 	if runtime.GOOS == "windows" {
 		cmdArgs = []string{"cmd", "/C", "exit 9"}
@@ -117,11 +117,11 @@ func TestRunCommand_Execute_SubprocessFailureExitCode(t *testing.T) {
 		cmdArgs = []string{"sh", "-c", "exit 9"}
 	}
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := NewRunCommand(mockConsole, cmdArgs)
+	hookCommand, err := NewExecCommand(mockConsole, cmdArgs)
 	if err != nil {
-		t.Fatalf("NewRunCommand: %v", err)
+		t.Fatalf("NewExecCommand: %v", err)
 	}
-	ctx := testRunHookContext(cursor.CursorHookRunData[struct{}]{
+	ctx := testExecHookContext(cursor.CursorHookRunData[struct{}]{
 		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
 	})
 	code := hookCommand.Execute(ctx)
@@ -130,16 +130,16 @@ func TestRunCommand_Execute_SubprocessFailureExitCode(t *testing.T) {
 	}
 }
 
-func testRunHookContext[T any](data cursor.CursorHookRunData[T]) *core.HookContext {
+func testExecHookContext[T any](data cursor.CursorHookRunData[T]) *core.HookContext {
 	return &core.HookContext{
 		HookHost:   cursor.HookHostCursor,
 		ParsedData: &data,
 	}
 }
 
-func TestNewRunCommand_InvalidFilePatternRegexp(t *testing.T) {
+func TestNewExecCommand_InvalidFilePatternRegexp(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	_, err := NewRunCommand(mockConsole, []string{"-f", `(`, "echo", "x"})
+	_, err := NewExecCommand(mockConsole, []string{"-f", `(`, "echo", "x"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -148,11 +148,11 @@ func TestNewRunCommand_InvalidFilePatternRegexp(t *testing.T) {
 	}
 }
 
-func TestRunCommand_Execute_FilePatternNoMatchSkipsSubprocess(t *testing.T) {
+func TestExecCommand_Execute_FilePatternNoMatchSkipsSubprocess(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := NewRunCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
+	hookCommand, err := NewExecCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
 	if err != nil {
-		t.Fatalf("NewRunCommand: %v", err)
+		t.Fatalf("NewExecCommand: %v", err)
 	}
 	data := cursor.CursorHookRunData[cursor.AfterFileEditFields]{
 		Common: cursor.HookDataCommon{HookEventName: "afterFileEdit"},
@@ -160,17 +160,17 @@ func TestRunCommand_Execute_FilePatternNoMatchSkipsSubprocess(t *testing.T) {
 			FilePath: `D:\repo\file.txt`,
 		},
 	}
-	code := hookCommand.Execute(testRunHookContext(data))
+	code := hookCommand.Execute(testExecHookContext(data))
 	if code != cli.ExitSuccess {
 		t.Fatalf("expected ExitSuccess when path does not match, got %d", code)
 	}
 }
 
-func TestRunCommand_Execute_FilePatternMatchRunsSubprocess(t *testing.T) {
+func TestExecCommand_Execute_FilePatternMatchRunsSubprocess(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := NewRunCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
+	hookCommand, err := NewExecCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
 	if err != nil {
-		t.Fatalf("NewRunCommand: %v", err)
+		t.Fatalf("NewExecCommand: %v", err)
 	}
 	data := cursor.CursorHookRunData[cursor.AfterFileEditFields]{
 		Common: cursor.HookDataCommon{HookEventName: "afterFileEdit"},
@@ -178,19 +178,19 @@ func TestRunCommand_Execute_FilePatternMatchRunsSubprocess(t *testing.T) {
 			FilePath: `D:\repo\file.go`,
 		},
 	}
-	code := hookCommand.Execute(testRunHookContext(data))
+	code := hookCommand.Execute(testExecHookContext(data))
 	if code != cli.ExitSuccess {
 		t.Fatalf("expected ExitSuccess from echo, got %d, stderr=%q", code, mockConsole.StderrString())
 	}
 }
 
-func TestRunCommand_Execute_FilePatternIgnoredWithoutFilePathBinding(t *testing.T) {
+func TestExecCommand_Execute_FilePatternIgnoredWithoutFilePathBinding(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := NewRunCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "y"})
+	hookCommand, err := NewExecCommand(mockConsole, []string{"-f", `[.]go$`, "echo", "y"})
 	if err != nil {
-		t.Fatalf("NewRunCommand: %v", err)
+		t.Fatalf("NewExecCommand: %v", err)
 	}
-	ctx := testRunHookContext(cursor.CursorHookRunData[struct{}]{
+	ctx := testExecHookContext(cursor.CursorHookRunData[struct{}]{
 		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
 	})
 	code := hookCommand.Execute(ctx)

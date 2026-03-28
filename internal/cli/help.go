@@ -5,7 +5,7 @@ func PrintRootHelp(console Console) {
 	_ = console.WriteError(rootHelpText)
 }
 
-// PrintRunHelp writes run subcommand usage to console's diagnostic stream.
-func PrintRunHelp(console Console) {
-	_ = console.WriteError(runHelpText)
+// PrintExecHelp writes exec subcommand usage to console's diagnostic stream.
+func PrintExecHelp(console Console) {
+	_ = console.WriteError(execHelpText)
 }

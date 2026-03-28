@@ -1,4 +1,4 @@
-package run
+package execcommand
 
 import "github.com/sviatsviatsviat/wat/internal/cursor"
 

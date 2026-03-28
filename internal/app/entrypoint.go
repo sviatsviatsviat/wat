@@ -123,7 +123,7 @@ func parseHost(programArgs []string) (hookHostName string, argsAfterHost []strin
 	)
 }
 
-// parseSubcommand reads the wat subcommand from the first element of argsAfterHost; subcommandArgs are passed to the subcommand implementation (e.g. run flags and templated command arguments).
+// parseSubcommand reads the wat subcommand from the first element of argsAfterHost; subcommandArgs are passed to the subcommand implementation (e.g. exec flags and templated command arguments).
 func parseSubcommand(argsAfterHost []string) (watSubcommand string, subcommandArgs []string, err error) {
 	return splitFirstArg(argsAfterHost,
 		"expected wat <host> <command> … (missing command after host)",

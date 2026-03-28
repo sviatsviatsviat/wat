@@ -1,4 +1,4 @@
-package run
+package execcommand
 
 import (
 	"path/filepath"
@@ -10,47 +10,47 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cursor"
 )
 
-type runCommand struct {
+type execCommand struct {
 	argsTemplate         []string
 	filePathFilterRegexp *regexp.Regexp
 	console              cli.Console
 }
 
-func (runCmd runCommand) Execute(hookContext *core.HookContext) int {
+func (execCmd execCommand) Execute(hookContext *core.HookContext) int {
 	if hookContext == nil {
-		_ = runCmd.console.WriteError("internal error: HookContext is nil before Execute")
+		_ = execCmd.console.WriteError("internal error: HookContext is nil before Execute")
 		return cli.ExitGeneral
 	}
 	if hookContext.HookHost != cursor.HookHostCursor {
-		_ = runCmd.console.WriteError("internal error: run command only supports Cursor hooks (unexpected HookHost)\n")
+		_ = execCmd.console.WriteError("internal error: exec command only supports Cursor hooks (unexpected HookHost)\n")
 		return cli.ExitGeneral
 	}
 
 	parsed := hookContext.ParsedData
 	if parsed == nil {
-		_ = runCmd.console.WriteError("internal error: hook handler did not set HookContext.ParsedData before Execute\n")
+		_ = execCmd.console.WriteError("internal error: hook handler did not set HookContext.ParsedData before Execute\n")
 		return cli.ExitGeneral
 	}
 
 	bindings, bindingsErr := templateBindingsForCursor(parsed)
 	if bindingsErr != nil {
-		_ = runCmd.console.WriteErrorf("internal error: %v\n", bindingsErr)
+		_ = execCmd.console.WriteErrorf("internal error: %v\n", bindingsErr)
 		return cli.ExitGeneral
 	}
 
-	if runCmd.filePathFilterRegexp != nil {
+	if execCmd.filePathFilterRegexp != nil {
 		if filePathFromHook, bindingDefined := bindings.TemplateValue("FILE_PATH"); bindingDefined {
 			normalizedFilePath := filepath.ToSlash(filepath.Clean(filePathFromHook))
-			if !runCmd.filePathFilterRegexp.MatchString(normalizedFilePath) {
+			if !execCmd.filePathFilterRegexp.MatchString(normalizedFilePath) {
 				return cli.ExitSuccess
 			}
 		}
 	}
 
-	renderedArgs, unknownPlaceholderKeys := renderTokens(runCmd.argsTemplate, bindings)
+	renderedArgs, unknownPlaceholderKeys := renderTokens(execCmd.argsTemplate, bindings)
 	if len(unknownPlaceholderKeys) > 0 {
-		_ = runCmd.console.WriteErrorf("unknown template placeholders: %s\n", strings.Join(unknownPlaceholderKeys, ", "))
+		_ = execCmd.console.WriteErrorf("unknown template placeholders: %s\n", strings.Join(unknownPlaceholderKeys, ", "))
 		return cli.ExitBadInput
 	}
-	return runSubprocess(runCmd.console, renderedArgs)
+	return runSubprocess(execCmd.console, renderedArgs)
 }

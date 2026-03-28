@@ -15,36 +15,36 @@ Sample **Cursor** hook configuration (`.cursor/hooks.json`). Adjust the path to 
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "wat cursor run echo __HOOK_EVENT_NAME__"
+        "command": "wat cursor exec echo __HOOK_EVENT_NAME__"
       }
     ]
   }
 }
 ```
 
-### `wat <host> run`
+### `wat <host> exec`
 
-Run a templated hook subprocess: read hook JSON from stdin, substitute allowed `__PLACEHOLDER__` tokens in the command template, run that process, and write the host’s hook protocol line on success. The **first** argument is the hook host (e.g. `cursor`); the **second** is the wat subcommand (`run` today).
+Run a templated hook subprocess: read hook JSON from stdin, substitute allowed `__PLACEHOLDER__` tokens in the command template, run that process, and write the host’s hook protocol line on success. The **first** argument is the hook host (e.g. `cursor`); the **second** is the wat subcommand (`exec`).
 
 ```text
 Usage:
 
-	wat <host> run <command> [templated arguments]
-	wat <host> run [-f <re>] <command> [templated arguments]
-	wat <host> run [--file-pattern <re>] <command> [templated arguments]
+	wat <host> exec <command> [templated arguments]
+	wat <host> exec [-f <re>] <command> [templated arguments]
+	wat <host> exec [--file-pattern <re>] <command> [templated arguments]
 
-Options (only for run, before the subprocess template):
+Options (only for exec, before the subprocess template):
 
 	-f, --file-pattern <re>
 	                      Optional; default * means no filter. If you pass a
 	                      non-* value, <re> must be non-empty (Go regexp syntax).
 	                      When stdin bindings include __FILE_PATH__ (Cursor
-	                      afterFileEdit), `run` skips the subprocess if the path
+	                      afterFileEdit), `exec` skips the subprocess if the path
 	                      does not match <re>; other hook events ignore the flag
 	                      for matching purposes.
 ```
 
-Put `-f` / `--file-pattern` after `run` and before the subprocess command (for example `wat cursor run -f '[.]go$' …`). Flags are parsed inside **`run.NewRunCommand`**. If equivalent options are repeated, **the last value wins**.
+Put `-f` / `--file-pattern` after `exec` and before the subprocess command (for example `wat cursor exec -f '[.]go$' …`). Flags are parsed inside **`execcommand.NewExecCommand`**. If equivalent options are repeated, **the last value wins**.
 
 **Command template** — Everything after the optional flags is one command template: the subprocess program and its arguments. Use only `__PLACEHOLDER__` tokens documented for the current hook event in [Supported Cursor hook types](#supported-cursor-hook-types); any other `__TOKEN__` in the template is an error (exit code `2`).
 
@@ -54,11 +54,11 @@ Put `-f` / `--file-pattern` after `run` and before the subprocess command (for e
 
 | Code | Meaning |
 |------|---------|
-| `0` | Success. For `run`, this means the templated command exited `0`, or `run` skipped the subprocess because `-f` / `--file-pattern` did not match `__FILE_PATH__`. |
+| `0` | Success. For `exec`, this means the templated command exited `0`, or `exec` skipped the subprocess because `-f` / `--file-pattern` did not match `__FILE_PATH__`. |
 | `1` | General failure — e.g. stdin JSON parse error, host/event rejected the payload, or the subprocess failed to run. |
-| `2` | Bad input — invalid CLI usage, unknown host, unknown subcommand, missing `run` command, unknown `__PLACEHOLDER__`, or nothing left to execute after templating. |
+| `2` | Bad input — invalid CLI usage, unknown host, unknown subcommand, missing `exec` command, unknown `__PLACEHOLDER__`, or nothing left to execute after templating. |
 
-If `run` **does** start a subprocess, the process exit code may match the child’s code, so `1` or `2` can mean either wat or the child; check stderr for context.
+If `exec` **does** start a subprocess, the process exit code may match the child’s code, so `1` or `2` can mean either wat or the child; check stderr for context.
 
 ## Supported hosts
 
@@ -118,7 +118,7 @@ Fires after a file edit.
 
 **Returns** `{}`.
 
-When `wat cursor run …` includes `-f` / `--file-pattern` with a Go regexp, **`commands.runCommand.Execute`** applies the filter before invoking the subprocess when `__FILE_PATH__` is present in template bindings (other events omit that key, so the subprocess runs as usual). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
+When `wat cursor exec …` includes `-f` / `--file-pattern` with a Go regexp, **`execCommand.Execute`** (in `internal/execcommand`) applies the filter before invoking the subprocess when `__FILE_PATH__` is present in template bindings (other events omit that key, so the subprocess runs as usual). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
 
 #### `afterTabFileEdit`
 
@@ -191,8 +191,8 @@ These types define the host-neutral contract:
 
 - **`HookHandlerFactory`** — Builds a `HookHandler` from raw hook stdin JSON bytes. The host chooses parsing, validation, and which events exist.
 - **`HookHandler`** — Handles one invocation: receives the subcommand `Command`, fills `HookContext` (`HookHost`, host-specific `ParsedData`), calls `Command.Execute`, and returns `HookHandlerResult` (process exit `Code` and hook stdout `Output` string).
-- **`Command`** — Subcommand implementation (`run` today): `Execute(ctx *HookContext) int`, returning the process exit code.
-- **Command argument placeholders (`internal/run`)** — For each inner part of a `__KEY__` token in the subprocess template, `run` resolves a string via hook data; missing keys are treated as unknown placeholders (bad input). For Cursor, resolution is driven by `HookContext.ParsedData` (`*cursor.CursorHookRunData[T]` per event type `T`, or `T == struct{}` for common-only hooks).
+- **`Command`** — Subcommand implementation (`exec` today): `Execute(ctx *HookContext) int`, returning the process exit code.
+- **Command argument placeholders (`internal/execcommand`)** — For each inner part of a `__KEY__` token in the subprocess template, the exec subcommand resolves a string via hook data; missing keys are treated as unknown placeholders (bad input). For Cursor, resolution is driven by `HookContext.ParsedData` (`*cursor.CursorHookRunData[T]` per event type `T`, or `T == struct{}` for common-only hooks).
 - **`HookContext`** — Carries `HookHost` and `ParsedData` (`any`) into `Command.Execute`; the host handler sets both before `Execute`.
 
 ### Execution flow
@@ -200,9 +200,9 @@ These types define the host-neutral contract:
 1. **Entry** — **`cmd/wat`** `main` calls **`app.Execute`** with program arguments (minus binary name), stdin, stdout, and stderr; **`Execute`** constructs **`cli.Console`** for diagnostics and hook protocol output for the rest of the run.
 2. **Host side** — The first argument selects the hook host; **`app`** builds a host **`HookHandlerFactory`** and keeps the remaining arguments for the wat subcommand.
 3. **Hook handler** — **`cli.ReadHookStdinJSON`** reads hook event bytes from stdin, then **`HookHandlerFromJSON`** returns a **`HookHandler`** for that event (before the wat subcommand line is turned into a **`Command`**).
-4. **Command** — **`newHookCommand(subcommand, …, rest)`** builds **`hookCommand`** (`core.Command`, e.g. **`run.NewRunCommand`**, which parses **`run`** flags such as **`-f`** from **`rest`**).
+4. **Command** — **`newHookCommand(subcommand, …, rest)`** builds **`hookCommand`** (`core.Command`, e.g. **`execcommand.NewExecCommand`**, which parses **`exec`** flags such as **`-f`** from **`rest`**).
 5. **`app.Execute` → `HookHandler`** — **`Handle(hookCommand)`**; the handler sets **`HookContext`** (**`HookHost`**, **`ParsedData`**).
-6. **`HookHandler` → `hookCommand` → `HookHandler` → `app.Execute`** — **`Execute(HookContext)`** (for **`run`**: build placeholder bindings from **`ParsedData`**, expand template tokens, subprocess via **`runSubprocess`** with **`Console.ConnectErrorsFrom`**, …) returns the subprocess exit code; **`HookHandler`** returns **`HookHandlerResult`** (**`Output`**, **`Code`**) to **`app.Execute`**.
+6. **`HookHandler` → `hookCommand` → `HookHandler` → `app.Execute`** — **`Execute(HookContext)`** (for **`exec`**: build placeholder bindings from **`ParsedData`**, expand template tokens, subprocess via **`runSubprocess`** with **`Console.ConnectErrorsFrom`**, …) returns the subprocess exit code; **`HookHandler`** returns **`HookHandlerResult`** (**`Output`**, **`Code`**) to **`app.Execute`**.
 7. **Finish** (diagram note over **`app.Execute`**) — write **`result.Output`** to hook stdout, return **`result.Code`** as the process exit code.
 
 ```mermaid
@@ -218,7 +218,7 @@ sequenceDiagram
   F-->>A: HookHandler
   A->>H: Handle(hookCommand)
   H->>C: Execute(HookContext)
-  Note right of C: run: bindings from ParsedData, render, subprocess, …
+  Note right of C: exec: bindings from ParsedData, render, subprocess, …
   C-->>H: exit code
   H-->>A: HookHandlerResult (Output, Code)
   Note over A: Write Output to hook stdout,<br/>return Code
@@ -233,8 +233,8 @@ This is how the **`HookHandlerFactory`** and **`HookHandler`** from the executio
 3. **Per-event dispatch** — **`hook_event_name`** selects an entry in **`cursorHookHandlerBuilders`** (`hook_handler_builders.go`). Missing events return an error (“not supported yet”).
 4. **Building the handler** — Each registered builder is a **`HookHandlerBuilder`** `func(rawJSON []byte, hookData HookDataCommon) (core.HookHandler, error)`. Most events use **`NewDefaultHookHandler`** ( **`CursorHookRunData[struct{}]`** , no event payload) or **`NewHookHandlerFromEventFields[T]`** (parses **`HookDataWithCommon[T]`** and builds **`CursorHookRunData[T]`** with **`EventSpecific: &Fields`**).
 5. **`CursorHookHandler[T].Handle`** — Builds **`HookContext`** with **`HookHost`** (**`cursor.HookHostCursor`**) and **`ParsedData`** pointing at **`CursorHookRunData[T]`**, calls **`cmd.Execute(ctx)`**, and returns **`HookHandlerResult`** with the subprocess exit **`Code`** and fixed hook stdout **`Output`** (**`cursor.DefaultHookResponseLine`**, i.e. `{}` plus newline).
-6. **Placeholder bindings in `internal/run`** (`cursor_bindings.go` plus `cursor_bindings_common.go`, `cursor_bindings_event.go`, and per-event files) — For Cursor, **`templateBindingsForCursor`** type-switches on **`*CursorHookRunData[T]`** and yields a bindings map: common placeholders mirror shared stdin fields (**`CONVERSATION_ID`**, **`HOOK_EVENT_NAME`**, …—the inner part of each **`__KEY__`** token in the template). Event-specific keys (**`FILE_PATH`**, **`COMMAND`**, …) merge with common lookups. Optional JSON uses **`helpers.StringFromPtr`**; **`workspace_roots`** is joined with **`;`**. Missing map keys mean the placeholder is unknown; known keys resolve even when the value is empty. Adding a new event type **`T`** adds a **`case`** branch (no change to **`CursorHookRunData`**’s shape).
-7. **Where bindings run** — For **`wat <host> run`**, **`runCommand.Execute`** optionally filters on **`FILE_PATH`** when a **`-f`** pattern is set, then substitutes **`__KEY__`** segments in each template token using the bindings and collects any unknown keys; **`run`** turns unknowns into a bad-input exit.
+6. **Placeholder bindings in `internal/execcommand`** (`cursor_bindings.go` plus `cursor_bindings_common.go`, `cursor_bindings_event.go`, and per-event files) — For Cursor, **`templateBindingsForCursor`** type-switches on **`*CursorHookRunData[T]`** and yields a bindings map: common placeholders mirror shared stdin fields (**`CONVERSATION_ID`**, **`HOOK_EVENT_NAME`**, …—the inner part of each **`__KEY__`** token in the template). Event-specific keys (**`FILE_PATH`**, **`COMMAND`**, …) merge with common lookups. Optional JSON uses **`helpers.StringFromPtr`**; **`workspace_roots`** is joined with **`;`**. Missing map keys mean the placeholder is unknown; known keys resolve even when the value is empty. Adding a new event type **`T`** adds a **`case`** branch (no change to **`CursorHookRunData`**’s shape).
+7. **Where bindings run** — For **`wat <host> exec`**, **`execCommand.Execute`** optionally filters on **`FILE_PATH`** when a **`-f`** pattern is set, then substitutes **`__KEY__`** segments in each template token using the bindings and collects any unknown keys; the exec subcommand turns unknowns into a bad-input exit.
 
 ```mermaid
 sequenceDiagram
@@ -254,7 +254,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant H as CursorHookHandler
-  participant Run as runCommand
+  participant Run as execCommand
   participant TB as templateBindingsForCursor
   participant R as placeholder_substitution
 
@@ -273,11 +273,11 @@ sequenceDiagram
 ### Other packages
 
 - **`internal/cli`** — Console (stderr vs hook stdout, including **`ConnectErrorsFrom`** for child stderr), help text, exit code constants, shared hook stdin JSON read.
-- **`internal/run`** — Subcommand `run` as `core.Command` (`NewRunCommand`), `__KEY__` placeholder expansion in the command template, and subprocess execution (PATH lookup, shell fallback, child stdout discarded).
+- **`internal/execcommand`** — Subcommand `exec` as `core.Command` (`NewExecCommand`), `__KEY__` placeholder expansion in the command template, and subprocess execution (PATH lookup, shell fallback, child stdout discarded).
 - **`internal/helpers`** — Small shared utilities.
 
 ### Extending wat
 
 - **New host** — Add a package (like `internal/cursor`) implementing `HookHandlerFactory`, own JSON types, default hook stdout lines, and stdin policy. Register the factory in `app.newHookHandlerFactory`. Keep host protocol strings out of `internal/cli`.
-- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s handler-builder map (e.g. `cursorHookHandlerBuilders` in `internal/cursor/hook_handler_builders.go`), wiring an existing or new builder to a `HookHandler`. Define a new event field struct **`T`** in `internal/cursor`, build **`CursorHookRunData[T]`** in the builder, and add a **`templateBindingsForCursor`** case for **`*CursorHookRunData[T]`** when `run` must support new **`__KEY__`** tokens. Document the event in the README.
-- **New subcommand** — Implement `core.Command` under `internal/<subcommand>` (today `internal/run`) and wire argument parsing in `app.newHookCommand`.
+- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s handler-builder map (e.g. `cursorHookHandlerBuilders` in `internal/cursor/hook_handler_builders.go`), wiring an existing or new builder to a `HookHandler`. Define a new event field struct **`T`** in `internal/cursor`, build **`CursorHookRunData[T]`** in the builder, and add a **`templateBindingsForCursor`** case for **`*CursorHookRunData[T]`** when `exec` must support new **`__KEY__`** tokens. Document the event in the README.
+- **New subcommand** — Implement `core.Command` under `internal/<subcommand>` (today `internal/execcommand`) and wire argument parsing in `app.newHookCommand`.

@@ -7,9 +7,9 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cli"
 )
 
-func TestNewHookCommand_Run(t *testing.T) {
+func TestNewHookCommand_Exec(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := newHookCommand("run", mockConsole, []string{"echo", "hi"})
+	hookCommand, err := newHookCommand("exec", mockConsole, []string{"echo", "hi"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -18,9 +18,9 @@ func TestNewHookCommand_Run(t *testing.T) {
 	}
 }
 
-func TestNewHookCommand_RunWithFilePatternFlag(t *testing.T) {
+func TestNewHookCommand_ExecWithFilePatternFlag(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := newHookCommand("run", mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
+	hookCommand, err := newHookCommand("exec", mockConsole, []string{"-f", `[.]go$`, "echo", "x"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -29,20 +29,20 @@ func TestNewHookCommand_RunWithFilePatternFlag(t *testing.T) {
 	}
 }
 
-func TestNewHookCommand_RunEmptyArgs(t *testing.T) {
+func TestNewHookCommand_ExecEmptyArgs(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
-	hookCommand, err := newHookCommand("run", mockConsole, []string{})
+	hookCommand, err := newHookCommand("exec", mockConsole, []string{})
 	if err == nil {
-		t.Fatal("expected error from run.NewRunCommand")
+		t.Fatal("expected error from execcommand.NewExecCommand")
 	}
 	if hookCommand != nil {
 		t.Fatal("expected nil command")
 	}
 	if errors.Is(err, errHookCommandBadInput) {
-		t.Fatal("run parse error should not be errHookCommandBadInput")
+		t.Fatal("exec parse error should not be errHookCommandBadInput")
 	}
-	if !mockConsole.StderrContains("missing command to run") {
-		t.Fatalf("expected run help on stderr, got %q", mockConsole.StderrString())
+	if !mockConsole.StderrContains("missing subprocess command") {
+		t.Fatalf("expected exec help on stderr, got %q", mockConsole.StderrString())
 	}
 }
 
