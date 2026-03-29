@@ -34,3 +34,7 @@ func execHookBindingsAfterMCPExecution(common cursor.HookDataCommon, event *curs
 func execHookBindingsAfterAgentThought(common cursor.HookDataCommon, event *cursor.AfterAgentThoughtFields) templateBindings {
 	return templateBindingsFromCursorEventPayload(common, event, afterAgentThoughtPlaceholderExtractors)
 }
+
+func execHookBindingsSessionEnd(common cursor.HookDataCommon, event *cursor.SessionEndFields) templateBindings {
+	return templateBindingsFromCursorEventPayload(common, event, sessionEndPlaceholderExtractors)
+}
