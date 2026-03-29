@@ -275,6 +275,61 @@ func TestTemplateBindingsAfterAgentThought_textNotAPlaceholder(t *testing.T) {
 	}
 }
 
+func TestSessionEndPlaceholderExtractors_registry(t *testing.T) {
+	wantKeys := map[string]struct{}{
+		"SESSION_ID": {}, "REASON": {}, "DURATION_MS": {}, "IS_BACKGROUND": {},
+		"FINAL_STATUS": {}, "ERROR_MESSAGE": {},
+	}
+	if len(sessionEndPlaceholderExtractors) != len(wantKeys) {
+		t.Fatalf("registry size: want %d, got %d", len(wantKeys), len(sessionEndPlaceholderExtractors))
+	}
+	for placeholderKey := range wantKeys {
+		if _, ok := sessionEndPlaceholderExtractors[placeholderKey]; !ok {
+			t.Fatalf("missing registry key %q", placeholderKey)
+		}
+	}
+}
+
+func TestTemplateBindingsSessionEnd_templateValueEventAndCommonFields(t *testing.T) {
+	data := cursor.CursorHookRunData[cursor.SessionEndFields]{
+		Common: cursor.HookDataCommon{
+			HookEventName:  "sessionEnd",
+			ConversationID: "conv-se",
+		},
+		EventSpecific: &cursor.SessionEndFields{
+			SessionID:         "sid-42",
+			Reason:            "error",
+			DurationMs:        45000,
+			IsBackgroundAgent: true,
+			FinalStatus:       "done",
+			ErrorMessage:      "oops",
+		},
+	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, sessionEndPlaceholderExtractors)
+	assertTemplateBindingValue(t, bindings, "HOOK_EVENT_NAME", "sessionEnd")
+	assertTemplateBindingValue(t, bindings, "CONVERSATION_ID", "conv-se")
+	assertTemplateBindingValue(t, bindings, "SESSION_ID", "sid-42")
+	assertTemplateBindingValue(t, bindings, "REASON", "error")
+	assertTemplateBindingValue(t, bindings, "DURATION_MS", "45000")
+	assertTemplateBindingValue(t, bindings, "IS_BACKGROUND", "true")
+	assertTemplateBindingValue(t, bindings, "FINAL_STATUS", "done")
+	assertTemplateBindingValue(t, bindings, "ERROR_MESSAGE", "oops")
+}
+
+func TestTemplateBindingsSessionEnd_emptyOptionalErrorMessage(t *testing.T) {
+	data := cursor.CursorHookRunData[cursor.SessionEndFields]{
+		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
+		EventSpecific: &cursor.SessionEndFields{
+			SessionID:   "s",
+			Reason:      "completed",
+			DurationMs:  1,
+			FinalStatus: "ok",
+		},
+	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, sessionEndPlaceholderExtractors)
+	assertTemplateBindingValue(t, bindings, "ERROR_MESSAGE", "")
+}
+
 func TestTemplateBindingsAfterMCPExecution_unknownKey(t *testing.T) {
 	data := cursor.CursorHookRunData[cursor.AfterMCPExecutionFields]{
 		Common:        cursor.HookDataCommon{HookEventName: "afterMCPExecution"},

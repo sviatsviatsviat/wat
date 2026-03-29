@@ -30,6 +30,9 @@ type AfterAgentResponseCursorHookAdapter = cursorHookAdapter[AfterAgentResponseF
 // AfterAgentThoughtCursorHookAdapter is the hook adapter for afterAgentThought.
 type AfterAgentThoughtCursorHookAdapter = cursorHookAdapter[AfterAgentThoughtFields]
 
+// SessionEndCursorHookAdapter is the hook adapter for sessionEnd.
+type SessionEndCursorHookAdapter = cursorHookAdapter[SessionEndFields]
+
 // defaultHookResponseLine is the Cursor hook stdout line (JSON object and newline).
 const defaultHookResponseLine = "{}\n"
 

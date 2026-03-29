@@ -56,8 +56,9 @@ func TestExecHookHandler_Handle_UnknownPlaceholder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewExecHookHandlerProvider: %v", err)
 	}
-	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[struct{}]{
-		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.SessionEndFields]{
+		Common:        cursor.HookDataCommon{HookEventName: "sessionEnd"},
+		EventSpecific: &cursor.SessionEndFields{},
 	})
 	handler, hookErr := provider.HookHandlerFor(adapter)
 	if hookErr != nil {
@@ -128,11 +129,12 @@ func TestExecHookHandler_Handle_SubstitutionAndSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewExecHookHandlerProvider: %v", err)
 	}
-	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[struct{}]{
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.SessionEndFields]{
 		Common: cursor.HookDataCommon{
 			HookEventName:  "sessionEnd",
 			ConversationID: "conv-test-1",
 		},
+		EventSpecific: &cursor.SessionEndFields{},
 	})
 	handler, hookErr := provider.HookHandlerFor(adapter)
 	if hookErr != nil {
@@ -159,8 +161,9 @@ func TestExecHookHandler_Handle_SubprocessFailureExitCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewExecHookHandlerProvider: %v", err)
 	}
-	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[struct{}]{
-		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.SessionEndFields]{
+		Common:        cursor.HookDataCommon{HookEventName: "sessionEnd"},
+		EventSpecific: &cursor.SessionEndFields{},
 	})
 	handler, hookErr := provider.HookHandlerFor(adapter)
 	if hookErr != nil {
@@ -246,8 +249,9 @@ func TestExecHookHandler_Handle_FilePatternIgnoredWithoutFilePathBinding(t *test
 	if err != nil {
 		t.Fatalf("NewExecHookHandlerProvider: %v", err)
 	}
-	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[struct{}]{
-		Common: cursor.HookDataCommon{HookEventName: "sessionEnd"},
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.SessionEndFields]{
+		Common:        cursor.HookDataCommon{HookEventName: "sessionEnd"},
+		EventSpecific: &cursor.SessionEndFields{},
 	})
 	handler, hookErr := provider.HookHandlerFor(adapter)
 	if hookErr != nil {

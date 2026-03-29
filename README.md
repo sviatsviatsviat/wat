@@ -52,7 +52,7 @@ Put `-f` / `--file-pattern` after `exec` and before the subprocess command (for 
 
 Authoritative list of `__KEY__` segments for `wat cursor exec` (inner part between underscores). Optional JSON fields resolve to an empty string when missing or `null`.
 
-**Common** — Available for every Cursor hook event that `exec` supports (including events that use the default adapter):
+**Common** — Available for every Cursor hook event that `exec` supports:
 
 | Placeholder | Description |
 |-------------|-------------|
@@ -72,7 +72,8 @@ Authoritative list of `__KEY__` segments for `wat cursor exec` (inner part betwe
 | `afterShellExecution` | `__DURATION__`, `__SANDBOX__` |
 | `afterMCPExecution` | `__TOOL_NAME__`, `__DURATION__` |
 | `afterAgentThought` | `__DURATION_MS__` |
-| `afterAgentResponse`, `sessionEnd`, and other events that use the default adapter | None — common placeholders only. |
+| `sessionEnd` | `__SESSION_ID__`, `__REASON__`, `__DURATION_MS__`, `__IS_BACKGROUND__`, `__FINAL_STATUS__`, `__ERROR_MESSAGE__` |
+| `afterAgentResponse` and any hook using the default adapter only | None — common placeholders only. |
 
 The built-in `wat … exec` help lists the union of placeholders across events; use the table above to see which tokens apply to the hook you are configuring.
 
@@ -144,7 +145,7 @@ Fires after the agent completes a thinking block. **`AfterAgentThoughtFields`** 
 
 #### `sessionEnd`
 
-Fires when the session ends. Uses the default adapter (**`HookDataCommon`** only).
+Fires when the session ends. **`SessionEndFields`** adds `session_id`, `reason` (`completed`, `aborted`, `error`, `window_close`, or `user_close`), `duration_ms`, `is_background_agent`, `final_status`, and optional `error_message` to the shared envelope. For `exec`, those fields map to **`__SESSION_ID__`**, **`__REASON__`**, **`__DURATION_MS__`**, **`__IS_BACKGROUND__`** (from `is_background_agent`), **`__FINAL_STATUS__`**, and **`__ERROR_MESSAGE__`** (empty when absent).
 
 **Returns** `{}`.
 
@@ -222,7 +223,7 @@ sequenceDiagram
 ### Cursor (`internal/cursor`)
 
 - **`HookAdapterFactory.HookAdapterFromJSON`** — Rejects empty stdin; **`NewHookDataCommon`** parses the shared envelope ([`hook_data.go`](internal/cursor/hook_data.go)).
-- **`cursorHookAdapterBuilders`** — Maps **`hook_event_name`** to a **`HookAdapterBuilder`** ([`hook_adapter_builders.go`](internal/cursor/hook_adapter_builders.go)). Each builder returns a concrete adapter (e.g. **`DefaultCursorHookAdapter`**, **`AfterFileEditCursorHookAdapter`**, **`AfterShellExecutionCursorHookAdapter`**, **`AfterMCPExecutionCursorHookAdapter`** — see [`cursor_hook_adapter.go`](internal/cursor/cursor_hook_adapter.go)).
+- **`cursorHookAdapterBuilders`** — Maps **`hook_event_name`** to a **`HookAdapterBuilder`** ([`hook_adapter_builders.go`](internal/cursor/hook_adapter_builders.go)). Each builder returns a concrete adapter (e.g. **`DefaultCursorHookAdapter`**, **`SessionEndCursorHookAdapter`**, **`AfterFileEditCursorHookAdapter`**, **`AfterShellExecutionCursorHookAdapter`**, **`AfterMCPExecutionCursorHookAdapter`** — see [`cursor_hook_adapter.go`](internal/cursor/cursor_hook_adapter.go)).
 - Parsed data lives on the adapter as **`CommonInput`** (`HookDataCommon`) and optional **`EventSpecificInput`** (`*T`). The struct **`CursorHookRunData[T]`** documents the same common-plus-event layout for tests and helpers.
 
 ### `exec` (`internal/execcommand`)

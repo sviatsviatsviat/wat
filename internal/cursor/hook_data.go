@@ -63,6 +63,16 @@ type AfterAgentThoughtFields struct {
 	DurationMs int64  `json:"duration_ms"`
 }
 
+// SessionEndFields is the event-specific JSON shape for sessionEnd.
+type SessionEndFields struct {
+	SessionID         string `json:"session_id"`
+	Reason            string `json:"reason"`
+	DurationMs        int64  `json:"duration_ms"`
+	IsBackgroundAgent bool   `json:"is_background_agent"`
+	FinalStatus       string `json:"final_status"`
+	ErrorMessage      string `json:"error_message,omitempty"`
+}
+
 // HookDataCommon is the shared JSON shape for Cursor hook stdin payloads.
 type HookDataCommon struct {
 	ConversationID string   `json:"conversation_id"`
