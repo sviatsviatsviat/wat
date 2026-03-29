@@ -52,6 +52,17 @@ type AfterMCPExecutionFields struct {
 	Duration   float64 `json:"duration"`
 }
 
+// AfterAgentResponseFields is the event-specific JSON shape for afterAgentResponse.
+type AfterAgentResponseFields struct {
+	Text string `json:"text"`
+}
+
+// AfterAgentThoughtFields is the event-specific JSON shape for afterAgentThought.
+type AfterAgentThoughtFields struct {
+	Text       string `json:"text"`
+	DurationMs int64  `json:"duration_ms"`
+}
+
 // HookDataCommon is the shared JSON shape for Cursor hook stdin payloads.
 type HookDataCommon struct {
 	ConversationID string   `json:"conversation_id"`

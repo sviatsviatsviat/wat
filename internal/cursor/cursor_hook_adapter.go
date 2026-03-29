@@ -24,6 +24,12 @@ type AfterShellExecutionCursorHookAdapter = cursorHookAdapter[AfterShellExecutio
 // AfterMCPExecutionCursorHookAdapter is the hook adapter for afterMCPExecution.
 type AfterMCPExecutionCursorHookAdapter = cursorHookAdapter[AfterMCPExecutionFields]
 
+// AfterAgentResponseCursorHookAdapter is the hook adapter for afterAgentResponse.
+type AfterAgentResponseCursorHookAdapter = cursorHookAdapter[AfterAgentResponseFields]
+
+// AfterAgentThoughtCursorHookAdapter is the hook adapter for afterAgentThought.
+type AfterAgentThoughtCursorHookAdapter = cursorHookAdapter[AfterAgentThoughtFields]
+
 // defaultHookResponseLine is the Cursor hook stdout line (JSON object and newline).
 const defaultHookResponseLine = "{}\n"
 

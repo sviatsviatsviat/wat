@@ -229,6 +229,52 @@ func TestTemplateBindingsAfterMCPExecution_decimalDuration(t *testing.T) {
 	assertTemplateBindingValue(t, bindings, "DURATION", "2841.805")
 }
 
+func TestAfterAgentThoughtPlaceholderExtractors_registry(t *testing.T) {
+	wantKeys := map[string]struct{}{
+		"DURATION_MS": {},
+	}
+	if len(afterAgentThoughtPlaceholderExtractors) != len(wantKeys) {
+		t.Fatalf("registry size: want %d, got %d", len(wantKeys), len(afterAgentThoughtPlaceholderExtractors))
+	}
+	for placeholderKey := range wantKeys {
+		if _, ok := afterAgentThoughtPlaceholderExtractors[placeholderKey]; !ok {
+			t.Fatalf("missing registry key %q", placeholderKey)
+		}
+	}
+}
+
+func TestTemplateBindingsAfterAgentThought_templateValueEventAndCommonFields(t *testing.T) {
+	data := cursor.CursorHookRunData[cursor.AfterAgentThoughtFields]{
+		Common: cursor.HookDataCommon{
+			HookEventName:  "afterAgentThought",
+			ConversationID: "conv-1",
+		},
+		EventSpecific: &cursor.AfterAgentThoughtFields{
+			Text:       "step by step",
+			DurationMs: 5000,
+		},
+	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterAgentThoughtPlaceholderExtractors)
+	assertTemplateBindingValue(t, bindings, "HOOK_EVENT_NAME", "afterAgentThought")
+	assertTemplateBindingValue(t, bindings, "CONVERSATION_ID", "conv-1")
+	assertTemplateBindingValue(t, bindings, "DURATION_MS", "5000")
+}
+
+func TestTemplateBindingsAfterAgentThought_textNotAPlaceholder(t *testing.T) {
+	data := cursor.CursorHookRunData[cursor.AfterAgentThoughtFields]{
+		Common: cursor.HookDataCommon{HookEventName: "afterAgentThought"},
+		EventSpecific: &cursor.AfterAgentThoughtFields{
+			Text:       "secret",
+			DurationMs: 1,
+		},
+	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterAgentThoughtPlaceholderExtractors)
+	_, ok := bindings.TemplateValue("TEXT")
+	if ok {
+		t.Fatal("TEXT must not be a defined placeholder")
+	}
+}
+
 func TestTemplateBindingsAfterMCPExecution_unknownKey(t *testing.T) {
 	data := cursor.CursorHookRunData[cursor.AfterMCPExecutionFields]{
 		Common:        cursor.HookDataCommon{HookEventName: "afterMCPExecution"},

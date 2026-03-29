@@ -78,6 +78,44 @@ func TestExecHookHandler_Handle_UnknownPlaceholder(t *testing.T) {
 	}
 }
 
+func TestExecHookHandler_Handle_AfterAgentThought_substitutesDurationMs(t *testing.T) {
+	var cmdArgs []string
+	if runtime.GOOS == "windows" {
+		cmdArgs = []string{"cmd", "/C", "echo __DURATION_MS__ 1>&2"}
+	} else {
+		cmdArgs = []string{"sh", "-c", "echo __DURATION_MS__ >&2"}
+	}
+	mockConsole := cli.NewMockConsole()
+	provider, err := NewExecHookHandlerProvider(mockConsole, cmdArgs)
+	if err != nil {
+		t.Fatalf("NewExecHookHandlerProvider: %v", err)
+	}
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.AfterAgentThoughtFields]{
+		Common: cursor.HookDataCommon{
+			HookEventName:  "afterAgentThought",
+			ConversationID: "conv-ms",
+		},
+		EventSpecific: &cursor.AfterAgentThoughtFields{
+			Text:       "reasoning",
+			DurationMs: 5000,
+		},
+	})
+	handler, hookErr := provider.HookHandlerFor(adapter)
+	if hookErr != nil {
+		t.Fatalf("HookHandlerFor: %v", hookErr)
+	}
+	result := handler.Handle()
+	if result.Code != cli.ExitSuccess {
+		t.Fatalf("expected success, got %d, stderr=%q", result.Code, mockConsole.StderrString())
+	}
+	if mockConsole.StdoutString() != "{}\n" {
+		t.Fatalf("hook stdout: want %q, got %q", "{}\n", mockConsole.StdoutString())
+	}
+	if !strings.Contains(mockConsole.StderrString(), "5000") {
+		t.Fatalf("expected duration in child stderr, got %q", mockConsole.StderrString())
+	}
+}
+
 func TestExecHookHandler_Handle_SubstitutionAndSuccess(t *testing.T) {
 	var cmdArgs []string
 	if runtime.GOOS == "windows" {

@@ -16,8 +16,8 @@ var cursorHookAdapterBuilders = map[string]HookAdapterBuilder{
 	"afterMCPExecution":   hookAdapterFromEventFieldsAfterMCPExecution,
 	"afterFileEdit":       hookAdapterFromEventFieldsAfterFileEdit,
 	"afterTabFileEdit":    hookAdapterFromEventFieldsAfterFileEdit,
-	"afterAgentResponse":  newDefaultHookAdapterBuilder,
-	"afterAgentThought":   newDefaultHookAdapterBuilder,
+	"afterAgentResponse":  hookAdapterFromEventFieldsAfterAgentResponse,
+	"afterAgentThought":   hookAdapterFromEventFieldsAfterAgentThought,
 	"sessionEnd":          newDefaultHookAdapterBuilder,
 }
 
@@ -31,6 +31,14 @@ func hookAdapterFromEventFieldsAfterMCPExecution(rawJSON []byte, hookData HookDa
 
 func hookAdapterFromEventFieldsAfterFileEdit(rawJSON []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {
 	return NewHookAdapterFromEventFields[AfterFileEditFields](console, rawJSON, hookData)
+}
+
+func hookAdapterFromEventFieldsAfterAgentResponse(rawJSON []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {
+	return NewHookAdapterFromEventFields[AfterAgentResponseFields](console, rawJSON, hookData)
+}
+
+func hookAdapterFromEventFieldsAfterAgentThought(rawJSON []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {
+	return NewHookAdapterFromEventFields[AfterAgentThoughtFields](console, rawJSON, hookData)
 }
 
 func newDefaultHookAdapterBuilder(_ []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {

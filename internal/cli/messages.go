@@ -45,7 +45,7 @@ The hook JSON on stdin supplies template values. Only these placeholders are all
 
 	__CONVERSATION_ID__  __GENERATION_ID__  __MODEL__
 	__HOOK_EVENT_NAME__  __CURSOR_VERSION__  __USER_EMAIL__
-	__TRANSCRIPT_PATH__  __FILE_PATH__  __TOOL_NAME__  __DURATION__  __SANDBOX__
+	__TRANSCRIPT_PATH__  __FILE_PATH__  __TOOL_NAME__  __DURATION__  __SANDBOX__  __DURATION_MS__
 
 Wat prints {} on stdout for Cursor; the child's stderr is copied to wat's stderr
 (child stdout is discarded — redirect with 1>&2 or >&2 if you need logs).
