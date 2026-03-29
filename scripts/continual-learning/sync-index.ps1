@@ -21,6 +21,10 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\common.ps1"
 
 $TranscriptsRoot = [System.IO.Path]::GetFullPath($TranscriptsRoot)
+if (-not (Test-Path -LiteralPath $TranscriptsRoot)) {
+    Write-Error "Transcripts root directory not found: $TranscriptsRoot"
+    exit 1
+}
 if ([string]::IsNullOrEmpty($IndexPath)) {
     $IndexPath = Join-Path (Get-WatRepoRoot) '.cursor/hooks/state/continual-learning-index.json'
 }
