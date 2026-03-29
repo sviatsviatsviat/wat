@@ -32,6 +32,14 @@ type AfterShellExecutionFields struct {
 	Sandbox  bool    `json:"sandbox"`
 }
 
+// AfterMCPExecutionFields is the event-specific JSON shape for afterMCPExecution.
+type AfterMCPExecutionFields struct {
+	ToolName   string  `json:"tool_name"`
+	ToolInput  string  `json:"tool_input"`
+	ResultJSON string  `json:"result_json"`
+	Duration   float64 `json:"duration"`
+}
+
 // HookDataCommon is the shared JSON shape for Cursor hook stdin payloads.
 type HookDataCommon struct {
 	ConversationID string   `json:"conversation_id"`

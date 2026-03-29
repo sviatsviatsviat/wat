@@ -70,6 +70,7 @@ Authoritative list of `__KEY__` segments for `wat cursor exec` (inner part betwe
 |-------|-------------------------|
 | `afterFileEdit` | `__FILE_PATH__` |
 | `afterShellExecution` | `__DURATION__`, `__SANDBOX__` |
+| `afterMCPExecution` | `__TOOL_NAME__`, `__DURATION__` |
 | Other registered events (default adapter) | None — common placeholders only. |
 
 The built-in `wat … exec` help lists the union of placeholders across events; use the table above to see which tokens apply to the hook you are configuring.
@@ -108,7 +109,7 @@ Fires after a shell command runs. **`AfterShellExecutionFields`** adds `command`
 
 #### `afterMCPExecution`
 
-Fires after MCP execution. Uses the default adapter with **no** separate event payload struct beyond **`HookDataCommon`**.
+Fires after MCP execution. **`AfterMCPExecutionFields`** adds `tool_name`, `tool_input`, `result_json`, and `duration` (milliseconds spent executing the tool, excluding approval wait time) to the shared envelope.
 
 **Returns** `{}`.
 
@@ -218,7 +219,7 @@ sequenceDiagram
 ### Cursor (`internal/cursor`)
 
 - **`HookAdapterFactory.HookAdapterFromJSON`** — Rejects empty stdin; **`NewHookDataCommon`** parses the shared envelope ([`hook_data.go`](internal/cursor/hook_data.go)).
-- **`cursorHookAdapterBuilders`** — Maps **`hook_event_name`** to a **`HookAdapterBuilder`** ([`hook_adapter_builders.go`](internal/cursor/hook_adapter_builders.go)). Each builder returns a concrete adapter (e.g. **`DefaultCursorHookAdapter`**, **`AfterFileEditCursorHookAdapter`**, **`AfterShellExecutionCursorHookAdapter`** — see [`cursor_hook_adapter.go`](internal/cursor/cursor_hook_adapter.go)).
+- **`cursorHookAdapterBuilders`** — Maps **`hook_event_name`** to a **`HookAdapterBuilder`** ([`hook_adapter_builders.go`](internal/cursor/hook_adapter_builders.go)). Each builder returns a concrete adapter (e.g. **`DefaultCursorHookAdapter`**, **`AfterFileEditCursorHookAdapter`**, **`AfterShellExecutionCursorHookAdapter`**, **`AfterMCPExecutionCursorHookAdapter`** — see [`cursor_hook_adapter.go`](internal/cursor/cursor_hook_adapter.go)).
 - Parsed data lives on the adapter as **`CommonInput`** (`HookDataCommon`) and optional **`EventSpecificInput`** (`*T`). The struct **`CursorHookRunData[T]`** documents the same common-plus-event layout for tests and helpers.
 
 ### `exec` (`internal/execcommand`)

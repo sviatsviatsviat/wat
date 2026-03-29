@@ -42,6 +42,14 @@ func (p *execHookHandlerProvider) HookHandlerFor(hook core.HookAdapter) (core.Ho
 				return execHookBindingsAfterShellExecution(h.CommonInput, h.EventSpecificInput)
 			},
 		}, nil
+	case *cursor.AfterMCPExecutionCursorHookAdapter:
+		return execHookHandlerCursorEvent{
+			execHookHandlerBase: base,
+			hook:                h,
+			buildBindings: func() templateBindings {
+				return execHookBindingsAfterMCPExecution(h.CommonInput, h.EventSpecificInput)
+			},
+		}, nil
 	default:
 		return nil, core.HookAdapterNotSupportedError(hook)
 	}
