@@ -175,101 +175,64 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/) and mainta
 
 ## Architecture overview
 
-wat is layered so **hosts** (Cursor today) stay separate from **shared** CLI, templating, and subprocess execution.
+wat separates **hook hosts** (Cursor today) from shared CLI wiring in **`internal/app`**, host-neutral types in **`internal/core`**, and subcommands such as **`internal/execcommand`** (`exec`). Hosts own JSON shapes and how stdin is validated; **`exec`** maps **`HookAdapter`** values to placeholder bindings and subprocess execution.
 
-### Core interfaces (`internal/core`)
+### Host-neutral contract (`internal/core`)
 
-These types define the host-neutral contract:
+| Role | Responsibility |
+|------|----------------|
+| **`HookAdapter`** | One parsed hook invocation: `HookHost()`, plus `ReturnEmpty()` to write the default hook protocol line (e.g. Cursor `"{}\n"`) via the `cli.Console` captured when the adapter was built. |
+| **`HookAdapterFactory`** | Builds a `HookAdapter` from stdin JSON (`HookAdapterFromJSON(hookEventJSON, console)`). |
+| **`HookHandlerProvider`** | Subcommand configuration; picks a `HookHandler` with `HookHandlerFor(hook HookAdapter)`. |
+| **`HookHandler`** | Runs one invocation: `Handle()` → `HookHandlerResult`. |
+| **`HookHandlerResult`** | Process exit `Code` only. Hook stdout is **not** part of this struct; handlers call `HookAdapter.ReturnEmpty()` so protocol output stays on the adapter/console path. |
 
-- **`HookHandlerFactory`** — Builds a `HookHandler` from raw hook stdin JSON bytes. The host chooses parsing, validation, and which events exist.
-- **`HookHandler`** — Handles one invocation: receives the subcommand `Command`, fills `HookContext` (`HookHost`, host-specific `ParsedData`), calls `Command.Execute`, and returns `HookHandlerResult` (process exit `Code` and hook stdout `Output` string).
-- **`Command`** — Subcommand implementation (`exec` today): `Execute(ctx *HookContext) int`, returning the process exit code.
-- **Command argument placeholders (`internal/execcommand`)** — For each inner part of a `__KEY__` token in the subprocess template, the exec subcommand resolves a string via hook data; missing keys are treated as unknown placeholders (bad input). For Cursor, resolution is driven by `HookContext.ParsedData` (`*cursor.CursorHookRunData[T]` per event type `T`, or `T == struct{}` for common-only hooks).
-- **`HookContext`** — Carries `HookHost` and `ParsedData` (`any`) into `Command.Execute`; the host handler sets both before `Execute`.
+Failures before a handler runs (unknown host, stdin JSON error, unsupported adapter for the subcommand) go to **stderr** only; hook stdout stays empty. After `Handle()`, `app.Execute` returns `result.Code` only.
 
-### Execution flow
+### Runtime pipeline
 
-1. **Entry** — **`cmd/wat`** `main` calls **`app.Execute`** with program arguments (minus binary name), stdin, stdout, and stderr; **`Execute`** constructs **`cli.Console`** for diagnostics and hook protocol output for the rest of the run.
-2. **Host side** — The first argument selects the hook host; **`app`** builds a host **`HookHandlerFactory`** and keeps the remaining arguments for the wat subcommand.
-3. **Hook handler** — **`cli.ReadHookStdinJSON`** reads hook event bytes from stdin, then **`HookHandlerFromJSON`** returns a **`HookHandler`** for that event (before the wat subcommand line is turned into a **`Command`**).
-4. **Hook handler provider** — **`app.newHookHandlerProvider(subcommand, console, rest)`** builds a **`core.HookHandlerProvider`** (e.g. **`execcommand.NewExecHookHandlerProvider`**, which parses **`exec`** flags such as **`-f`** from **`rest`**).
-5. **`app.Execute` → `HookHandler`** — **`Handle(hookCommand)`**; the handler sets **`HookContext`** (**`HookHost`**, **`ParsedData`**).
-6. **`HookHandler` → `hookCommand` → `HookHandler` → `app.Execute`** — **`Execute(HookContext)`** (for **`exec`**: build placeholder bindings from **`ParsedData`**, expand template tokens, subprocess via **`runSubprocess`** with **`Console.ConnectErrorsFrom`**, …) returns the subprocess exit code; **`HookHandler`** returns **`HookHandlerResult`** (**`Output`**, **`Code`**) to **`app.Execute`**.
-7. **Finish** (diagram note over **`app.Execute`**) — write **`result.Output`** to hook stdout, return **`result.Code`** as the process exit code.
+1. **`cmd/wat`** calls **`app.Execute`** with program args, stdin, stdout, stderr; **`cli.NewConsole`** routes diagnostics to stderr and hook protocol output to stdout.
+2. **Host** — Parse `wat <host> …`; **`app.newHookAdapterFactory`** returns a **`HookAdapterFactory`** (e.g. **`cursor.NewHookAdapterFactory()`**).
+3. **Stdin** — **`cli.ReadHookStdinJSON`** reads bytes; **`HookAdapterFromJSON`** builds a **`HookAdapter`**. Cursor requires a non-empty JSON object.
+4. **Subcommand** — Parse `wat <host> <subcommand> …`; **`app.newHookHandlerProvider`** returns a **`HookHandlerProvider`** (e.g. **`execcommand.NewExecHookHandlerProvider`**, which parses **`exec`** flags such as **`-f`** from the remaining args).
+5. **Run** — **`HookHandlerFor(adapter)`** then **`Handle()`** → **`HookHandlerResult`**; **`app.Execute`** returns **`Code`**.
 
 ```mermaid
 sequenceDiagram
   autonumber
-  participant A as app.Execute
-  participant F as HookHandlerFactory
+  participant E as app.Execute
+  participant AF as HookAdapterFactory
+  participant A as HookAdapter
+  participant P as HookHandlerProvider
   participant H as HookHandler
-  participant C as hookCommand
 
-  Note over A: Host factory, ReadHookStdinJSON,<br/>HookHandlerFromJSON, newHookCommand
-  A->>F: HookHandlerFromJSON(hook event bytes)
-  F-->>A: HookHandler
-  A->>H: Handle(hookCommand)
-  H->>C: Execute(HookContext)
-  Note right of C: exec: bindings from ParsedData, render, subprocess, …
-  C-->>H: exit code
-  H-->>A: HookHandlerResult (Output, Code)
-  Note over A: Write Output to hook stdout,<br/>return Code
+  E->>AF: HookAdapterFromJSON(stdin, console)
+  AF-->>A: adapter
+  E->>P: HookHandlerFor(adapter)
+  P-->>H: handler
+  E->>H: Handle()
+  Note right of H: e.g. exec: __KEY__ expansion,<br/>subprocess, adapter.ReturnEmpty()
+  H-->>E: HookHandlerResult (Code)
 ```
 
-### Cursor hook factory and handler (`internal/cursor`)
+### Cursor (`internal/cursor`)
 
-This is how the **`HookHandlerFactory`** and **`HookHandler`** from the execution flow are implemented for Cursor today.
+- **`HookAdapterFactory.HookAdapterFromJSON`** — Rejects empty stdin; **`NewHookDataCommon`** parses the shared envelope ([`hook_data.go`](internal/cursor/hook_data.go)).
+- **`cursorHookAdapterBuilders`** — Maps **`hook_event_name`** to a **`HookAdapterBuilder`** ([`hook_adapter_builders.go`](internal/cursor/hook_adapter_builders.go)). Each builder returns a concrete adapter (e.g. **`DefaultCursorHookAdapter`**, **`AfterFileEditCursorHookAdapter`**, **`AfterShellExecutionCursorHookAdapter`** — see [`cursor_hook_adapter.go`](internal/cursor/cursor_hook_adapter.go)).
+- Parsed data lives on the adapter as **`CommonInput`** (`HookDataCommon`) and optional **`EventSpecificInput`** (`*T`). The struct **`CursorHookRunData[T]`** documents the same common-plus-event layout for tests and helpers.
 
-1. **Factory value** — **`cursor.NewHookHandlerFactory()`** returns **`cursor.HookHandlerFactory`** for **`HookHandlerFromJSON`** / event builders.
-2. **`HookHandlerFromJSON`** — Rejects empty stdin (Cursor expects a JSON body). **`NewHookDataCommon`** unmarshals bytes into **`HookDataCommon`** (shared envelope: `conversation_id`, `hook_event_name`, etc.—see `hook_data.go`).
-3. **Per-event dispatch** — **`hook_event_name`** selects an entry in **`cursorHookAdapterBuilders`** (`hook_adapter_builders.go`). Missing events return an error (“not supported yet”).
-4. **Building the handler** — Each registered builder is a **`HookHandlerBuilder`** `func(rawJSON []byte, hookData HookDataCommon) (core.HookHandler, error)`. Most events use **`NewDefaultHookHandler`** ( **`CursorHookRunData[struct{}]`** , no event payload) or **`NewHookHandlerFromEventFields[T]`** (parses **`HookDataWithCommon[T]`** and builds **`CursorHookRunData[T]`** with **`EventSpecific: &Fields`**).
-5. **`CursorHookHandler[T].Handle`** — Builds **`HookContext`** with **`HookHost`** (**`cursor.HookHostCursor`**) and **`ParsedData`** pointing at **`CursorHookRunData[T]`**, calls **`cmd.Execute(ctx)`**, and returns **`HookHandlerResult`** with the subprocess exit **`Code`** and fixed hook stdout **`Output`** (**`cursor.DefaultHookResponseLine`**, i.e. `{}` plus newline).
-6. **Placeholder bindings in `internal/execcommand`** (`cursor_bindings_common.go`, `cursor_bindings_event.go`, and per-event extractor maps) — For Cursor, **`NewExecHookHandlerProvider`**’s **`HookHandlerFor`** selects an exec handler; bindings come from **`newTemplateBindingsCommon`** and/or **`templateBindingsFromCursorEventPayload`** (common keys such as **`CONVERSATION_ID`**, **`HOOK_EVENT_NAME`**, …—the inner part of each **`__KEY__`** token, plus event keys like **`FILE_PATH`** or **`DURATION`** / **`SANDBOX`** where defined). Optional JSON strings use **`helpers.StringFromPtr`**. Missing map keys mean the placeholder is unknown; known keys resolve even when the value is empty. Supporting a new adapter type in **`exec`** adds a **`case`** in **`HookHandlerFor`** and usually a small extractor map (no change to **`CursorHookRunData`**’s shape).
-7. **Where bindings run** — For **`wat <host> exec`**, the exec **`HookHandler`** (from **`NewExecHookHandlerProvider`**) optionally filters on **`FILE_PATH`** when a **`-f`** pattern is set, then substitutes **`__KEY__`** segments in each template token using the bindings and collects any unknown keys; the exec subcommand turns unknowns into a bad-input exit.
+### `exec` (`internal/execcommand`)
 
-```mermaid
-sequenceDiagram
-  participant F as cursor.HookHandlerFactory
-  participant Data as hookDataCommon
-  participant Map as cursorHookAdapterBuilders
-  participant Build as HookAdapterBuilder
-
-  F->>F: require non-empty JSON
-  F->>Data: NewHookDataCommon(bytes)
-  F->>Map: lookup hook_event_name
-  Map-->>F: hookHandlerBuilder
-  F->>Build: builder(rawJSON, hookData)
-  Build-->>F: HookHandler (e.g. CursorHookHandler)
-```
-
-```mermaid
-sequenceDiagram
-  participant H as CursorHookHandler
-  participant Run as execHookHandler
-  participant TB as exec_bindings
-  participant R as placeholder_substitution
-
-  H->>Run: Handle()
-  Run->>TB: build bindings from ParsedData
-  TB-->>Run: bindings
-  Run->>R: substitute __KEY__ in argsTemplate
-  loop each template token / __KEY__
-    R->>TB: TemplateValue(inner key)
-    TB-->>R: value, ok
-  end
-  R-->>Run: rendered args, unknown keys
-  Note right of Run: then runSubprocess(console, rendered args)
-```
+- **`NewExecHookHandlerProvider`** parses the command template and optional **`-f` / `--file-pattern`**, then **`HookHandlerFor`** dispatches on concrete Cursor adapter types ([`exec_hook_handler_provider.go`](internal/execcommand/exec_hook_handler_provider.go)).
+- Handlers build **`templateBindings`** ([`cursor_bindings_common.go`](internal/execcommand/cursor_bindings_common.go), [`cursor_bindings_event.go`](internal/execcommand/cursor_bindings_event.go), and per-event helpers), substitute **`__KEY__`** segments, run **`runSubprocess`** (child stderr via **`Console.ConnectErrorsFrom`**), and call **`hook.ReturnEmpty()`** ([`exec_hook_handler_base.go`](internal/execcommand/exec_hook_handler_base.go)). **`afterFileEdit`** applies the file-pattern filter only when that adapter type is used ([`exec_hook_handler_after_file_edit.go`](internal/execcommand/exec_hook_handler_after_file_edit.go)).
 
 ### Other packages
 
-- **`internal/cli`** — Console (stderr vs hook stdout, including **`ConnectErrorsFrom`** for child stderr), help text, exit code constants, shared hook stdin JSON read.
-- **`internal/execcommand`** — Subcommand `exec` as **`core.HookHandlerProvider`** (`NewExecHookHandlerProvider`), `__KEY__` placeholder expansion in the command template, and subprocess execution (PATH lookup, shell fallback, child stdout discarded).
-- **`internal/helpers`** — Small shared utilities.
+- **`internal/cli`** — Console, shared hook stdin JSON read, help, exit code constants.
+- **`internal/helpers`** — Small utilities (e.g. optional string fields in bindings).
 
 ### Extending wat
 
-- **New host** — Add a package (like `internal/cursor`) implementing `HookHandlerFactory`, own JSON types, default hook stdout lines, and stdin policy. Register the factory in `app.newHookHandlerFactory`. Keep host protocol strings out of `internal/cli`.
-- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s adapter-builder map (e.g. `cursorHookAdapterBuilders` in `internal/cursor/hook_adapter_builders.go`), wiring an existing or new builder to a `HookAdapter`. Define a new event field struct **`T`** in `internal/cursor`, build **`CursorHookRunData[T]`** in the builder, and add a **`HookHandlerFor`** case in **`NewExecHookHandlerProvider`** (plus extractor maps) when `exec` must support new **`__KEY__`** tokens. Document the event in the README.
-- **New subcommand** — Implement `core.HookHandlerProvider` under `internal/<subcommand>` (today `internal/execcommand`) and wire it in `app.newHookHandlerProvider`.
+- **New host** — Implement **`HookAdapterFactory`** and hook stdout policy (`ReturnEmpty`). Register in **`app.newHookAdapterFactory`**. Keep host-specific protocol strings in the host package, not scattered through **`cli`**.
+- **New Cursor event** — Register **`hook_event_name`** in **`cursorHookAdapterBuilders`** and return the right concrete **`HookAdapter`**. If **`exec`** needs new **`__KEY__`** tokens, extend **`HookHandlerFor`** and bindings.
+- **New wat subcommand** — Implement **`HookHandlerProvider`** under **`internal/<name>`** and wire **`app.newHookHandlerProvider`**.
