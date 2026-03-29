@@ -13,7 +13,7 @@ type HookAdapterBuilder func(rawJSON []byte, hookData HookDataCommon, console cl
 // cursorHookAdapterBuilders maps hook_event_name to a builder.
 var cursorHookAdapterBuilders = map[string]HookAdapterBuilder{
 	"afterShellExecution": hookAdapterFromEventFieldsAfterShellExecution,
-	"afterMCPExecution":   newDefaultHookAdapterBuilder,
+	"afterMCPExecution":   hookAdapterFromEventFieldsAfterMCPExecution,
 	"afterFileEdit":       hookAdapterFromEventFieldsAfterFileEdit,
 	"afterTabFileEdit":    newDefaultHookAdapterBuilder,
 	"afterAgentResponse":  newDefaultHookAdapterBuilder,
@@ -23,6 +23,10 @@ var cursorHookAdapterBuilders = map[string]HookAdapterBuilder{
 
 func hookAdapterFromEventFieldsAfterShellExecution(rawJSON []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {
 	return NewHookAdapterFromEventFields[AfterShellExecutionFields](console, rawJSON, hookData)
+}
+
+func hookAdapterFromEventFieldsAfterMCPExecution(rawJSON []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {
+	return NewHookAdapterFromEventFields[AfterMCPExecutionFields](console, rawJSON, hookData)
 }
 
 func hookAdapterFromEventFieldsAfterFileEdit(rawJSON []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {

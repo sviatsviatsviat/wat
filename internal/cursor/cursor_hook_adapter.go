@@ -21,6 +21,9 @@ type AfterFileEditCursorHookAdapter = cursorHookAdapter[AfterFileEditFields]
 // AfterShellExecutionCursorHookAdapter is the hook adapter for afterShellExecution.
 type AfterShellExecutionCursorHookAdapter = cursorHookAdapter[AfterShellExecutionFields]
 
+// AfterMCPExecutionCursorHookAdapter is the hook adapter for afterMCPExecution.
+type AfterMCPExecutionCursorHookAdapter = cursorHookAdapter[AfterMCPExecutionFields]
+
 // defaultHookResponseLine is the Cursor hook stdout line (JSON object and newline).
 const defaultHookResponseLine = "{}\n"
 

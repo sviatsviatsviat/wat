@@ -182,6 +182,67 @@ func TestTemplateBindingsAfterShellExecution_unknownKey(t *testing.T) {
 	}
 }
 
+func TestAfterMCPExecutionPlaceholderExtractors_registry(t *testing.T) {
+	wantKeys := map[string]struct{}{
+		"TOOL_NAME": {},
+		"DURATION":  {},
+	}
+	if len(afterMCPExecutionPlaceholderExtractors) != len(wantKeys) {
+		t.Fatalf("registry size: want %d, got %d", len(wantKeys), len(afterMCPExecutionPlaceholderExtractors))
+	}
+	for placeholderKey := range wantKeys {
+		if _, ok := afterMCPExecutionPlaceholderExtractors[placeholderKey]; !ok {
+			t.Fatalf("missing registry key %q", placeholderKey)
+		}
+	}
+}
+
+func TestTemplateBindingsAfterMCPExecution_templateValueEventAndCommonFields(t *testing.T) {
+	data := cursor.CursorHookRunData[cursor.AfterMCPExecutionFields]{
+		Common: cursor.HookDataCommon{
+			HookEventName:  "afterMCPExecution",
+			ConversationID: "conv-1",
+		},
+		EventSpecific: &cursor.AfterMCPExecutionFields{
+			ToolName:   "search",
+			ToolInput:  `{"q":"x"}`,
+			ResultJSON: `{"hits":[]}`,
+			Duration:   1234,
+		},
+	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterMCPExecutionPlaceholderExtractors)
+	assertTemplateBindingValue(t, bindings, "HOOK_EVENT_NAME", "afterMCPExecution")
+	assertTemplateBindingValue(t, bindings, "CONVERSATION_ID", "conv-1")
+	assertTemplateBindingValue(t, bindings, "TOOL_NAME", "search")
+	assertTemplateBindingValue(t, bindings, "DURATION", "1234")
+}
+
+func TestTemplateBindingsAfterMCPExecution_decimalDuration(t *testing.T) {
+	data := cursor.CursorHookRunData[cursor.AfterMCPExecutionFields]{
+		Common: cursor.HookDataCommon{HookEventName: "afterMCPExecution"},
+		EventSpecific: &cursor.AfterMCPExecutionFields{
+			ToolName: "t",
+			Duration: 2841.805,
+		},
+	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterMCPExecutionPlaceholderExtractors)
+	assertTemplateBindingValue(t, bindings, "DURATION", "2841.805")
+}
+
+func TestTemplateBindingsAfterMCPExecution_unknownKey(t *testing.T) {
+	data := cursor.CursorHookRunData[cursor.AfterMCPExecutionFields]{
+		Common:        cursor.HookDataCommon{HookEventName: "afterMCPExecution"},
+		EventSpecific: &cursor.AfterMCPExecutionFields{ToolName: "x"},
+	}
+	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterMCPExecutionPlaceholderExtractors)
+	for _, key := range []string{"SANDBOX", "TOOL_INPUT", "RESULT_JSON"} {
+		_, ok := bindings.TemplateValue(key)
+		if ok {
+			t.Fatalf("%q must not be a defined placeholder", key)
+		}
+	}
+}
+
 func ptr(s string) *string { return &s }
 
 func assertTemplateBindingValue(t *testing.T, bindings templateBindings, key, want string) {

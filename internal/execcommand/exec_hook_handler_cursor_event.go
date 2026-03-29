@@ -26,3 +26,7 @@ func execHookBindingsCommonOnly(common cursor.HookDataCommon) templateBindings {
 func execHookBindingsAfterShellExecution(common cursor.HookDataCommon, event *cursor.AfterShellExecutionFields) templateBindings {
 	return templateBindingsFromCursorEventPayload(common, event, afterShellExecutionPlaceholderExtractors)
 }
+
+func execHookBindingsAfterMCPExecution(common cursor.HookDataCommon, event *cursor.AfterMCPExecutionFields) templateBindings {
+	return templateBindingsFromCursorEventPayload(common, event, afterMCPExecutionPlaceholderExtractors)
+}
