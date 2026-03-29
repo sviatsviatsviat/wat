@@ -13,7 +13,7 @@ function Normalize-TranscriptPath {
 
 function Get-FileMtimeMs {
     param([Parameter(Mandatory)][System.IO.FileInfo]$File)
-    # Avoid DateTimeOffset.SpecifyKind (not available on older runtimes); ticks are UTC wall time.
+    # Convert LastWriteTimeUtc ticks to a UTC DateTimeOffset with zero offset; ticks are UTC wall time.
     $dto = [DateTimeOffset]::new($File.LastWriteTimeUtc.Ticks, [TimeSpan]::Zero)
     return $dto.ToUnixTimeMilliseconds()
 }

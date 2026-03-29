@@ -22,7 +22,7 @@ $ErrorActionPreference = 'Stop'
 
 $TranscriptsRoot = [System.IO.Path]::GetFullPath($TranscriptsRoot)
 if ([string]::IsNullOrEmpty($IndexPath)) {
-    $IndexPath = Join-Path (Get-WatRepoRoot) '.cursor\hooks\state\continual-learning-index.json'
+    $IndexPath = Join-Path (Get-WatRepoRoot) '.cursor/hooks/state/continual-learning-index.json'
 }
 if ([string]::IsNullOrEmpty($ProcessedAt)) {
     $ProcessedAt = [DateTimeOffset]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
