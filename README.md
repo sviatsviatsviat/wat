@@ -39,7 +39,7 @@ Options (only for exec, before the subprocess template):
 	                      Optional; default * means no filter. If you pass a
 	                      non-* value, <re> must be non-empty (Go regexp syntax).
 	                      When stdin bindings include __FILE_PATH__ (Cursor
-	                      afterFileEdit), `exec` skips the subprocess if the path
+	                      afterFileEdit or afterTabFileEdit), `exec` skips the subprocess if the path
 	                      does not match <re>; other hook events ignore the flag
 	                      for matching purposes.
 ```
@@ -68,7 +68,7 @@ Authoritative list of `__KEY__` segments for `wat cursor exec` (inner part betwe
 
 | Event | Additional placeholders |
 |-------|-------------------------|
-| `afterFileEdit` | `__FILE_PATH__` |
+| `afterFileEdit`, `afterTabFileEdit` | `__FILE_PATH__` |
 | `afterShellExecution` | `__DURATION__`, `__SANDBOX__` |
 | `afterMCPExecution` | `__TOOL_NAME__`, `__DURATION__` |
 | Other registered events (default adapter) | None — common placeholders only. |
@@ -119,13 +119,15 @@ Fires after a file edit. **`AfterFileEditFields`** adds `file_path` and `edits` 
 
 **Returns** `{}`.
 
-When `wat cursor exec …` includes `-f` / `--file-pattern` with a Go regexp, **`execcommand.NewExecHookHandlerProvider`** (in `internal/execcommand`) builds handlers whose **afterFileEdit** path applies the filter before invoking the subprocess when `__FILE_PATH__` is present in template bindings (other events omit that key, so the subprocess runs as usual). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
+When `wat cursor exec …` includes `-f` / `--file-pattern` with a Go regexp, **`execcommand.NewExecHookHandlerProvider`** (in `internal/execcommand`) builds handlers for **afterFileEdit** and **afterTabFileEdit** that apply the filter before invoking the subprocess when `__FILE_PATH__` is present in template bindings (other events omit that key, so the subprocess runs as usual). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
 
 #### `afterTabFileEdit`
 
-Fires after a tab file edit. Uses the default adapter (**`HookDataCommon`** only).
+Fires after Tab (inline completion) edits a file—not Agent edits. Uses the same adapter and exec behavior as **`afterFileEdit`**: **`AfterFileEditFields`** with `file_path` and `edits`. Each edit includes `old_string` / `new_string`; Tab payloads may also include `range` (`start_line_number`, `start_column`, `end_line_number`, `end_column`), `old_line`, and `new_line` for precise tracking.
 
 **Returns** `{}`.
+
+File-pattern filtering with `-f` / `--file-pattern` matches **`afterFileEdit`** (same `__FILE_PATH__` binding).
 
 #### `afterAgentResponse`
 
@@ -225,7 +227,7 @@ sequenceDiagram
 ### `exec` (`internal/execcommand`)
 
 - **`NewExecHookHandlerProvider`** parses the command template and optional **`-f` / `--file-pattern`**, then **`HookHandlerFor`** dispatches on concrete Cursor adapter types ([`exec_hook_handler_provider.go`](internal/execcommand/exec_hook_handler_provider.go)).
-- Handlers build **`templateBindings`** ([`cursor_bindings_common.go`](internal/execcommand/cursor_bindings_common.go), [`cursor_bindings_event.go`](internal/execcommand/cursor_bindings_event.go), and per-event helpers), substitute **`__KEY__`** segments, run **`runSubprocess`** (child stderr via **`Console.ConnectErrorsFrom`**), and call **`hook.ReturnEmpty()`** ([`exec_hook_handler_base.go`](internal/execcommand/exec_hook_handler_base.go)). **`afterFileEdit`** applies the file-pattern filter only when that adapter type is used ([`exec_hook_handler_after_file_edit.go`](internal/execcommand/exec_hook_handler_after_file_edit.go)).
+- Handlers build **`templateBindings`** ([`cursor_bindings_common.go`](internal/execcommand/cursor_bindings_common.go), [`cursor_bindings_event.go`](internal/execcommand/cursor_bindings_event.go), and per-event helpers), substitute **`__KEY__`** segments, run **`runSubprocess`** (child stderr via **`Console.ConnectErrorsFrom`**), and call **`hook.ReturnEmpty()`** ([`exec_hook_handler_base.go`](internal/execcommand/exec_hook_handler_base.go)). **`afterFileEdit`** and **`afterTabFileEdit`** apply the file-pattern filter only when that adapter type is used ([`exec_hook_handler_after_file_edit.go`](internal/execcommand/exec_hook_handler_after_file_edit.go)).
 
 ### Other packages
 

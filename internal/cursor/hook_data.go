@@ -12,13 +12,25 @@ type CursorHookRunData[T any] struct {
 	EventSpecific *T
 }
 
-// AfterFileEditEditPair is one edit hunk in an afterFileEdit / afterTabFileEdit payload.
-type AfterFileEditEditPair struct {
-	OldString string `json:"old_string"`
-	NewString string `json:"new_string"`
+// AfterFileEditEditRange is the range for one edit in an afterTabFileEdit payload (optional on afterFileEdit).
+type AfterFileEditEditRange struct {
+	StartLineNumber int `json:"start_line_number"`
+	StartColumn     int `json:"start_column"`
+	EndLineNumber   int `json:"end_line_number"`
+	EndColumn       int `json:"end_column"`
 }
 
-// AfterFileEditFields is the event-specific JSON shape for afterFileEdit.
+// AfterFileEditEditPair is one edit hunk in an afterFileEdit / afterTabFileEdit payload.
+// afterTabFileEdit may include range, old_line, and new_line; afterFileEdit typically has old_string / new_string only.
+type AfterFileEditEditPair struct {
+	OldString string                  `json:"old_string"`
+	NewString string                  `json:"new_string"`
+	EditRange *AfterFileEditEditRange `json:"range,omitempty"`
+	OldLine   string                  `json:"old_line,omitempty"`
+	NewLine   string                  `json:"new_line,omitempty"`
+}
+
+// AfterFileEditFields is the event-specific JSON shape for afterFileEdit and afterTabFileEdit.
 type AfterFileEditFields struct {
 	FilePath string                  `json:"file_path"`
 	Edits    []AfterFileEditEditPair `json:"edits"`

@@ -18,7 +18,7 @@ const defaultFilePatternFlagValue = "*"
 func newExecFlagSet(filePatternFlagTarget *string) *flag.FlagSet {
 	execFlagSet := flag.NewFlagSet("exec", flag.ContinueOnError)
 	execFlagSet.SetOutput(io.Discard)
-	execFlagSet.StringVar(filePatternFlagTarget, "file-pattern", defaultFilePatternFlagValue, "optional regexp for FILE_PATH filter on afterFileEdit; default * means no filter")
+	execFlagSet.StringVar(filePatternFlagTarget, "file-pattern", defaultFilePatternFlagValue, "optional regexp for FILE_PATH filter on afterFileEdit and afterTabFileEdit; default * means no filter")
 	execFlagSet.StringVar(filePatternFlagTarget, "f", defaultFilePatternFlagValue, "shorthand for file-pattern")
 	return execFlagSet
 }

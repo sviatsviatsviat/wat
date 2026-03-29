@@ -267,8 +267,11 @@ func TestExecute_ExecWithFilePatternStillRunsSubprocess(t *testing.T) {
 }
 
 func TestExecute_ExecWithFilePatternSkipsWhenPathNoMatch(t *testing.T) {
-	jsonTxt := `{
-		"hook_event_name": "afterFileEdit",
+	hookEvents := []string{"afterFileEdit", "afterTabFileEdit"}
+	for _, hookEventName := range hookEvents {
+		t.Run(hookEventName, func(t *testing.T) {
+			jsonTxt := `{
+		"hook_event_name": "` + hookEventName + `",
 		"conversation_id": "c1",
 		"generation_id": "g1",
 		"model": "m",
@@ -279,25 +282,27 @@ func TestExecute_ExecWithFilePatternSkipsWhenPathNoMatch(t *testing.T) {
 		"file_path": "/repo/file.txt",
 		"edits": [{"old_string": "a", "new_string": "b"}]
 	}`
-	if runtime.GOOS == "windows" {
-		var stdout, stderr bytes.Buffer
-		code := Execute([]string{"cursor", "exec", "-f", `[.]go$`, "cmd", "/C", "echo", "ran", "1>&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
-		if code != cli.ExitSuccess {
-			t.Fatalf("expected ExitSuccess, got %d, stderr=%q", code, stderr.String())
-		}
-		assertHookStdoutJSON(t, stdout.String())
-		if strings.Contains(stderr.String(), "ran") {
-			t.Fatalf("subprocess should be skipped, stderr=%q", stderr.String())
-		}
-		return
-	}
-	var stdout, stderr bytes.Buffer
-	code := Execute([]string{"cursor", "exec", "-f", `[.]go$`, "sh", "-c", "echo ran >&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
-	if code != cli.ExitSuccess {
-		t.Fatalf("expected ExitSuccess, got %d, stderr=%q", code, stderr.String())
-	}
-	assertHookStdoutJSON(t, stdout.String())
-	if strings.Contains(stderr.String(), "ran") {
-		t.Fatalf("subprocess should be skipped, stderr=%q", stderr.String())
+			if runtime.GOOS == "windows" {
+				var stdout, stderr bytes.Buffer
+				code := Execute([]string{"cursor", "exec", "-f", `[.]go$`, "cmd", "/C", "echo", "ran", "1>&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
+				if code != cli.ExitSuccess {
+					t.Fatalf("expected ExitSuccess, got %d, stderr=%q", code, stderr.String())
+				}
+				assertHookStdoutJSON(t, stdout.String())
+				if strings.Contains(stderr.String(), "ran") {
+					t.Fatalf("subprocess should be skipped, stderr=%q", stderr.String())
+				}
+				return
+			}
+			var stdout, stderr bytes.Buffer
+			code := Execute([]string{"cursor", "exec", "-f", `[.]go$`, "sh", "-c", "echo ran >&2"}, strings.NewReader(jsonTxt), &stdout, &stderr)
+			if code != cli.ExitSuccess {
+				t.Fatalf("expected ExitSuccess, got %d, stderr=%q", code, stderr.String())
+			}
+			assertHookStdoutJSON(t, stdout.String())
+			if strings.Contains(stderr.String(), "ran") {
+				t.Fatalf("subprocess should be skipped, stderr=%q", stderr.String())
+			}
+		})
 	}
 }

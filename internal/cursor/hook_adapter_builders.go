@@ -15,7 +15,7 @@ var cursorHookAdapterBuilders = map[string]HookAdapterBuilder{
 	"afterShellExecution": hookAdapterFromEventFieldsAfterShellExecution,
 	"afterMCPExecution":   hookAdapterFromEventFieldsAfterMCPExecution,
 	"afterFileEdit":       hookAdapterFromEventFieldsAfterFileEdit,
-	"afterTabFileEdit":    newDefaultHookAdapterBuilder,
+	"afterTabFileEdit":    hookAdapterFromEventFieldsAfterFileEdit,
 	"afterAgentResponse":  newDefaultHookAdapterBuilder,
 	"afterAgentThought":   newDefaultHookAdapterBuilder,
 	"sessionEnd":          newDefaultHookAdapterBuilder,

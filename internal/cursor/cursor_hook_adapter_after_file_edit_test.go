@@ -78,3 +78,24 @@ func TestHookAdapterFactory_afterFileEditUsesCursorHookAdapter(t *testing.T) {
 		t.Fatalf("adapter type: want *AfterFileEditCursorHookAdapter, got %T", adapter)
 	}
 }
+
+func TestHookAdapterFactory_afterTabFileEditUsesCursorHookAdapter(t *testing.T) {
+	mock := cli.NewMockConsole()
+	factory := NewHookAdapterFactory()
+	raw := []byte(`{"hook_event_name":"afterTabFileEdit","file_path":"D:/repo/tab.go","edits":[{"old_string":"x","new_string":"y","range":{"start_line_number":1,"start_column":0,"end_line_number":1,"end_column":1},"old_line":"a","new_line":"b"}]}`)
+
+	adapter, err := factory.HookAdapterFromJSON(raw, mock)
+	if err != nil {
+		t.Fatalf("HookAdapterFromJSON: %v", err)
+	}
+	a, ok := adapter.(*AfterFileEditCursorHookAdapter)
+	if !ok || a == nil {
+		t.Fatalf("adapter type: want *AfterFileEditCursorHookAdapter, got %T", adapter)
+	}
+	if a.EventSpecificInput == nil || a.EventSpecificInput.FilePath != "D:/repo/tab.go" {
+		t.Fatalf("EventSpecificInput.FilePath: got %#v", a.EventSpecificInput)
+	}
+	if len(a.EventSpecificInput.Edits) != 1 || a.EventSpecificInput.Edits[0].EditRange == nil {
+		t.Fatalf("expected one edit with range: %#v", a.EventSpecificInput.Edits)
+	}
+}
