@@ -1,0 +1,18 @@
+---
+description: Where continual learning merges durable memory into AGENTS.md for this repo
+globs: AGENTS.md
+---
+
+# AGENTS.md continual learning
+
+When the **continual-learning** skill or **agents-memory-updater** flow runs for this repo, use the PowerShell helpers under [`scripts/continual-learning/`](../../scripts/continual-learning/) instead of ad hoc directory walks or hand-maintained index math:
+
+1. Resolve the workspace’s Cursor `agent-transcripts` path (under `~/.cursor/projects/.../agent-transcripts`), then pass it as **`-TranscriptsRoot`** to every script (required).
+2. Run **`delta.ps1`** — stdout lists `.jsonl` files that are new or have newer mtime than [`.cursor/hooks/state/continual-learning-index.json`](../../.cursor/hooks/state/continual-learning-index.json); stderr prints `count=N`. Read only those transcripts for mining.
+3. Update [`AGENTS.md`](../../AGENTS.md): merge durable prefs into **## Rules** and durable facts into **## Context**; do **not** add `## Learned User Preferences` / `## Learned Workspace Facts`. Keep edits minimal, high-signal, no secrets.
+4. Run **`sync-index.ps1`** to refresh the index from disk (prune deleted files, update `mtimeMs` / `lastProcessedAt`).
+5. Optionally run **`validate-jsonl.ps1`** if transcript parsing seemed wrong (line-by-line JSON check).
+
+Example (from repo root, after substituting the real transcripts path):
+
+`powershell -File scripts/continual-learning/delta.ps1 -TranscriptsRoot "<path-to-agent-transcripts>"`
