@@ -5,6 +5,11 @@
       {
         "command": "./wat cursor exec --file-pattern=[.]go$ gofmt -w __FILE_PATH__"
       }
+    ],
+    "afterTabFileEdit": [
+      {
+        "command": "./wat cursor exec --file-pattern=[.]go$ gofmt -w __FILE_PATH__"
+      }
     ]
   }
 }

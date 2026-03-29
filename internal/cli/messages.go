@@ -19,7 +19,7 @@ Supported commands:
 For exec, optional flags before the subprocess template:
 
 	-f, --file-pattern <re>     Optional; when stdin supplies __FILE_PATH__ (Cursor
-	                             afterFileEdit), skip the subprocess if the path does
+	                             afterFileEdit or afterTabFileEdit), skip the subprocess if the path does
 	                             not match <re> (Go regexp). Default * means no filter.
 	                             If set, <re> must be non-empty.
 

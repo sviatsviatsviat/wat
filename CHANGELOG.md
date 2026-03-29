@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`afterTabFileEdit`** uses the same **`AfterFileEditFields`** adapter and **`wat cursor exec`** behavior as **`afterFileEdit`** (`__FILE_PATH__`, `-f` / `--file-pattern`); Tab payloads may include per-edit **`range`**, **`old_line`**, and **`new_line`** for fine-grained tracking.
 - **`afterMCPExecution`** Cursor hook stdin is parsed into **`AfterMCPExecutionFields`** (`tool_name`, `tool_input`, `result_json`, `duration`); **`wat cursor exec`** exposes **`__TOOL_NAME__`** and **`__DURATION__`** for that event.
 - Initial **wat** CLI: first program argument selects the hook host (e.g. `cursor`), the second selects the wat subcommand (e.g. `exec`), remaining arguments passed to that subcommand (e.g. `wat cursor exec …`). **Cursor** is the supported host today; the same layout can extend to other hosts or subcommands (e.g. `guard`).
 - **`exec` subcommand** in package `execcommand` (`execcommand.NewExecHookHandlerProvider`): read hook JSON from stdin; optional `-f` / `--file-pattern` (Go regexp); when bindings include `__FILE_PATH__`, skip the subprocess if the cleaned path does not match; templated subprocess command with allowed placeholders; cross-platform execution with propagated child exit codes; when running under Cursor, the hook writes the literal `{}` to stdout (plus newline per protocol), child stderr forwarded, child stdout discarded.

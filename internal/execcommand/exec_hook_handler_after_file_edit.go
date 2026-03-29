@@ -9,7 +9,7 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cursor"
 )
 
-// execHookHandlerAfterFileEdit runs exec templates for afterFileEdit hooks.
+// execHookHandlerAfterFileEdit runs exec templates for afterFileEdit and afterTabFileEdit hooks.
 // Optional -f/--file-pattern applies only here: it matches the event file_path from the hook payload.
 type execHookHandlerAfterFileEdit struct {
 	execHookHandlerBase
