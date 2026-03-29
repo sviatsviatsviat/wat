@@ -28,6 +28,14 @@ func (p *execHookHandlerProvider) HookHandlerFor(hook core.HookAdapter) (core.Ho
 				return execHookBindingsCommonOnly(h.CommonInput)
 			},
 		}, nil
+	case *cursor.AfterAgentResponseCursorHookAdapter:
+		return execHookHandlerCursorEvent{
+			execHookHandlerBase: base,
+			hook:                h,
+			buildBindings: func() templateBindings {
+				return execHookBindingsCommonOnly(h.CommonInput)
+			},
+		}, nil
 	case *cursor.AfterFileEditCursorHookAdapter:
 		return execHookHandlerAfterFileEdit{
 			execHookHandlerBase:  base,
@@ -48,6 +56,14 @@ func (p *execHookHandlerProvider) HookHandlerFor(hook core.HookAdapter) (core.Ho
 			hook:                h,
 			buildBindings: func() templateBindings {
 				return execHookBindingsAfterMCPExecution(h.CommonInput, h.EventSpecificInput)
+			},
+		}, nil
+	case *cursor.AfterAgentThoughtCursorHookAdapter:
+		return execHookHandlerCursorEvent{
+			execHookHandlerBase: base,
+			hook:                h,
+			buildBindings: func() templateBindings {
+				return execHookBindingsAfterAgentThought(h.CommonInput, h.EventSpecificInput)
 			},
 		}, nil
 	default:

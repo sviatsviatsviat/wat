@@ -71,7 +71,8 @@ Authoritative list of `__KEY__` segments for `wat cursor exec` (inner part betwe
 | `afterFileEdit`, `afterTabFileEdit` | `__FILE_PATH__` |
 | `afterShellExecution` | `__DURATION__`, `__SANDBOX__` |
 | `afterMCPExecution` | `__TOOL_NAME__`, `__DURATION__` |
-| Other registered events (default adapter) | None — common placeholders only. |
+| `afterAgentThought` | `__DURATION_MS__` |
+| `afterAgentResponse`, `sessionEnd`, and other events that use the default adapter | None — common placeholders only. |
 
 The built-in `wat … exec` help lists the union of placeholders across events; use the table above to see which tokens apply to the hook you are configuring.
 
@@ -131,13 +132,13 @@ File-pattern filtering with `-f` / `--file-pattern` matches **`afterFileEdit`** 
 
 #### `afterAgentResponse`
 
-Fires after an agent response. Uses the default adapter (**`HookDataCommon`** only).
+Fires after the agent completes an assistant message. **`AfterAgentResponseFields`** adds `text` to the shared envelope. `wat cursor exec` exposes common placeholders only (not `text`).
 
 **Returns** `{}`.
 
 #### `afterAgentThought`
 
-Fires after agent thought. Uses the default adapter (**`HookDataCommon`** only).
+Fires after the agent completes a thinking block. **`AfterAgentThoughtFields`** adds `text` and `duration_ms` to the shared envelope. For `exec`, **`__DURATION_MS__`** is bound from `duration_ms`; `text` is not exposed as a template placeholder.
 
 **Returns** `{}`.
 
