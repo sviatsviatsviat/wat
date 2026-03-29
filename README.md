@@ -46,7 +46,33 @@ Options (only for exec, before the subprocess template):
 
 Put `-f` / `--file-pattern` after `exec` and before the subprocess command (for example `wat cursor exec -f '[.]go$' …`). Flags are parsed when **`execcommand.NewExecHookHandlerProvider`** builds the provider. If equivalent options are repeated, **the last value wins**.
 
-**Command template** — Everything after the optional flags is one command template: the subprocess program and its arguments. Use only `__PLACEHOLDER__` tokens documented for the current hook event in [Supported Cursor hook types](#supported-cursor-hook-types); any other `__TOKEN__` in the template is an error (exit code `2`).
+**Command template** — Everything after the optional flags is one command template: the subprocess program and its arguments. Use only `__PLACEHOLDER__` tokens documented under [Cursor exec template bindings](#cursor-exec-template-bindings); any other `__TOKEN__` in the template is an error (exit code `2`).
+
+#### Cursor exec template bindings
+
+Authoritative list of `__KEY__` segments for `wat cursor exec` (inner part between underscores). Optional JSON fields resolve to an empty string when missing or `null`.
+
+**Common** — Available for every Cursor hook event that `exec` supports (including events that use the default adapter):
+
+| Placeholder | Description |
+|-------------|-------------|
+| `__CONVERSATION_ID__` | From `conversation_id`. |
+| `__GENERATION_ID__` | From `generation_id`. |
+| `__MODEL__` | From `model`. |
+| `__HOOK_EVENT_NAME__` | From `hook_event_name`. |
+| `__CURSOR_VERSION__` | From `cursor_version`. |
+| `__USER_EMAIL__` | From `user_email` when present (empty if missing or `null`). |
+| `__TRANSCRIPT_PATH__` | From `transcript_path` when present (empty if missing or `null`). |
+
+**Per event** — `exec` adds event-specific keys only when the hook adapter carries that data ([`exec_hook_handler_provider.go`](internal/execcommand/exec_hook_handler_provider.go)):
+
+| Event | Additional placeholders |
+|-------|-------------------------|
+| `afterFileEdit` | `__FILE_PATH__` |
+| `afterShellExecution` | `__DURATION__`, `__SANDBOX__` |
+| Other registered events (default adapter) | None — common placeholders only. |
+
+The built-in `wat … exec` help lists the union of placeholders across events; use the table above to see which tokens apply to the hook you are configuring.
 
 **Exit status** — If the subprocess is started, wat exits with **that process’s exit code**. Otherwise wat uses own standard [Exit codes](#exit-codes).
 
@@ -68,53 +94,27 @@ If `exec` **does** start a subprocess, the process exit code may match the child
 
 Cursor supplies hook JSON on stdin. Register hook commands in **`.cursor/hooks.json`**.
 
-### Common Cursor placeholders
-
-| Placeholder | Description |
-|-------------|-------------|
-| `__CONVERSATION_ID__` | Identifier for the current conversation; taken from the `conversation_id` property of the stdin JSON. |
-| `__GENERATION_ID__` | Identifier for the generation step; taken from `generation_id`. |
-| `__MODEL__` | Model name for the interaction; taken from `model`. |
-| `__HOOK_EVENT_NAME__` | Which hook fired (for example `afterFileEdit`); taken from `hook_event_name`. |
-| `__CURSOR_VERSION__` | Cursor app version string; taken from `cursor_version`. |
-| `__WORKSPACE_ROOTS__` | Workspace root paths as a single string, joined with `;`; taken from the `workspace_roots` JSON array on stdin. |
-| `__USER_EMAIL__` | Signed-in user email when present; taken from `user_email` (empty string if missing or `null`). |
-| `__TRANSCRIPT_PATH__` | Transcript file path when present; taken from `transcript_path` (empty string if missing or `null`). |
+Shared and event-specific field types are defined in [`internal/cursor/hook_data.go`](internal/cursor/hook_data.go). Every event receives the shared **`HookDataCommon`** envelope (`conversation_id`, `generation_id`, `model`, `hook_event_name`, `cursor_version`, `workspace_roots`, optional `user_email`, optional `transcript_path`).
 
 ### Supported Cursor hook types
 
+Each subsection describes what the **hook adapter** exposes from stdin for that `hook_event_name` (not which `exec` placeholders exist—see [Cursor exec template bindings](#cursor-exec-template-bindings)).
+
 #### `afterShellExecution`
 
-Fires after a shell command runs in Cursor.
-
-**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders) plus the additional placeholders below.
-
-| Placeholder | Description |
-|-------------|-------------|
-| `__COMMAND__` | Full terminal command that Cursor executed; taken from `command`. |
-| `__OUTPUT__` | Full terminal output captured by Cursor; taken from `output`. |
-| `__DURATION__` | Duration in milliseconds spent executing the shell command; taken from `duration`. |
-| `__SANDBOX__` | Whether the command ran in a sandboxed environment (`true` or `false`); taken from `sandbox`. |
+Fires after a shell command runs. **`AfterShellExecutionFields`** adds `command`, `output`, `duration`, and `sandbox` to the shared envelope.
 
 **Returns** `{}`.
 
 #### `afterMCPExecution`
 
-Fires after MCP execution.
-
-**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+Fires after MCP execution. Uses the default adapter with **no** separate event payload struct beyond **`HookDataCommon`**.
 
 **Returns** `{}`.
 
 #### `afterFileEdit`
 
-Fires after a file edit.
-
-**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders) plus:
-
-| Placeholder | Description |
-|-------------|-------------|
-| `__FILE_PATH__` | Absolute path of the edited file; taken from `file_path`. |
+Fires after a file edit. **`AfterFileEditFields`** adds `file_path` and `edits` (each edit is `old_string` / `new_string`).
 
 **Returns** `{}`.
 
@@ -122,33 +122,25 @@ When `wat cursor exec …` includes `-f` / `--file-pattern` with a Go regexp, **
 
 #### `afterTabFileEdit`
 
-Fires after a tab file edit.
-
-**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+Fires after a tab file edit. Uses the default adapter (**`HookDataCommon`** only).
 
 **Returns** `{}`.
 
 #### `afterAgentResponse`
 
-Fires after an agent response.
-
-**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+Fires after an agent response. Uses the default adapter (**`HookDataCommon`** only).
 
 **Returns** `{}`.
 
 #### `afterAgentThought`
 
-Fires after agent thought.
-
-**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+Fires after agent thought. Uses the default adapter (**`HookDataCommon`** only).
 
 **Returns** `{}`.
 
 #### `sessionEnd`
 
-Fires when the session ends.
-
-**Placeholders** — [Common Cursor placeholders](#common-cursor-placeholders).
+Fires when the session ends. Uses the default adapter (**`HookDataCommon`** only).
 
 **Returns** `{}`.
 
@@ -230,18 +222,18 @@ This is how the **`HookHandlerFactory`** and **`HookHandler`** from the executio
 
 1. **Factory value** — **`cursor.NewHookHandlerFactory()`** returns **`cursor.HookHandlerFactory`** for **`HookHandlerFromJSON`** / event builders.
 2. **`HookHandlerFromJSON`** — Rejects empty stdin (Cursor expects a JSON body). **`NewHookDataCommon`** unmarshals bytes into **`HookDataCommon`** (shared envelope: `conversation_id`, `hook_event_name`, etc.—see `hook_data.go`).
-3. **Per-event dispatch** — **`hook_event_name`** selects an entry in **`cursorHookHandlerBuilders`** (`hook_handler_builders.go`). Missing events return an error (“not supported yet”).
+3. **Per-event dispatch** — **`hook_event_name`** selects an entry in **`cursorHookAdapterBuilders`** (`hook_adapter_builders.go`). Missing events return an error (“not supported yet”).
 4. **Building the handler** — Each registered builder is a **`HookHandlerBuilder`** `func(rawJSON []byte, hookData HookDataCommon) (core.HookHandler, error)`. Most events use **`NewDefaultHookHandler`** ( **`CursorHookRunData[struct{}]`** , no event payload) or **`NewHookHandlerFromEventFields[T]`** (parses **`HookDataWithCommon[T]`** and builds **`CursorHookRunData[T]`** with **`EventSpecific: &Fields`**).
 5. **`CursorHookHandler[T].Handle`** — Builds **`HookContext`** with **`HookHost`** (**`cursor.HookHostCursor`**) and **`ParsedData`** pointing at **`CursorHookRunData[T]`**, calls **`cmd.Execute(ctx)`**, and returns **`HookHandlerResult`** with the subprocess exit **`Code`** and fixed hook stdout **`Output`** (**`cursor.DefaultHookResponseLine`**, i.e. `{}` plus newline).
-6. **Placeholder bindings in `internal/execcommand`** (`cursor_bindings.go` plus `cursor_bindings_common.go`, `cursor_bindings_event.go`, and per-event files) — For Cursor, **`templateBindingsForCursor`** type-switches on **`*CursorHookRunData[T]`** and yields a bindings map: common placeholders mirror shared stdin fields (**`CONVERSATION_ID`**, **`HOOK_EVENT_NAME`**, …—the inner part of each **`__KEY__`** token in the template). Event-specific keys (**`FILE_PATH`**, **`COMMAND`**, …) merge with common lookups. Optional JSON uses **`helpers.StringFromPtr`**; **`workspace_roots`** is joined with **`;`**. Missing map keys mean the placeholder is unknown; known keys resolve even when the value is empty. Adding a new event type **`T`** adds a **`case`** branch (no change to **`CursorHookRunData`**’s shape).
+6. **Placeholder bindings in `internal/execcommand`** (`cursor_bindings_common.go`, `cursor_bindings_event.go`, and per-event extractor maps) — For Cursor, **`NewExecHookHandlerProvider`**’s **`HookHandlerFor`** selects an exec handler; bindings come from **`newTemplateBindingsCommon`** and/or **`templateBindingsFromCursorEventPayload`** (common keys such as **`CONVERSATION_ID`**, **`HOOK_EVENT_NAME`**, …—the inner part of each **`__KEY__`** token, plus event keys like **`FILE_PATH`** or **`DURATION`** / **`SANDBOX`** where defined). Optional JSON strings use **`helpers.StringFromPtr`**. Missing map keys mean the placeholder is unknown; known keys resolve even when the value is empty. Supporting a new adapter type in **`exec`** adds a **`case`** in **`HookHandlerFor`** and usually a small extractor map (no change to **`CursorHookRunData`**’s shape).
 7. **Where bindings run** — For **`wat <host> exec`**, the exec **`HookHandler`** (from **`NewExecHookHandlerProvider`**) optionally filters on **`FILE_PATH`** when a **`-f`** pattern is set, then substitutes **`__KEY__`** segments in each template token using the bindings and collects any unknown keys; the exec subcommand turns unknowns into a bad-input exit.
 
 ```mermaid
 sequenceDiagram
   participant F as cursor.HookHandlerFactory
   participant Data as hookDataCommon
-  participant Map as cursorHookHandlerBuilders
-  participant Build as HookHandlerBuilder
+  participant Map as cursorHookAdapterBuilders
+  participant Build as HookAdapterBuilder
 
   F->>F: require non-empty JSON
   F->>Data: NewHookDataCommon(bytes)
@@ -255,11 +247,11 @@ sequenceDiagram
 sequenceDiagram
   participant H as CursorHookHandler
   participant Run as execHookHandler
-  participant TB as templateBindingsForCursor
+  participant TB as exec_bindings
   participant R as placeholder_substitution
 
   H->>Run: Handle()
-  Run->>TB: templateBindingsForCursor(CursorHookRunData)
+  Run->>TB: build bindings from ParsedData
   TB-->>Run: bindings
   Run->>R: substitute __KEY__ in argsTemplate
   loop each template token / __KEY__
@@ -279,5 +271,5 @@ sequenceDiagram
 ### Extending wat
 
 - **New host** — Add a package (like `internal/cursor`) implementing `HookHandlerFactory`, own JSON types, default hook stdout lines, and stdin policy. Register the factory in `app.newHookHandlerFactory`. Keep host protocol strings out of `internal/cli`.
-- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s handler-builder map (e.g. `cursorHookHandlerBuilders` in `internal/cursor/hook_handler_builders.go`), wiring an existing or new builder to a `HookHandler`. Define a new event field struct **`T`** in `internal/cursor`, build **`CursorHookRunData[T]`** in the builder, and add a **`templateBindingsForCursor`** case for **`*CursorHookRunData[T]`** when `exec` must support new **`__KEY__`** tokens. Document the event in the README.
+- **New hook (event)** — For an existing host, register `hook_event_name` in that host’s adapter-builder map (e.g. `cursorHookAdapterBuilders` in `internal/cursor/hook_adapter_builders.go`), wiring an existing or new builder to a `HookAdapter`. Define a new event field struct **`T`** in `internal/cursor`, build **`CursorHookRunData[T]`** in the builder, and add a **`HookHandlerFor`** case in **`NewExecHookHandlerProvider`** (plus extractor maps) when `exec` must support new **`__KEY__`** tokens. Document the event in the README.
 - **New subcommand** — Implement `core.HookHandlerProvider` under `internal/<subcommand>` (today `internal/execcommand`) and wire it in `app.newHookHandlerProvider`.
