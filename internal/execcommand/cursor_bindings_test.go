@@ -29,7 +29,6 @@ func TestTemplateBindingsCommon_templateValueAllCommonFields(t *testing.T) {
 		"MODEL":           "claude-sonnet-4",
 		"HOOK_EVENT_NAME": "afterFileEdit",
 		"CURSOR_VERSION":  "1.7.2",
-		"WORKSPACE_ROOTS": "/repo;/repo-2",
 		"USER_EMAIL":      "dev@example.com",
 		"TRANSCRIPT_PATH": "/tmp/transcript.jsonl",
 	}
@@ -124,8 +123,6 @@ func TestTemplateBindingsAfterFileEdit_unknownKey(t *testing.T) {
 
 func TestAfterShellExecutionPlaceholderExtractors_registry(t *testing.T) {
 	wantKeys := map[string]struct{}{
-		"COMMAND":  {},
-		"OUTPUT":   {},
 		"DURATION": {},
 		"SANDBOX":  {},
 	}
@@ -155,8 +152,6 @@ func TestTemplateBindingsAfterShellExecution_templateValueEventAndCommonFields(t
 	bindings := templateBindingsFromCursorEventPayload(data.Common, data.EventSpecific, afterShellExecutionPlaceholderExtractors)
 	assertTemplateBindingValue(t, bindings, "HOOK_EVENT_NAME", "afterShellExecution")
 	assertTemplateBindingValue(t, bindings, "CONVERSATION_ID", "conv-1")
-	assertTemplateBindingValue(t, bindings, "COMMAND", "go test ./...")
-	assertTemplateBindingValue(t, bindings, "OUTPUT", "PASS")
 	assertTemplateBindingValue(t, bindings, "DURATION", "1234")
 	assertTemplateBindingValue(t, bindings, "SANDBOX", "true")
 }
