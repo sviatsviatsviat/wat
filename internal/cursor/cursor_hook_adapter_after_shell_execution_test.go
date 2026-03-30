@@ -4,18 +4,16 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
+	"github.com/sviatsviatsviat/wat/internal/core"
 )
 
 func TestNewAfterShellExecutionHookAdapter_success(t *testing.T) {
 	mock := cli.NewMockConsole()
 	raw := []byte(`{"hook_event_name":"afterShellExecution","command":"npm test","output":"ok","duration":1,"sandbox":false}`)
-	common, err := NewHookDataCommon(raw)
+	factory := NewHookAdapterFactory()
+	adapter, err := factory.HookAdapterFromJSON(raw, mock)
 	if err != nil {
-		t.Fatalf("NewHookDataCommon: %v", err)
-	}
-	adapter, err := NewHookAdapterFromEventFields[AfterShellExecutionFields](mock, raw, common)
-	if err != nil {
-		t.Fatalf("NewHookAdapterFromEventFields: %v", err)
+		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
 	if adapter == nil {
 		t.Fatal("expected non-nil HookAdapter")
@@ -24,14 +22,11 @@ func TestNewAfterShellExecutionHookAdapter_success(t *testing.T) {
 
 func TestAfterShellExecutionHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	mock := cli.NewMockConsole()
-	raw := []byte(`{"hook_event_name":"afterShellExecution","conversation_id":"cid-1","command":"npm test","output":"all good","duration":1234,"sandbox":true}`)
-	common, err := NewHookDataCommon(raw)
+	raw := []byte(`{"hook_event_name":"afterShellExecution","conversation_id":"cid-1","command":"cd /tmp/example && git status","output":"all good","duration":1234,"sandbox":true}`)
+	factory := NewHookAdapterFactory()
+	a, err := factory.HookAdapterFromJSON(raw, mock)
 	if err != nil {
-		t.Fatalf("NewHookDataCommon: %v", err)
-	}
-	a, err := NewHookAdapterFromEventFields[AfterShellExecutionFields](mock, raw, common)
-	if err != nil {
-		t.Fatalf("NewHookAdapterFromEventFields: %v", err)
+		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
 	adapter, ok := a.(*AfterShellExecutionCursorHookAdapter)
 	if !ok || adapter == nil {
@@ -46,8 +41,20 @@ func TestAfterShellExecutionHookAdapter_carriesHookDataAndProtocol(t *testing.T)
 	if adapter.EventSpecificInput == nil {
 		t.Fatal("EventSpecificInput must be set")
 	}
-	if adapter.EventSpecificInput.Command != "npm test" {
+	if adapter.EventSpecificInput.Command != "cd /tmp/example && git status" {
 		t.Errorf("COMMAND: got %q", adapter.EventSpecificInput.Command)
+	}
+	if adapter.EventSpecificInput.CommandParseErr != nil {
+		t.Errorf("CommandParseErr: %v", adapter.EventSpecificInput.CommandParseErr)
+	}
+	if adapter.EventSpecificInput.CommandParse.Raw != adapter.EventSpecificInput.Command {
+		t.Errorf("CommandParse.Raw: got %q", adapter.EventSpecificInput.CommandParse.Raw)
+	}
+	if adapter.EventSpecificInput.CommandParse.Dialect != core.DialectBash {
+		t.Errorf("CommandParse.Dialect: got %q", adapter.EventSpecificInput.CommandParse.Dialect)
+	}
+	if len(adapter.EventSpecificInput.CommandParse.Pipeline) < 2 {
+		t.Errorf("CommandParse.Pipeline: %+v", adapter.EventSpecificInput.CommandParse.Pipeline)
 	}
 	if adapter.EventSpecificInput.Output != "all good" {
 		t.Errorf("OUTPUT: got %q", adapter.EventSpecificInput.Output)

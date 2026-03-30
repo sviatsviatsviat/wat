@@ -5,6 +5,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
 	"github.com/sviatsviatsviat/wat/internal/core"
+	"github.com/sviatsviatsviat/wat/internal/shellparse"
 )
 
 // HookAdapterBuilder builds a [core.HookAdapter] from parsed hook fields.
@@ -22,7 +23,14 @@ var cursorHookAdapterBuilders = map[string]HookAdapterBuilder{
 }
 
 func hookAdapterFromEventFieldsAfterShellExecution(rawJSON []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {
-	return NewHookAdapterFromEventFields[AfterShellExecutionFields](console, rawJSON, hookData)
+	d, err := NewHookDataWithCommon[AfterShellExecutionFields](rawJSON, hookData)
+	if err != nil {
+		return nil, fmt.Errorf("invalid cursor %s payload: %w", hookData.HookEventName, err)
+	}
+	res, perr := shellparse.NewParserRouter().Parse(d.Fields.Command)
+	d.Fields.CommandParse = res
+	d.Fields.CommandParseErr = perr
+	return NewHookAdapter(console, d.HookDataCommon, &d.Fields), nil
 }
 
 func hookAdapterFromEventFieldsAfterMCPExecution(rawJSON []byte, hookData HookDataCommon, console cli.Console) (core.HookAdapter, error) {

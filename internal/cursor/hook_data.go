@@ -1,6 +1,10 @@
 package cursor
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/core"
+)
 
 // HookHostCursor is the program-argument host token returned by Cursor hook adapters' HookHost method.
 const HookHostCursor = "cursor"
@@ -42,6 +46,10 @@ type AfterShellExecutionFields struct {
 	Output   string  `json:"output"`
 	Duration float32 `json:"duration"`
 	Sandbox  bool    `json:"sandbox"`
+
+	// CommandParse and CommandParseErr are set when building the hook adapter (not from JSON).
+	CommandParse    core.ParseResult `json:"-"`
+	CommandParseErr error            `json:"-"`
 }
 
 // AfterMCPExecutionFields is the event-specific JSON shape for afterMCPExecution.

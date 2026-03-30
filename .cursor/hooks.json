@@ -10,6 +10,11 @@
       {
         "command": "./wat cursor exec --file-pattern=[.]go$ gofmt -w __FILE_PATH__"
       }
+    ],
+    "afterShellExecution": [
+      {
+        "command": "./wat cursor exec echo __HOOK_EVENT_NAME__"
+      }
     ]
   }
 }
