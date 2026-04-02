@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
+	"github.com/sviatsviatsviat/wat/internal/cmdast/hookline"
 	"github.com/sviatsviatsviat/wat/internal/core"
-	"github.com/sviatsviatsviat/wat/internal/shellparse"
 )
 
 // HookAdapterBuilder builds a [core.HookAdapter] from parsed hook fields.
@@ -27,9 +27,9 @@ func hookAdapterFromEventFieldsAfterShellExecution(rawJSON []byte, hookData Hook
 	if err != nil {
 		return nil, fmt.Errorf("invalid cursor %s payload: %w", hookData.HookEventName, err)
 	}
-	res, perr := shellparse.NewParserRouter().Parse(d.Fields.Command)
-	d.Fields.CommandParse = res
-	d.Fields.CommandParseErr = perr
+	cl, _, perr := hookline.ParseCommandLine(d.Fields.Command)
+	d.Fields.CommandLine = cl
+	d.Fields.CommandLineErr = perr
 	return NewHookAdapter(console, d.HookDataCommon, &d.Fields), nil
 }
 

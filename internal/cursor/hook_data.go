@@ -3,7 +3,7 @@ package cursor
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/internal/core"
+	"github.com/sviatsviatsviat/wat/internal/cmdast"
 )
 
 // HookHostCursor is the program-argument host token returned by Cursor hook adapters' HookHost method.
@@ -47,9 +47,9 @@ type AfterShellExecutionFields struct {
 	Duration float32 `json:"duration"`
 	Sandbox  bool    `json:"sandbox"`
 
-	// CommandParse and CommandParseErr are set when building the hook adapter (not from JSON).
-	CommandParse    core.ParseResult `json:"-"`
-	CommandParseErr error            `json:"-"`
+	// CommandLine and CommandLineErr are set when building the hook adapter (not from JSON).
+	CommandLine    *cmdast.CommandLine `json:"-"`
+	CommandLineErr error               `json:"-"`
 }
 
 // AfterMCPExecutionFields is the event-specific JSON shape for afterMCPExecution.

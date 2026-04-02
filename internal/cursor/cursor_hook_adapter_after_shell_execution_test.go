@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
-	"github.com/sviatsviatsviat/wat/internal/core"
+	"github.com/sviatsviatsviat/wat/internal/cmdast"
 )
 
 func TestNewAfterShellExecutionHookAdapter_success(t *testing.T) {
@@ -44,17 +44,28 @@ func TestAfterShellExecutionHookAdapter_carriesHookDataAndProtocol(t *testing.T)
 	if adapter.EventSpecificInput.Command != "cd /tmp/example && git status" {
 		t.Errorf("COMMAND: got %q", adapter.EventSpecificInput.Command)
 	}
-	if adapter.EventSpecificInput.CommandParseErr != nil {
-		t.Errorf("CommandParseErr: %v", adapter.EventSpecificInput.CommandParseErr)
+	if adapter.EventSpecificInput.CommandLineErr != nil {
+		t.Errorf("CommandLineErr: %v", adapter.EventSpecificInput.CommandLineErr)
 	}
-	if adapter.EventSpecificInput.CommandParse.Raw != adapter.EventSpecificInput.Command {
-		t.Errorf("CommandParse.Raw: got %q", adapter.EventSpecificInput.CommandParse.Raw)
+	cl := adapter.EventSpecificInput.CommandLine
+	if cl == nil {
+		t.Fatal("CommandLine must be set")
 	}
-	if adapter.EventSpecificInput.CommandParse.Dialect != core.DialectBash {
-		t.Errorf("CommandParse.Dialect: got %q", adapter.EventSpecificInput.CommandParse.Dialect)
+	if cl.Raw != adapter.EventSpecificInput.Command {
+		t.Errorf("CommandLine.Raw: got %q", cl.Raw)
 	}
-	if len(adapter.EventSpecificInput.CommandParse.Pipeline) < 2 {
-		t.Errorf("CommandParse.Pipeline: %+v", adapter.EventSpecificInput.CommandParse.Pipeline)
+	if len(cl.Statements) != 1 {
+		t.Fatalf("statements: %d", len(cl.Statements))
+	}
+	root := cl.Statements[0]
+	if root.Kind != cmdast.StmtChain || root.Chain == nil || root.Chain.Operator != "&&" {
+		t.Fatalf("want && chain root: %+v", root)
+	}
+	if root.Chain.Left == nil || root.Chain.Left.Command == nil || root.Chain.Left.Command.Name != "cd" {
+		t.Fatalf("left cmd: %+v", root.Chain.Left)
+	}
+	if root.Chain.Right == nil || root.Chain.Right.Command == nil || root.Chain.Right.Command.Name != "git" {
+		t.Fatalf("right cmd: %+v", root.Chain.Right)
 	}
 	if adapter.EventSpecificInput.Output != "all good" {
 		t.Errorf("OUTPUT: got %q", adapter.EventSpecificInput.Output)
