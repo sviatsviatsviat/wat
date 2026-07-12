@@ -217,29 +217,18 @@ var toolAliases = map[string]string{
 }
 
 // NormalizeToolName maps a native tool name onto the canonical vocabulary.
-// MCP tools report mcp=true and keep the native name:
+// MCP tools with a verified namespace report mcp=true and keep the native name:
 //   - Claude / Copilot PascalCase: "mcp__<server>__<tool>"
 //   - Cursor matcher form: "MCP:<tool>"
-//   - Copilot camelCase runtime: "<serverKey>-<toolName>"
+//
+// Copilot camelCase MCP names (serverKey-toolName) are not inferred here; codecs
+// set ToolCall.MCP from dialect-specific structured metadata.
 func NormalizeToolName(native string) (name string, mcp bool) {
 	if strings.HasPrefix(native, "mcp__") || strings.HasPrefix(native, "MCP:") {
-		return native, true
-	}
-	if isCopilotMCPToolName(native) {
 		return native, true
 	}
 	if n, ok := toolAliases[strings.ToLower(native)]; ok {
 		return n, false
 	}
 	return native, false
-}
-
-// isCopilotMCPToolName reports Copilot camelCase MCP tools named serverKey-toolName.
-// Built-in Copilot tools use underscores or single tokens; see github/copilot-sdk#869.
-func isCopilotMCPToolName(native string) bool {
-	if !strings.Contains(native, "-") {
-		return false
-	}
-	_, known := toolAliases[strings.ToLower(native)]
-	return !known
 }

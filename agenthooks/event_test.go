@@ -26,13 +26,14 @@ func TestNormalizeToolName(t *testing.T) {
 		{name: "copilot_create", native: "create", wantName: ToolWrite},
 		{name: "copilot_view", native: "view", wantName: ToolRead},
 		{name: "copilot_web_fetch", native: "web_fetch", wantName: ToolWebFetch},
-		{name: "copilot_mcp", native: "my-server-list_items", wantName: "my-server-list_items", wantMCP: true},
+		{name: "copilot_mcp_name_passthrough", native: "my-server-list_items", wantName: "my-server-list_items"},
 		// Cursor
 		{name: "cursor_shell", native: "Shell", wantName: ToolBash},
 		{name: "cursor_delete", native: "delete", wantName: ToolDelete},
 		{name: "cursor_mcp", native: "MCP:browser_navigate", wantName: "MCP:browser_navigate", wantMCP: true},
 		// Passthrough
 		{name: "unknown_tool", native: "CustomTool", wantName: "CustomTool"},
+		{name: "hyphenated_non_mcp", native: "Custom-Tool", wantName: "Custom-Tool"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -2,7 +2,7 @@
 
 Reference for tool names, MCP naming, and payload conventions across Claude Code, GitHub Copilot, and Cursor. Use this when implementing normalization, codecs, matchers, or portconfig translation.
 
-Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference), [copilot-sdk#869](https://github.com/github/copilot-sdk/issues/869), design `plan/hooks-abstraction-design.md` §5.1.
+Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference), [copilot-sdk#869](https://github.com/github/copilot-sdk/issues/869).
 
 ## Tool name normalization
 
@@ -12,7 +12,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 |-------|---------|-----------------|------------|-------------|---------------|
 | Claude Code | `PreToolUse` | `Bash` | `bash` | `mcp__github__create_issue` | `mcp__` prefix → `mcp=true`, name unchanged |
 | Copilot | PascalCase `PreToolUse` | `Bash` | `bash` | `mcp__github__create_issue` | same as Claude (Claude-format matchers) |
-| Copilot | camelCase `preToolUse` | `bash` | `bash` | `my-server-list_items` | `<serverKey>-<toolName>` when not a known builtin alias → `mcp=true` |
+| Copilot | camelCase `preToolUse` | `bash` | `bash` | `my-server-list_items` | codec sets `ToolCall.MCP` from structured metadata (not inferred from hyphens) |
 | Cursor | `preToolUse` / dedicated shell hooks | `Shell` | `bash` | `MCP:browser_navigate` | `MCP:` prefix → `mcp=true`, name unchanged |
 
 ### Builtin alias examples
@@ -26,7 +26,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 | `Agent`, `task` | `task` |
 | `web_fetch` | `web_fetch` |
 
-Unknown names pass through unchanged with `mcp=false` unless an MCP rule above matches.
+Unknown names pass through unchanged with `mcp=false` unless an `mcp__` or `MCP:` prefix matches.
 
 ### Out of scope for `NormalizeToolName`
 
