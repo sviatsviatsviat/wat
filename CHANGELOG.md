@@ -13,3 +13,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Unified `agenthooks.Result` / `Decision` types with `Merge` and `Unsupported` for hook handler responses
 - `agenthooks.ParseDialect` and `agenthooks.Detect` for hook payload dialect sniffing
 - `agenthooks.Codec`, `agenthooks.CodecFor`, and `agenthooks.ClaudeCodec` for Claude Code stdin/stdout translation
+- `agenthooks.CopilotCodec` for GitHub Copilot camelCase and VS Code hook payloads

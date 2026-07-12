@@ -39,7 +39,7 @@ func TestCodecFor(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "claude", dialect: Claude},
-		{name: "copilot not yet", dialect: Copilot, wantErr: true},
+		{name: "copilot", dialect: Copilot},
 		{name: "cursor not yet", dialect: Cursor, wantErr: true},
 		{name: "unknown", dialect: Unknown, wantErr: true},
 	}
@@ -55,8 +55,8 @@ func TestCodecFor(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if codec.Dialect() != Claude {
-				t.Fatalf("Dialect() = %v, want Claude", codec.Dialect())
+			if codec.Dialect() != tt.dialect {
+				t.Fatalf("Dialect() = %v, want %v", codec.Dialect(), tt.dialect)
 			}
 		})
 	}

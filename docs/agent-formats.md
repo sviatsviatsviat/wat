@@ -88,6 +88,59 @@ Payload shape is checked before environment variables because Cursor exports `CL
 
 When `$CLAUDE_ENV_FILE` is unset, `Result.Env` on SessionStart is a no-op (not an error). Env keys must match `[A-Za-z_][A-Za-z0-9_]*`; invalid keys return an encode error.
 
+## Copilot codec
+
+`agenthooks.CopilotCodec` decodes GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format and encodes `agenthooks.Result` into flat camelCase stdout JSON.
+
+### Wire formats
+
+| Signal in payload | Format | Event name source |
+|---|---|---|
+| `sessionId` | camelCase CLI | Config key via `eventHint` (required except `notification`, which carries `hook_event_name`) |
+| `hook_event_name` | VS Code compatible | Payload (`PreToolUse`, `Stop`, …) |
+
+Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
+
+### Event name mapping
+
+| Copilot event | `Kind` |
+|---|---|
+| `sessionStart` / `SessionStart` | `KindSessionStart` |
+| `sessionEnd` / `SessionEnd` | `KindSessionEnd` |
+| `userPromptSubmitted` / `UserPromptSubmit` | `KindUserPrompt` |
+| `preToolUse` / `PreToolUse` | `KindPreTool` |
+| `postToolUse` / `PostToolUse` | `KindPostTool` |
+| `postToolUseFailure` / `PostToolUseFailure` | `KindPostToolFailure` |
+| `permissionRequest` / `PermissionRequest` | `KindPermissionRequest` |
+| `subagentStart` / `SubagentStart` | `KindSubagentStart` |
+| `subagentStop` / `SubagentStop` | `KindSubagentStop` |
+| `agentStop` / `Stop` | `KindStop` |
+| `preCompact` / `PreCompact` | `KindPreCompact` |
+| `notification` / `Notification` | `KindNotification` |
+| `errorOccurred` / `ErrorOccurred` | `KindAgentError` |
+
+`preToolUse` with `toolName: "bash"` or VS Code `tool_name: "Bash"` extracts shell `command` into `ToolCall.Shell`.
+
+### Encode surfaces
+
+| Event kind | Key `Result` fields → Copilot JSON | Exit code |
+|---|---|---|
+| PreTool | `Decision`, `Reason` → `permissionDecision`, `permissionDecisionReason`; `UpdatedInput` → `modifiedArgs` | `0` |
+| PostTool | `UpdatedOutput` → `modifiedResult`; `Context` → `additionalContext` | `0` |
+| Stop / SubagentStop | `FollowUp` → `decision:block` + `reason` | `0` |
+| PermissionRequest | `Decision`, `Reason`, `HaltSession` → `behavior`, `message`, `interrupt` | `2` on deny |
+| PostToolFailure | `Context` → stdout text (recovery guidance) | `2` |
+| SessionStart / SubagentStart / Notification | `Context` → `additionalContext` | `0` |
+
+### Exit codes
+
+| Constant | Value | When |
+|---|---|---|
+| `CopilotPreToolErrorExit` | `1` | Runner should use when a `preToolUse` handler returns an error (fail-closed deny) |
+| `CopilotWarnExit` | `2` | `Encode` returns this for documented `permissionRequest` deny and `postToolUseFailure` context paths |
+
+Copilot-specific limitations (`BlockPrompt`, `Env`, most `HaltSession` cases) are reported via `Unsupported`.
+
 ## Related code
 
 - Detection: [`agenthooks/dialect.go`](../agenthooks/dialect.go) — `ParseDialect`, `Detect`
@@ -96,3 +149,5 @@ When `$CLAUDE_ENV_FILE` is unset, `Result.Env` on SessionStart is a no-op (not a
 - Tests: [`agenthooks/event_test.go`](../agenthooks/event_test.go)
 - Claude codec: [`agenthooks/claude.go`](../agenthooks/claude.go) — `ClaudeCodec`, `CodecFor`
 - Tests: [`agenthooks/claude_test.go`](../agenthooks/claude_test.go)
+- Copilot codec: [`agenthooks/copilot.go`](../agenthooks/copilot.go) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
+- Tests: [`agenthooks/copilot_test.go`](../agenthooks/copilot_test.go)
