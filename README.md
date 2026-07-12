@@ -24,11 +24,11 @@ Install golangci-lint once:
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 ```
 
-**PowerShell** (run sequentially):
+Verify: `go vet ./... && go test ./... && golangci-lint run ./...`
 
-```powershell
-go vet ./...; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; go test ./...
-```
+## Dev Container
+
+Linux development environment with Go 1.26 and pinned lint tools. See [.devcontainer/README.md](.devcontainer/README.md) for setup (named volume at `/workspaces/wat`, manual `git clone`).
 
 ## Documentation
 

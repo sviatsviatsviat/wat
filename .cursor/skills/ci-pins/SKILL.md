@@ -19,12 +19,6 @@ Run from repo root after editing workflows:
 rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows
 ```
 
-**PowerShell** (repo default on Windows):
-
-```powershell
-rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows
-```
-
 Exit code 0 with **no matches** means no floating major pins remain. Any match is a violation.
 
 Also scan manually for `@main`, `@master`, and `@latest`.

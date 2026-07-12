@@ -13,6 +13,8 @@
 
 **Design docs:** Local-only `plan/` directory (gitignored). Prototype code in `plan/agenthooks/` is reference material for tasks 02–10.
 
+**Development environment:** Linux Dev Container — see [.devcontainer/README.md](.devcontainer/README.md). Workspace lives on named volume `wat-workspace` at `/workspaces/wat` (no Windows bind mount).
+
 **Build and CI:**
 
 ```bash
@@ -22,7 +24,7 @@ go test ./...
 golangci-lint run ./...
 ```
 
-On Windows PowerShell, chain checks sequentially (`; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`) — `&&` is not reliable in older PowerShell.
+Verify locally: `go vet ./... && go test ./... && golangci-lint run ./...`
 
 Install golangci-lint: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8`
 

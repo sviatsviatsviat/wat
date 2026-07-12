@@ -7,6 +7,7 @@ User-facing reference for the redesigned **wat** monorepo. Update these files wh
 | Document | Contents |
 |----------|----------|
 | [agent-formats.md](agent-formats.md) | Tool names, MCP naming, and normalization rules per agent |
+| [../.devcontainer/README.md](../.devcontainer/README.md) | Dev Container setup and named-volume workspace |
 | [../README.md](../README.md) | Build, test, and current shipped capabilities |
 | [../CHANGELOG.md](../CHANGELOG.md) | Release notes ([Unreleased] during development) |
 | [../AGENTS.md](../AGENTS.md) | Agent/CI conventions for contributors |

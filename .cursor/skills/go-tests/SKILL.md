@@ -82,12 +82,7 @@ Production `cmd/wat` behavior:
 ```bash
 go test ./...
 go test -race ./...   # optional locally
-```
-
-**PowerShell** (sequential verify):
-
-```powershell
-go vet ./...; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; go test ./...
+go vet ./... && go test ./...
 ```
 
 ## Exit criteria
