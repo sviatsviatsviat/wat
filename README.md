@@ -21,7 +21,7 @@ golangci-lint run ./...
 Install golangci-lint once:
 
 ```bash
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 ```
 
 Verify: `go vet ./... && go test ./... && golangci-lint run ./...`

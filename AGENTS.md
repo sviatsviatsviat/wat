@@ -26,7 +26,7 @@ golangci-lint run ./...
 
 Verify locally: `go vet ./... && go test ./... && golangci-lint run ./...`
 
-Install golangci-lint: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8`
+Install golangci-lint: `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2`
 
 Browse API docs: `go doc github.com/sviatsviatsviat/wat/agenthooks`
 

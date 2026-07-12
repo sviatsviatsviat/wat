@@ -1,3 +1,5 @@
+version: "2"
+
 run:
   timeout: 5m
 
@@ -11,22 +13,24 @@ linters:
     - gosec
     - revive
     - misspell
+  settings:
+    gosec:
+      severity: medium
+      confidence: medium
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - checkPrivateReceivers
+            - sayRepetitiveInsteadOfStutters
+  exclusions:
+    generated: lax
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+
+formatters:
+  enable:
     - gofmt
     - goimports
-
-linters-settings:
-  gosec:
-    severity: medium
-    confidence: medium
-  revive:
-    rules:
-      - name: exported
-        arguments:
-          - checkPrivateReceivers
-          - sayRepetitiveInsteadOfStutters
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec

@@ -9,7 +9,7 @@ description: >-
 
 Every `uses:` reference in `.github/workflows/` must pin an **exact release tag** with a patch version (e.g. `actions/checkout@v4.3.1`), not a floating major or minor (`@v4`, `@v6`).
 
-Tool versions inside `with:` blocks must also be exact (e.g. `version: v1.64.8`, `go run ...@v1.6.0`).
+Tool versions inside `with:` blocks must also be exact (e.g. `version: v2.12.2`, `go run ...@v1.6.0`).
 
 ## Audit command
 
@@ -36,7 +36,7 @@ Also scan manually for `@main`, `@master`, and `@latest`.
 # Good
 uses: actions/checkout@v4.3.1
 uses: actions/setup-go@v5.6.0
-uses: golangci/golangci-lint-action@v6.5.2
+uses: golangci/golangci-lint-action@v9.3.0
 
 # Bad — floating major
 uses: actions/checkout@v4

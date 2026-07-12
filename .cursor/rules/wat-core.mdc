@@ -26,7 +26,7 @@ Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rul
 
 Pin **exact versions** for tools and actions referenced in repo config and docs. Do not use `@latest`, `version: latest`, or floating major/minor tags (e.g. `@v4`, `@v6`) in:
 
-- `.github/workflows/ci.yml` (exact action release tags, e.g. `actions/checkout@v4.3.1`, `golangci-lint-action@v6.5.2`; tool versions, e.g. `golangci-lint@v1.64.8`, `govulncheck@v1.6.0`)
+- `.github/workflows/ci.yml` (exact action release tags, e.g. `actions/checkout@v4.3.1`, `golangci-lint-action@v9.3.0`; tool versions, e.g. `golangci-lint@v2.12.2`, `govulncheck@v1.6.0`)
 - `README.md`, `AGENTS.md`, and install instructions
 
 When bumping a pinned version, update every reference in the same change.
