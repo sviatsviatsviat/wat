@@ -30,6 +30,10 @@ const copilotVSCodeStop = `{
   "stop_reason": "end_turn"
 }`
 
+// Minimal Cursor payloads for dialect detection only (no cursor codec dependency).
+const detectCursorShell = `{"conversation_id":"c1","cursor_version":"1.7.2","hook_event_name":"beforeShellExecution"}`
+const detectCursorStop = `{"conversation_id":"c1","cursor_version":"1.7.2","hook_event_name":"stop"}`
+
 func TestParseDialect(t *testing.T) {
 	tests := []struct {
 		name string
@@ -65,8 +69,8 @@ func TestDetect_payloadFixtures(t *testing.T) {
 		{name: "claude pre tool use", payload: claudePreToolUse, want: Claude},
 		{name: "copilot camelCase", payload: copilotCamelPreToolUse, want: Copilot},
 		{name: "copilot VS Code format", payload: copilotVSCodeStop, want: Copilot},
-		{name: "cursor shell", payload: cursorShell, want: Cursor},
-		{name: "cursor stop", payload: cursorStop, want: Cursor},
+		{name: "cursor shell", payload: detectCursorShell, want: Cursor},
+		{name: "cursor stop", payload: detectCursorStop, want: Cursor},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

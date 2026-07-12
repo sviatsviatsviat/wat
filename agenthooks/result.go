@@ -155,6 +155,9 @@ func unsupportedClaude(k Kind, r Result, out *[]string) {
 	if r.Decision != DecisionUnset && k != KindPreTool && k != KindPermissionRequest {
 		*out = append(*out, "Decision")
 	}
+	if r.UpdatedInput != nil && k != KindPreTool && k != KindPermissionRequest {
+		*out = append(*out, "UpdatedInput")
+	}
 	if r.UpdatedOutput != nil && k != KindPostTool && k != KindPostToolFailure {
 		*out = append(*out, "UpdatedOutput")
 	}
@@ -211,6 +214,9 @@ func unsupportedCursor(k Kind, r Result, out *[]string) {
 	}
 	if r.UpdatedOutput != nil && k != KindPostTool {
 		*out = append(*out, "UpdatedOutput")
+	}
+	if r.UpdatedInput != nil && k != KindPreTool {
+		*out = append(*out, "UpdatedInput")
 	}
 	if r.Decision != DecisionUnset && k != KindPreTool && k != KindSubagentStart {
 		*out = append(*out, "Decision")

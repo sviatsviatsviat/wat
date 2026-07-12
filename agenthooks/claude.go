@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"unicode"
 )
 
 // ClaudeCodec implements Codec for Claude Code hooks.
@@ -167,6 +166,9 @@ func (c *ClaudeCodec) Encode(ev *Event, res Result) ([]byte, int, error) {
 			}
 			hso["decision"] = dec
 		}
+		if res.Context != "" {
+			hso["additionalContext"] = res.Context
+		}
 	case KindPostTool, KindPostToolFailure:
 		if res.Decision == DecisionDeny {
 			out["decision"] = "block"
@@ -269,19 +271,20 @@ func shellSingleQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
 
-// validEnvKey reports whether k is safe to embed unquoted in a shell export name.
+// validEnvKey reports whether k is a valid ASCII shell export name.
 func validEnvKey(k string) bool {
 	if k == "" {
 		return false
 	}
-	for i, r := range k {
+	for i := 0; i < len(k); i++ {
+		c := k[i]
 		if i == 0 {
-			if r != '_' && !unicode.IsLetter(r) {
+			if c != '_' && (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') {
 				return false
 			}
 			continue
 		}
-		if r != '_' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+		if c != '_' && (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') && (c < '0' || c > '9') {
 			return false
 		}
 	}

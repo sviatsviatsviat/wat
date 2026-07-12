@@ -504,6 +504,18 @@ func TestClaudeEncode_PermissionRequestAsk(t *testing.T) {
 	}
 }
 
+func TestClaudeEncode_PermissionRequestContext(t *testing.T) {
+	c := &ClaudeCodec{}
+	ev := &Event{Agent: Claude, Kind: KindPermissionRequest, Name: "PermissionRequest"}
+	out, code, err := c.Encode(ev, Result{Decision: DecisionAllow, Context: "extra guidance"})
+	if err != nil || code != 0 {
+		t.Fatal(err, code)
+	}
+	if !strings.Contains(string(out), `"additionalContext":"extra guidance"`) {
+		t.Fatalf("bad output: %s", out)
+	}
+}
+
 func TestValidEnvKey(t *testing.T) {
 	tests := []struct {
 		key  string
@@ -517,6 +529,7 @@ func TestValidEnvKey(t *testing.T) {
 		{key: "FOO=BAR", want: false},
 		{key: "FOO\nBAR", want: false},
 		{key: "FOO;BAR", want: false},
+		{key: "FÖO", want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.key, func(t *testing.T) {

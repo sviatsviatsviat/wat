@@ -139,6 +139,11 @@ func TestEmitClaude_roundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	pre := cfg1.Hooks[agenthooks.KindPreTool]
+	if len(pre) == 0 {
+		t.Fatal("expected PreTool entries")
+	}
+	pre[0].TimeoutSec = 99
 	out, _, err := Emit(cfg1, agenthooks.Claude)
 	if err != nil {
 		t.Fatal(err)
@@ -147,6 +152,10 @@ func TestEmitClaude_roundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if cfg2.Hooks[agenthooks.KindPreTool][0].TimeoutSec != 99 {
+		t.Fatalf("mutated timeout not emitted: %+v", cfg2.Hooks[agenthooks.KindPreTool][0])
+	}
+	cfg1.Hooks[agenthooks.KindPreTool][0].Raw = cfg2.Hooks[agenthooks.KindPreTool][0].Raw
 	assertClaudeConfigEqual(t, cfg1, cfg2)
 }
 
@@ -155,6 +164,16 @@ func TestEmitCopilot_roundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	pre := cfg1.Hooks[agenthooks.KindPreTool]
+	if len(pre) == 0 {
+		t.Fatal("expected PreTool entries")
+	}
+	for i := range pre {
+		if pre[i].Matcher == "bash" {
+			pre[i].TimeoutSec = 99
+			break
+		}
+	}
 	out, _, err := Emit(cfg1, agenthooks.Copilot)
 	if err != nil {
 		t.Fatal(err)
@@ -162,6 +181,18 @@ func TestEmitCopilot_roundTrip(t *testing.T) {
 	cfg2, _, err := Parse(out, agenthooks.Copilot)
 	if err != nil {
 		t.Fatal(err)
+	}
+	for _, e := range cfg2.Hooks[agenthooks.KindPreTool] {
+		if e.Matcher == "bash" && e.TimeoutSec != 99 {
+			t.Fatalf("mutated timeout not emitted: %+v", e)
+		}
+	}
+	for i := range cfg1.Hooks[agenthooks.KindPreTool] {
+		for j := range cfg2.Hooks[agenthooks.KindPreTool] {
+			if cfg1.Hooks[agenthooks.KindPreTool][i].Matcher == cfg2.Hooks[agenthooks.KindPreTool][j].Matcher {
+				cfg1.Hooks[agenthooks.KindPreTool][i].Raw = cfg2.Hooks[agenthooks.KindPreTool][j].Raw
+			}
+		}
 	}
 	assertCopilotHooksEqual(t, cfg1, cfg2)
 }

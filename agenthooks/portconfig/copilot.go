@@ -143,22 +143,57 @@ func copilotHandlerAllowed(handlerType, event string) bool {
 }
 
 func copilotHandlerRaw(e Entry) (json.RawMessage, error) {
-	if len(e.Raw) > 0 {
-		return cloneRaw(e.Raw), nil
+	if len(e.Raw) == 0 {
+		h := copilotHandler{Matcher: e.Matcher, TimeoutSec: e.TimeoutSec}
+		switch e.Type {
+		case "command", "":
+			h.Type = "command"
+			h.Command = e.Command
+		case "http":
+			h.Type = "http"
+			h.URL = e.URL
+		case "prompt":
+			h.Type = "prompt"
+			h.Prompt = e.Prompt
+		default:
+			h.Type = e.Type
+		}
+		return json.Marshal(h)
 	}
-	h := copilotHandler{Matcher: e.Matcher, TimeoutSec: e.TimeoutSec}
+	var m map[string]any
+	if err := json.Unmarshal(e.Raw, &m); err != nil {
+		return nil, err
+	}
+	overlayCopilotHandlerFields(m, e)
+	return json.Marshal(m)
+}
+
+func overlayCopilotHandlerFields(m map[string]any, e Entry) {
+	if e.Matcher != "" {
+		m["matcher"] = e.Matcher
+	}
+	if e.TimeoutSec != 0 {
+		m["timeoutSec"] = e.TimeoutSec
+	}
 	switch e.Type {
 	case "command", "":
-		h.Type = "command"
-		h.Command = e.Command
+		if e.Command != "" {
+			m["type"] = "command"
+			m["command"] = e.Command
+		}
 	case "http":
-		h.Type = "http"
-		h.URL = e.URL
+		if e.URL != "" {
+			m["type"] = "http"
+			m["url"] = e.URL
+		}
 	case "prompt":
-		h.Type = "prompt"
-		h.Prompt = e.Prompt
+		if e.Prompt != "" {
+			m["type"] = "prompt"
+			m["prompt"] = e.Prompt
+		}
 	default:
-		h.Type = e.Type
+		if e.Type != "" {
+			m["type"] = e.Type
+		}
 	}
-	return json.Marshal(h)
 }

@@ -194,6 +194,13 @@ func TestUnsupported_capabilityMatrix(t *testing.T) {
 			want:    nil,
 		},
 		{
+			name:    "cursor updated input only on pre tool",
+			dialect: Cursor,
+			kind:    KindStop,
+			result:  Result{UpdatedInput: map[string]any{"command": "ls"}},
+			want:    []string{"UpdatedInput"},
+		},
+		{
 			name:    "cursor halt session unsupported",
 			dialect: Cursor,
 			kind:    KindStop,
@@ -241,6 +248,13 @@ func TestUnsupported_capabilityMatrix(t *testing.T) {
 			kind:    KindPreTool,
 			result:  Deny("blocked"),
 			want:    nil,
+		},
+		{
+			name:    "claude updated input only on pre tool",
+			dialect: Claude,
+			kind:    KindStop,
+			result:  Result{UpdatedInput: map[string]any{"command": "ls"}},
+			want:    []string{"UpdatedInput"},
 		},
 		{
 			name:    "claude updated output only on post tool",

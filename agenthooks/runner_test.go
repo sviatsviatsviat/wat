@@ -112,6 +112,7 @@ func TestMux_Serve_WithGetenv(t *testing.T) {
 		strings.NewReader(`{}`),
 		new(bytes.Buffer),
 		&stderr,
+		WithGetenv(func(string) string { return "" }),
 	)
 	if code != 1 {
 		t.Fatalf("exit = %d, want unknown dialect without env", code)

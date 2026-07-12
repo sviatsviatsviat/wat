@@ -140,9 +140,32 @@ func emitClaude(cfg Config) ([]byte, []Warning, error) {
 }
 
 func claudeHandlerRaw(e Entry) (json.RawMessage, error) {
-	if len(e.Raw) > 0 {
-		return cloneRaw(e.Raw), nil
+	if len(e.Raw) == 0 {
+		h := claudeHandler{Type: e.Type, Command: e.Command, Prompt: e.Prompt, URL: e.URL, Timeout: e.TimeoutSec}
+		return json.Marshal(h)
 	}
-	h := claudeHandler{Type: e.Type, Command: e.Command, Prompt: e.Prompt, URL: e.URL, Timeout: e.TimeoutSec}
-	return json.Marshal(h)
+	var m map[string]any
+	if err := json.Unmarshal(e.Raw, &m); err != nil {
+		return nil, err
+	}
+	overlayClaudeHandlerFields(m, e)
+	return json.Marshal(m)
+}
+
+func overlayClaudeHandlerFields(m map[string]any, e Entry) {
+	if e.Type != "" {
+		m["type"] = e.Type
+	}
+	if e.Command != "" {
+		m["command"] = e.Command
+	}
+	if e.Prompt != "" {
+		m["prompt"] = e.Prompt
+	}
+	if e.URL != "" {
+		m["url"] = e.URL
+	}
+	if e.TimeoutSec != 0 {
+		m["timeout"] = e.TimeoutSec
+	}
 }

@@ -169,7 +169,7 @@ Dedicated shell, MCP, and file events are **folded** into unified pre/post tool 
 | `preCompact` | `KindPreCompact` | |
 | `afterAgentResponse` | `KindOther` | observe-only |
 | `afterAgentThought` | `KindOther` | observe-only |
-| `beforeTabFileRead` | `KindOther` | tab surface — not folded |
+| `beforeTabFileRead` | `KindOther` | tab surface — permission-gating only, not folded |
 | `afterTabFileEdit` | `KindOther` | tab surface — not folded |
 | `workspaceOpen` | `KindOther` | app lifecycle — not folded |
 
@@ -181,7 +181,8 @@ Dedicated shell, MCP, and file events are **folded** into unified pre/post tool 
 |---|---|---|
 | PreTool / dedicated pre-events / SubagentStart / `beforeTabFileRead` | `Decision` → `permission`; `UserMessage` → `user_message`; `Reason` → `agent_message`; `UpdatedInput` → `updated_input` (preToolUse only) | `2` on deny |
 | UserPrompt (`beforeSubmitPrompt`) | `BlockPrompt` / `DecisionDeny` → `continue:false`; `UserMessage` → `user_message` | `0` |
-| PostTool | `UpdatedOutput` → `updated_mcp_tool_output`; `Context` → `additional_context` | `0` |
+| PostTool (MCP: `postToolUse`, `afterMCPExecution`) | `UpdatedOutput` → `updated_mcp_tool_output`; `Context` → `additional_context` | `0` |
+| PostTool (shell/file: `afterShellExecution`, `afterFileEdit`) | `Context` → `additional_context`; `UpdatedOutput` unsupported | `0` |
 | Stop / SubagentStop | `FollowUp` → `followup_message` | `0` |
 | SessionStart | `Env` → `env`; `Context` → `additional_context` | `0` |
 | PreCompact | `UserMessage` → `user_message` | `0` |
