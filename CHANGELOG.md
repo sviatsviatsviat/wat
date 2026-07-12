@@ -16,3 +16,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `agenthooks.ClaudeCodec` for Claude Code stdin/stdout translation
 - `agenthooks.CopilotCodec` for GitHub Copilot camelCase and VS Code hook payloads
 - `agenthooks.CursorCodec` decodes and encodes Cursor hooks, folding dedicated shell/MCP/file events into unified pre/post tool kinds
+- `agenthooks.Mux` with `On`, `OnAny`, `Serve`, and `Main` for hook handler registration and the hook process lifecycle
+- Serve options `WithDialect`, `WithEvent`, and `WithGetenv` for explicit dialect, Copilot event hints, and testable environment lookup

@@ -9,4 +9,11 @@
 // results merge via Merge; Unsupported reports fields a dialect cannot encode.
 // Use CodecFor to obtain a dialect codec; ClaudeCodec, CopilotCodec, and
 // CursorCodec decode native stdin and encode Result for their respective agents.
+//
+// Hook scripts register handlers on a Mux with On and OnAny, then call Main
+// (or Serve for testable I/O). Serve reads stdin, detects or accepts a dialect
+// (WithDialect), decodes via CodecFor, runs OnAny then kind-specific handlers
+// and merges results, encodes stdout, and returns the exit code. WithEvent
+// supplies the Copilot camelCase event name when the payload omits it;
+// WithGetenv injects environment lookup for Detect and ClaudeCodec encode.
 package agenthooks
