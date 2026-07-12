@@ -20,6 +20,15 @@ Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rul
 - Keep per-agent SDKs usable without `agenthooks`.
 - New exported API must include godoc comments (enforced by revive in CI).
 
+## Version pinning
+
+Pin **exact versions** for tools and actions referenced in repo config and docs. Do not use `@latest`, `version: latest`, or floating major/minor tags (e.g. `@v6`) in:
+
+- `.github/workflows/ci.yml` (exact action release tags, e.g. `golangci-lint-action@v6.5.2`; tool versions, e.g. `golangci-lint@v1.64.8`, `govulncheck@v1.6.0`)
+- `README.md`, `AGENTS.md`, and install instructions
+
+When bumping a pinned version, update every reference in the same change.
+
 ## Workflow pointers
 
 - Changelog: `.cursor/skills/changelog/SKILL.md`

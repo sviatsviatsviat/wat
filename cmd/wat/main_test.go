@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"errors"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -22,6 +23,31 @@ func TestWat_help(t *testing.T) {
 	text := string(out)
 	if !strings.Contains(text, "wat") {
 		t.Fatalf("help output missing wat: %q", text)
+	}
+}
+
+func TestWat_unknownCommand(t *testing.T) {
+	t.Helper()
+
+	binary := buildWat(t)
+
+	cmd := exec.Command(binary, "nosuchcommand")
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatal("wat nosuchcommand: expected non-zero exit")
+	}
+
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) {
+		t.Fatalf("wat nosuchcommand: expected exit error, got %v\n%s", err, out)
+	}
+	if code := exitErr.ExitCode(); code != 1 {
+		t.Fatalf("exit code = %d, want 1\n%s", code, out)
+	}
+
+	text := string(out)
+	if !strings.Contains(text, "wat") {
+		t.Fatalf("usage output missing wat: %q", text)
 	}
 }
 
