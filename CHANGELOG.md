@@ -10,3 +10,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Unified `agenthooks.Event` / `Kind` types and tool-name normalization for hook authors
+- Unified `agenthooks.Result` / `Decision` types with `Merge` and `Unsupported` for hook handler responses

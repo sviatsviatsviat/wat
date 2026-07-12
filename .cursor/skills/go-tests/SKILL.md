@@ -12,6 +12,36 @@ description: >-
 - Assert **real behavior**. No empty, placeholder, or tautological tests.
 - New exported API or behavior change ships with tests in the same change.
 
+## Caller immutability
+
+Functions that take a struct **by value** and return a combined result must not mutate reference-type fields owned by the caller (maps, slices, pointers).
+
+Applies to merge/combine helpers such as `Merge(a, b Result) Result`: `a` is copied, but `a.Env` still aliases the caller's map unless the implementation clones first.
+
+When adding or reviewing these APIs, assert **both**:
+
+1. **Output** — merged fields have the expected values.
+2. **Input unchanged** — snapshot caller-owned maps/slices before the call and compare after.
+
+```go
+t.Run("env merge", func(t *testing.T) {
+    a := Result{Env: map[string]string{"A": "1", "B": "2"}}
+    b := Result{Env: map[string]string{"B": "override", "C": "3"}}
+    origA := maps.Clone(a.Env)
+
+    got := Merge(a, b)
+
+    if got.Env["B"] != "override" {
+        t.Fatalf("merged env = %v", got.Env)
+    }
+    if !maps.Equal(a.Env, origA) {
+        t.Fatalf("caller env mutated: got %v, want %v", a.Env, origA)
+    }
+})
+```
+
+Use `maps.Clone` / `maps.Equal` for maps and `slices.Clone` / `slices.Equal` for slices. For pointers, compare dereferenced values or identity as appropriate to the contract.
+
 ## Structure
 
 - Table-driven tests for decode/encode matrices and flag parsing:

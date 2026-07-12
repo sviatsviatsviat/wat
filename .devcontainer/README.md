@@ -1,6 +1,6 @@
 # Dev Container
 
-Linux development environment for **wat** with Go 1.26-bookworm (base image), golangci-lint 2.12.2, ripgrep (`rg`) 15.1.0, and GitHub CLI (`gh`) 2.96.0. Go comes from `Dockerfile`; the other tools are pinned Dev Container Features in `devcontainer.json`. The repo lives on a named Docker volume at `/workspaces/wat`. Only `.devcontainer/` is bind-mounted from the host so **Rebuild Container** picks up config edits from either side.
+Linux development environment for **wat** with Go 1.26 on `mcr.microsoft.com/devcontainers/go:2.1.5-1.26-bookworm`, golangci-lint 2.12.2, ripgrep (`rg`) 15.1.0, and GitHub CLI (`gh`) 2.96.0. Go comes from `Dockerfile`; the other tools are pinned Dev Container Features in `devcontainer.json`. The repo lives on a named Docker volume at `/workspaces/wat`. Only `.devcontainer/` is bind-mounted from the host so **Rebuild Container** picks up config edits from either side.
 
 ## First-time setup
 
