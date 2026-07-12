@@ -106,6 +106,21 @@ func buildCursorKindForEvent() map[string]agenthooks.Kind {
 	return m
 }
 
+// cursorDedicatedEvents lists Cursor hook events folded into unified kinds but
+// not portable as dedicated events on other agents.
+var cursorDedicatedEvents = map[string]bool{
+	"beforeShellExecution": true,
+	"afterShellExecution":  true,
+	"beforeMCPExecution":   true,
+	"afterMCPExecution":    true,
+	"beforeReadFile":       true,
+	"afterFileEdit":        true,
+}
+
+func isCursorDedicatedEvent(event string) bool {
+	return cursorDedicatedEvents[event]
+}
+
 func eventNameForEmit(e Entry, kindForEvent map[string]agenthooks.Kind, eventForKind map[agenthooks.Kind]string) string {
 	if e.NativeEvent != "" {
 		if k, ok := kindForEvent[e.NativeEvent]; ok && k == e.Kind {

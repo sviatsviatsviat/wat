@@ -393,6 +393,9 @@ func assertEntriesByKind(t *testing.T, a, b map[agenthooks.Kind][]Entry) {
 				ae.NativeEvent != be.NativeEvent || ae.Type != be.Type {
 				t.Fatalf("kind %q entry %d: %+v != %+v", kind, i, ae, be)
 			}
+			if !rawJSONEqual(ae.ClaudeGroupIf, be.ClaudeGroupIf) {
+				t.Fatalf("kind %q entry %d ClaudeGroupIf mismatch:\n%s\n!=\n%s", kind, i, ae.ClaudeGroupIf, be.ClaudeGroupIf)
+			}
 			if !rawJSONEqual(ae.Raw, be.Raw) {
 				t.Fatalf("kind %q entry %d raw mismatch:\n%s\n!=\n%s", kind, i, ae.Raw, be.Raw)
 			}

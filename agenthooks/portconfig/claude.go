@@ -14,6 +14,7 @@ type claudeFile struct {
 
 type claudeGroup struct {
 	Matcher string            `json:"matcher,omitempty"`
+	If      json.RawMessage   `json:"if,omitempty"`
 	Hooks   []json.RawMessage `json:"hooks"`
 }
 
@@ -47,7 +48,7 @@ func parseClaude(data []byte) (Config, []Warning, error) {
 		}
 		for _, g := range groups {
 			for _, handlerRaw := range g.Hooks {
-				entry, extraRaw, w, ok := claudeHandlerToEntry(event, kind, g.Matcher, handlerRaw)
+				entry, extraRaw, w, ok := claudeHandlerToEntry(event, kind, g.Matcher, g.If, handlerRaw)
 				warns = append(warns, w...)
 				if !ok {
 					if extraRaw != nil {
@@ -62,18 +63,19 @@ func parseClaude(data []byte) (Config, []Warning, error) {
 	return cfg, warns, nil
 }
 
-func claudeHandlerToEntry(event string, kind agenthooks.Kind, matcher string, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
+func claudeHandlerToEntry(event string, kind agenthooks.Kind, matcher string, groupIf json.RawMessage, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
 	var h claudeHandler
 	if err := json.Unmarshal(handlerRaw, &h); err != nil {
 		return Entry{}, nil, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
 	}
 	var warns []Warning
 	e := Entry{
-		Kind:        kind,
-		NativeEvent: event,
-		Matcher:     matcher,
-		TimeoutSec:  h.Timeout,
-		Raw:         cloneRaw(handlerRaw),
+		Kind:          kind,
+		NativeEvent:   event,
+		Matcher:       matcher,
+		TimeoutSec:    h.Timeout,
+		ClaudeGroupIf: cloneRaw(groupIf),
+		Raw:           cloneRaw(handlerRaw),
 	}
 	switch h.Type {
 	case "command", "":
@@ -93,7 +95,7 @@ func claudeHandlerToEntry(event string, kind agenthooks.Kind, matcher string, ha
 		e.URL = h.URL
 		return e, nil, warns, true
 	default:
-		groupRaw, err := json.Marshal(claudeGroup{Matcher: matcher, Hooks: []json.RawMessage{handlerRaw}})
+		groupRaw, err := json.Marshal(claudeGroup{Matcher: matcher, If: groupIf, Hooks: []json.RawMessage{handlerRaw}})
 		if err != nil {
 			warns = append(warns, warnf("%s: handler type %q could not be preserved: %v", event, h.Type, err))
 			return Entry{}, nil, warns, false
@@ -118,7 +120,11 @@ func emitClaude(cfg Config) ([]byte, []Warning, error) {
 				warns = append(warns, warnf("%s: could not encode handler: %v", event, err))
 				continue
 			}
-			f.Hooks[event] = append(f.Hooks[event], claudeGroup{Matcher: e.Matcher, Hooks: []json.RawMessage{handlerRaw}})
+			f.Hooks[event] = append(f.Hooks[event], claudeGroup{
+				Matcher: e.Matcher,
+				If:      cloneRaw(e.ClaudeGroupIf),
+				Hooks:   []json.RawMessage{handlerRaw},
+			})
 		}
 	}
 	for _, extra := range cfg.Extras {

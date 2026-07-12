@@ -19,3 +19,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `agenthooks.Mux` with `On`, `OnAny`, `Serve`, and `Main` for hook handler registration and the hook process lifecycle
 - Serve options `WithDialect`, `WithEvent`, and `WithGetenv` for explicit dialect, Copilot event hints, and testable environment lookup
 - `agenthooks/portconfig.Parse` and `Emit` for Claude Code, GitHub Copilot, and Cursor hook configuration files, preserving unmappable entries and native handler fields for same-dialect round-trip
+- `agenthooks/portconfig.Translate` for cross-agent hook config conversion with explicit warnings for lossy matchers, unsupported handler types, and unmappable events

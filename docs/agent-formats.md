@@ -197,7 +197,7 @@ Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preTo
 
 ## Related code
 
-- Config porting: [`agenthooks/portconfig`](../agenthooks/portconfig/) — `Parse`, `Emit`
+- Config porting: [`agenthooks/portconfig`](../agenthooks/portconfig/) — `Parse`, `Emit`, `Translate`
 - Detection: [`agenthooks/dialect.go`](../agenthooks/dialect.go) — `ParseDialect`, `Detect`
 - Tests: [`agenthooks/dialect_test.go`](../agenthooks/dialect_test.go)
 - Normalization: [`agenthooks/event.go`](../agenthooks/event.go) — `NormalizeToolName`, `InputAs`

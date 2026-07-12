@@ -33,6 +33,8 @@ type Entry struct {
 	URL string
 	// TimeoutSec is the handler timeout in seconds when set.
 	TimeoutSec int
+	// ClaudeGroupIf holds a Claude-only group-level permission rule when present.
+	ClaudeGroupIf json.RawMessage
 	// Raw is the untouched native handler JSON preserved for round-trip emit.
 	Raw json.RawMessage
 }
