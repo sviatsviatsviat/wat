@@ -63,9 +63,36 @@ Payload shape is checked before environment variables because Cursor exports `CL
 
 **Ambiguous cases:** Copilot payloads always win over `CLAUDE_PROJECT_DIR` in the environment. Env-only detection with only `CLAUDE_PROJECT_DIR` may misidentify Copilot in repos that also have `.claude/settings.json`; prefer payload evidence or an explicit `--agent` override.
 
+## Claude codec
+
+`agenthooks.ClaudeCodec` decodes Claude Code hook stdin into `agenthooks.Event` and encodes `agenthooks.Result` into Claude stdout JSON. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
+
+### Event name mapping
+
+| Claude `hook_event_name` | `Kind` |
+|---|---|
+| `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `SubagentStart`, `SubagentStop`, `Stop`, `PreCompact`, `Notification`, `StopFailure` | Normalized (see `go doc agenthooks Kind`) |
+| All other Claude events (`Setup`, `UserPromptExpansion`, `PostToolBatch`, `PermissionDenied`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `MessageDisplay`, `InstructionsLoaded`, `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeCreate`, `WorktreeRemove`, `PostCompact`, `Elicitation`, `ElicitationResult`, …) | `KindOther` — full payload preserved in `Event.Raw` |
+
+`PreToolUse` with `tool_name: "Bash"` extracts `tool_input.command` into `ToolCall.Shell`.
+
+### Encode surfaces
+
+| Event kind | Key `Result` fields → Claude JSON |
+|---|---|
+| PreTool | `Decision`, `Reason` → `hookSpecificOutput.permissionDecision`; `UpdatedInput`, `Context` |
+| UserPrompt | `BlockPrompt` / `Decision` → top-level `decision:block`; `Context`, `SetTitle` |
+| Stop / SubagentStop | `FollowUp` → top-level `decision:block` + `reason`; `Context` |
+| SessionStart | `Context`, `SetTitle`; `Env` → append `export KEY="value"` lines to `$CLAUDE_ENV_FILE` |
+| Any | `HaltSession` → `continue:false`; `UserMessage` → `systemMessage` |
+
+When `$CLAUDE_ENV_FILE` is unset, `Result.Env` on SessionStart is a no-op (not an error). Env keys must match `[A-Za-z_][A-Za-z0-9_]*`; invalid keys return an encode error.
+
 ## Related code
 
 - Detection: [`agenthooks/dialect.go`](../agenthooks/dialect.go) — `ParseDialect`, `Detect`
 - Tests: [`agenthooks/dialect_test.go`](../agenthooks/dialect_test.go)
 - Normalization: [`agenthooks/event.go`](../agenthooks/event.go) — `NormalizeToolName`, `InputAs`
 - Tests: [`agenthooks/event_test.go`](../agenthooks/event_test.go)
+- Claude codec: [`agenthooks/claude.go`](../agenthooks/claude.go) — `ClaudeCodec`, `CodecFor`
+- Tests: [`agenthooks/claude_test.go`](../agenthooks/claude_test.go)
