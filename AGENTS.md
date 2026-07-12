@@ -32,7 +32,7 @@ Browse API docs: `go doc github.com/sviatsviatsviat/wat/agenthooks`
 
 **Documentation:** User-facing behavior belongs in [docs/](docs/) and [CHANGELOG.md](CHANGELOG.md). Update those when API or CLI behavior changes in the same PR as the code.
 
-**Dependabot:** [`.github/dependabot.yml`](.github/dependabot.yml) opens weekly PRs for GitHub Actions and Go modules. Keep exact pinned versions. When bumping a dependency, update every reference to **that same dependency** in the same PR (e.g. all `golangci-lint` pins: CI `version:`, README, AGENTS; all `govulncheck@` pins in workflow files). Unrelated pins do not need to move with every Action bump unless compatibility requires it.
+**Dependabot:** [`.github/dependabot.yml`](.github/dependabot.yml) opens weekly PRs for GitHub Actions, Go modules, Dev Container Features, and the devcontainer base image (`.devcontainer/Dockerfile`). Keep exact pinned versions. When bumping a dependency, update every reference to **that same dependency** in the same PR (e.g. all `golangci-lint` pins: CI `version:`, README, AGENTS; all `govulncheck@` pins in workflow files). Unrelated pins do not need to move with every Action bump unless compatibility requires it.
 
 ## Rules
 

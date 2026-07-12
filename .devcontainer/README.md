@@ -1,6 +1,6 @@
 # Dev Container
 
-Linux development environment for **wat** with Go 1.26, golangci-lint, ripgrep, and GitHub CLI (`gh`). The repo lives on a named Docker volume at `/workspaces/wat`. Only `.devcontainer/` is bind-mounted from the host so **Rebuild Container** picks up config edits from either side.
+Linux development environment for **wat** with Go 1.26 (base image), golangci-lint 1.64.8, ripgrep (`rg`) 15.1.0, and GitHub CLI (`gh`) 2.96.0. Go comes from `Dockerfile`; the other tools are pinned Dev Container Features in `devcontainer.json`. The repo lives on a named Docker volume at `/workspaces/wat`. Only `.devcontainer/` is bind-mounted from the host so **Rebuild Container** picks up config edits from either side.
 
 ## First-time setup
 
