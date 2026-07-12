@@ -55,7 +55,7 @@ func (t *copilotTimestamp) UnmarshalJSON(data []byte) error {
 		}
 		parsed, err := time.Parse(time.RFC3339, s)
 		if err != nil {
-			return err
+			return nil
 		}
 		t.Time = parsed
 		return nil
@@ -66,7 +66,7 @@ func (t *copilotTimestamp) UnmarshalJSON(data []byte) error {
 	}
 	n, err := ms.Int64()
 	if err != nil {
-		return err
+		return nil
 	}
 	t.Time = time.UnixMilli(n)
 	return nil

@@ -12,5 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Unified `agenthooks.Event` / `Kind` types and tool-name normalization for hook authors
 - Unified `agenthooks.Result` / `Decision` types with `Merge` and `Unsupported` for hook handler responses
 - `agenthooks.ParseDialect` and `agenthooks.Detect` for hook payload dialect sniffing
-- `agenthooks.Codec`, `agenthooks.CodecFor`, and `agenthooks.ClaudeCodec` for Claude Code stdin/stdout translation
+- `agenthooks.Codec` and `agenthooks.CodecFor` for dialect codec lookup
+- `agenthooks.ClaudeCodec` for Claude Code stdin/stdout translation
 - `agenthooks.CopilotCodec` for GitHub Copilot camelCase and VS Code hook payloads
+- `agenthooks.CursorCodec` decodes and encodes Cursor hooks, folding dedicated shell/MCP/file events into unified pre/post tool kinds

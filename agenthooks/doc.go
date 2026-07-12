@@ -7,6 +7,6 @@
 // Result is the outbound hook handler response. Event.Result is a different
 // concept: incoming post-tool payload data on decoded events. Multiple handler
 // results merge via Merge; Unsupported reports fields a dialect cannot encode.
-// Use CodecFor to obtain a dialect codec; ClaudeCodec and CopilotCodec decode
-// native stdin and encode Result for their respective agents.
+// Use CodecFor to obtain a dialect codec; ClaudeCodec, CopilotCodec, and
+// CursorCodec decode native stdin and encode Result for their respective agents.
 package agenthooks

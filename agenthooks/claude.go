@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"unicode"
 )
 
@@ -146,6 +147,8 @@ func (c *ClaudeCodec) Encode(ev *Event, res Result) ([]byte, int, error) {
 			if res.Reason != "" {
 				hso["permissionDecisionReason"] = res.Reason
 			}
+		} else if res.UpdatedInput != nil {
+			hso["permissionDecision"] = "allow"
 		}
 		if res.UpdatedInput != nil {
 			hso["updatedInput"] = res.UpdatedInput
@@ -239,7 +242,7 @@ func (c *ClaudeCodec) writeEnvFile(env map[string]string) error {
 	appendFile := c.AppendFile
 	if appendFile == nil {
 		appendFile = func(p string, data []byte) error {
-			f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) //nolint:gosec // CLAUDE_ENV_FILE path from agent env
+			f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600) //nolint:gosec // CLAUDE_ENV_FILE path from agent env
 			if err != nil {
 				return err
 			}
@@ -253,9 +256,17 @@ func (c *ClaudeCodec) writeEnvFile(env map[string]string) error {
 		if !validEnvKey(k) {
 			return fmt.Errorf("claude: invalid env key %q", k)
 		}
-		buf = append(buf, []byte(fmt.Sprintf("export %s=%q\n", k, v))...)
+		buf = append(buf, []byte(fmt.Sprintf("export %s=%s\n", k, shellSingleQuote(v)))...)
 	}
 	return appendFile(path, buf)
+}
+
+// shellSingleQuote wraps s in single quotes using POSIX-safe escaping.
+func shellSingleQuote(s string) string {
+	if s == "" {
+		return "''"
+	}
+	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
 
 // validEnvKey reports whether k is safe to embed unquoted in a shell export name.

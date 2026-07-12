@@ -2,8 +2,6 @@ package agenthooks
 
 import "encoding/json"
 
-// newToolCall builds a ToolCall from native tool metadata and extracts a shell
-// command when the tool is a shell execution.
 func cloneRaw(raw json.RawMessage) json.RawMessage {
 	if len(raw) == 0 {
 		return nil
@@ -11,6 +9,8 @@ func cloneRaw(raw json.RawMessage) json.RawMessage {
 	return append(json.RawMessage(nil), raw...)
 }
 
+// newToolCall builds a ToolCall from native tool metadata and extracts a shell
+// command when the tool is a shell execution.
 func newToolCall(native string, input json.RawMessage, id string) *ToolCall {
 	name, mcp := NormalizeToolName(native)
 	tc := &ToolCall{

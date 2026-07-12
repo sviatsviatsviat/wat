@@ -40,7 +40,7 @@ func TestCodecFor(t *testing.T) {
 	}{
 		{name: "claude", dialect: Claude},
 		{name: "copilot", dialect: Copilot},
-		{name: "cursor not yet", dialect: Cursor, wantErr: true},
+		{name: "cursor", dialect: Cursor},
 		{name: "unknown", dialect: Unknown, wantErr: true},
 	}
 	for _, tt := range tests {
@@ -97,6 +97,34 @@ func TestClaudeDecodeEncode_PreToolDeny(t *testing.T) {
 	}
 }
 
+func TestClaudeDecodeEncode_PreToolUpdatedInput(t *testing.T) {
+	c := &ClaudeCodec{Getenv: func(string) string { return "" }}
+	ev, err := c.Decode([]byte(claudePreToolUse), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out, code, err := c.Encode(ev, Result{UpdatedInput: map[string]any{"command": "ls -la"}})
+	if err != nil || code != 0 {
+		t.Fatalf("encode: %v code=%d", err, code)
+	}
+	var got struct {
+		HSO struct {
+			Decision string         `json:"permissionDecision"`
+			Input    map[string]any `json:"updatedInput"`
+		} `json:"hookSpecificOutput"`
+	}
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.HSO.Decision != "allow" {
+		t.Fatalf("permissionDecision = %q, want allow", got.HSO.Decision)
+	}
+	if got.HSO.Input["command"] != "ls -la" {
+		t.Fatalf("updatedInput = %+v", got.HSO.Input)
+	}
+}
+
 func TestClaudeEncode_StopFollowUp(t *testing.T) {
 	c := &ClaudeCodec{}
 	stopEv := &Event{Agent: Claude, Kind: KindStop, Name: "Stop"}
@@ -148,17 +176,36 @@ func TestClaudeEncode_SessionStartEnv(t *testing.T) {
 	if out != nil {
 		t.Fatalf("env-only result should produce no stdout, got %q", out)
 	}
-	want := `export FOO="bar"` + "\n" + `export BAZ="qux"` + "\n"
-	if string(written) != want && string(written) != `export BAZ="qux"`+"\n"+`export FOO="bar"`+"\n" {
-		t.Fatalf("env file = %q, want export lines for FOO and BAZ", written)
+	wantLines := []string{`export FOO='bar'`, `export BAZ='qux'`}
+	got := string(written)
+	for _, line := range wantLines {
+		if !strings.Contains(got, line) {
+			t.Fatalf("env file = %q, want lines %v", got, wantLines)
+		}
 	}
 	data, err := os.ReadFile(envPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(data), `export FOO="bar"`) || !strings.Contains(string(data), `export BAZ="qux"`) {
-		t.Fatalf("file contents = %q", data)
+	for _, line := range wantLines {
+		if !strings.Contains(string(data), line) {
+			t.Fatalf("file contents = %q, want lines %v", data, wantLines)
+		}
 	}
+
+	t.Run("shell metacharacters preserved", func(t *testing.T) {
+		written = nil
+		ev := &Event{Agent: Claude, Kind: KindSessionStart, Name: "SessionStart"}
+		unsafe := "$(rm -rf /) `whoami` $HOME"
+		_, code, err := c.Encode(ev, Result{Env: map[string]string{"UNSAFE": unsafe}})
+		if err != nil || code != 0 {
+			t.Fatalf("encode: %v code=%d", err, code)
+		}
+		want := "export UNSAFE='$(rm -rf /) `whoami` $HOME'\n"
+		if string(written) != want {
+			t.Fatalf("env file = %q, want %q", written, want)
+		}
+	})
 }
 
 func TestClaudeEncode_ZeroResult(t *testing.T) {
@@ -360,6 +407,15 @@ func TestClaudeEncode_SessionStartEnvInvalidKey(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "invalid env key") {
 		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestClaudeEncode_SessionStartEnvInvalidKeyUnsetFile(t *testing.T) {
+	c := &ClaudeCodec{Getenv: func(string) string { return "" }}
+	ev := &Event{Agent: Claude, Kind: KindSessionStart, Name: "SessionStart"}
+	_, code, err := c.Encode(ev, Result{Env: map[string]string{"FOO\nBAR": "value"}})
+	if err != nil || code != 0 {
+		t.Fatalf("unset CLAUDE_ENV_FILE should no-op invalid keys, got err=%v code=%d", err, code)
 	}
 }
 

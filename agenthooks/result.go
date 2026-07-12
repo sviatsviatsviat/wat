@@ -221,8 +221,9 @@ func unsupportedCursor(k Kind, r Result, out *[]string) {
 }
 
 var copilotContextKinds = map[Kind]bool{
-	KindSessionStart:  true,
-	KindSubagentStart: true,
-	KindNotification:  true,
-	KindPostTool:      true,
+	KindSessionStart:    true,
+	KindSubagentStart:   true,
+	KindNotification:    true,
+	KindPostTool:        true,
+	KindPostToolFailure: true,
 }

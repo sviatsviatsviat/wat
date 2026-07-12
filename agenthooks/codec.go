@@ -22,6 +22,8 @@ func CodecFor(d Dialect) (Codec, error) {
 		return &ClaudeCodec{}, nil
 	case Copilot:
 		return &CopilotCodec{}, nil
+	case Cursor:
+		return &CursorCodec{}, nil
 	default:
 		return nil, fmt.Errorf("agenthooks: no codec for dialect %q", d)
 	}

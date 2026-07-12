@@ -83,10 +83,10 @@ Payload shape is checked before environment variables because Cursor exports `CL
 | PreTool | `Decision`, `Reason` → `hookSpecificOutput.permissionDecision`; `UpdatedInput`, `Context` |
 | UserPrompt | `BlockPrompt` / `Decision` → top-level `decision:block`; `Context`, `SetTitle` |
 | Stop / SubagentStop | `FollowUp` → top-level `decision:block` + `reason`; `Context` |
-| SessionStart | `Context`, `SetTitle`; `Env` → append `export KEY="value"` lines to `$CLAUDE_ENV_FILE` |
+| SessionStart | `Context`, `SetTitle`; `Env` → append `export KEY='value'` lines to `$CLAUDE_ENV_FILE` |
 | Any | `HaltSession` → `continue:false`; `UserMessage` → `systemMessage` |
 
-When `$CLAUDE_ENV_FILE` is unset, `Result.Env` on SessionStart is a no-op (not an error). Env keys must match `[A-Za-z_][A-Za-z0-9_]*`; invalid keys return an encode error.
+When `$CLAUDE_ENV_FILE` is set, env keys must match `[A-Za-z_][A-Za-z0-9_]*`; invalid keys return an encode error before any file write. When `$CLAUDE_ENV_FILE` is unset, `Result.Env` on SessionStart is a no-op (not an error) and key validation is skipped.
 
 ## Copilot codec
 
@@ -141,6 +141,60 @@ Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
 
 Copilot-specific limitations (`BlockPrompt`, `Env`, most `HaltSession` cases) are reported via `Unsupported`.
 
+## Cursor codec
+
+`agenthooks.CursorCodec` decodes Cursor hook stdin into `agenthooks.Event` and encodes `agenthooks.Result` into Cursor stdout JSON.
+
+Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`; the full payload stays in `Event.Raw`.
+
+### Event name mapping
+
+| Cursor event | `Kind` | Folding notes |
+|---|---|---|
+| `sessionStart` | `KindSessionStart` | |
+| `sessionEnd` | `KindSessionEnd` | |
+| `beforeSubmitPrompt` | `KindUserPrompt` | |
+| `preToolUse` | `KindPreTool` | |
+| `postToolUse` | `KindPostTool` | |
+| `postToolUseFailure` | `KindPostToolFailure` | |
+| `beforeShellExecution` | `KindPreTool` | → `Tool.Name=bash`, `Tool.Shell=command` |
+| `afterShellExecution` | `KindPostTool` | → bash + terminal `output` in `Result.Text` |
+| `beforeMCPExecution` | `KindPreTool` | → `Tool.MCP=true` |
+| `afterMCPExecution` | `KindPostTool` | → MCP + `Result.Text=result_json` |
+| `beforeReadFile` | `KindPreTool` | → `Tool.Name=read`; file content in `Tool.Input` |
+| `afterFileEdit` | `KindPostTool` | → `Tool.Name=edit`; diffs in `Tool.Input` / `Result.Raw` |
+| `subagentStart` | `KindSubagentStart` | |
+| `subagentStop` | `KindSubagentStop` | `LoopCount` on `Subagent` |
+| `stop` | `KindStop` | `LoopCount` on `Turn` |
+| `preCompact` | `KindPreCompact` | |
+| `afterAgentResponse` | `KindOther` | observe-only |
+| `afterAgentThought` | `KindOther` | observe-only |
+| `beforeTabFileRead` | `KindOther` | tab surface — not folded |
+| `afterTabFileEdit` | `KindOther` | tab surface — not folded |
+| `workspaceOpen` | `KindOther` | app lifecycle — not folded |
+
+`preToolUse` with `tool_name: "Shell"` extracts `tool_input.command` into `ToolCall.Shell`.
+
+### Encode surfaces
+
+| Event kind | Key `Result` fields → Cursor JSON | Exit code |
+|---|---|---|
+| PreTool / dedicated pre-events / SubagentStart / `beforeTabFileRead` | `Decision` → `permission`; `UserMessage` → `user_message`; `Reason` → `agent_message`; `UpdatedInput` → `updated_input` (preToolUse only) | `2` on deny |
+| UserPrompt (`beforeSubmitPrompt`) | `BlockPrompt` / `DecisionDeny` → `continue:false`; `UserMessage` → `user_message` | `0` |
+| PostTool | `UpdatedOutput` → `updated_mcp_tool_output`; `Context` → `additional_context` | `0` |
+| Stop / SubagentStop | `FollowUp` → `followup_message` | `0` |
+| SessionStart | `Env` → `env`; `Context` → `additional_context` | `0` |
+| PreCompact | `UserMessage` → `user_message` | `0` |
+
+### Exit codes
+
+| Constant | Value | When |
+|---|---|---|
+| `CursorHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `CursorWarnExit` | `2` | `Encode` returns this for permission-gating deny |
+
+Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preToolUse) are reported via `Unsupported`.
+
 ## Related code
 
 - Detection: [`agenthooks/dialect.go`](../agenthooks/dialect.go) — `ParseDialect`, `Detect`
@@ -151,3 +205,5 @@ Copilot-specific limitations (`BlockPrompt`, `Env`, most `HaltSession` cases) ar
 - Tests: [`agenthooks/claude_test.go`](../agenthooks/claude_test.go)
 - Copilot codec: [`agenthooks/copilot.go`](../agenthooks/copilot.go) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
 - Tests: [`agenthooks/copilot_test.go`](../agenthooks/copilot_test.go)
+- Cursor codec: [`agenthooks/cursor.go`](../agenthooks/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit`
+- Tests: [`agenthooks/cursor_test.go`](../agenthooks/cursor_test.go)

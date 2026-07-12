@@ -187,6 +187,13 @@ func TestUnsupported_capabilityMatrix(t *testing.T) {
 			want:    nil,
 		},
 		{
+			name:    "copilot context supported on post tool failure",
+			dialect: Copilot,
+			kind:    KindPostToolFailure,
+			result:  Context("extra"),
+			want:    nil,
+		},
+		{
 			name:    "cursor halt session unsupported",
 			dialect: Cursor,
 			kind:    KindStop,

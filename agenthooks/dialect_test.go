@@ -30,28 +30,6 @@ const copilotVSCodeStop = `{
   "stop_reason": "end_turn"
 }`
 
-const cursorShell = `{
-  "conversation_id": "c1",
-  "generation_id": "g1",
-  "model": "some-model",
-  "hook_event_name": "beforeShellExecution",
-  "cursor_version": "1.7.2",
-  "workspace_roots": ["/w"],
-  "user_email": null,
-  "transcript_path": null,
-  "command": "git push --force",
-  "cwd": "/w",
-  "sandbox": false
-}`
-
-const cursorStop = `{
-  "conversation_id": "c1",
-  "hook_event_name": "stop",
-  "cursor_version": "1.7.2",
-  "status": "error",
-  "loop_count": 1
-}`
-
 func TestParseDialect(t *testing.T) {
 	tests := []struct {
 		name string
