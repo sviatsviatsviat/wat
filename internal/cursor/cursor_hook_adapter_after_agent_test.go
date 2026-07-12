@@ -58,16 +58,16 @@ func TestAfterAgentThoughtHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookAdapterFromEventFields: %v", err)
 	}
-	adapter, ok := a.(*AfterAgentThoughtCursorHookAdapter)
+	adapter, ok := a.(*AfterAgentThoughtCursorHook)
 	if !ok || adapter == nil {
 		t.Fatalf("want *AfterAgentThoughtCursorHookAdapter, got %T", a)
 	}
 	if adapter.EventSpecificInput == nil || adapter.EventSpecificInput.Text != "think" || adapter.EventSpecificInput.DurationMs != 42 {
 		t.Fatalf("EventSpecificInput: got %#v", adapter.EventSpecificInput)
 	}
-	adapter.ReturnEmpty()
+	adapter.writeDefaultHookResponse()
 	if mock.StdoutString() != cursorHookStdoutSuccessLine {
-		t.Fatalf("hook stdout after ReturnEmpty: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
+		t.Fatalf("hook stdout after writeDefaultHookResponse: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
 	}
 }
 
@@ -79,7 +79,7 @@ func TestHookAdapterFactory_afterAgentResponseUsesTypedAdapter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
-	a, ok := adapter.(*AfterAgentResponseCursorHookAdapter)
+	a, ok := adapter.(*AfterAgentResponseCursorHook)
 	if !ok {
 		t.Fatalf("adapter type: want *AfterAgentResponseCursorHookAdapter, got %T", adapter)
 	}
@@ -96,7 +96,7 @@ func TestHookAdapterFactory_afterAgentThoughtUsesTypedAdapter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
-	a, ok := adapter.(*AfterAgentThoughtCursorHookAdapter)
+	a, ok := adapter.(*AfterAgentThoughtCursorHook)
 	if !ok {
 		t.Fatalf("adapter type: want *AfterAgentThoughtCursorHookAdapter, got %T", adapter)
 	}

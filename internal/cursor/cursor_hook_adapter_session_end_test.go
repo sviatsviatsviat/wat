@@ -55,7 +55,7 @@ func TestSessionEndHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookAdapterFromEventFields: %v", err)
 	}
-	adapter, ok := a.(*SessionEndCursorHookAdapter)
+	adapter, ok := a.(*SessionEndCursorHook)
 	if !ok || adapter == nil {
 		t.Fatalf("want *SessionEndCursorHookAdapter, got %T", a)
 	}
@@ -67,9 +67,9 @@ func TestSessionEndHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 		!ev.IsBackgroundAgent || ev.FinalStatus != "ok" {
 		t.Fatalf("EventSpecificInput: got %#v", ev)
 	}
-	adapter.ReturnEmpty()
+	adapter.writeDefaultHookResponse()
 	if mock.StdoutString() != cursorHookStdoutSuccessLine {
-		t.Fatalf("hook stdout after ReturnEmpty: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
+		t.Fatalf("hook stdout after writeDefaultHookResponse: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
 	}
 }
 
@@ -81,7 +81,7 @@ func TestHookAdapterFactory_sessionEndUsesTypedAdapter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
-	a, ok := adapter.(*SessionEndCursorHookAdapter)
+	a, ok := adapter.(*SessionEndCursorHook)
 	if !ok {
 		t.Fatalf("adapter type: want *SessionEndCursorHookAdapter, got %T", adapter)
 	}

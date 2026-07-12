@@ -5,7 +5,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
 	"github.com/sviatsviatsviat/wat/internal/core"
-	"github.com/sviatsviatsviat/wat/internal/cursor"
 )
 
 type execHookHandlerProvider struct {
@@ -19,64 +18,20 @@ func (p *execHookHandlerProvider) HookHandlerFor(hook core.HookAdapter) (core.Ho
 		argsTemplate: p.argsTemplate,
 		console:      p.console,
 	}
-	switch h := hook.(type) {
-	case *cursor.DefaultCursorHookAdapter:
-		return execHookHandlerCursorEvent{
-			execHookHandlerBase: base,
-			hook:                h,
-			buildBindings: func() templateBindings {
-				return execHookBindingsCommonOnly(h.CommonInput)
-			},
-		}, nil
-	case *cursor.AfterAgentResponseCursorHookAdapter:
-		return execHookHandlerCursorEvent{
-			execHookHandlerBase: base,
-			hook:                h,
-			buildBindings: func() templateBindings {
-				return execHookBindingsCommonOnly(h.CommonInput)
-			},
-		}, nil
-	case *cursor.AfterFileEditCursorHookAdapter:
+	if h, ok := hook.AsAfterFileEdit(); ok {
 		return execHookHandlerAfterFileEdit{
 			execHookHandlerBase:  base,
 			filePathFilterRegexp: p.filePathFilterRegexp,
 			hook:                 h,
 		}, nil
-	case *cursor.AfterShellExecutionCursorHookAdapter:
-		return execHookHandlerCursorEvent{
-			execHookHandlerBase: base,
-			hook:                h,
-			buildBindings: func() templateBindings {
-				return execHookBindingsAfterShellExecution(h.CommonInput, h.EventSpecificInput)
-			},
-		}, nil
-	case *cursor.AfterMCPExecutionCursorHookAdapter:
-		return execHookHandlerCursorEvent{
-			execHookHandlerBase: base,
-			hook:                h,
-			buildBindings: func() templateBindings {
-				return execHookBindingsAfterMCPExecution(h.CommonInput, h.EventSpecificInput)
-			},
-		}, nil
-	case *cursor.AfterAgentThoughtCursorHookAdapter:
-		return execHookHandlerCursorEvent{
-			execHookHandlerBase: base,
-			hook:                h,
-			buildBindings: func() templateBindings {
-				return execHookBindingsAfterAgentThought(h.CommonInput, h.EventSpecificInput)
-			},
-		}, nil
-	case *cursor.SessionEndCursorHookAdapter:
-		return execHookHandlerCursorEvent{
-			execHookHandlerBase: base,
-			hook:                h,
-			buildBindings: func() templateBindings {
-				return execHookBindingsSessionEnd(h.CommonInput, h.EventSpecificInput)
-			},
-		}, nil
-	default:
-		return nil, core.HookAdapterNotSupportedError(hook)
 	}
+	if h, ok := hook.AsAfterShellExecution(); ok {
+		return execHookHandlerAfterShell{
+			execHookHandlerBase: base,
+			hook:                h,
+		}, nil
+	}
+	return nil, core.HookAdapterNotSupportedError(hook)
 }
 
 // NewExecHookHandlerProvider parses optional -f/--file-pattern from programArgs, then returns a [core.HookHandlerProvider] whose

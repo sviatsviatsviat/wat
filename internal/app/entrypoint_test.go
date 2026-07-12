@@ -132,7 +132,7 @@ func TestExecute_ExecHelpWhenNoCommand(t *testing.T) {
 	if !strings.Contains(stderr.String(), "missing subprocess command") {
 		t.Fatalf("expected missing subprocess command message, got %q", stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "__CONVERSATION_ID__") {
+	if !strings.Contains(stderr.String(), "__HOOK_EVENT_NAME__") {
 		t.Fatalf("expected exec help with placeholder list, got %q", stderr.String())
 	}
 }
@@ -218,7 +218,7 @@ func TestExecute_ParseErrorMissingFilePatternValue(t *testing.T) {
 	if !strings.Contains(stderr.String(), "needs an argument") {
 		t.Fatalf("expected flag needs-an-argument for file-pattern, got %q", stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "__CONVERSATION_ID__") {
+	if !strings.Contains(stderr.String(), "__HOOK_EVENT_NAME__") {
 		t.Fatalf("expected exec help after parse error, got %q", stderr.String())
 	}
 }
@@ -233,7 +233,7 @@ func TestExecute_ParseErrorEmptyFilePatternEquals(t *testing.T) {
 	if !strings.Contains(stderr.String(), "file-pattern value cannot be empty") {
 		t.Fatalf("expected empty pattern message, got %q", stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "__CONVERSATION_ID__") {
+	if !strings.Contains(stderr.String(), "__HOOK_EVENT_NAME__") {
 		t.Fatalf("expected exec help after parse error, got %q", stderr.String())
 	}
 }

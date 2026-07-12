@@ -9,7 +9,7 @@ import (
 
 func newHookAdapterFactory(host string) (core.HookAdapterFactory, error) {
 	switch host {
-	case "cursor":
+	case cursor.HookHostCursor:
 		return cursor.NewHookAdapterFactory(), nil
 	default:
 		return nil, fmt.Errorf("host %q is not supported yet", host)

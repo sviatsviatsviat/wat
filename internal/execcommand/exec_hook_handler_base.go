@@ -13,9 +13,14 @@ type execHookHandlerBase struct {
 	console      cli.Console
 }
 
+// hookDefaultResponder writes the default hook protocol line for the active capability.
+type hookDefaultResponder interface {
+	WriteDefaultToHost()
+}
+
 // runExecWithBindings expands the argument template with bindings, runs the subprocess, writes the
-// default hook protocol line via [core.HookAdapter.ReturnEmpty], and returns the handler result.
-func (b execHookHandlerBase) runExecWithBindings(bindings templateBindings, hook core.HookAdapter) core.HookHandlerResult {
+// default hook protocol line via respond, and returns the handler result.
+func (b execHookHandlerBase) runExecWithBindings(bindings templateBindings, respond hookDefaultResponder) core.HookHandlerResult {
 	var code int
 	renderedArgs, unknownPlaceholderKeys := renderTokens(b.argsTemplate, bindings)
 	if len(unknownPlaceholderKeys) > 0 {
@@ -24,6 +29,6 @@ func (b execHookHandlerBase) runExecWithBindings(bindings templateBindings, hook
 	} else {
 		code = runSubprocess(b.console, renderedArgs)
 	}
-	hook.ReturnEmpty()
+	respond.WriteDefaultToHost()
 	return core.HookHandlerResult{Code: code}
 }

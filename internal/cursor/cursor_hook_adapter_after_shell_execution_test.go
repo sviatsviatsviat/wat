@@ -28,7 +28,7 @@ func TestAfterShellExecutionHookAdapter_carriesHookDataAndProtocol(t *testing.T)
 	if err != nil {
 		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
-	adapter, ok := a.(*AfterShellExecutionCursorHookAdapter)
+	adapter, ok := a.(*AfterShellExecutionCursorHook)
 	if !ok || adapter == nil {
 		t.Fatalf("want *AfterShellExecutionCursorHookAdapter, got %T", a)
 	}
@@ -76,9 +76,9 @@ func TestAfterShellExecutionHookAdapter_carriesHookDataAndProtocol(t *testing.T)
 	if !adapter.EventSpecificInput.Sandbox {
 		t.Error("SANDBOX: want true")
 	}
-	adapter.ReturnEmpty()
+	adapter.writeDefaultHookResponse()
 	if mock.StdoutString() != cursorHookStdoutSuccessLine {
-		t.Fatalf("hook stdout after ReturnEmpty: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
+		t.Fatalf("hook stdout after writeDefaultHookResponse: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
 	}
 }
 
@@ -91,7 +91,7 @@ func TestHookAdapterFactory_afterShellExecutionUsesCursorHookAdapter(t *testing.
 	if err != nil {
 		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
-	if _, ok := adapter.(*AfterShellExecutionCursorHookAdapter); !ok {
+	if _, ok := adapter.(*AfterShellExecutionCursorHook); !ok {
 		t.Fatalf("adapter type: want *AfterShellExecutionCursorHookAdapter, got %T", adapter)
 	}
 }

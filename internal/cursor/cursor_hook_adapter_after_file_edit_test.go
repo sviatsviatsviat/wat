@@ -46,7 +46,7 @@ func TestAfterFileEditHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookAdapterFromEventFields: %v", err)
 	}
-	adapter, ok := a.(*AfterFileEditCursorHookAdapter)
+	adapter, ok := a.(*AfterFileEditCursorHook)
 	if !ok || adapter == nil {
 		t.Fatalf("want *AfterFileEditCursorHookAdapter, got %T", a)
 	}
@@ -59,9 +59,9 @@ func TestAfterFileEditHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	if adapter.EventSpecificInput == nil || adapter.EventSpecificInput.FilePath != "D:/repo/file.go" {
 		t.Fatalf("EventSpecificInput.FilePath: got %#v", adapter.EventSpecificInput)
 	}
-	adapter.ReturnEmpty()
+	adapter.writeDefaultHookResponse()
 	if mock.StdoutString() != cursorHookStdoutSuccessLine {
-		t.Fatalf("hook stdout after ReturnEmpty: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
+		t.Fatalf("hook stdout after writeDefaultHookResponse: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
 	}
 }
 
@@ -74,7 +74,7 @@ func TestHookAdapterFactory_afterFileEditUsesCursorHookAdapter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
-	if _, ok := adapter.(*AfterFileEditCursorHookAdapter); !ok {
+	if _, ok := adapter.(*AfterFileEditCursorHook); !ok {
 		t.Fatalf("adapter type: want *AfterFileEditCursorHookAdapter, got %T", adapter)
 	}
 }
@@ -88,7 +88,7 @@ func TestHookAdapterFactory_afterTabFileEditUsesCursorHookAdapter(t *testing.T) 
 	if err != nil {
 		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
-	a, ok := adapter.(*AfterFileEditCursorHookAdapter)
+	a, ok := adapter.(*AfterFileEditCursorHook)
 	if !ok || a == nil {
 		t.Fatalf("adapter type: want *AfterFileEditCursorHookAdapter, got %T", adapter)
 	}

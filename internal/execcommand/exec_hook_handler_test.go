@@ -56,9 +56,9 @@ func TestExecHookHandler_Handle_UnknownPlaceholder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewExecHookHandlerProvider: %v", err)
 	}
-	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.SessionEndFields]{
-		Common:        cursor.HookDataCommon{HookEventName: "sessionEnd"},
-		EventSpecific: &cursor.SessionEndFields{},
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.AfterFileEditFields]{
+		Common:        cursor.HookDataCommon{HookEventName: "afterFileEdit"},
+		EventSpecific: &cursor.AfterFileEditFields{FilePath: "/x"},
 	})
 	handler, hookErr := provider.HookHandlerFor(adapter)
 	if hookErr != nil {
@@ -79,26 +79,26 @@ func TestExecHookHandler_Handle_UnknownPlaceholder(t *testing.T) {
 	}
 }
 
-func TestExecHookHandler_Handle_AfterAgentThought_substitutesDurationMs(t *testing.T) {
+func TestExecHookHandler_Handle_AfterShell_substitutesDuration(t *testing.T) {
 	var cmdArgs []string
 	if runtime.GOOS == "windows" {
-		cmdArgs = []string{"cmd", "/C", "echo __DURATION_MS__ 1>&2"}
+		cmdArgs = []string{"cmd", "/C", "echo __DURATION__ 1>&2"}
 	} else {
-		cmdArgs = []string{"sh", "-c", "echo __DURATION_MS__ >&2"}
+		cmdArgs = []string{"sh", "-c", "echo __DURATION__ >&2"}
 	}
 	mockConsole := cli.NewMockConsole()
 	provider, err := NewExecHookHandlerProvider(mockConsole, cmdArgs)
 	if err != nil {
 		t.Fatalf("NewExecHookHandlerProvider: %v", err)
 	}
-	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.AfterAgentThoughtFields]{
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.AfterShellExecutionFields]{
 		Common: cursor.HookDataCommon{
-			HookEventName:  "afterAgentThought",
-			ConversationID: "conv-ms",
+			HookEventName: "afterShellExecution",
 		},
-		EventSpecific: &cursor.AfterAgentThoughtFields{
-			Text:       "reasoning",
-			DurationMs: 5000,
+		EventSpecific: &cursor.AfterShellExecutionFields{
+			Command:  "go test",
+			Duration: 5000,
+			Sandbox:  false,
 		},
 	})
 	handler, hookErr := provider.HookHandlerFor(adapter)
@@ -120,21 +120,20 @@ func TestExecHookHandler_Handle_AfterAgentThought_substitutesDurationMs(t *testi
 func TestExecHookHandler_Handle_SubstitutionAndSuccess(t *testing.T) {
 	var cmdArgs []string
 	if runtime.GOOS == "windows" {
-		cmdArgs = []string{"cmd", "/C", "echo __CONVERSATION_ID__"}
+		cmdArgs = []string{"cmd", "/C", "echo __HOOK_EVENT_NAME__"}
 	} else {
-		cmdArgs = []string{"sh", "-c", "echo __CONVERSATION_ID__"}
+		cmdArgs = []string{"sh", "-c", "echo __HOOK_EVENT_NAME__"}
 	}
 	mockConsole := cli.NewMockConsole()
 	provider, err := NewExecHookHandlerProvider(mockConsole, cmdArgs)
 	if err != nil {
 		t.Fatalf("NewExecHookHandlerProvider: %v", err)
 	}
-	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.SessionEndFields]{
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.AfterFileEditFields]{
 		Common: cursor.HookDataCommon{
-			HookEventName:  "sessionEnd",
-			ConversationID: "conv-test-1",
+			HookEventName: "afterFileEdit",
 		},
-		EventSpecific: &cursor.SessionEndFields{},
+		EventSpecific: &cursor.AfterFileEditFields{FilePath: "/repo/f.go"},
 	})
 	handler, hookErr := provider.HookHandlerFor(adapter)
 	if hookErr != nil {
@@ -161,9 +160,9 @@ func TestExecHookHandler_Handle_SubprocessFailureExitCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewExecHookHandlerProvider: %v", err)
 	}
-	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.SessionEndFields]{
-		Common:        cursor.HookDataCommon{HookEventName: "sessionEnd"},
-		EventSpecific: &cursor.SessionEndFields{},
+	adapter := testExecHookAdapter(mockConsole, cursor.CursorHookRunData[cursor.AfterShellExecutionFields]{
+		Common:        cursor.HookDataCommon{HookEventName: "afterShellExecution"},
+		EventSpecific: &cursor.AfterShellExecutionFields{Command: "x"},
 	})
 	handler, hookErr := provider.HookHandlerFor(adapter)
 	if hookErr != nil {
@@ -243,7 +242,7 @@ func TestExecHookHandler_Handle_FilePatternMatchRunsSubprocess(t *testing.T) {
 	}
 }
 
-func TestExecHookHandler_Handle_FilePatternIgnoredWithoutFilePathBinding(t *testing.T) {
+func TestExecHookHandler_Handle_FilePatternWithNonExecHookErrors(t *testing.T) {
 	mockConsole := cli.NewMockConsole()
 	provider, err := NewExecHookHandlerProvider(mockConsole, []string{"-f", `[.]go$`, "echo", "y"})
 	if err != nil {
@@ -253,16 +252,12 @@ func TestExecHookHandler_Handle_FilePatternIgnoredWithoutFilePathBinding(t *test
 		Common:        cursor.HookDataCommon{HookEventName: "sessionEnd"},
 		EventSpecific: &cursor.SessionEndFields{},
 	})
-	handler, hookErr := provider.HookHandlerFor(adapter)
-	if hookErr != nil {
-		t.Fatalf("HookHandlerFor: %v", hookErr)
+	_, hookErr := provider.HookHandlerFor(adapter)
+	if hookErr == nil {
+		t.Fatal("expected error: exec does not support this hook kind")
 	}
-	result := handler.Handle()
-	if result.Code != cli.ExitSuccess {
-		t.Fatalf("expected ExitSuccess, got %d", result.Code)
-	}
-	if mockConsole.StdoutString() != "{}\n" {
-		t.Fatalf("hook stdout: want %q, got %q", "{}\n", mockConsole.StdoutString())
+	if !errors.Is(hookErr, core.ErrHookAdapterNotSupported) {
+		t.Fatalf("want %v, got %v", core.ErrHookAdapterNotSupported, hookErr)
 	}
 }
 
@@ -281,9 +276,13 @@ func TestHookHandlerFor_unsupportedAdapterType(t *testing.T) {
 	}
 }
 
-// unsupportedHookAdapterStub implements [core.HookAdapter] but is not a supported Cursor exec payload type.
+// unsupportedHookAdapterStub implements [core.HookAdapter] but exposes no exec capabilities.
 type unsupportedHookAdapterStub struct{}
 
-func (unsupportedHookAdapterStub) HookHost() string { return "cursor" }
+func (unsupportedHookAdapterStub) AsAfterFileEdit() (core.AfterFileEditHook, bool) {
+	return nil, false
+}
 
-func (unsupportedHookAdapterStub) ReturnEmpty() {}
+func (unsupportedHookAdapterStub) AsAfterShellExecution() (core.AfterShellExecutionHook, bool) {
+	return nil, false
+}

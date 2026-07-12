@@ -25,12 +25,9 @@ func TestDefaultHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 		t.Fatalf("NewHookDataCommon: %v", err)
 	}
 	a := NewDefaultHookAdapter(mock, hookData)
-	adapter, ok := a.(*DefaultCursorHookAdapter)
+	adapter, ok := a.(*DefaultCursorHook)
 	if !ok || adapter == nil {
 		t.Fatalf("want *DefaultCursorHookAdapter, got %T", a)
-	}
-	if adapter.HookHost() != HookHostCursor {
-		t.Errorf("HookHost: want %q, got %q", HookHostCursor, adapter.HookHost())
 	}
 	if adapter.CommonInput.HookEventName != "afterFileEdit" {
 		t.Errorf("HOOK_EVENT_NAME: want afterFileEdit, got %q", adapter.CommonInput.HookEventName)
@@ -41,8 +38,8 @@ func TestDefaultHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	if adapter.EventSpecificInput != nil {
 		t.Error("default adapter must leave EventSpecificInput nil")
 	}
-	adapter.ReturnEmpty()
+	adapter.writeDefaultHookResponse()
 	if mock.StdoutString() != cursorHookStdoutSuccessLine {
-		t.Fatalf("hook stdout after ReturnEmpty: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
+		t.Fatalf("hook stdout after writeDefaultHookResponse: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
 	}
 }

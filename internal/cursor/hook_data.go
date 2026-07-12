@@ -6,7 +6,7 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/cmdast"
 )
 
-// HookHostCursor is the program-argument host token returned by Cursor hook adapters' HookHost method.
+// HookHostCursor is the first program argument identifying the Cursor hook host (e.g. `wat cursor …`).
 const HookHostCursor = "cursor"
 
 // CursorHookRunData is Cursor hook stdin parsed once for subcommands.

@@ -1,5 +1,5 @@
 // Package cursor implements Cursor hook stdin models (HookDataCommon, CursorHookRunData, event field types),
-// hook adapter type aliases (e.g. [DefaultCursorHookAdapter]), HookAdapterBuilder plumbing, and builds [core.HookAdapter] values from stdin JSON.
+// hook adapter type aliases (e.g. [DefaultCursorHook]), HookAdapterBuilder plumbing, and builds [core.HookAdapter] values from stdin JSON.
 package cursor
 
 import (

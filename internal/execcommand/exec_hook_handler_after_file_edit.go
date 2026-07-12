@@ -6,7 +6,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/cli"
 	"github.com/sviatsviatsviat/wat/internal/core"
-	"github.com/sviatsviatsviat/wat/internal/cursor"
 )
 
 // execHookHandlerAfterFileEdit runs exec templates for afterFileEdit and afterTabFileEdit hooks.
@@ -14,20 +13,18 @@ import (
 type execHookHandlerAfterFileEdit struct {
 	execHookHandlerBase
 	filePathFilterRegexp *regexp.Regexp
-	hook                 *cursor.AfterFileEditCursorHookAdapter
+	hook                 core.AfterFileEditHook
 }
 
 func (h execHookHandlerAfterFileEdit) Handle() core.HookHandlerResult {
 	if h.filePathFilterRegexp != nil {
-		if event := h.hook.EventSpecificInput; event != nil {
-			normalizedFilePath := filepath.ToSlash(filepath.Clean(event.FilePath))
-			if !h.filePathFilterRegexp.MatchString(normalizedFilePath) {
-				h.hook.ReturnEmpty()
-				return core.HookHandlerResult{Code: cli.ExitSuccess}
-			}
+		normalizedFilePath := filepath.ToSlash(filepath.Clean(h.hook.FilePath()))
+		if !h.filePathFilterRegexp.MatchString(normalizedFilePath) {
+			h.hook.WriteDefaultToHost()
+			return core.HookHandlerResult{Code: cli.ExitSuccess}
 		}
 	}
 
-	bindings := templateBindingsFromCursorEventPayload(h.hook.CommonInput, h.hook.EventSpecificInput, afterFileEditPlaceholderExtractors)
+	bindings := templateBindingsAfterFileEdit{hook: h.hook}
 	return h.runExecWithBindings(bindings, h.hook)
 }

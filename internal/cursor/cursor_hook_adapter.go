@@ -5,44 +5,39 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/core"
 )
 
-// cursorHookAdapter holds parsed Cursor hook stdin for subcommand handlers.
-type cursorHookAdapter[T any] struct {
+// cursorHook holds parsed Cursor hook stdin for subcommand handlers.
+type cursorHook[T any] struct {
 	CommonInput        HookDataCommon
 	EventSpecificInput *T
 	console            cli.Console
 }
 
-// DefaultCursorHookAdapter is the hook adapter for common-only stdin (no event payload).
-type DefaultCursorHookAdapter = cursorHookAdapter[struct{}]
+// DefaultCursorHook is the hook adapter for common-only stdin (no event payload).
+type DefaultCursorHook = cursorHook[struct{}]
 
-// AfterFileEditCursorHookAdapter is the hook adapter for afterFileEdit / afterTabFileEdit.
-type AfterFileEditCursorHookAdapter = cursorHookAdapter[AfterFileEditFields]
+// AfterFileEditCursorHook is the hook adapter for afterFileEdit / afterTabFileEdit.
+type AfterFileEditCursorHook = cursorHook[AfterFileEditFields]
 
-// AfterShellExecutionCursorHookAdapter is the hook adapter for afterShellExecution.
-type AfterShellExecutionCursorHookAdapter = cursorHookAdapter[AfterShellExecutionFields]
+// AfterShellExecutionCursorHook is the hook adapter for afterShellExecution.
+type AfterShellExecutionCursorHook = cursorHook[AfterShellExecutionFields]
 
-// AfterMCPExecutionCursorHookAdapter is the hook adapter for afterMCPExecution.
-type AfterMCPExecutionCursorHookAdapter = cursorHookAdapter[AfterMCPExecutionFields]
+// AfterMCPExecutionCursorHook is the hook adapter for afterMCPExecution.
+type AfterMCPExecutionCursorHook = cursorHook[AfterMCPExecutionFields]
 
-// AfterAgentResponseCursorHookAdapter is the hook adapter for afterAgentResponse.
-type AfterAgentResponseCursorHookAdapter = cursorHookAdapter[AfterAgentResponseFields]
+// AfterAgentResponseCursorHook is the hook adapter for afterAgentResponse.
+type AfterAgentResponseCursorHook = cursorHook[AfterAgentResponseFields]
 
-// AfterAgentThoughtCursorHookAdapter is the hook adapter for afterAgentThought.
-type AfterAgentThoughtCursorHookAdapter = cursorHookAdapter[AfterAgentThoughtFields]
+// AfterAgentThoughtCursorHook is the hook adapter for afterAgentThought.
+type AfterAgentThoughtCursorHook = cursorHook[AfterAgentThoughtFields]
 
-// SessionEndCursorHookAdapter is the hook adapter for sessionEnd.
-type SessionEndCursorHookAdapter = cursorHookAdapter[SessionEndFields]
+// SessionEndCursorHook is the hook adapter for sessionEnd.
+type SessionEndCursorHook = cursorHook[SessionEndFields]
 
 // defaultHookResponseLine is the Cursor hook stdout line (JSON object and newline).
 const defaultHookResponseLine = "{}\n"
 
-// HookHost returns [HookHostCursor].
-func (a *cursorHookAdapter[T]) HookHost() string {
-	return HookHostCursor
-}
-
-// ReturnEmpty writes the default Cursor hook protocol stdout line using the console captured at construction.
-func (a *cursorHookAdapter[T]) ReturnEmpty() {
+// writeDefaultHookResponse writes the default Cursor hook protocol stdout line using the console captured at construction.
+func (a *cursorHook[T]) writeDefaultHookResponse() {
 	if a.console != nil {
 		_ = a.console.Write(defaultHookResponseLine)
 	}
@@ -50,7 +45,7 @@ func (a *cursorHookAdapter[T]) ReturnEmpty() {
 
 // NewDefaultHookAdapter returns a [core.HookAdapter] with common fields only (no event-specific payload).
 func NewDefaultHookAdapter(console cli.Console, hookData HookDataCommon) core.HookAdapter {
-	return &cursorHookAdapter[struct{}]{
+	return &cursorHook[struct{}]{
 		CommonInput:        hookData,
 		EventSpecificInput: nil,
 		console:            console,
@@ -60,7 +55,7 @@ func NewDefaultHookAdapter(console cli.Console, hookData HookDataCommon) core.Ho
 // NewHookAdapter returns a [core.HookAdapter] with shared common fields and optional event-specific payload.
 // For common-only hooks (T == struct{}), eventSpecific is nil.
 func NewHookAdapter[T any](console cli.Console, common HookDataCommon, eventSpecific *T) core.HookAdapter {
-	return &cursorHookAdapter[T]{
+	return &cursorHook[T]{
 		CommonInput:        common,
 		EventSpecificInput: eventSpecific,
 		console:            console,

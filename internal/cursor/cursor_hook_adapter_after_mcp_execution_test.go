@@ -33,7 +33,7 @@ func TestAfterMCPExecutionHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHookAdapterFromEventFields: %v", err)
 	}
-	adapter, ok := a.(*AfterMCPExecutionCursorHookAdapter)
+	adapter, ok := a.(*AfterMCPExecutionCursorHook)
 	if !ok || adapter == nil {
 		t.Fatalf("want *AfterMCPExecutionCursorHookAdapter, got %T", a)
 	}
@@ -58,9 +58,9 @@ func TestAfterMCPExecutionHookAdapter_carriesHookDataAndProtocol(t *testing.T) {
 	if adapter.EventSpecificInput.Duration != 1234 {
 		t.Errorf("DURATION: got %v", adapter.EventSpecificInput.Duration)
 	}
-	adapter.ReturnEmpty()
+	adapter.writeDefaultHookResponse()
 	if mock.StdoutString() != cursorHookStdoutSuccessLine {
-		t.Fatalf("hook stdout after ReturnEmpty: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
+		t.Fatalf("hook stdout after writeDefaultHookResponse: want %q, got %q", cursorHookStdoutSuccessLine, mock.StdoutString())
 	}
 }
 
@@ -73,7 +73,7 @@ func TestHookAdapterFactory_afterMCPExecutionUsesCursorHookAdapter(t *testing.T)
 	if err != nil {
 		t.Fatalf("HookAdapterFromJSON: %v", err)
 	}
-	if _, ok := adapter.(*AfterMCPExecutionCursorHookAdapter); !ok {
+	if _, ok := adapter.(*AfterMCPExecutionCursorHook); !ok {
 		t.Fatalf("adapter type: want *AfterMCPExecutionCursorHookAdapter, got %T", adapter)
 	}
 }

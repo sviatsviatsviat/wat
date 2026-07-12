@@ -38,10 +38,8 @@ Options (only for exec, before the subprocess template):
 	-f, --file-pattern <re>
 	                      Optional; default * means no filter. If you pass a
 	                      non-* value, <re> must be non-empty (Go regexp syntax).
-	                      When stdin bindings include __FILE_PATH__ (Cursor
-	                      afterFileEdit or afterTabFileEdit), `exec` skips the subprocess if the path
-	                      does not match <re>; other hook events ignore the flag
-	                      for matching purposes.
+	                      When stdin is afterFileEdit or afterTabFileEdit, `exec` skips the subprocess if
+	                      __FILE_PATH__ does not match <re>. The flag is ignored for other hook events.
 ```
 
 Put `-f` / `--file-pattern` after `exec` and before the subprocess command (for example `wat cursor exec -f '[.]go$' …`). Flags are parsed when **`execcommand.NewExecHookHandlerProvider`** builds the provider. If equivalent options are repeated, **the last value wins**.
@@ -50,32 +48,16 @@ Put `-f` / `--file-pattern` after `exec` and before the subprocess command (for 
 
 #### Cursor exec template bindings
 
-Authoritative list of `__KEY__` segments for `wat cursor exec` (inner part between underscores). Optional JSON fields resolve to an empty string when missing or `null`.
+`wat cursor exec` only supports **`afterFileEdit`**, **`afterTabFileEdit`**, and **`afterShellExecution`**. Other Cursor hook events are rejected for this subcommand.
 
-**Common** — Available for every Cursor hook event that `exec` supports:
+Authoritative `__KEY__` segments (between underscores). Optional JSON fields resolve to an empty string when missing or `null`.
 
-| Placeholder | Description |
-|-------------|-------------|
-| `__CONVERSATION_ID__` | From `conversation_id`. |
-| `__GENERATION_ID__` | From `generation_id`. |
-| `__MODEL__` | From `model`. |
-| `__HOOK_EVENT_NAME__` | From `hook_event_name`. |
-| `__CURSOR_VERSION__` | From `cursor_version`. |
-| `__USER_EMAIL__` | From `user_email` when present (empty if missing or `null`). |
-| `__TRANSCRIPT_PATH__` | From `transcript_path` when present (empty if missing or `null`). |
+| Hook | Placeholders |
+|------|----------------|
+| `afterFileEdit`, `afterTabFileEdit` | `__HOOK_EVENT_NAME__`, `__TRANSCRIPT_PATH__`, `__FILE_PATH__` |
+| `afterShellExecution` | `__HOOK_EVENT_NAME__`, `__TRANSCRIPT_PATH__`, `__DURATION__`, `__SANDBOX__`, `__COMMAND__` (`command` string from stdin) |
 
-**Per event** — `exec` adds event-specific keys only when the hook adapter carries that data ([`exec_hook_handler_provider.go`](internal/execcommand/exec_hook_handler_provider.go)):
-
-| Event | Additional placeholders |
-|-------|-------------------------|
-| `afterFileEdit`, `afterTabFileEdit` | `__FILE_PATH__` |
-| `afterShellExecution` | `__DURATION__`, `__SANDBOX__` |
-| `afterMCPExecution` | `__TOOL_NAME__`, `__DURATION__` |
-| `afterAgentThought` | `__DURATION_MS__` |
-| `sessionEnd` | `__SESSION_ID__`, `__REASON__`, `__DURATION_MS__`, `__IS_BACKGROUND__`, `__FINAL_STATUS__`, `__ERROR_MESSAGE__` |
-| `afterAgentResponse` and any hook using the default adapter only | None — common placeholders only. |
-
-The built-in `wat … exec` help lists the union of placeholders across events; use the table above to see which tokens apply to the hook you are configuring.
+Bindings are implemented in [`internal/execcommand/hook_bindings.go`](internal/execcommand/hook_bindings.go).
 
 **Exit status** — If the subprocess is started, wat exits with **that process’s exit code**. Otherwise wat uses own standard [Exit codes](#exit-codes).
 
@@ -101,7 +83,7 @@ Shared and event-specific field types are defined in [`internal/cursor/hook_data
 
 ### Supported Cursor hook types
 
-Each subsection describes what the **hook adapter** exposes from stdin for that `hook_event_name` (not which `exec` placeholders exist—see [Cursor exec template bindings](#cursor-exec-template-bindings)).
+Each subsection describes what the **hook adapter** exposes from stdin for that `hook_event_name`. For **`wat cursor exec`** placeholders, see [Cursor exec template bindings](#cursor-exec-template-bindings) (only **afterFileEdit**, **afterTabFileEdit**, and **afterShellExecution**).
 
 #### `afterShellExecution`
 
@@ -121,7 +103,7 @@ Fires after a file edit. **`AfterFileEditFields`** adds `file_path` and `edits` 
 
 **Returns** `{}`.
 
-When `wat cursor exec …` includes `-f` / `--file-pattern` with a Go regexp, **`execcommand.NewExecHookHandlerProvider`** (in `internal/execcommand`) builds handlers for **afterFileEdit** and **afterTabFileEdit** that apply the filter before invoking the subprocess when `__FILE_PATH__` is present in template bindings (other events omit that key, so the subprocess runs as usual). The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
+When `wat cursor exec …` includes `-f` / `--file-pattern` with a Go regexp, file-edit hooks apply the filter before invoking the subprocess. The regexp is matched against the hook’s `file_path` after path cleaning and normalizing separators to `/`.
 
 #### `afterTabFileEdit`
 
@@ -133,19 +115,19 @@ File-pattern filtering with `-f` / `--file-pattern` matches **`afterFileEdit`** 
 
 #### `afterAgentResponse`
 
-Fires after the agent completes an assistant message. **`AfterAgentResponseFields`** adds `text` to the shared envelope. `wat cursor exec` exposes common placeholders only (not `text`).
+Fires after the agent completes an assistant message. **`AfterAgentResponseFields`** adds `text` to the shared envelope. **`wat cursor exec`** does not support this hook (use another workflow or extend wat).
 
 **Returns** `{}`.
 
 #### `afterAgentThought`
 
-Fires after the agent completes a thinking block. **`AfterAgentThoughtFields`** adds `text` and `duration_ms` to the shared envelope. For `exec`, **`__DURATION_MS__`** is bound from `duration_ms`; `text` is not exposed as a template placeholder.
+Fires after the agent completes a thinking block. **`AfterAgentThoughtFields`** adds `text` and `duration_ms` to the shared envelope. **`wat cursor exec`** does not support this hook.
 
 **Returns** `{}`.
 
 #### `sessionEnd`
 
-Fires when the session ends. **`SessionEndFields`** adds `session_id`, `reason` (`completed`, `aborted`, `error`, `window_close`, or `user_close`), `duration_ms`, `is_background_agent`, `final_status`, and optional `error_message` to the shared envelope. For `exec`, those fields map to **`__SESSION_ID__`**, **`__REASON__`**, **`__DURATION_MS__`**, **`__IS_BACKGROUND__`** (from `is_background_agent`), **`__FINAL_STATUS__`**, and **`__ERROR_MESSAGE__`** (empty when absent).
+Fires when the session ends. **`SessionEndFields`** adds `session_id`, `reason` (`completed`, `aborted`, `error`, `window_close`, or `user_close`), `duration_ms`, `is_background_agent`, `final_status`, and optional `error_message` to the shared envelope. **`wat cursor exec`** does not support this hook.
 
 **Returns** `{}`.
 
@@ -180,17 +162,17 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/) and mainta
 
 ## Architecture overview
 
-wat separates **hook hosts** (Cursor today) from shared CLI wiring in **`internal/app`**, host-neutral types in **`internal/core`**, and subcommands such as **`internal/execcommand`** (`exec`). Hosts own JSON shapes and how stdin is validated; **`exec`** maps **`HookAdapter`** values to placeholder bindings and subprocess execution.
+wat separates **hook hosts** (Cursor today) from shared CLI wiring in **`internal/app`**, host-neutral types in **`internal/core`**, and subcommands such as **`internal/execcommand`** (`exec`). Hosts own JSON shapes and how stdin is validated; **`exec`** uses **`HookAdapter.AsAfterFileEdit`** / **`AsAfterShellExecution`** and maps those capability interfaces to placeholder bindings and subprocess execution.
 
 ### Host-neutral contract (`internal/core`)
 
 | Role | Responsibility |
 |------|----------------|
-| **`HookAdapter`** | One parsed hook invocation: `HookHost()`, plus `ReturnEmpty()` to write the default hook protocol line (e.g. Cursor `"{}\n"`) via the `cli.Console` captured when the adapter was built. |
+| **`HookAdapter`** | One parsed hook invocation: optional **`AsAfterFileEdit()`** / **`AsAfterShellExecution()`** returning core capability interfaces that carry **`WriteDefaultToHost()`** for the default hook protocol line (e.g. Cursor `"{}\n"`). |
 | **`HookAdapterFactory`** | Builds a `HookAdapter` from stdin JSON (`HookAdapterFromJSON(hookEventJSON, console)`). |
 | **`HookHandlerProvider`** | Subcommand configuration; picks a `HookHandler` with `HookHandlerFor(hook HookAdapter)`. |
 | **`HookHandler`** | Runs one invocation: `Handle()` → `HookHandlerResult`. |
-| **`HookHandlerResult`** | Process exit `Code` only. Hook stdout is **not** part of this struct; handlers call `HookAdapter.ReturnEmpty()` so protocol output stays on the adapter/console path. |
+| **`HookHandlerResult`** | Process exit `Code` only. Hook stdout is **not** part of this struct; **`exec`** handlers call **`WriteDefaultToHost()`** on the active capability interface. |
 
 Failures before a handler runs (unknown host, stdin JSON error, unsupported adapter for the subcommand) go to **stderr** only; hook stdout stays empty. After `Handle()`, `app.Execute` returns `result.Code` only.
 
@@ -216,7 +198,7 @@ sequenceDiagram
   E->>P: HookHandlerFor(adapter)
   P-->>H: handler
   E->>H: Handle()
-  Note right of H: e.g. exec: __KEY__ expansion,<br/>subprocess, adapter.ReturnEmpty()
+  Note right of H: e.g. exec: __KEY__ expansion,<br/>subprocess, WriteDefaultToHost()
   H-->>E: HookHandlerResult (Code)
 ```
 
@@ -228,8 +210,8 @@ sequenceDiagram
 
 ### `exec` (`internal/execcommand`)
 
-- **`NewExecHookHandlerProvider`** parses the command template and optional **`-f` / `--file-pattern`**, then **`HookHandlerFor`** dispatches on concrete Cursor adapter types ([`exec_hook_handler_provider.go`](internal/execcommand/exec_hook_handler_provider.go)).
-- Handlers build **`templateBindings`** ([`cursor_bindings_common.go`](internal/execcommand/cursor_bindings_common.go), [`cursor_bindings_event.go`](internal/execcommand/cursor_bindings_event.go), and per-event helpers), substitute **`__KEY__`** segments, run **`runSubprocess`** (child stderr via **`Console.ConnectErrorsFrom`**), and call **`hook.ReturnEmpty()`** ([`exec_hook_handler_base.go`](internal/execcommand/exec_hook_handler_base.go)). **`afterFileEdit`** and **`afterTabFileEdit`** apply the file-pattern filter only when that adapter type is used ([`exec_hook_handler_after_file_edit.go`](internal/execcommand/exec_hook_handler_after_file_edit.go)).
+- **`NewExecHookHandlerProvider`** parses the command template and optional **`-f` / `--file-pattern`**, then **`HookHandlerFor`** uses **`AsAfterFileEdit`** / **`AsAfterShellExecution`** ([`exec_hook_handler_provider.go`](internal/execcommand/exec_hook_handler_provider.go)).
+- Handlers build **`templateBindings`** from **`hook_bindings.go`**, substitute **`__KEY__`** segments, run **`runSubprocess`** (child stderr via **`Console.ConnectErrorsFrom`**), and call **`WriteDefaultToHost()`** on the capability ([`exec_hook_handler_base.go`](internal/execcommand/exec_hook_handler_base.go)). File-edit hooks apply the file-pattern filter in [`exec_hook_handler_after_file_edit.go`](internal/execcommand/exec_hook_handler_after_file_edit.go).
 
 ### Other packages
 
@@ -238,6 +220,6 @@ sequenceDiagram
 
 ### Extending wat
 
-- **New host** — Implement **`HookAdapterFactory`** and hook stdout policy (`ReturnEmpty`). Register in **`app.newHookAdapterFactory`**. Keep host-specific protocol strings in the host package, not scattered through **`cli`**.
-- **New Cursor event** — Register **`hook_event_name`** in **`cursorHookAdapterBuilders`** and return the right concrete **`HookAdapter`**. If **`exec`** needs new **`__KEY__`** tokens, extend **`HookHandlerFor`** and bindings.
+- **New host** — Implement **`HookAdapterFactory`** and capability bridges with **`WriteDefaultToHost()`**. Register in **`app.newHookAdapterFactory`**. Keep host-specific protocol strings in the host package, not scattered through **`cli`**.
+- **New Cursor event** — Register **`hook_event_name`** in **`cursorHookAdapterBuilders`** and return the right concrete **`HookAdapter`**. To support **`exec`**, add **`As…`** accessors and **`hook_bindings`** placeholders as needed.
 - **New wat subcommand** — Implement **`HookHandlerProvider`** under **`internal/<name>`** and wire **`app.newHookHandlerProvider`**.

@@ -22,14 +22,14 @@ func (fake fakeBindings) TemplateValue(key string) (string, bool) {
 }
 
 func TestRenderTokens_ReplacesValues(t *testing.T) {
-	templateTokens := []string{"echo", "__HOOK_EVENT_NAME__", "__CONVERSATION_ID__"}
+	templateTokens := []string{"echo", "__HOOK_EVENT_NAME__", "__FILE_PATH__"}
 	bindings := fakeBindings{
 		defined: map[string]struct{}{
-			"HOOK_EVENT_NAME": {}, "CONVERSATION_ID": {},
+			"HOOK_EVENT_NAME": {}, "FILE_PATH": {},
 		},
 		values: map[string]string{
 			"HOOK_EVENT_NAME": "afterFileEdit",
-			"CONVERSATION_ID": "conv-9",
+			"FILE_PATH":       "/x/y.go",
 		},
 	}
 
@@ -40,7 +40,7 @@ func TestRenderTokens_ReplacesValues(t *testing.T) {
 	if rendered[0] != "echo" {
 		t.Fatalf("literal token passthrough: want echo, got %q", rendered[0])
 	}
-	if rendered[1] != "afterFileEdit" || rendered[2] != "conv-9" {
+	if rendered[1] != "afterFileEdit" || rendered[2] != "/x/y.go" {
 		t.Fatalf("unexpected rendered tokens: %v", rendered)
 	}
 }
