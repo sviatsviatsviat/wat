@@ -44,7 +44,28 @@ All codecs produce `agenthooks.Event`:
 
 See `go doc github.com/sviatsviatsviat/wat/agenthooks Event` for sub-structs (`Tool`, `Result`, `Life`, …).
 
+## Dialect detection
+
+`agenthooks.Detect` infers the originating agent from a hook stdin payload and environment hints. `agenthooks.ParseDialect` parses explicit names from CLI flags (`claude`, `copilot`, `cursor` and aliases). When the dialect is already known, skip `Detect` and use the explicit value.
+
+Payload shape is checked before environment variables because Cursor exports `CLAUDE_PROJECT_DIR` for Claude Code compatibility.
+
+| Step | Signal | Result |
+|------|--------|--------|
+| 1 | `cursor_version` or `conversation_id` in JSON | Cursor |
+| 2 | `sessionId` (camelCase) | Copilot camelCase |
+| 3 | `hook_event_name` + `timestamp` | Copilot VS Code (Claude payloads carry no `timestamp`) |
+| 4 | `session_id` | Claude Code |
+| 5a | `CURSOR_VERSION` env | Cursor |
+| 5b | `CLAUDE_PROJECT_DIR` env | Claude Code |
+| 5c | `COPILOT_HOME` env | Copilot |
+| else | — | Unknown |
+
+**Ambiguous cases:** Copilot payloads always win over `CLAUDE_PROJECT_DIR` in the environment. Env-only detection with only `CLAUDE_PROJECT_DIR` may misidentify Copilot in repos that also have `.claude/settings.json`; prefer payload evidence or an explicit `--agent` override.
+
 ## Related code
 
+- Detection: [`agenthooks/dialect.go`](../agenthooks/dialect.go) — `ParseDialect`, `Detect`
+- Tests: [`agenthooks/dialect_test.go`](../agenthooks/dialect_test.go)
 - Normalization: [`agenthooks/event.go`](../agenthooks/event.go) — `NormalizeToolName`, `InputAs`
 - Tests: [`agenthooks/event_test.go`](../agenthooks/event_test.go)
