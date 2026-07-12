@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/sviatsviatsviat/wat/agenthooks"
+	_ "github.com/sviatsviatsviat/wat/agenthooks" // TODO: remove blank import when cmd/wat calls agenthooks APIs
 )
 
 const usage = `wat — run and install Go hook scripts for coding agents
@@ -20,9 +20,11 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "-h", "--help", "help":
-			fmt.Fprint(os.Stderr, usage)
+			fmt.Fprint(os.Stdout, usage)
 			return
 		}
+		fmt.Fprint(os.Stderr, usage)
+		os.Exit(1)
 	}
 	fmt.Fprint(os.Stderr, usage)
 	os.Exit(1)

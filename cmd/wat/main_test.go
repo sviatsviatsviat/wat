@@ -9,45 +9,53 @@ import (
 	"testing"
 )
 
-func TestWat_help(t *testing.T) {
-	t.Helper()
-
+func TestWat_usage(t *testing.T) {
 	binary := buildWat(t)
 
-	cmd := exec.Command(binary, "help")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("wat help: %v\n%s", err, out)
+	tests := []struct {
+		name       string
+		args       []string
+		wantErr    bool
+		wantCode   int
+		wantOutput string
+	}{
+		{
+			name:       "help",
+			args:       []string{"help"},
+			wantOutput: "Run with -h or help for this message.",
+		},
+		{
+			name:       "unknown_command",
+			args:       []string{"nosuchcommand"},
+			wantErr:    true,
+			wantCode:   1,
+			wantOutput: "Commands will be added in later releases",
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(binary, tt.args...)
+			out, err := cmd.CombinedOutput()
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected non-zero exit")
+				}
+				var exitErr *exec.ExitError
+				if !errors.As(err, &exitErr) {
+					t.Fatalf("expected exit error, got %v\n%s", err, out)
+				}
+				if code := exitErr.ExitCode(); code != tt.wantCode {
+					t.Fatalf("exit code = %d, want %d\n%s", code, tt.wantCode, out)
+				}
+			} else if err != nil {
+				t.Fatalf("unexpected error: %v\n%s", err, out)
+			}
 
-	text := string(out)
-	if !strings.Contains(text, "wat") {
-		t.Fatalf("help output missing wat: %q", text)
-	}
-}
-
-func TestWat_unknownCommand(t *testing.T) {
-	t.Helper()
-
-	binary := buildWat(t)
-
-	cmd := exec.Command(binary, "nosuchcommand")
-	out, err := cmd.CombinedOutput()
-	if err == nil {
-		t.Fatal("wat nosuchcommand: expected non-zero exit")
-	}
-
-	var exitErr *exec.ExitError
-	if !errors.As(err, &exitErr) {
-		t.Fatalf("wat nosuchcommand: expected exit error, got %v\n%s", err, out)
-	}
-	if code := exitErr.ExitCode(); code != 1 {
-		t.Fatalf("exit code = %d, want 1\n%s", code, out)
-	}
-
-	text := string(out)
-	if !strings.Contains(text, "wat") {
-		t.Fatalf("usage output missing wat: %q", text)
+			text := string(out)
+			if !strings.Contains(text, tt.wantOutput) {
+				t.Fatalf("output missing %q: %q", tt.wantOutput, text)
+			}
+		})
 	}
 }
 
