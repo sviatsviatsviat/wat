@@ -1,0 +1,28 @@
+---
+description: Core wat monorepo layout, layering, and agent context
+alwaysApply: true
+---
+
+# wat core
+
+Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rules.
+
+## Layout
+
+- `cmd/wat` — CLI; depends on `agenthooks`
+- `agenthooks` — unified hook library (stdlib only)
+- `claudehook`, `copilothook`, `cursorhook` — independent per-agent SDKs
+- `plan/` — local-only design docs (gitignored); do not commit
+
+## Layering
+
+- Do not add the old `internal/core` + host-package layout unless a task requires it.
+- Keep per-agent SDKs usable without `agenthooks`.
+- New exported API must include godoc comments (enforced by revive in CI).
+
+## Workflow pointers
+
+- Changelog: `.cursor/skills/changelog/SKILL.md`
+- Commits: `.cursor/skills/conventional-commits/SKILL.md`
+- Godoc: `.cursor/skills/godoc/SKILL.md`
+- Tests: `.cursor/skills/go-tests/SKILL.md`

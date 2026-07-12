@@ -1,0 +1,15 @@
+---
+description: Go test conventions for wat
+globs: **/*_test.go
+alwaysApply: false
+---
+
+# Go tests
+
+Follow [.cursor/skills/go-tests/SKILL.md](../skills/go-tests/SKILL.md) for full conventions.
+
+- Assert real behavior; no empty or tautological tests.
+- Prefer table-driven tests and `t.Run` subtests.
+- Helpers call `t.Helper()`.
+- Inject I/O; use `t.TempDir()` for filesystem tests.
+- For CLI behavior, build and run `cmd/wat` when validating end-to-end paths.

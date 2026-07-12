@@ -1,0 +1,16 @@
+---
+description: Godoc requirements for exported Go API
+globs: **/*.go
+alwaysApply: false
+---
+
+# Godoc
+
+Follow [.cursor/skills/godoc/SKILL.md](../skills/godoc/SKILL.md).
+
+- Every exported `func`, `type`, `const`, `var`, and method needs a godoc comment.
+- Comments are complete sentences starting with the name of the thing described.
+- Package-level overview goes in `doc.go` when it helps readers.
+- CI fails on undocumented exports (revive `exported`).
+
+Browse locally: `go doc github.com/sviatsviatsviat/wat/<package>`

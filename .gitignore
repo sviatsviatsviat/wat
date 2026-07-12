@@ -7,6 +7,10 @@
 *.dll
 *.so
 *.dylib
+/bin/
+
+# Extensionless binary if someone used `go build -o wat` on Windows (prefer `go build ./cmd/wat` → wat.exe)
+/wat
 
 # Test binary, built with `go test -c`
 *.test
@@ -27,6 +31,14 @@ go.work.sum
 # env file
 .env
 
+# Local design and task tracking (not committed)
+/plan/
+
+# wat project cache
+.wat/.cache/
+
 # Editor/IDE
 # .idea/
 # .vscode/
+
+/.cursor/hooks/state/
