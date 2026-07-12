@@ -13,6 +13,7 @@ Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rul
 - `agenthooks` — unified hook library (stdlib only)
 - `claudehook`, `copilothook`, `cursorhook` — independent per-agent SDKs
 - `plan/` — local-only design docs (gitignored); do not commit
+- `docs/` — committed user-facing reference (agent formats, doc index)
 
 ## Layering
 
@@ -22,12 +23,14 @@ Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rul
 
 ## Version pinning
 
-Pin **exact versions** for tools and actions referenced in repo config and docs. Do not use `@latest`, `version: latest`, or floating major/minor tags (e.g. `@v6`) in:
+Pin **exact versions** for tools and actions referenced in repo config and docs. Do not use `@latest`, `version: latest`, or floating major/minor tags (e.g. `@v4`, `@v6`) in:
 
-- `.github/workflows/ci.yml` (exact action release tags, e.g. `golangci-lint-action@v6.5.2`; tool versions, e.g. `golangci-lint@v1.64.8`, `govulncheck@v1.6.0`)
+- `.github/workflows/ci.yml` (exact action release tags, e.g. `actions/checkout@v4.3.1`, `golangci-lint-action@v6.5.2`; tool versions, e.g. `golangci-lint@v1.64.8`, `govulncheck@v1.6.0`)
 - `README.md`, `AGENTS.md`, and install instructions
 
 When bumping a pinned version, update every reference in the same change.
+
+**Audit:** After workflow edits, run `rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows` — zero matches required. See `.cursor/skills/ci-pins/SKILL.md`.
 
 ## Workflow pointers
 
@@ -35,3 +38,6 @@ When bumping a pinned version, update every reference in the same change.
 - Commits: `.cursor/skills/conventional-commits/SKILL.md`
 - Godoc: `.cursor/skills/godoc/SKILL.md`
 - Tests: `.cursor/skills/go-tests/SKILL.md`
+- Task plans: `.cursor/skills/task-planning/SKILL.md`
+- CI pins: `.cursor/skills/ci-pins/SKILL.md`
+- Agent formats: `docs/agent-formats.md`

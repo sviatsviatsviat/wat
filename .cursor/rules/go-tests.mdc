@@ -10,6 +10,7 @@ Follow [.cursor/skills/go-tests/SKILL.md](../skills/go-tests/SKILL.md) for full 
 
 - Assert real behavior; no empty or tautological tests.
 - Prefer table-driven tests and `t.Run` subtests.
-- Helpers call `t.Helper()`.
+- `t.Helper()` only in helpers — not in top-level tests.
+- Per-case `wantOutput` for CLI tests; help → stdout, invalid usage → stderr.
 - Inject I/O; use `t.TempDir()` for filesystem tests.
 - For CLI behavior, build and run `cmd/wat` when validating end-to-end paths.

@@ -22,9 +22,13 @@ go test ./...
 golangci-lint run ./...
 ```
 
+On Windows PowerShell, chain checks sequentially (`; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`) — `&&` is not reliable in older PowerShell.
+
 Install golangci-lint: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8`
 
 Browse API docs: `go doc github.com/sviatsviatsviat/wat/agenthooks`
+
+**Documentation:** User-facing behavior belongs in [docs/](docs/) and [CHANGELOG.md](CHANGELOG.md). Update those when API or CLI behavior changes in the same PR as the code.
 
 **Dependabot:** [`.github/dependabot.yml`](.github/dependabot.yml) opens weekly PRs for GitHub Actions and Go modules. Keep exact pinned versions. When bumping a dependency, update every reference to **that same dependency** in the same PR (e.g. all `golangci-lint` pins: CI `version:`, README, AGENTS; all `govulncheck@` pins in workflow files). Unrelated pins do not need to move with every Action bump unless compatibility requires it.
 
@@ -34,7 +38,7 @@ Browse API docs: `go doc github.com/sviatsviatsviat/wat/agenthooks`
 - **Godoc:** Every exported identifier needs a godoc comment. Package overviews belong in `doc.go`. See `.cursor/rules/godoc.mdc` and the godoc skill.
 - **Tests:** Assert real behavior; no placeholder tests. See `.cursor/skills/go-tests/SKILL.md` and `.cursor/rules/go-tests.mdc`.
 - **Changelog:** User-facing functionality only (CLI, public API, hook behavior) — not scaffolding, CI, lint, or agent harness. Keep a Changelog format; **Added** for new capability; **Changed** / **Removed** only vs a published release. See the changelog skill.
-- **Version pinning:** Pin exact tool and action versions in workflows and docs; no `@latest`. Bump all references together. See **Version pinning** in `.cursor/rules/wat-core.mdc`.
+- **Version pinning:** Pin exact tool and action versions in workflows and docs; no `@latest`. Bump all references together. See **Version pinning** in `.cursor/rules/wat-core.mdc` and `.cursor/skills/ci-pins/SKILL.md`.
 - **Commits:** Conventional prefixes (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`). Imperative subject; body explains *why*. See the conventional-commits skill.
 - **Pull requests:** Summarize the full branch, not only the latest commit.
 - **Naming:** Clear identifiers (`args`, `programArgs`) over jargon (`argv`, `d`, `rest`) unless Unix argv is explicitly the topic.

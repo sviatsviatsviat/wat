@@ -24,15 +24,24 @@ Install golangci-lint once:
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 ```
 
-Browse package docs locally:
+**PowerShell** (run sequentially):
 
-```bash
-go doc github.com/sviatsviatsviat/wat/agenthooks
+```powershell
+go vet ./...; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; go test ./...
 ```
 
-## Design docs
+## Documentation
 
-Architecture and implementation tasks live in a local-only `plan/` directory (gitignored). They are not part of a standard clone.
+| Doc | Purpose |
+|-----|---------|
+| [docs/README.md](docs/README.md) | Documentation index |
+| [docs/agent-formats.md](docs/agent-formats.md) | Tool and MCP naming across agents |
+| [CHANGELOG.md](CHANGELOG.md) | Release notes |
+| [AGENTS.md](AGENTS.md) | Contributor and agent workflow conventions |
+
+Browse package docs: `go doc github.com/sviatsviatsviat/wat/agenthooks`
+
+Architecture and task breakdown live in a local-only `plan/` directory (gitignored).
 
 ## License
 
