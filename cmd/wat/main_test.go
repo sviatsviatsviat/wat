@@ -61,13 +61,6 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "not implemented",
 		},
 		{
-			name:       "stub_init",
-			args:       []string{"init"},
-			wantErr:    true,
-			wantCode:   2,
-			wantOutput: "not implemented",
-		},
-		{
 			name:       "stub_install",
 			args:       []string{"install"},
 			wantErr:    true,
