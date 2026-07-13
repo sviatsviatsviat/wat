@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"reflect"
 )
 
 type decodeFn func([]byte) (Event, error)
@@ -45,42 +44,30 @@ var decoders = map[string]decodeFn{
 func decodeAs[T Event](raw []byte) (Event, error) {
 	var ev T
 	if err := json.Unmarshal(raw, &ev); err != nil {
-		return nil, fmt.Errorf("claudehook: decode %T: %w", ev, err)
+		return nil, fmt.Errorf("claudehook: decode %T: %w", ev, fmt.Errorf("%w: %w", ErrDecodePayload, err))
 	}
-	return attachDecodedRaw(ev, raw), nil
-}
-
-func attachDecodedRaw[T Event](ev T, raw []byte) T {
-	rv := reflect.ValueOf(&ev).Elem()
-	ef := rv.FieldByName("Envelope")
-	if !ef.IsValid() || !ef.CanSet() {
-		return ev
-	}
-	env, ok := ef.Interface().(Envelope)
-	if !ok {
-		return ev
-	}
-	env.decodedRaw = cloneRaw(raw)
-	ef.Set(reflect.ValueOf(env))
-	return ev
+	envelopeAccessorForValue(&ev).envelopePtr().setDecodedRaw(raw)
+	return ev, nil
 }
 
 // Decode parses a Claude Code hook stdin payload into a typed Event.
 func Decode(raw []byte) (Event, error) {
 	if len(raw) == 0 {
-		return nil, fmt.Errorf("claudehook: empty payload")
+		return nil, ErrEmptyPayload
 	}
 	var env Envelope
 	if err := json.Unmarshal(raw, &env); err != nil {
-		return nil, fmt.Errorf("claudehook: decode envelope: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrDecodePayload, err)
 	}
 	name := env.HookEventName
 	if name == "" {
+		env.setDecodedRaw(raw)
 		return RawEvent{Envelope: env, Raw: cloneRaw(raw)}, nil
 	}
 	if fn, ok := decoders[name]; ok {
 		return fn(raw)
 	}
+	env.setDecodedRaw(raw)
 	return RawEvent{Envelope: env, Raw: cloneRaw(raw)}, nil
 }
 
@@ -118,28 +105,15 @@ func RawBytes(ev Event) json.RawMessage {
 }
 
 func decodedRawFrom(ev Event) json.RawMessage {
-	rv := reflect.ValueOf(ev)
-	if rv.Kind() == reflect.Pointer {
-		if rv.IsNil() {
-			return nil
-		}
-		rv = rv.Elem()
-	}
-	if rv.Kind() != reflect.Struct {
-		return nil
-	}
-	ef := rv.FieldByName("Envelope")
-	if !ef.IsValid() {
-		return nil
-	}
-	env, ok := ef.Interface().(Envelope)
-	if !ok {
-		return nil
-	}
-	return env.decodedRaw
+	return envelopeAccessorForEvent(ev).envelopePtr().decodedRawBytes()
 }
 
 // CloneRaw copies raw JSON for independent mutation.
 func CloneRaw(raw json.RawMessage) json.RawMessage {
 	return cloneRaw(raw)
+}
+
+// EnvelopeOf returns the shared envelope from a decoded event.
+func EnvelopeOf(ev Event) Envelope {
+	return *envelopeAccessorForEvent(ev).envelopePtr()
 }

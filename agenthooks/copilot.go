@@ -3,7 +3,6 @@ package agenthooks
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/sviatsviatsviat/wat/copilothook"
 )
@@ -68,16 +67,11 @@ func (c *CopilotCodec) Encode(ev *Event, res Result) ([]byte, int, error) {
 func mapCopilotDecodeError(err error) error {
 	switch {
 	case errors.Is(err, copilothook.ErrUnrecognizedFormat):
-		return fmt.Errorf("copilot: decode payload: unrecognized format")
+		return remapDecodeError(err, "copilot: decode payload: unrecognized format")
 	case errors.Is(err, copilothook.ErrEventNameRequired):
-		return fmt.Errorf("copilot: decode: event name required (camelCase payloads need eventHint)")
+		return remapDecodeError(err, "copilot: decode: event name required (camelCase payloads need eventHint)")
 	case errors.Is(err, copilothook.ErrDecodePayload), errors.Is(err, copilothook.ErrEmptyPayload):
-		const prefix = "copilothook: "
-		msg := err.Error()
-		if strings.HasPrefix(msg, prefix) {
-			return fmt.Errorf("copilot: %s", msg[len(prefix):])
-		}
-		return fmt.Errorf("copilot: %w", err)
+		return mapDecodeErrorMessage(err, "copilot", "copilothook")
 	default:
 		return fmt.Errorf("copilot: %w", err)
 	}

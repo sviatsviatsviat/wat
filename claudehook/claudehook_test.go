@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -187,6 +188,35 @@ func TestDecode_UnknownEvent(t *testing.T) {
 	}
 }
 
+func TestDecode_InvalidJSON(t *testing.T) {
+	t.Run("envelope", func(t *testing.T) {
+		_, err := claudehook.Decode([]byte("not json"))
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if !errors.Is(err, claudehook.ErrDecodePayload) {
+			t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
+		}
+		if !strings.Contains(err.Error(), "decode payload") {
+			t.Fatalf("error = %v", err)
+		}
+	})
+
+	t.Run("typed event", func(t *testing.T) {
+		raw := []byte(`{"session_id":"s1","hook_event_name":"PreToolUse","cwd":"/w","tool_name":123}`)
+		_, err := claudehook.Decode(raw)
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if !errors.Is(err, claudehook.ErrDecodePayload) {
+			t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
+		}
+		if !strings.Contains(err.Error(), "decode payload") {
+			t.Fatalf("error = %v", err)
+		}
+	})
+}
+
 func TestMux_FailPolicy(t *testing.T) {
 	mux := claudehook.NewMux()
 	claudehook.On(mux, func(ctx context.Context, ev claudehook.PreToolUse) (claudehook.PreToolUseOutput, error) {
@@ -207,6 +237,15 @@ func TestEncode_ZeroOutput(t *testing.T) {
 	out, err := claudehook.Encode("PreToolUse", claudehook.PreToolUseOutput{})
 	if err != nil || out != nil {
 		t.Fatalf("zero output should be silent, got %q err=%v", out, err)
+	}
+}
+
+func TestEncode_EventOutputMismatch(t *testing.T) {
+	_, err := claudehook.Encode(claudehook.EventPostToolUse, claudehook.PreToolUseOutput{
+		Decision: claudehook.DecisionAllow,
+	})
+	if err == nil {
+		t.Fatal("expected incompatible event/output error")
 	}
 }
 
@@ -294,5 +333,39 @@ func TestIsMCPTool(t *testing.T) {
 	server, tool, ok := tools.IsMCPTool("mcp__github__create_issue")
 	if !ok || server != "github" || tool != "create_issue" {
 		t.Fatalf("IsMCPTool = %q, %q, %v", server, tool, ok)
+	}
+}
+
+func TestParseHandler_RoundTrip(t *testing.T) {
+	raw, err := claudehook.MarshalHandler(claudehook.Handler{
+		Type:    "command",
+		Command: "echo hi",
+		Timeout: 30,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, err := claudehook.ParseHandler(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.Type != "command" || h.Command != "echo hi" || h.Timeout != 30 {
+		t.Fatalf("handler = %+v", h)
+	}
+	if h.TimeoutSeconds() != 30 {
+		t.Fatalf("TimeoutSeconds = %d", h.TimeoutSeconds())
+	}
+}
+
+func TestHandlers_EncodesMultiple(t *testing.T) {
+	blobs, err := claudehook.Handlers(
+		claudehook.Handler{Type: "command", Command: "a"},
+		claudehook.Handler{Type: "command", Command: "b"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(blobs) != 2 {
+		t.Fatalf("len = %d", len(blobs))
 	}
 }

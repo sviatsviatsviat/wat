@@ -16,6 +16,9 @@ func Encode(eventName string, out any, opts ...Option) ([]byte, error) {
 	if out == nil || isZeroOutput(out) {
 		return nil, nil
 	}
+	if err := validateEncodePair(eventName, out); err != nil {
+		return nil, err
+	}
 	cfg := defaultRuntimeConfig()
 	applyOptions(&cfg, opts...)
 
@@ -55,6 +58,70 @@ func isZeroOutput(out any) bool {
 		return z.isZero()
 	}
 	return reflect.ValueOf(out).IsZero()
+}
+
+func validateEncodePair(eventName string, out any) error {
+	if eventName == "" {
+		return nil
+	}
+	allowed, ok := allowedEventsForOutput(out)
+	if !ok {
+		return fmt.Errorf("claudehook: encode: unsupported output type %T", out)
+	}
+	for _, name := range allowed {
+		if eventName == name {
+			return nil
+		}
+	}
+	return fmt.Errorf("claudehook: encode: event %q incompatible with output type %T", eventName, out)
+}
+
+func allowedEventsForOutput(out any) ([]string, bool) {
+	switch out.(type) {
+	case PreToolUseOutput:
+		return []string{EventPreToolUse}, true
+	case PermissionRequestOutput:
+		return []string{EventPermissionRequest}, true
+	case PostToolUseOutput:
+		return []string{EventPostToolUse, EventPostToolUseFailure}, true
+	case UserPromptSubmitOutput:
+		return []string{EventUserPromptSubmit}, true
+	case StopOutput:
+		return []string{EventStop, EventSubagentStop}, true
+	case SessionStartOutput:
+		return []string{EventSessionStart}, true
+	case MessageDisplayOutput:
+		return []string{EventMessageDisplay}, true
+	case PermissionDeniedOutput:
+		return []string{EventPermissionDenied}, true
+	case ElicitationOutput:
+		return []string{EventElicitation}, true
+	case WorktreeCreateOutput:
+		return []string{EventWorktreeCreate}, true
+	case CommonOutput:
+		return []string{
+			EventSetup,
+			EventSessionEnd,
+			EventUserPromptExpansion,
+			EventPostToolBatch,
+			EventSubagentStart,
+			EventTaskCreated,
+			EventTaskCompleted,
+			EventStopFailure,
+			EventTeammateIdle,
+			EventNotification,
+			EventInstructionsLoaded,
+			EventConfigChange,
+			EventCwdChanged,
+			EventFileChanged,
+			EventWorktreeRemove,
+			EventPreCompact,
+			EventPostCompact,
+			EventElicitationResult,
+		}, true
+	default:
+		return nil, false
+	}
 }
 
 func buildOutput(eventName string, out any) (map[string]any, map[string]any, error) {

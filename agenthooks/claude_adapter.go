@@ -1,8 +1,6 @@
 package agenthooks
 
 import (
-	"encoding/json"
-
 	"github.com/sviatsviatsviat/wat/claudehook"
 )
 
@@ -57,18 +55,7 @@ func mapClaudeEvent(native claudehook.Event, raw []byte) *Event {
 }
 
 func envelopeOf(native claudehook.Event) claudehook.Envelope {
-	switch e := native.(type) {
-	case claudehook.RawEvent:
-		return e.Envelope
-	default:
-		b, err := json.Marshal(native)
-		if err != nil {
-			return claudehook.Envelope{HookEventName: native.EventName()}
-		}
-		var env claudehook.Envelope
-		_ = json.Unmarshal(b, &env)
-		return env
-	}
+	return claudehook.EnvelopeOf(native)
 }
 
 func mapClaudeOutput(ev *Event, res Result) any {

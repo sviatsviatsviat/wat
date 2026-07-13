@@ -3,10 +3,13 @@ package agenthooks
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/claudehook"
 )
 
 // Design §3.2 ⚠ verification checklist (re-verify against live Claude docs):
@@ -59,6 +62,20 @@ func TestCodecFor(t *testing.T) {
 				t.Fatalf("Dialect() = %v, want %v", codec.Dialect(), tt.dialect)
 			}
 		})
+	}
+}
+
+func TestClaudeDecode_InvalidJSONPreservesSentinel(t *testing.T) {
+	c := &ClaudeCodec{}
+	_, err := c.Decode([]byte("not json"), "")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !errors.Is(err, claudehook.ErrDecodePayload) {
+		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
+	}
+	if !strings.HasPrefix(err.Error(), "claude: decode payload") {
+		t.Fatalf("error = %v", err)
 	}
 }
 

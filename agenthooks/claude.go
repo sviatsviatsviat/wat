@@ -1,6 +1,7 @@
 package agenthooks
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/claudehook"
@@ -22,7 +23,7 @@ func (c *ClaudeCodec) Dialect() Dialect { return Claude }
 func (c *ClaudeCodec) Decode(raw []byte, eventHint string) (*Event, error) {
 	native, err := claudehook.Decode(raw)
 	if err != nil {
-		return nil, fmt.Errorf("claude: %w", err)
+		return nil, mapClaudeDecodeError(err)
 	}
 	ev := mapClaudeEvent(native, raw)
 	if ev.Name == "" && eventHint != "" {
@@ -57,6 +58,15 @@ func (c *ClaudeCodec) Encode(ev *Event, res Result) ([]byte, int, error) {
 		return nil, 0, fmt.Errorf("claude: %w", err)
 	}
 	return b, 0, err
+}
+
+func mapClaudeDecodeError(err error) error {
+	switch {
+	case errors.Is(err, claudehook.ErrDecodePayload), errors.Is(err, claudehook.ErrEmptyPayload):
+		return mapDecodeErrorMessage(err, "claude", "claudehook")
+	default:
+		return fmt.Errorf("claude: %w", err)
+	}
 }
 
 // As re-decodes Event.Raw into a claudehook native event type.

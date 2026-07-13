@@ -85,3 +85,8 @@ func Handlers(h ...Handler) ([]json.RawMessage, error) {
 	}
 	return out, nil
 }
+
+// TimeoutSeconds returns the configured handler timeout in seconds.
+func (h Handler) TimeoutSeconds() int {
+	return h.Timeout
+}

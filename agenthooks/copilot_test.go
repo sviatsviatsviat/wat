@@ -3,6 +3,7 @@ package agenthooks
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -46,6 +47,9 @@ func TestCopilotDecode_CamelCaseRequiresEventHint(t *testing.T) {
 	_, err := c.Decode([]byte(copilotCamelPreToolUse), "")
 	if err == nil {
 		t.Fatal("expected error without eventHint")
+	}
+	if !errors.Is(err, copilothook.ErrEventNameRequired) {
+		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
 	}
 	if !strings.Contains(err.Error(), "eventHint") {
 		t.Fatalf("error = %v", err)
@@ -292,7 +296,25 @@ func TestCopilotDecode_InvalidJSON(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
+	if !errors.Is(err, copilothook.ErrUnrecognizedFormat) {
+		t.Fatalf("errors.Is ErrUnrecognizedFormat = false, err = %v", err)
+	}
 	if !strings.Contains(err.Error(), "copilot: decode payload") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestCopilotDecode_InvalidPayloadPreservesSentinel(t *testing.T) {
+	c := &CopilotCodec{}
+	raw := []byte(`{"sessionId":"s1","timestamp":1,"cwd":[]}`)
+	_, err := c.Decode(raw, "preToolUse")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !errors.Is(err, copilothook.ErrDecodePayload) {
+		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
+	}
+	if !strings.HasPrefix(err.Error(), "copilot: decode payload") {
 		t.Fatalf("error = %v", err)
 	}
 }
