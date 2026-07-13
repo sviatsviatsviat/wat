@@ -5,34 +5,18 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/copilothook"
 )
 
-type copilotFile struct {
-	Version int                          `json:"version"`
-	Hooks   map[string][]json.RawMessage `json:"hooks"`
-}
-
-type copilotHandler struct {
-	Type       string `json:"type,omitempty"`
-	Bash       string `json:"bash,omitempty"`
-	PowerShell string `json:"powershell,omitempty"`
-	Command    string `json:"command,omitempty"`
-	URL        string `json:"url,omitempty"`
-	Prompt     string `json:"prompt,omitempty"`
-	Matcher    string `json:"matcher,omitempty"`
-	TimeoutSec int    `json:"timeoutSec,omitempty"`
-	Timeout    int    `json:"timeout,omitempty"`
-}
-
 func parseCopilot(data []byte) (Config, []Warning, error) {
-	var f copilotFile
+	var f copilothook.File
 	if err := json.Unmarshal(data, &f); err != nil {
 		return Config{}, nil, fmt.Errorf("portconfig: parse copilot hooks: %w", err)
 	}
 	cfg := Config{}
 	var warns []Warning
 	for event, handlers := range f.Hooks {
-		kind, known := copilotKindForEvent[event]
+		kind, known := agenthooks.CopilotKindForEvent(event)
 		if !known {
 			for _, handlerRaw := range handlers {
 				appendExtra(&cfg, event, handlerRaw)
@@ -55,20 +39,16 @@ func parseCopilot(data []byte) (Config, []Warning, error) {
 }
 
 func copilotHandlerToEntry(event string, kind agenthooks.Kind, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
-	var h copilotHandler
-	if err := json.Unmarshal(handlerRaw, &h); err != nil {
+	h, err := copilothook.ParseHandler(handlerRaw)
+	if err != nil {
 		return Entry{}, nil, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
 	}
 	var warns []Warning
-	timeout := h.TimeoutSec
-	if timeout == 0 {
-		timeout = h.Timeout
-	}
 	e := Entry{
 		Kind:        kind,
 		NativeEvent: event,
 		Matcher:     h.Matcher,
-		TimeoutSec:  timeout,
+		TimeoutSec:  h.TimeoutSeconds(),
 		Raw:         cloneRaw(handlerRaw),
 	}
 	switch h.Type {
@@ -97,11 +77,11 @@ func copilotHandlerToEntry(event string, kind agenthooks.Kind, handlerRaw json.R
 }
 
 func emitCopilot(cfg Config) ([]byte, []Warning, error) {
-	f := copilotFile{Version: 1, Hooks: map[string][]json.RawMessage{}}
+	f := copilothook.File{Version: 1, Hooks: map[string][]json.RawMessage{}}
 	var warns []Warning
 	for kind, entries := range cfg.Hooks {
 		for _, e := range entries {
-			event := eventNameForEmit(e, copilotKindForEvent, copilotEventForKind)
+			event := eventNameForEmit(e, agenthooks.CopilotKindForEventMap, agenthooks.CopilotEventForKind)
 			if event == "" {
 				warns = append(warns, warnf("kind %q has no Copilot event name; dropped", kind))
 				continue
@@ -136,7 +116,7 @@ func copilotHandlerAllowed(handlerType, event string) bool {
 	case "http":
 		return true
 	case "prompt":
-		return event == "sessionStart"
+		return event == copilothook.EventSessionStart
 	default:
 		return false
 	}
@@ -144,7 +124,7 @@ func copilotHandlerAllowed(handlerType, event string) bool {
 
 func copilotHandlerRaw(e Entry) (json.RawMessage, error) {
 	if len(e.Raw) == 0 {
-		h := copilotHandler{Matcher: e.Matcher, TimeoutSec: e.TimeoutSec}
+		h := copilothook.Handler{Matcher: e.Matcher, TimeoutSec: e.TimeoutSec}
 		switch e.Type {
 		case "command", "":
 			h.Type = "command"
@@ -158,7 +138,7 @@ func copilotHandlerRaw(e Entry) (json.RawMessage, error) {
 		default:
 			h.Type = e.Type
 		}
-		return json.Marshal(h)
+		return copilothook.MarshalHandler(h)
 	}
 	var m map[string]any
 	if err := json.Unmarshal(e.Raw, &m); err != nil {

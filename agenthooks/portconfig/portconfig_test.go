@@ -117,6 +117,38 @@ func TestParseCopilot_timeoutAlias(t *testing.T) {
 	}
 }
 
+func TestParseCopilot_powershellOnlyNotCommand(t *testing.T) {
+	raw := `{"version":1,"hooks":{"preToolUse":[{"type":"command","powershell":"Get-ChildItem"}]}}`
+	cfg, warns, err := Parse([]byte(raw), agenthooks.Copilot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warns) == 0 {
+		t.Fatal("expected powershell warning")
+	}
+	powershellWarn := false
+	for _, w := range warns {
+		if strings.Contains(string(w), "powershell") {
+			powershellWarn = true
+			break
+		}
+	}
+	if !powershellWarn {
+		t.Fatalf("expected warning mentioning powershell, got %v", warns)
+	}
+	entry := cfg.Hooks[agenthooks.KindPreTool][0]
+	if entry.Command != "" {
+		t.Fatalf("Command = %q, want empty", entry.Command)
+	}
+	out, _, err := Emit(cfg, agenthooks.Copilot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"powershell"`) || !strings.Contains(string(out), "Get-ChildItem") {
+		t.Fatalf("emit lost powershell field: %s", out)
+	}
+}
+
 func TestParseCursor_dedicatedEvent(t *testing.T) {
 	cfg, _, err := Parse([]byte(cursorDedicatedSettings), agenthooks.Cursor)
 	if err != nil {

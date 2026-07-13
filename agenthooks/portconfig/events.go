@@ -4,22 +4,6 @@ import (
 	"github.com/sviatsviatsviat/wat/agenthooks"
 )
 
-var copilotEventForKind = map[agenthooks.Kind]string{
-	agenthooks.KindSessionStart:      "sessionStart",
-	agenthooks.KindSessionEnd:        "sessionEnd",
-	agenthooks.KindUserPrompt:        "userPromptSubmitted",
-	agenthooks.KindPreTool:           "preToolUse",
-	agenthooks.KindPostTool:          "postToolUse",
-	agenthooks.KindPostToolFailure:   "postToolUseFailure",
-	agenthooks.KindPermissionRequest: "permissionRequest",
-	agenthooks.KindSubagentStart:     "subagentStart",
-	agenthooks.KindSubagentStop:      "subagentStop",
-	agenthooks.KindStop:              "agentStop",
-	agenthooks.KindPreCompact:        "preCompact",
-	agenthooks.KindNotification:      "notification",
-	agenthooks.KindAgentError:        "errorOccurred",
-}
-
 var cursorEventForKind = map[agenthooks.Kind]string{
 	agenthooks.KindSessionStart:    "sessionStart",
 	agenthooks.KindSessionEnd:      "sessionEnd",
@@ -41,35 +25,7 @@ func invertKindEvent(m map[agenthooks.Kind]string) map[string]agenthooks.Kind {
 	return out
 }
 
-var (
-	copilotKindForEvent = buildCopilotKindForEvent()
-	cursorKindForEvent  = buildCursorKindForEvent()
-)
-
-func buildCopilotKindForEvent() map[string]agenthooks.Kind {
-	m := invertKindEvent(copilotEventForKind)
-	// Copilot configs may use VS Code PascalCase event keys.
-	for k, v := range map[string]string{
-		"SessionStart":       "sessionStart",
-		"SessionEnd":         "sessionEnd",
-		"UserPromptSubmit":   "userPromptSubmitted",
-		"PreToolUse":         "preToolUse",
-		"PostToolUse":        "postToolUse",
-		"PostToolUseFailure": "postToolUseFailure",
-		"PermissionRequest":  "permissionRequest",
-		"SubagentStart":      "subagentStart",
-		"SubagentStop":       "subagentStop",
-		"Stop":               "agentStop",
-		"PreCompact":         "preCompact",
-		"Notification":       "notification",
-		"ErrorOccurred":      "errorOccurred",
-	} {
-		if kind, ok := m[v]; ok {
-			m[k] = kind
-		}
-	}
-	return m
-}
+var cursorKindForEvent = buildCursorKindForEvent()
 
 func buildCursorKindForEvent() map[string]agenthooks.Kind {
 	m := invertKindEvent(cursorEventForKind)

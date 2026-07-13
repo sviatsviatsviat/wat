@@ -157,7 +157,7 @@ func eventForKind(d agenthooks.Dialect, kind agenthooks.Kind) string {
 	case agenthooks.Claude:
 		return agenthooks.ClaudeEventForKind[kind]
 	case agenthooks.Copilot:
-		return copilotEventForKind[kind]
+		return agenthooks.CopilotEventForKind[kind]
 	case agenthooks.Cursor:
 		return cursorEventForKind[kind]
 	default:

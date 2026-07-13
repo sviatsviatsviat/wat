@@ -3,11 +3,11 @@ package agenthooks
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/claudehook"
+	"github.com/sviatsviatsviat/wat/copilothook"
 )
 
 func cloneRaw(raw json.RawMessage) json.RawMessage {
-	return claudehook.CloneRaw(raw)
+	return copilothook.CloneRaw(raw)
 }
 
 // newToolCall builds a ToolCall from native tool metadata and extracts a shell

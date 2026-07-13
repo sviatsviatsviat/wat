@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/copilothook"
 )
 
 func TestCopilotDecodeEncode_PreToolDeny(t *testing.T) {
@@ -324,6 +326,18 @@ func TestCopilotEncode_PreToolAllowModifiedArgs(t *testing.T) {
 	}
 }
 
+func TestCopilotEncode_EmptyNameUsesKind(t *testing.T) {
+	c := &CopilotCodec{}
+	ev := &Event{Agent: Copilot, Kind: KindPreTool, Name: ""}
+	out, code, err := c.Encode(ev, Result{Decision: DecisionAllow})
+	if err != nil || code != 0 {
+		t.Fatal(err, code)
+	}
+	if !strings.Contains(string(out), `"permissionDecision":"allow"`) {
+		t.Fatalf("bad output: %s", out)
+	}
+}
+
 func TestCopilotEncode_PostToolUpdatedOutput(t *testing.T) {
 	c := &CopilotCodec{}
 	ev := &Event{Agent: Copilot, Kind: KindPostTool, Name: "postToolUse"}
@@ -380,6 +394,18 @@ func TestCopilotEncode_PermissionRequestDenyInterrupt(t *testing.T) {
 	}
 }
 
+func TestCopilotEncode_PermissionRequestAsk(t *testing.T) {
+	c := &CopilotCodec{}
+	ev := &Event{Agent: Copilot, Kind: KindPermissionRequest, Name: "permissionRequest"}
+	out, code, err := c.Encode(ev, Ask("needs user confirmation"))
+	if err != nil || code != 0 {
+		t.Fatalf("encode: %v code=%d", err, code)
+	}
+	if !strings.Contains(string(out), `"behavior":"deny"`) {
+		t.Fatalf("bad output: %s", out)
+	}
+}
+
 func TestCopilotEncode_PostToolFailureContext(t *testing.T) {
 	c := &CopilotCodec{}
 	ev := &Event{Agent: Copilot, Kind: KindPostToolFailure, Name: "postToolUseFailure"}
@@ -429,17 +455,27 @@ func TestCopilotEncode_NilEvent(t *testing.T) {
 
 func TestCopilotTimestamp_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
-		name string
-		raw  string
-		want int64 // unix ms
+		name    string
+		raw     string
+		want    int64 // unix ms
+		wantErr bool
 	}{
 		{name: "ms epoch", raw: `1760000000000`, want: 1760000000000},
 		{name: "iso8601", raw: `"2026-07-12T10:00:00Z"`, want: 1783850400000},
+		{name: "invalid RFC3339", raw: `"not-a-time"`, wantErr: true},
+		{name: "non-integer epoch", raw: `1.5`, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var ts copilotTimestamp
-			if err := json.Unmarshal([]byte(tt.raw), &ts); err != nil {
+			var ts copilothook.Timestamp
+			err := json.Unmarshal([]byte(tt.raw), &ts)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				return
+			}
+			if err != nil {
 				t.Fatal(err)
 			}
 			if ts.UnixMilli() != tt.want {
