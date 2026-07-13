@@ -116,7 +116,7 @@ func adaptEntry(e *Entry, kind agenthooks.Kind, from, to agenthooks.Dialect, tim
 		return w, false
 	}
 	var warns []Warning
-	if from == agenthooks.Cursor && to != agenthooks.Cursor && isCursorDedicatedEvent(e.NativeEvent) {
+	if from == agenthooks.Cursor && to != agenthooks.Cursor && agenthooks.IsCursorDedicatedEvent(e.NativeEvent) {
 		warns = append(warns, warnf("%s: Cursor dedicated event maps to generic %s on %s; review matcher and payload semantics",
 			e.NativeEvent, eventForKind(to, kind), to))
 	}
@@ -159,7 +159,7 @@ func eventForKind(d agenthooks.Dialect, kind agenthooks.Kind) string {
 	case agenthooks.Copilot:
 		return agenthooks.CopilotEventForKind[kind]
 	case agenthooks.Cursor:
-		return cursorEventForKind[kind]
+		return agenthooks.CursorEventForKind[kind]
 	default:
 		return ""
 	}

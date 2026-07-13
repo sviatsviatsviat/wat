@@ -23,5 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `claudehook` package with typed Claude Code hook events, `Decode`/`Encode`, generic `Mux`/`On`/`Serve`/`Main`, and `claudehook/tools` lazy tool input helpers
 - `agenthooks.As` to re-decode unified events into native `claudehook` types for long-tail Claude events
 - `copilothook` package with typed GitHub Copilot hook events, dual-format `Decode`/`Encode`, generic `Mux`/`On`/`Serve`/`Main`, `WithEvent` for camelCase payloads, and `copilothook/tools` lazy tool input helpers
+- `cursorhook` package with typed Cursor hook events (21 surfaces), `Decode`/`Encode`, generic `Mux`/`On`/`Serve`/`Main`, `WithEvent` for payloads missing `hook_event_name`, `cursorhook/tools` lazy tool input helpers, and env helpers (`CURSOR_PROJECT_DIR`, `CURSOR_VERSION`)
+- `agenthooks.AsCursor` to re-decode unified events into native `cursorhook` types
 - `claudehook.EnvelopeOf` and decode error sentinels (`ErrEmptyPayload`, `ErrDecodePayload`) for stable envelope access and error handling
 - `claudehook.Handler.TimeoutSeconds` for hook config timeout lookup

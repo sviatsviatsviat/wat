@@ -5,30 +5,18 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/cursorhook"
 )
 
-type cursorFile struct {
-	Version int                          `json:"version"`
-	Hooks   map[string][]json.RawMessage `json:"hooks"`
-}
-
-type cursorHandler struct {
-	Command string `json:"command,omitempty"`
-	Type    string `json:"type,omitempty"`
-	Prompt  string `json:"prompt,omitempty"`
-	Matcher string `json:"matcher,omitempty"`
-	Timeout int    `json:"timeout,omitempty"`
-}
-
 func parseCursor(data []byte) (Config, []Warning, error) {
-	var f cursorFile
+	var f cursorhook.File
 	if err := json.Unmarshal(data, &f); err != nil {
 		return Config{}, nil, fmt.Errorf("portconfig: parse cursor hooks: %w", err)
 	}
 	cfg := Config{}
 	var warns []Warning
 	for event, handlers := range f.Hooks {
-		kind, known := cursorKindForEvent[event]
+		kind, known := agenthooks.CursorKindForEvent(event)
 		if !known {
 			for _, handlerRaw := range handlers {
 				appendExtra(&cfg, event, handlerRaw)
@@ -57,8 +45,8 @@ func parseCursor(data []byte) (Config, []Warning, error) {
 }
 
 func cursorHandlerToEntry(event string, kind agenthooks.Kind, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
-	var h cursorHandler
-	if err := json.Unmarshal(handlerRaw, &h); err != nil {
+	h, err := cursorhook.ParseHandler(handlerRaw)
+	if err != nil {
 		return Entry{}, nil, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
 	}
 	var warns []Warning
@@ -66,16 +54,16 @@ func cursorHandlerToEntry(event string, kind agenthooks.Kind, handlerRaw json.Ra
 		Kind:        kind,
 		NativeEvent: event,
 		Matcher:     h.Matcher,
-		TimeoutSec:  h.Timeout,
+		TimeoutSec:  h.TimeoutSeconds(),
 		Raw:         cloneRaw(handlerRaw),
 	}
 	switch h.Type {
-	case "command", "":
-		e.Type = "command"
+	case cursorhook.HandlerTypeCommand, "":
+		e.Type = cursorhook.HandlerTypeCommand
 		e.Command = h.Command
 		return e, nil, warns, true
-	case "prompt":
-		e.Type = "prompt"
+	case cursorhook.HandlerTypePrompt:
+		e.Type = cursorhook.HandlerTypePrompt
 		e.Prompt = h.Prompt
 		return e, nil, warns, true
 	default:
@@ -85,11 +73,11 @@ func cursorHandlerToEntry(event string, kind agenthooks.Kind, handlerRaw json.Ra
 }
 
 func emitCursor(cfg Config) ([]byte, []Warning, error) {
-	f := cursorFile{Version: 1, Hooks: map[string][]json.RawMessage{}}
+	f := cursorhook.File{Version: 1, Hooks: map[string][]json.RawMessage{}}
 	var warns []Warning
 	for kind, entries := range cfg.Hooks {
 		for _, e := range entries {
-			event := eventNameForEmit(e, cursorKindForEvent, cursorEventForKind)
+			event := eventNameForEmit(e, agenthooks.CursorKindForEventMap, agenthooks.CursorEventForKind)
 			if event == "" {
 				warns = append(warns, warnf("kind %q has no Cursor event name; dropped", kind))
 				continue
@@ -117,19 +105,14 @@ func cursorHandlerRaw(e Entry) (json.RawMessage, error) {
 	if len(e.Raw) > 0 {
 		return cloneRaw(e.Raw), nil
 	}
-	h := cursorHandler{
+	h := cursorhook.Handler{
 		Command: e.Command,
-		Type:    nonDefault(e.Type, "command"),
 		Prompt:  e.Prompt,
 		Matcher: e.Matcher,
 		Timeout: e.TimeoutSec,
 	}
-	return json.Marshal(h)
-}
-
-func nonDefault(v, def string) string {
-	if v == def {
-		return ""
+	if e.Type != "" && e.Type != cursorhook.HandlerTypeCommand {
+		h.Type = e.Type
 	}
-	return v
+	return cursorhook.MarshalHandler(h)
 }

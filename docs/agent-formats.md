@@ -6,7 +6,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 ## Per-agent SDK skeleton
 
-`claudehook` and `copilothook` are standalone packages (stdlib only) with the same file layout. Each can be used without `agenthooks`; `agenthooks` adapts them through `ClaudeCodec` and `CopilotCodec`.
+`claudehook`, `copilothook`, and `cursorhook` are standalone packages (stdlib only) with the same file layout. Each can be used without `agenthooks`; `agenthooks` adapts them through `ClaudeCodec`, `CopilotCodec`, and `CursorCodec`.
 
 | File | Role |
 |------|------|
@@ -26,12 +26,12 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 **Intentional protocol differences** (do not expect parity):
 
-- **Event count** — Claude exposes ~30 events; Copilot exposes 13.
-- **Wire format** — Copilot accepts camelCase CLI and VS Code snake_case in one SDK; Claude uses a single snake_case envelope.
-- **Decode hints** — Copilot camelCase payloads need `WithEvent` unless `hook_event_name` is on the wire; Claude reads `hook_event_name` directly.
-- **Encode contract** — Copilot `Encode` returns `([]byte, exitCode, error)`; Claude `Encode` returns `([]byte, error)` with blocking in JSON fields.
-- **Side effects** — Claude `SessionStartOutput.Env` writes `CLAUDE_ENV_FILE`; Copilot has no equivalent.
-- **Config schema** — Claude `settings.json` (`Settings`) vs Copilot `hooks.json` (`File`).
+- **Event count** — Claude exposes ~30 events; Copilot exposes 13; Cursor exposes 21.
+- **Wire format** — Copilot accepts camelCase CLI and VS Code snake_case in one SDK; Claude and Cursor use a single envelope shape with `hook_event_name`.
+- **Decode hints** — Copilot camelCase payloads need `WithEvent` unless `hook_event_name` is on the wire; Claude and Cursor read `hook_event_name` directly when present.
+- **Encode contract** — Copilot and Cursor `Encode` return `([]byte, exitCode, error)`; Claude `Encode` returns `([]byte, error)` with blocking in JSON fields.
+- **Side effects** — Claude `SessionStartOutput.Env` writes `CLAUDE_ENV_FILE`; Copilot and Cursor pass `env` in stdout JSON.
+- **Config schema** — Claude `settings.json` (`Settings`) vs Copilot/Cursor `hooks.json` (`File`).
 
 ## Tool name normalization
 
@@ -236,5 +236,7 @@ Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preTo
 - Tests: [`agenthooks/claude_test.go`](../agenthooks/claude_test.go)
 - Copilot codec: [`agenthooks/copilot.go`](../agenthooks/copilot.go) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
 - Tests: [`agenthooks/copilot_test.go`](../agenthooks/copilot_test.go)
-- Cursor codec: [`agenthooks/cursor.go`](../agenthooks/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit`
+- Cursor codec: [`agenthooks/cursor.go`](../agenthooks/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit` (adapts `cursorhook`)
 - Tests: [`agenthooks/cursor_test.go`](../agenthooks/cursor_test.go)
+- Cursor SDK: [`cursorhook/`](../cursorhook/) — typed events, `Decode`/`Encode`, `Mux`/`On`/`Serve`/`Main`, `cursorhook/tools` lazy tool input helpers
+- Tests: [`cursorhook/cursorhook_test.go`](../cursorhook/cursorhook_test.go)

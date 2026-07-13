@@ -42,3 +42,4 @@ go.work.sum
 # .vscode/
 
 /.cursor/hooks/state/
+.cache/
