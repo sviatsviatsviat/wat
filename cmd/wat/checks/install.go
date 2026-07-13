@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sviatsviatsviat/wat/claudehook"
-	"github.com/sviatsviatsviat/wat/copilothook"
-	"github.com/sviatsviatsviat/wat/cursorhook"
+	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/copilot"
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // Install verifies wat on PATH and installed hook config entries.
@@ -168,7 +168,7 @@ func disableAllHooks(deps Deps, path string) []Result {
 	if _, err := deps.Stat(path); err != nil {
 		return nil
 	}
-	var settings claudehook.Settings
+	var settings claude.Settings
 	if err := readInstallJSON(deps, path, &settings); err != nil {
 		return nil
 	}
@@ -200,7 +200,7 @@ func readInstallJSON(deps Deps, path string, dest any) error {
 func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 	switch agent {
 	case "claude":
-		var settings claudehook.Settings
+		var settings claude.Settings
 		if err := readInstallJSON(deps, path, &settings); err != nil {
 			return nil, err
 		}
@@ -208,7 +208,7 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 		for _, groups := range settings.Hooks {
 			for _, g := range groups {
 				for _, raw := range g.Hooks {
-					h, err := claudehook.ParseHandler(raw)
+					h, err := claude.ParseHandler(raw)
 					if err != nil {
 						continue
 					}
@@ -222,12 +222,12 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 		}
 		return cmds, nil
 	case "copilot":
-		var f copilothook.File
+		var f copilot.File
 		if err := readInstallJSON(deps, path, &f); err != nil {
 			return nil, err
 		}
 		return flatWatCommands(f.Hooks, func(raw json.RawMessage) (string, bool) {
-			h, err := copilothook.ParseHandler(raw)
+			h, err := copilot.ParseHandler(raw)
 			if err != nil {
 				return "", false
 			}
@@ -237,16 +237,16 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 			return h.Command, true
 		})
 	case "cursor":
-		var f cursorhook.File
+		var f cursor.File
 		if err := readInstallJSON(deps, path, &f); err != nil {
 			return nil, err
 		}
 		return flatWatCommands(f.Hooks, func(raw json.RawMessage) (string, bool) {
-			h, err := cursorhook.ParseHandler(raw)
+			h, err := cursor.ParseHandler(raw)
 			if err != nil {
 				return "", false
 			}
-			if h.Type != "" && h.Type != cursorhook.HandlerTypeCommand {
+			if h.Type != "" && h.Type != cursor.HandlerTypeCommand {
 				return "", false
 			}
 			return h.Command, true

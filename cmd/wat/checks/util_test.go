@@ -3,7 +3,7 @@ package checks
 import (
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 func TestParseGoModDirective(t *testing.T) {
@@ -72,12 +72,12 @@ func TestExpectedInstallEvents_matchesInstallCounts(t *testing.T) {
 		}
 	}
 	claude, _ := ExpectedInstallEvents("claude")
-	if len(claude) != len(agenthooks.ClaudeEventForKind) {
-		t.Fatalf("claude events = %d, want %d", len(claude), len(agenthooks.ClaudeEventForKind))
+	if len(claude) != len(agnostic.ClaudeEventForKind) {
+		t.Fatalf("claude events = %d, want %d", len(claude), len(agnostic.ClaudeEventForKind))
 	}
 	copilot, _ := ExpectedInstallEvents("copilot")
-	if len(copilot) != len(agenthooks.CopilotEventForKind) {
-		t.Fatalf("copilot events = %d, want %d", len(copilot), len(agenthooks.CopilotEventForKind))
+	if len(copilot) != len(agnostic.CopilotEventForKind) {
+		t.Fatalf("copilot events = %d, want %d", len(copilot), len(agnostic.CopilotEventForKind))
 	}
 	claudeAlias, err := ExpectedInstallEvents("claude-code")
 	if err != nil {

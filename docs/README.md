@@ -16,7 +16,7 @@ User-facing reference for the redesigned **wat** monorepo. Update these files wh
 
 | Change | Update |
 |--------|--------|
-| New public `agenthooks` API | CHANGELOG, godoc, agent-formats if tool/dialect behavior; README only if build/docs links change |
+| New public `sdk/agnostic` API | CHANGELOG, godoc, agent-formats if tool/dialect behavior; README only if build/docs links change |
 | New `wat` subcommand | README, CHANGELOG, CLI tests per go-tests skill |
 | New agent codec or MCP rule | agent-formats.md, normalization tests |
 | CI action bump | AGENTS.md / README if versions cited; ci-pins skill audit |

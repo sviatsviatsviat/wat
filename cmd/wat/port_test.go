@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 const claudePortFixture = `{
@@ -50,8 +50,8 @@ func TestPortProject_claudeToCursor(t *testing.T) {
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
 	code := portProject(portConfig{
-		from:      agenthooks.Claude,
-		to:        agenthooks.Cursor,
+		from:      agnostic.Claude,
+		to:        agnostic.Cursor,
 		inputPath: inputPath,
 	}, defaultPortDeps())
 	if code != exitOK {
@@ -106,8 +106,8 @@ func TestPortProject_writesOutputFile(t *testing.T) {
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
 	code := portProject(portConfig{
-		from:       agenthooks.Claude,
-		to:         agenthooks.Cursor,
+		from:       agnostic.Claude,
+		to:         agnostic.Cursor,
 		inputPath:  inputPath,
 		outputPath: outputPath,
 	}, defaultPortDeps())
@@ -144,8 +144,8 @@ func TestPortProject_missingInput(t *testing.T) {
 	}
 
 	code := portProject(portConfig{
-		from:      agenthooks.Claude,
-		to:        agenthooks.Cursor,
+		from:      agnostic.Claude,
+		to:        agnostic.Cursor,
 		inputPath: "/nonexistent/settings.json",
 	}, deps)
 	if code != exitRuntimeFailure {
@@ -166,8 +166,8 @@ func TestPortProject_sameDialect(t *testing.T) {
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
 	code := portProject(portConfig{
-		from:      agenthooks.Claude,
-		to:        agenthooks.Claude,
+		from:      agnostic.Claude,
+		to:        agnostic.Claude,
 		inputPath: inputPath,
 	}, defaultPortDeps())
 	if code != exitOK {
@@ -209,7 +209,7 @@ func TestParsePortDialect(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if got == agenthooks.Unknown {
+			if got == agnostic.Unknown {
 				t.Fatal("got Unknown dialect")
 			}
 		})
@@ -219,12 +219,12 @@ func TestParsePortDialect(t *testing.T) {
 func TestDefaultInputPath(t *testing.T) {
 	wd := "/project"
 	tests := []struct {
-		from agenthooks.Dialect
+		from agnostic.Dialect
 		want string
 	}{
-		{from: agenthooks.Claude, want: "/project/.claude/settings.json"},
-		{from: agenthooks.Copilot, want: "/project/.github/hooks/wat.json"},
-		{from: agenthooks.Cursor, want: "/project/.cursor/hooks.json"},
+		{from: agnostic.Claude, want: "/project/.claude/settings.json"},
+		{from: agnostic.Copilot, want: "/project/.github/hooks/wat.json"},
+		{from: agnostic.Cursor, want: "/project/.cursor/hooks.json"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.from.String(), func(t *testing.T) {

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/claudehook"
 	"github.com/sviatsviatsviat/wat/cmd/wat/checks"
-	"github.com/sviatsviatsviat/wat/cursorhook"
+	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 func TestRunDoctor_allPass(t *testing.T) {
@@ -185,7 +185,7 @@ func TestRunDoctor_missingInstallEntry(t *testing.T) {
 		buildOK:   true,
 	})
 	cursorPath := filepath.Join(project, ".cursor", "hooks.json")
-	var f cursorhook.File
+	var f cursor.File
 	instDeps := defaultInstallDeps()
 	if err := readInstallJSON(cursorPath, &f, instDeps); err != nil {
 		t.Fatal(err)
@@ -214,13 +214,13 @@ func TestRunDoctor_missingInstallEntry(t *testing.T) {
 func TestRunDoctor_invalidEventInConfig(t *testing.T) {
 	project, watAbs := doctorTestProject(t)
 	claudePath := filepath.Join(project, ".claude", "settings.json")
-	event := claudehook.EventPreToolUse
+	event := claude.EventPreToolUse
 	badCmd := watAbs + " run --agent claude --event NotARealEvent"
-	settings := claudehook.Settings{
-		Hooks: map[string][]claudehook.MatcherGroup{
+	settings := claude.Settings{
+		Hooks: map[string][]claude.MatcherGroup{
 			event: {{
 				Hooks: []json.RawMessage{
-					mustClaudeRaw(t, claudehook.Handler{Type: "command", Command: badCmd}),
+					mustClaudeRaw(t, claude.Handler{Type: "command", Command: badCmd}),
 				},
 			}},
 		},
@@ -249,7 +249,7 @@ func TestRunDoctor_invalidEventInConfig(t *testing.T) {
 func TestRunDoctor_disableAllHooks(t *testing.T) {
 	project, watAbs := doctorTestProject(t)
 	claudePath := filepath.Join(project, ".claude", "settings.json")
-	var settings claudehook.Settings
+	var settings claude.Settings
 	if err := readInstallJSON(claudePath, &settings, defaultInstallDeps()); err != nil {
 		t.Fatal(err)
 	}

@@ -14,8 +14,8 @@ Every exported identifier in this repo must have a godoc comment. CI enforces th
 Put a package overview in `doc.go`:
 
 ```go
-// Package agenthooks provides a unified hook event model for coding agents.
-package agenthooks
+// Package agnostic provides a unified hook event model for coding agents.
+package agnostic
 ```
 
 Use `doc.go` when the overview helps; small internal packages may omit it if nothing is exported yet.
@@ -34,8 +34,8 @@ KindPreTool Kind = "PreTool"
 ## Browse locally
 
 ```bash
-go doc github.com/sviatsviatsviat/wat/agenthooks
-go doc github.com/sviatsviatsviat/wat/agenthooks Kind
+go doc github.com/sviatsviatsviat/wat/sdk/agnostic
+go doc github.com/sviatsviatsviat/wat/sdk/agnostic Kind
 ```
 
 No doc server is required; use standard `go doc`.

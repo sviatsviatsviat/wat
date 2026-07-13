@@ -1,5 +1,5 @@
 // wat test executes the user's compiled .wat/hooks binary (same cache path as
-// wat run). agenthooks codecs decode the fixture locally for the event summary
+// wat run). agnostic codecs decode the fixture locally for the event summary
 // only; they do not replace hook execution.
 package main
 
@@ -13,7 +13,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 type testConfig struct {
@@ -81,23 +81,23 @@ func runTest(cfg testConfig, deps testDeps) int {
 	return hookExit
 }
 
-func decodeFixtureSummary(agentFlag, eventHint string, payload []byte, getenv func(string) string) (*agenthooks.Event, agenthooks.Dialect, error) {
-	dialect := agenthooks.ParseDialect(agentFlag)
-	if dialect == agenthooks.Unknown {
-		dialect = agenthooks.Detect(payload, getenv)
+func decodeFixtureSummary(agentFlag, eventHint string, payload []byte, getenv func(string) string) (*agnostic.Event, agnostic.Dialect, error) {
+	dialect := agnostic.ParseDialect(agentFlag)
+	if dialect == agnostic.Unknown {
+		dialect = agnostic.Detect(payload, getenv)
 	}
-	if dialect == agenthooks.Unknown {
-		return nil, agenthooks.Unknown, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
+	if dialect == agnostic.Unknown {
+		return nil, agnostic.Unknown, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
 	}
 
-	codec, err := agenthooks.CodecFor(dialect)
+	codec, err := agnostic.CodecFor(dialect)
 	if err != nil {
 		return nil, dialect, err
 	}
 
 	ev, err := codec.Decode(payload, eventHint)
 	if err != nil {
-		if dialect == agenthooks.Copilot && eventHint == "" {
+		if dialect == agnostic.Copilot && eventHint == "" {
 			return nil, dialect, fmt.Errorf("decode: %w (Copilot camelCase payloads require --event)", err)
 		}
 		return nil, dialect, fmt.Errorf("decode: %w", err)
@@ -130,7 +130,7 @@ func execHookBinary(binPath string, payload []byte, cfg testConfig, deps runDeps
 	return outBuf.Bytes(), errBuf.Bytes(), exitOK, nil
 }
 
-func writeTestReport(w io.Writer, ev *agenthooks.Event, dialect agenthooks.Dialect, hookStdout, hookStderr []byte, hookExit int, verbose bool) {
+func writeTestReport(w io.Writer, ev *agnostic.Event, dialect agnostic.Dialect, hookStdout, hookStderr []byte, hookExit int, verbose bool) {
 	_, _ = fmt.Fprintln(w, "event:")
 	_, _ = fmt.Fprintf(w, "  agent: %s\n", dialect)
 	_, _ = fmt.Fprintf(w, "  kind:  %s\n", ev.Kind)
@@ -171,7 +171,7 @@ func writeTestReport(w io.Writer, ev *agenthooks.Event, dialect agenthooks.Diale
 	_, _ = fmt.Fprintf(w, "  exit:   %d\n", hookExit)
 }
 
-func summarizeHookDecision(dialect agenthooks.Dialect, hookStdout []byte) string {
+func summarizeHookDecision(dialect agnostic.Dialect, hookStdout []byte) string {
 	hookStdout = bytes.TrimSpace(hookStdout)
 	if len(hookStdout) == 0 {
 		return ""
@@ -196,13 +196,13 @@ func summarizeHookDecision(dialect agenthooks.Dialect, hookStdout []byte) string
 	return ""
 }
 
-func decisionJSONKeys(dialect agenthooks.Dialect) []string {
+func decisionJSONKeys(dialect agnostic.Dialect) []string {
 	switch dialect {
-	case agenthooks.Claude:
+	case agnostic.Claude:
 		return []string{"permissionDecision", "decision", "permission"}
-	case agenthooks.Copilot:
+	case agnostic.Copilot:
 		return []string{"permissionDecision", "decision", "permission"}
-	case agenthooks.Cursor:
+	case agnostic.Cursor:
 		return []string{"permission", "permissionDecision", "decision"}
 	default:
 		return []string{"permissionDecision", "permission", "decision"}

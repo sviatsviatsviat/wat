@@ -9,9 +9,9 @@ Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rul
 
 ## Layout
 
-- `cmd/wat` — CLI; depends on `agenthooks`
-- `agenthooks` — unified hook library (stdlib only)
-- `claudehook`, `copilothook`, `cursorhook` — independent per-agent SDKs
+- `cmd/wat` — CLI; depends on `sdk/agnostic`
+- `sdk/agnostic` — unified hook library (stdlib only)
+- `sdk/claude`, `sdk/copilot`, `sdk/cursor` — independent per-agent SDKs
 - `plan/` — local-only design docs (gitignored); do not commit
 - `docs/` — committed user-facing reference (agent formats, doc index)
 - `.devcontainer/` — Linux Dev Container (named volume workspace at `/workspaces/wat`)
@@ -19,7 +19,7 @@ Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rul
 ## Layering
 
 - Do not add the old `internal/core` + host-package layout unless a task requires it.
-- Keep per-agent SDKs usable without `agenthooks`.
+- Keep per-agent SDKs usable without `sdk/agnostic`.
 - New exported API must include godoc comments (enforced by revive in CI).
 
 ## Version pinning

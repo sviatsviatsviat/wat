@@ -246,4 +246,3 @@ func TestRunHookExecExitHelper(t *testing.T) {
 	}
 	os.Exit(7)
 }
-

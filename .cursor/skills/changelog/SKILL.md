@@ -15,7 +15,7 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) in [CHANGELOG.md
 Document **user-facing functionality** — behavior users or hook authors can rely on in released artifacts:
 
 - CLI commands, flags, exit codes
-- Public library API (`agenthooks`, per-agent SDKs)
+- Public library API (`sdk/agnostic`, per-agent SDKs under `sdk/`)
 - Hook protocol support, config porting, breaking API changes
 - Security fixes affecting shipped behavior
 

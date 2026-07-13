@@ -5,11 +5,11 @@
 **Packages:**
 
 - **`cmd/wat`** — CLI entrypoint (`init`, `install`, `run`, `port`, `test`, `doctor` in later tasks).
-- **`agenthooks`** — Aggregated library: unified `Event`/`Result`, dialect codecs, runner, and `portconfig`. Stdlib only.
-- **`claudehook`**, **`copilothook`**, **`cursorhook`** — Per-agent SDKs; independent packages usable without `agenthooks`.
+- **`sdk/agnostic`** — Aggregated library: unified `Event`/`Result`, dialect codecs, runner, and `portconfig`. Stdlib only.
+- **`sdk/claude`**, **`sdk/copilot`**, **`sdk/cursor`** — Per-agent SDKs; independent packages usable without `sdk/agnostic`.
 - **`internal/cmdast`** — Shell AST helpers (task 22; not present yet).
 
-**Module graph:** `wat` depends on `agenthooks`. Per-agent SDKs do not depend on `agenthooks`.
+**Module graph:** `wat` depends on `sdk/agnostic`. Per-agent SDKs do not depend on `sdk/agnostic`.
 
 **Design docs:** Local-only `plan/` directory (gitignored). Prototype code in `plan/agenthooks/` is reference material for tasks 02–10.
 
@@ -28,7 +28,7 @@ Verify locally: `go vet ./... && go test ./... && golangci-lint run ./...`
 
 Install golangci-lint: `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2`
 
-Browse API docs: `go doc github.com/sviatsviatsviat/wat/agenthooks`
+Browse API docs: `go doc github.com/sviatsviatsviat/wat/sdk/agnostic`
 
 **Documentation:** User-facing behavior belongs in [docs/](docs/) and [CHANGELOG.md](CHANGELOG.md). Update those when API or CLI behavior changes in the same PR as the code.
 
@@ -36,7 +36,7 @@ Browse API docs: `go doc github.com/sviatsviatsviat/wat/agenthooks`
 
 ## Rules
 
-- **Layering:** Keep `agenthooks` stdlib-only. Per-agent SDKs stay independent. Put CLI wiring in `cmd/wat`; do not reintroduce the old `internal/core` + host packages layout unless a later task specifies it.
+- **Layering:** Keep `sdk/agnostic` stdlib-only. Per-agent SDKs stay independent. Put CLI wiring in `cmd/wat`; do not reintroduce the old `internal/core` + host packages layout unless a later task specifies it.
 - **Godoc:** Every exported identifier needs a godoc comment. Package overviews belong in `doc.go`. See `.cursor/rules/godoc.mdc` and the godoc skill.
 - **Tests:** Assert real behavior; no placeholder tests. See `.cursor/skills/go-tests/SKILL.md` and `.cursor/rules/go-tests.mdc`.
 - **Changelog:** User-facing functionality only (CLI, public API, hook behavior) — not scaffolding, CI, lint, or agent harness. Keep a Changelog format; **Added** for new capability; **Changed** / **Removed** only vs a published release. See the changelog skill.

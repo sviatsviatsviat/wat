@@ -1,6 +1,6 @@
 # wat
 
-**wat** is a Go CLI and library stack for authoring hook scripts that run under Claude Code, GitHub Copilot, and Cursor. The redesign provides a unified `agenthooks` library, per-agent SDKs, and a `wat` command that compiles and installs user hook scripts.
+**wat** is a Go CLI and library stack for authoring hook scripts that run under Claude Code, GitHub Copilot, and Cursor. The redesign provides a unified `sdk/agnostic` library, per-agent SDKs under `sdk/`, and a `wat` command that compiles and installs user hook scripts.
 
 ## Build
 
@@ -62,7 +62,7 @@ Linux development environment with Go 1.26 and pinned lint tools. See [.devconta
 | [CHANGELOG.md](CHANGELOG.md) | Release notes |
 | [AGENTS.md](AGENTS.md) | Contributor and agent workflow conventions |
 
-Browse package docs: `go doc github.com/sviatsviatsviat/wat/agenthooks`
+Browse package docs: `go doc github.com/sviatsviatsviat/wat/sdk/agnostic`
 
 Architecture and task breakdown live in a local-only `plan/` directory (gitignored).
 

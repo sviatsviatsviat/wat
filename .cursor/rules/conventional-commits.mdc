@@ -9,6 +9,6 @@ Use [.cursor/skills/conventional-commits/SKILL.md](../skills/conventional-commit
 
 Prefixes: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`
 
-Optional scope: `feat(wat):`, `feat(agenthooks):`
+Optional scope: `feat(wat):`, `feat(agnostic):`
 
 Subject: imperative mood, concise. Body: explain *why*, not only *what*.

@@ -6,7 +6,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 ## Per-agent SDK skeleton
 
-`claudehook`, `copilothook`, and `cursorhook` are standalone packages (stdlib only) with the same file layout. Each can be used without `agenthooks`; `agenthooks` adapts them through `ClaudeCodec`, `CopilotCodec`, and `CursorCodec`.
+`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same file layout. Each can be used without `agnostic`; `agnostic` adapts them through `ClaudeCodec`, `CopilotCodec`, and `CursorCodec`.
 
 | File | Role |
 |------|------|
@@ -35,7 +35,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 ## Tool name normalization
 
-`agenthooks.NormalizeToolName` maps native names to a canonical vocabulary. `ToolCall.Native` always keeps the original string.
+`agnostic.NormalizeToolName` maps native names to a canonical vocabulary. `ToolCall.Native` always keeps the original string.
 
 | Agent | Surface | Builtin example | Normalized | MCP example | MCP detection |
 |-------|---------|-----------------|------------|-------------|---------------|
@@ -64,18 +64,18 @@ Unknown names pass through unchanged with `mcp=false` unless an `mcp__` or `MCP:
 
 ## Unified event envelope
 
-All codecs produce `agenthooks.Event`:
+All codecs produce `agnostic.Event`:
 
 - `Agent` — `Dialect` (Claude, Copilot, Cursor)
 - `Kind` — normalized category (`KindPreTool`, `KindStop`, …)
 - `Name` — native hook event name as received
 - `Raw` — untouched native JSON payload
 
-See `go doc github.com/sviatsviatsviat/wat/agenthooks Event` for sub-structs (`Tool`, `Result`, `Life`, …).
+See `go doc github.com/sviatsviatsviat/wat/sdk/agnostic Event` for sub-structs (`Tool`, `Result`, `Life`, …).
 
 ## Dialect detection
 
-`agenthooks.Detect` infers the originating agent from a hook stdin payload and environment hints. `agenthooks.ParseDialect` parses explicit names from CLI flags (`claude`, `copilot`, `cursor` and aliases). When the dialect is already known, skip `Detect` and use the explicit value.
+`agnostic.Detect` infers the originating agent from a hook stdin payload and environment hints. `agnostic.ParseDialect` parses explicit names from CLI flags (`claude`, `copilot`, `cursor` and aliases). When the dialect is already known, skip `Detect` and use the explicit value.
 
 Payload shape is checked before environment variables because Cursor exports `CLAUDE_PROJECT_DIR` for Claude Code compatibility.
 
@@ -94,13 +94,13 @@ Payload shape is checked before environment variables because Cursor exports `CL
 
 ## Claude codec
 
-`agenthooks.ClaudeCodec` decodes Claude Code hook stdin into `agenthooks.Event` and encodes `agenthooks.Result` into Claude stdout JSON. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
+`agnostic.ClaudeCodec` decodes Claude Code hook stdin into `agnostic.Event` and encodes `agnostic.Result` into Claude stdout JSON. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
 
 ### Event name mapping
 
 | Claude `hook_event_name` | `Kind` |
 |---|---|
-| `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `SubagentStart`, `SubagentStop`, `Stop`, `PreCompact`, `Notification`, `StopFailure` | Normalized (see `go doc agenthooks Kind`) |
+| `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `SubagentStart`, `SubagentStop`, `Stop`, `PreCompact`, `Notification`, `StopFailure` | Normalized (see `go doc agnostic Kind`) |
 | All other Claude events (`Setup`, `UserPromptExpansion`, `PostToolBatch`, `PermissionDenied`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `MessageDisplay`, `InstructionsLoaded`, `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeCreate`, `WorktreeRemove`, `PostCompact`, `Elicitation`, `ElicitationResult`, …) | `KindOther` — full payload preserved in `Event.Raw` |
 
 `PreToolUse` with `tool_name: "Bash"` extracts `tool_input.command` into `ToolCall.Shell`.
@@ -121,12 +121,12 @@ When `$CLAUDE_ENV_FILE` is set, env keys must match `[A-Za-z_][A-Za-z0-9_]*`; in
 
 | Constant | Value | When |
 |---|---|---|
-| `claudehook.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `claudehook.FailBlockExit` | `2` | Runner should use when `WithFailPolicy(FailBlock)` is active |
+| `claude.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `claude.FailBlockExit` | `2` | Runner should use when `WithFailPolicy(FailBlock)` is active |
 
 ## Copilot codec
 
-`agenthooks.CopilotCodec` decodes GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format and encodes `agenthooks.Result` into flat camelCase stdout JSON.
+`agnostic.CopilotCodec` decodes GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format and encodes `agnostic.Result` into flat camelCase stdout JSON.
 
 ### Wire formats
 
@@ -172,15 +172,15 @@ Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
 
 | Constant | Value | When |
 |---|---|---|
-| `copilothook.HandlerErrorExit` / `CopilotHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `copilothook.PreToolErrorExit` / `CopilotPreToolErrorExit` | `1` | Same value; use when a `preToolUse` handler returns an error (fail-closed deny) |
-| `copilothook.WarnExit` / `CopilotWarnExit` | `2` | `Encode` returns this for documented `permissionRequest` deny and `postToolUseFailure` context paths |
+| `copilot.HandlerErrorExit` / `CopilotHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `copilot.PreToolErrorExit` / `CopilotPreToolErrorExit` | `1` | Same value; use when a `preToolUse` handler returns an error (fail-closed deny) |
+| `copilot.WarnExit` / `CopilotWarnExit` | `2` | `Encode` returns this for documented `permissionRequest` deny and `postToolUseFailure` context paths |
 
 Copilot-specific limitations (`BlockPrompt`, `Env`, most `HaltSession` cases) are reported via `Unsupported`.
 
 ## Cursor codec
 
-`agenthooks.CursorCodec` decodes Cursor hook stdin into `agenthooks.Event` and encodes `agenthooks.Result` into Cursor stdout JSON.
+`agnostic.CursorCodec` decodes Cursor hook stdin into `agnostic.Event` and encodes `agnostic.Result` into Cursor stdout JSON.
 
 Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`; the full payload stays in `Event.Raw`.
 
@@ -228,23 +228,23 @@ Dedicated shell, MCP, and file events are **folded** into unified pre/post tool 
 
 | Constant | Value | When |
 |---|---|---|
-| `cursorhook.HandlerErrorExit` / `CursorHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `cursorhook.PermissionDenyExit` / `CursorWarnExit` | `2` | `Encode` returns this for permission-gating deny |
+| `cursor.HandlerErrorExit` / `CursorHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `cursor.PermissionDenyExit` / `CursorWarnExit` | `2` | `Encode` returns this for permission-gating deny |
 
 Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preToolUse) are reported via `Unsupported`.
 
 ## Related code
 
-- Config porting: [`agenthooks/portconfig`](../agenthooks/portconfig/) — `Parse`, `Emit`, `Translate`
-- Detection: [`agenthooks/dialect.go`](../agenthooks/dialect.go) — `ParseDialect`, `Detect`
-- Tests: [`agenthooks/dialect_test.go`](../agenthooks/dialect_test.go)
-- Normalization: [`agenthooks/event.go`](../agenthooks/event.go) — `NormalizeToolName`, `InputAs`
-- Tests: [`agenthooks/event_test.go`](../agenthooks/event_test.go)
-- Claude codec: [`agenthooks/claude.go`](../agenthooks/claude.go) — `ClaudeCodec`, `CodecFor`
-- Tests: [`agenthooks/claude_test.go`](../agenthooks/claude_test.go)
-- Copilot codec: [`agenthooks/copilot.go`](../agenthooks/copilot.go) — `CopilotCodec`, `CopilotHandlerErrorExit`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
-- Tests: [`agenthooks/copilot_test.go`](../agenthooks/copilot_test.go)
-- Cursor codec: [`agenthooks/cursor.go`](../agenthooks/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit` (adapts `cursorhook`)
-- Tests: [`agenthooks/cursor_test.go`](../agenthooks/cursor_test.go)
-- Cursor SDK: [`cursorhook/`](../cursorhook/) — typed events, `Decode`/`Encode`, `Mux`/`On`/`Serve`/`Main`, `cursorhook/tools` lazy tool input helpers
-- Tests: [`cursorhook/cursorhook_test.go`](../cursorhook/cursorhook_test.go)
+- Config porting: [`sdk/agnostic/portconfig`](../sdk/agnostic/portconfig/) — `Parse`, `Emit`, `Translate`
+- Detection: [`sdk/agnostic/dialect.go`](../sdk/agnostic/dialect.go) — `ParseDialect`, `Detect`
+- Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
+- Normalization: [`sdk/agnostic/event.go`](../sdk/agnostic/event.go) — `NormalizeToolName`, `InputAs`
+- Tests: [`sdk/agnostic/event_test.go`](../sdk/agnostic/event_test.go)
+- Claude codec: [`sdk/agnostic/claude.go`](../sdk/agnostic/claude.go) — `ClaudeCodec`, `CodecFor`
+- Tests: [`sdk/agnostic/claude_test.go`](../sdk/agnostic/claude_test.go)
+- Copilot codec: [`sdk/agnostic/copilot.go`](../sdk/agnostic/copilot.go) — `CopilotCodec`, `CopilotHandlerErrorExit`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
+- Tests: [`sdk/agnostic/copilot_test.go`](../sdk/agnostic/copilot_test.go)
+- Cursor codec: [`sdk/agnostic/cursor.go`](../sdk/agnostic/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit` (adapts `cursor`)
+- Tests: [`sdk/agnostic/cursor_test.go`](../sdk/agnostic/cursor_test.go)
+- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Mux`/`On`/`Serve`/`Main`, `sdk/cursor/tools` lazy tool input helpers
+- Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

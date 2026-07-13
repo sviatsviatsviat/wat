@@ -42,7 +42,7 @@ Copy and tailor this block into every new or updated task plan:
 
 | Task type | Add to DoD |
 |-----------|------------|
-| `agenthooks` API | Normalization/codec tests per agent column in agent-formats doc |
+| `sdk/agnostic` API | Normalization/codec tests per agent column in agent-formats doc |
 | CLI (`cmd/wat`) | Help on stdout; invalid usage on stderr + exit 1; CLI table tests with `wantOutput` |
 | Codec | Fixture decode test per supporting agent; `Event.Raw` preserved |
 | CI / workflow | Every `uses:` line pinned; bump all references to same dependency together |

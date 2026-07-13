@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 func TestRunTest_missingFixtureUsage(t *testing.T) {
@@ -81,13 +81,13 @@ func TestDecodeFixtureSummary_copilotRequiresEvent(t *testing.T) {
 }
 
 func TestWriteTestReport_eventSummary(t *testing.T) {
-	ev := &agenthooks.Event{
-		Kind: agenthooks.KindPreTool,
+	ev := &agnostic.Event{
+		Kind: agnostic.KindPreTool,
 		Name: "PreToolUse",
-		Tool: &agenthooks.ToolCall{Name: agenthooks.ToolBash, Shell: "git push --force"},
+		Tool: &agnostic.ToolCall{Name: agnostic.ToolBash, Shell: "git push --force"},
 	}
 	var buf bytes.Buffer
-	writeTestReport(&buf, ev, agenthooks.Claude, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)
+	writeTestReport(&buf, ev, agnostic.Claude, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)
 
 	out := buf.String()
 	for _, want := range []string{"kind:  PreTool", "tool:  bash", "shell: git push --force", "decision: deny", "exit:   0"} {
@@ -135,7 +135,7 @@ func TestRunTest_preToolDenyIntegration(t *testing.T) {
 			name:     "cursor",
 			agent:    "cursor",
 			fixture:  filepath.Join(fixtures, "testdata", "fixtures", "cursor", "before_shell_force_push.json"),
-			wantExit: agenthooks.CursorWarnExit,
+			wantExit: agnostic.CursorWarnExit,
 			wantOutput: []string{
 				`"permission":"deny"`,
 				"force pushes are not allowed",

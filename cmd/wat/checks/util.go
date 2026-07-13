@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 // ParseWatRunFlags extracts --agent and --event from a wat run shell command.
@@ -125,22 +125,22 @@ func validateAgent(agent string) error {
 	if agent == "" {
 		return nil
 	}
-	if agenthooks.ParseDialect(agent) == agenthooks.Unknown {
+	if agnostic.ParseDialect(agent) == agnostic.Unknown {
 		return fmt.Errorf("unknown agent dialect %q (want claude, copilot, or cursor)", agent)
 	}
 	return nil
 }
 
 func isValidInstallEvent(agent, event string) bool {
-	switch agenthooks.ParseDialect(agent) {
-	case agenthooks.Claude:
-		_, ok := agenthooks.ClaudeKindForEvent(event)
+	switch agnostic.ParseDialect(agent) {
+	case agnostic.Claude:
+		_, ok := agnostic.ClaudeKindForEvent(event)
 		return ok
-	case agenthooks.Copilot:
-		_, ok := agenthooks.CopilotKindForEvent(event)
+	case agnostic.Copilot:
+		_, ok := agnostic.CopilotKindForEvent(event)
 		return ok
-	case agenthooks.Cursor:
-		_, ok := agenthooks.CursorKindForEvent(event)
+	case agnostic.Cursor:
+		_, ok := agnostic.CursorKindForEvent(event)
 		return ok
 	default:
 		return false
@@ -149,17 +149,17 @@ func isValidInstallEvent(agent, event string) bool {
 
 // ExpectedInstallEvents returns hook event names wat install writes for agent.
 func ExpectedInstallEvents(agent string) ([]string, error) {
-	switch agenthooks.ParseDialect(agent) {
-	case agenthooks.Claude:
-		return sortedValues(agenthooks.ClaudeEventForKind), nil
-	case agenthooks.Copilot:
-		return sortedValues(agenthooks.CopilotEventForKind), nil
-	case agenthooks.Cursor:
+	switch agnostic.ParseDialect(agent) {
+	case agnostic.Claude:
+		return sortedValues(agnostic.ClaudeEventForKind), nil
+	case agnostic.Copilot:
+		return sortedValues(agnostic.CopilotEventForKind), nil
+	case agnostic.Cursor:
 		eventSet := map[string]bool{}
-		for _, ev := range sortedValues(agenthooks.CursorEventForKind) {
+		for _, ev := range sortedValues(agnostic.CursorEventForKind) {
 			eventSet[ev] = true
 		}
-		for ev := range agenthooks.CursorDedicatedEvents {
+		for ev := range agnostic.CursorDedicatedEvents {
 			eventSet[ev] = true
 		}
 		return sortedKeys(eventSet), nil

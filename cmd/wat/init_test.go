@@ -52,11 +52,11 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read hooks.go: %v", err)
 	}
-	if !strings.Contains(string(hooksBytes), "agenthooks.NewMux") {
+	if !strings.Contains(string(hooksBytes), "agnostic.NewMux") {
 		t.Fatalf("hooks.go missing mux usage: %q", string(hooksBytes))
 	}
-	if !strings.Contains(string(hooksBytes), "github.com/sviatsviatsviat/wat/agenthooks") {
-		t.Fatalf("hooks.go missing agenthooks import: %q", string(hooksBytes))
+	if !strings.Contains(string(hooksBytes), "github.com/sviatsviatsviat/wat/sdk/agnostic") {
+		t.Fatalf("hooks.go missing agnostic import: %q", string(hooksBytes))
 	}
 
 	if gotCmdName != "go" || len(gotCmdArgs) != 2 || gotCmdArgs[0] != "mod" || gotCmdArgs[1] != "tidy" {
@@ -116,4 +116,3 @@ func TestInitProject_refusesOverwriteWithoutForce(t *testing.T) {
 		t.Fatalf("hooks.go content after --force mismatch")
 	}
 }
-

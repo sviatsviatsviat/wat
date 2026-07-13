@@ -28,7 +28,7 @@ description: >-
 
 ## Scope (optional)
 
-Examples: `feat(wat):`, `feat(agenthooks):`, `fix(cursorhook):`
+Examples: `feat(wat):`, `feat(agnostic):`, `fix(cursor):`
 
 ## Subject
 
@@ -43,7 +43,7 @@ Explain **why** the change is needed. Reference issues or design sections when h
 ## Examples
 
 ```
-feat(agenthooks): add unified Event Kind constants
+feat(agnostic): add unified Event Kind constants
 
 Normalize event names across Claude, Copilot, and Cursor so one handler
 registers once in Mux.On.
