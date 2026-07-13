@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `wat` CLI with subcommands `init`, `install`, `run`, `port`, `test`, and `doctor`; root and per-command help; `--agent`, `--event`, and `--fail-closed` flags on the subcommands that need them; stub commands exit 2 until implemented
 - Unified `agenthooks.Event` / `Kind` types and tool-name normalization for hook authors
 - Unified `agenthooks.Result` / `Decision` types with `Merge` and `Unsupported` for hook handler responses
 - `agenthooks.ParseDialect` and `agenthooks.Detect` for hook payload dialect sniffing

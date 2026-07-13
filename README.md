@@ -10,6 +10,27 @@ go build ./cmd/wat
 
 On Windows the toolchain writes `wat.exe`; on Unix, `wat`. Avoid `go build -o wat` on Windows — use `./cmd/wat` or `-o wat.exe`.
 
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `wat init` | Scaffold a `.wat/` hook project |
+| `wat install` | Write hook config entries pointing at `wat run` |
+| `wat run` | Execute `.wat/hooks.go` on hook invocation |
+| `wat port` | Translate hook configs between agents |
+| `wat test` | Run hook script against fixture payloads |
+| `wat doctor` | Verify toolchain, script, cache, and install state |
+
+Run `wat help` for the command list or `wat <command> -h` for per-command flags. Subcommands are scaffolded; invoking a valid stub command without `-h` exits with code 2 until its implementation lands, while invalid commands, flags, or `--agent` values exit with code 1.
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Usage error (unknown command, invalid flags) |
+| `2` | Command not yet implemented |
+
 ## Test and lint
 
 ```bash
