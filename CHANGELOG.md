@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- `wat` CLI with subcommands `init`, `install`, `run`, `port`, `test`, and `doctor`; root and per-command help; `--agent`, `--event`, and `--fail-closed` flags on the subcommands that need them; stub commands exit 2 until implemented
+- `wat` CLI with subcommands `init`, `install`, `run`, `port`, `test`, and `doctor`; root and per-command help; `--agent`, `--event`, and `--fail-closed` flags on the subcommands that need them; `test` and `doctor` stub commands exit 2 until implemented
+- `wat port --from` / `--to` translates hook configs between Claude Code, GitHub Copilot, and Cursor via `portconfig.Translate`; `-i` / `-o` select input and output files (default input: `.claude/settings.json`, `.github/hooks/wat.json`, or `.cursor/hooks.json` from cwd); warnings print to stderr and exit 0; translation errors exit 3
 - Unified `agenthooks.Event` / `Kind` types and tool-name normalization for hook authors
 - Unified `agenthooks.Result` / `Decision` types with `Merge` and `Unsupported` for hook handler responses
 - `agenthooks.ParseDialect` and `agenthooks.Detect` for hook payload dialect sniffing

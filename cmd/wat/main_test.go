@@ -68,11 +68,16 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "no .wat/ project found",
 		},
 		{
-			name:       "stub_port",
+			name:       "port_missing_flags",
 			args:       []string{"port"},
 			wantErr:    true,
-			wantCode:   2,
-			wantOutput: "not implemented",
+			wantCode:   1,
+			wantOutput: "--from is required",
+		},
+		{
+			name:       "port_help",
+			args:       []string{"port", "--help"},
+			wantOutput: "-from",
 		},
 		{
 			name:       "stub_test",
