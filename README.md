@@ -21,7 +21,7 @@ On Windows the toolchain writes `wat.exe`; on Unix, `wat`. Avoid `go build -o wa
 | `wat test` | Run hook script against fixture payloads |
 | `wat doctor` | Verify toolchain, script, cache, and install state |
 
-Run `wat help` for the command list or `wat <command> -h` for per-command flags. Subcommands are scaffolded; invoking a valid stub command without `-h` exits with code 2 until its implementation lands, while invalid commands, flags, or `--agent` values exit with code 1.
+Run `wat help` for the command list or `wat <command> -h` for per-command flags.
 
 ## Exit codes
 
@@ -30,6 +30,8 @@ Run `wat help` for the command list or `wat <command> -h` for per-command flags.
 | `0` | Success |
 | `1` | Usage error (unknown command, invalid flags) |
 | `2` | Command not yet implemented |
+| `3` | Runtime failure (missing project, I/O error, translation failure) |
+| `4` | `wat doctor` check failure |
 
 ## Test and lint
 

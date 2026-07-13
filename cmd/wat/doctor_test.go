@@ -1,0 +1,417 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+
+	"github.com/sviatsviatsviat/wat/claudehook"
+	"github.com/sviatsviatsviat/wat/cmd/wat/checks"
+	"github.com/sviatsviatsviat/wat/cursorhook"
+)
+
+func TestRunDoctor_allPass(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+	warmDoctorCache(t, project, deps)
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
+	}
+	out := outBuf.String()
+	for _, want := range []string{"PASS", "toolchain", "script", "cache", "install"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("output missing %q: %s", want, out)
+		}
+	}
+	if strings.Contains(out, "FAIL") {
+		t.Fatalf("unexpected FAIL in output: %s", out)
+	}
+}
+
+func TestRunDoctor_missingGo(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{buildOK: true})
+	deps.LookPath = func(name string) (string, error) {
+		if name == "go" {
+			return "", os.ErrNotExist
+		}
+		return exec.LookPath(name)
+	}
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "go not found on PATH") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_goVersionTooOld(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.25.0 linux/amd64",
+		buildOK:   true,
+	})
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "does not satisfy go 1.26") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_missingWatProject(t *testing.T) {
+	dir := t.TempDir()
+	deps := doctorTestDeps(t, dir, filepath.Join(dir, "wat"), doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "no .wat/ project found") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_compileError(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package main\n\nfunc main() {\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   false,
+		buildErr:  "syntax error",
+	})
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "go build failed") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_cacheNotWritable(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+	cacheDir := filepath.Join(project, ".wat", ".cache")
+	deps.WriteFile = func(path string, data []byte, perm os.FileMode) error {
+		if strings.HasPrefix(path, cacheDir) {
+			return os.ErrPermission
+		}
+		return os.WriteFile(path, data, perm)
+	}
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), ".wat/.cache/") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_coldCache(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "no cached binary") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_watNotOnPath(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+	deps.LookPath = func(name string) (string, error) {
+		if name == "wat" {
+			return "", os.ErrNotExist
+		}
+		return exec.LookPath(name)
+	}
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "wat not found on PATH") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_missingInstallEntry(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+	cursorPath := filepath.Join(project, ".cursor", "hooks.json")
+	var f cursorhook.File
+	instDeps := defaultInstallDeps()
+	if err := readInstallJSON(cursorPath, &f, instDeps); err != nil {
+		t.Fatal(err)
+	}
+	events, err := checks.ExpectedInstallEvents("cursor")
+	if err != nil || len(events) == 0 {
+		t.Fatal("expected cursor events")
+	}
+	delete(f.Hooks, events[0])
+	b, _ := json.MarshalIndent(f, "", "  ")
+	b = append(b, '\n')
+	if err := os.WriteFile(cursorPath, b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "missing hook entry") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_invalidEventInConfig(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	claudePath := filepath.Join(project, ".claude", "settings.json")
+	event := claudehook.EventPreToolUse
+	badCmd := watAbs + " run --agent claude --event NotARealEvent"
+	settings := claudehook.Settings{
+		Hooks: map[string][]claudehook.MatcherGroup{
+			event: {{
+				Hooks: []json.RawMessage{
+					mustClaudeRaw(t, claudehook.Handler{Type: "command", Command: badCmd}),
+				},
+			}},
+		},
+	}
+	b, _ := json.MarshalIndent(settings, "", "  ")
+	b = append(b, '\n')
+	if err := os.WriteFile(claudePath, b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "invalid --event") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_disableAllHooks(t *testing.T) {
+	project, watAbs := doctorTestProject(t)
+	claudePath := filepath.Join(project, ".claude", "settings.json")
+	var settings claudehook.Settings
+	if err := readInstallJSON(claudePath, &settings, defaultInstallDeps()); err != nil {
+		t.Fatal(err)
+	}
+	settings.DisableAllHooks = true
+	b, _ := json.MarshalIndent(settings, "", "  ")
+	b = append(b, '\n')
+	if err := os.WriteFile(claudePath, b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+	warmDoctorCache(t, project, deps)
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "disableAllHooks is true") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+func TestRunDoctor_noInstallConfigs(t *testing.T) {
+	project, watAbs := doctorTestProject(t, doctorProjectOpts{skipInstall: true})
+	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
+		goVersion: "go version go1.26.0 linux/amd64",
+		buildOK:   true,
+	})
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitCheckFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	}
+	if !strings.Contains(outBuf.String(), "no hook config files found") {
+		t.Fatalf("output: %s", outBuf.String())
+	}
+}
+
+type doctorTestGoDeps struct {
+	goVersion string
+	buildOK   bool
+	buildErr  string
+}
+
+type doctorProjectOpts struct {
+	skipInstall bool
+}
+
+func doctorTestProject(t *testing.T, opts ...doctorProjectOpts) (project, watAbs string) {
+	t.Helper()
+	var o doctorProjectOpts
+	if len(opts) > 0 {
+		o = opts[0]
+	}
+
+	project = t.TempDir()
+	watDir := filepath.Join(project, ".wat")
+	if err := os.MkdirAll(filepath.Join(watDir, ".cache"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	watAbs = filepath.Join(project, "bin", "wat")
+	if !o.skipInstall {
+		deps := defaultInstallDeps()
+		deps.getwd = func() (string, error) { return project, nil }
+		if err := installProject(installConfig{
+			agents:  installAgentPlan{claude: true, copilot: true, cursor: true},
+			watPath: watAbs,
+		}, deps); err != nil {
+			t.Fatalf("installProject: %v", err)
+		}
+	}
+	return project, watAbs
+}
+
+func doctorTestDeps(t *testing.T, project, watAbs string, goCfg doctorTestGoDeps) doctorDeps {
+	t.Helper()
+	deps := defaultDoctorDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
+	deps.LookPath = func(name string) (string, error) {
+		switch name {
+		case "wat":
+			return watAbs, nil
+		case "go":
+			return "go", nil
+		default:
+			return exec.LookPath(name)
+		}
+	}
+	deps.Command = func(name string, args ...string) *exec.Cmd {
+		if name == "go" && len(args) > 0 && args[0] == "version" {
+			return exec.Command("echo", goCfg.goVersion)
+		}
+		if name == "go" && len(args) >= 3 && args[0] == "build" {
+			if goCfg.buildOK {
+				out := args[2]
+				return exec.Command("sh", "-c", "mkdir -p "+filepath.Dir(out)+" && touch "+out)
+			}
+			msg := goCfg.buildErr
+			if msg == "" {
+				msg = "build failed"
+			}
+			return exec.Command("sh", "-c", "echo "+msg+" >&2; exit 1")
+		}
+		return exec.Command(name, args...)
+	}
+	return deps
+}
+
+func warmDoctorCache(t *testing.T, project string, deps doctorDeps) {
+	t.Helper()
+	watDir := filepath.Join(project, ".wat")
+	key, err := hookBuildCacheKey(watDir, deps.runDeps())
+	if err != nil {
+		t.Fatal(err)
+	}
+	binPath := hooksBinaryPath(watDir, key)
+	if err := os.MkdirAll(filepath.Dir(binPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(binPath, []byte("binary"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func captureStdout(t *testing.T) *bytes.Buffer {
+	t.Helper()
+	prevStdout := stdout
+	buf := &bytes.Buffer{}
+	stdout = buf
+	t.Cleanup(func() { stdout = prevStdout })
+	return buf
+}
+
+func TestRunDoctor_realGoBuild(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell-based go mock not used; real go build covered by allPass on unix")
+	}
+	project, watAbs := doctorTestProject(t)
+	deps := defaultDoctorDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
+	deps.LookPath = func(name string) (string, error) {
+		if name == "wat" {
+			return watAbs, nil
+		}
+		return exec.LookPath(name)
+	}
+
+	outBuf := captureStdout(t)
+	code := runDoctor(deps)
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
+	}
+}

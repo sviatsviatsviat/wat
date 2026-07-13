@@ -6,6 +6,7 @@ const (
 	exitUsage          = 1
 	exitNotImplemented = 2
 	exitRuntimeFailure = 3
+	exitCheckFailed    = 4
 
 	// exitBuildFailed is used when wat fails to compile the user hook script.
 	// It intentionally matches exitUsage (1) because the calling agent treats

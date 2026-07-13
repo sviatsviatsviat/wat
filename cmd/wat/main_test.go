@@ -13,11 +13,12 @@ func TestWat_usage(t *testing.T) {
 	binary := buildWat(t)
 
 	tests := []struct {
-		name       string
-		args       []string
-		wantErr    bool
-		wantCode   int
-		wantOutput string
+		name         string
+		args         []string
+		wantErr      bool
+		wantCode     int
+		wantOutput   string
+		emptyWorkDir bool
 	}{
 		{
 			name:       "help",
@@ -54,18 +55,20 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "-fail-closed",
 		},
 		{
-			name:       "run_without_project",
-			args:       []string{"run"},
-			wantErr:    true,
-			wantCode:   3,
-			wantOutput: "no .wat/ project found",
+			name:         "run_without_project",
+			args:         []string{"run"},
+			wantErr:      true,
+			wantCode:     3,
+			wantOutput:   "no .wat/ project found",
+			emptyWorkDir: true,
 		},
 		{
-			name:       "install_without_project",
-			args:       []string{"install"},
-			wantErr:    true,
-			wantCode:   3,
-			wantOutput: "no .wat/ project found",
+			name:         "install_without_project",
+			args:         []string{"install"},
+			wantErr:      true,
+			wantCode:     3,
+			wantOutput:   "no .wat/ project found",
+			emptyWorkDir: true,
 		},
 		{
 			name:       "port_missing_flags",
@@ -97,11 +100,12 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "-fixture",
 		},
 		{
-			name:       "stub_doctor",
-			args:       []string{"doctor"},
-			wantErr:    true,
-			wantCode:   2,
-			wantOutput: "not implemented",
+			name:         "doctor_without_project",
+			args:         []string{"doctor"},
+			wantErr:      true,
+			wantCode:     4,
+			wantOutput:   "no .wat/ project found",
+			emptyWorkDir: true,
 		},
 		{
 			name:       "invalid_agent",
@@ -111,16 +115,20 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "unknown agent dialect",
 		},
 		{
-			name:       "valid_agent_without_project",
-			args:       []string{"run", "--agent", "claude"},
-			wantErr:    true,
-			wantCode:   3,
-			wantOutput: "no .wat/ project found",
+			name:         "valid_agent_without_project",
+			args:         []string{"run", "--agent", "claude"},
+			wantErr:      true,
+			wantCode:     3,
+			wantOutput:   "no .wat/ project found",
+			emptyWorkDir: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := exec.Command(binary, tt.args...)
+			if tt.emptyWorkDir {
+				cmd.Dir = t.TempDir()
+			}
 			out, err := cmd.CombinedOutput()
 			if tt.wantErr {
 				if err == nil {

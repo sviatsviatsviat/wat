@@ -140,8 +140,3 @@ func rootUsage() string {
 	fmt.Fprint(&b, "\nUse \"wat <command> -h\" for more information about a command.\n")
 	return b.String()
 }
-
-func stubNotImplemented(name string) int {
-	_, _ = fmt.Fprintf(stderr, "wat %s: not implemented\n", name)
-	return exitNotImplemented
-}

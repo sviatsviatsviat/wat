@@ -7,11 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 
-	"github.com/sviatsviatsviat/wat/agenthooks"
 	"github.com/sviatsviatsviat/wat/claudehook"
+	"github.com/sviatsviatsviat/wat/cmd/wat/checks"
 	"github.com/sviatsviatsviat/wat/copilothook"
 	"github.com/sviatsviatsviat/wat/cursorhook"
 )
@@ -43,22 +42,22 @@ type installConfig struct {
 }
 
 type installDeps struct {
-	getwd    func() (string, error)
-	stat     func(string) (os.FileInfo, error)
-	readFile func(string) ([]byte, error)
-	mkdirAll func(string, os.FileMode) error
+	getwd     func() (string, error)
+	stat      func(string) (os.FileInfo, error)
+	readFile  func(string) ([]byte, error)
+	mkdirAll  func(string, os.FileMode) error
 	writeFile func(string, []byte, os.FileMode) error
-	lookPath func(string) (string, error)
+	lookPath  func(string) (string, error)
 }
 
 func defaultInstallDeps() installDeps {
 	return installDeps{
 		getwd:     os.Getwd,
 		stat:      os.Stat,
-		readFile:   os.ReadFile,
-		mkdirAll:   os.MkdirAll,
-		writeFile:  os.WriteFile,
-		lookPath:   exec.LookPath,
+		readFile:  os.ReadFile,
+		mkdirAll:  os.MkdirAll,
+		writeFile: os.WriteFile,
+		lookPath:  exec.LookPath,
 	}
 }
 
@@ -152,10 +151,13 @@ func installClaude(root, watAbs string, deps installDeps) error {
 		return err
 	}
 	if settings.Hooks == nil {
-			settings.Hooks = map[string][]claudehook.MatcherGroup{}
+		settings.Hooks = map[string][]claudehook.MatcherGroup{}
 	}
 
-	events := sortedValues(agenthooks.ClaudeEventForKind)
+	events, err := checks.ExpectedInstallEvents("claude")
+	if err != nil {
+		return err
+	}
 	for _, event := range events {
 		cmd := watRunCommand(watAbs, "claude", event)
 		settings.Hooks[event] = upsertClaudeGroups(settings.Hooks[event], cmd, "claude", event, watAbs)
@@ -220,7 +222,10 @@ func installCopilot(root, watAbs string, deps installDeps) error {
 		f.Version = 1
 	}
 
-	events := sortedValues(agenthooks.CopilotEventForKind)
+	events, err := checks.ExpectedInstallEvents("copilot")
+	if err != nil {
+		return err
+	}
 	for _, event := range events {
 		cmd := watRunCommand(watAbs, "copilot", event)
 		f.Hooks[event] = upsertFlatHandlers(f.Hooks[event], cmd, "copilot", event, watAbs, func(raw json.RawMessage) (string, bool) {
@@ -255,15 +260,10 @@ func installCursor(root, watAbs string, deps installDeps) error {
 		f.Version = 1
 	}
 
-	eventSet := map[string]bool{}
-	for _, ev := range sortedValues(agenthooks.CursorEventForKind) {
-		eventSet[ev] = true
+	events, err := checks.ExpectedInstallEvents("cursor")
+	if err != nil {
+		return err
 	}
-	for ev := range agenthooks.CursorDedicatedEvents {
-		eventSet[ev] = true
-	}
-	events := sortedKeys(eventSet)
-
 	for _, event := range events {
 		cmd := watRunCommand(watAbs, "cursor", event)
 		f.Hooks[event] = upsertFlatHandlers(f.Hooks[event], cmd, "cursor", event, watAbs, func(raw json.RawMessage) (string, bool) {
@@ -317,7 +317,7 @@ func upsertFlatHandlers(existing []json.RawMessage, cmd, agent, event, watAbs st
 	var out []json.RawMessage
 	for _, raw := range existing {
 		c, ok := getCommand(raw)
-		if ok && isWatManagedCommand(c, agent, event, watAbs) {
+		if ok && checks.IsWatManagedCommand(c, agent, event, watAbs) {
 			continue
 		}
 		out = append(out, raw)
@@ -331,35 +331,5 @@ func watRunCommand(watAbs, agent, event string) string {
 }
 
 func isWatManagedCommand(command, agent, event, watAbs string) bool {
-	needle := "run --agent " + agent + " --event " + event
-	c := strings.TrimSpace(command)
-	if strings.HasPrefix(c, strings.TrimSpace(watAbs)+" ") && strings.Contains(c, needle) {
-		return true
-	}
-	// Best-effort: also treat plain `wat ...` as wat-managed so re-install replaces it.
-	if strings.HasPrefix(c, "wat ") && strings.Contains(c, needle) {
-		return true
-	}
-	return false
+	return checks.IsWatManagedCommand(command, agent, event, watAbs)
 }
-
-func sortedValues[K comparable](m map[K]string) []string {
-	out := make([]string, 0, len(m))
-	for _, v := range m {
-		if v != "" {
-			out = append(out, v)
-		}
-	}
-	sort.Strings(out)
-	return out
-}
-
-func sortedKeys(m map[string]bool) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
-}
-
