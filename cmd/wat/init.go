@@ -7,9 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime/debug"
-	"strings"
-	"time"
 )
 
 func newInitCmd() *subcommandRunner {
@@ -62,7 +59,11 @@ func initProject(root string, force bool, command func(string, ...string) *exec.
 	}
 
 	goModPath := filepath.Join(watDir, "go.mod")
-	if err := writeFileIfMissing(goModPath, []byte(watGoMod())); err != nil {
+	goModText, err := watGoMod()
+	if err != nil {
+		return err
+	}
+	if err := writeFileIfMissing(goModPath, []byte(goModText)); err != nil {
 		return err
 	}
 
@@ -106,52 +107,19 @@ func goModTidy(dir string, command func(string, ...string) *exec.Cmd) error {
 	return nil
 }
 
-func watGoMod() string {
-	version := watModuleVersion()
+func watGoMod() (string, error) {
+	version := watModuleVersionFn()
 	if version == "" {
-		// Last-resort fallback: allow Go tooling to resolve a version implicitly.
-		// This is uncommon when build metadata is present (Go builds default to -buildvcs=true).
-		return "module wat-hooks\n\ngo 1.26\n"
+		return "", fmt.Errorf("determine wat module version (build with -buildvcs=true or use a tagged build)")
 	}
-	return fmt.Sprintf("module wat-hooks\n\ngo 1.26\n\nrequire github.com/sviatsviatsviat/wat %s\n", version)
-}
-
-func watModuleVersion() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return ""
-	}
-	if v := strings.TrimSpace(info.Main.Version); v != "" && v != "(devel)" {
-		return v
-	}
-
-	var revision string
-	var t time.Time
-	for _, s := range info.Settings {
-		switch s.Key {
-		case "vcs.revision":
-			revision = s.Value
-		case "vcs.time":
-			parsed, err := time.Parse(time.RFC3339, s.Value)
-			if err == nil {
-				t = parsed.UTC()
-			}
-		}
-	}
-	if revision == "" || t.IsZero() {
-		return ""
-	}
-	short := revision
-	if len(short) > 12 {
-		short = short[:12]
-	}
-	return fmt.Sprintf("v0.0.0-%s-%s", t.Format("20060102150405"), short)
+	return fmt.Sprintf("module wat-hooks\n\ngo 1.26\n\nrequire github.com/sviatsviatsviat/wat %s\n", version), nil
 }
 
 const watHooksGo = `package main
 
 import (
 	"context"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -200,6 +168,13 @@ func main() {
 		return agenthooks.Result{}, nil
 	})
 
-	mux.Main() // stdin → detect agent → decode → dispatch → encode → exit
+	var opts []agenthooks.Option
+	if v := os.Getenv("WAT_AGENT"); v != "" {
+		opts = append(opts, agenthooks.WithDialect(agenthooks.ParseDialect(v)))
+	}
+	if v := os.Getenv("WAT_EVENT"); v != "" {
+		opts = append(opts, agenthooks.WithEvent(v))
+	}
+	mux.Main(opts...) // stdin → detect agent → decode → dispatch → encode → exit
 }
 `

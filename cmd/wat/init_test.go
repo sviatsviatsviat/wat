@@ -10,6 +10,10 @@ import (
 )
 
 func TestInitProject_createsWatDirAndFiles(t *testing.T) {
+	prevVersionFn := watModuleVersionFn
+	watModuleVersionFn = func() string { return "v0.0.0-test-000000000000" }
+	t.Cleanup(func() { watModuleVersionFn = prevVersionFn })
+
 	dir := t.TempDir()
 	prevStdout, prevStderr := stdout, stderr
 	stdout, stderr = io.Discard, io.Discard
@@ -67,6 +71,10 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 }
 
 func TestInitProject_refusesOverwriteWithoutForce(t *testing.T) {
+	prevVersionFn := watModuleVersionFn
+	watModuleVersionFn = func() string { return "v0.0.0-test-000000000000" }
+	t.Cleanup(func() { watModuleVersionFn = prevVersionFn })
+
 	dir := t.TempDir()
 	prevStdout, prevStderr := stdout, stderr
 	stdout, stderr = io.Discard, io.Discard

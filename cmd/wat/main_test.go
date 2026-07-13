@@ -54,11 +54,11 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "-fail-closed",
 		},
 		{
-			name:       "stub_run",
+			name:       "run_without_project",
 			args:       []string{"run"},
 			wantErr:    true,
-			wantCode:   2,
-			wantOutput: "not implemented",
+			wantCode:   3,
+			wantOutput: "no .wat/ project found",
 		},
 		{
 			name:       "stub_install",
@@ -96,11 +96,11 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "unknown agent dialect",
 		},
 		{
-			name:       "valid_agent_stub",
+			name:       "valid_agent_without_project",
 			args:       []string{"run", "--agent", "claude"},
 			wantErr:    true,
-			wantCode:   2,
-			wantOutput: "not implemented",
+			wantCode:   3,
+			wantOutput: "no .wat/ project found",
 		},
 	}
 	for _, tt := range tests {
