@@ -35,7 +35,7 @@ var decoders = map[string]decodeFn{
 func decodeAs[T Event](raw []byte, received, canonical string) (Event, error) {
 	var ev T
 	if err := json.Unmarshal(raw, &ev); err != nil {
-		return nil, fmt.Errorf("cursorhook: decode %T: %w", ev, err)
+		return nil, fmt.Errorf("cursorhook: decode %T: %w", ev, fmt.Errorf("%w: %w", ErrDecodePayload, err))
 	}
 	envelopeAccessorForValue(&ev).envelopePtr().setEnvelopeMeta(received, canonical, raw)
 	return ev, nil
@@ -59,8 +59,7 @@ func Decode(raw []byte, opts ...Option) (Event, error) {
 		received = cfg.eventHint
 	}
 	if received == "" {
-		env.setEnvelopeMeta(received, "", raw)
-		return RawEvent{Envelope: env, Raw: cloneRaw(raw)}, nil
+		return nil, ErrEventNameRequired
 	}
 
 	canonical := received

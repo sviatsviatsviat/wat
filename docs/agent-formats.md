@@ -117,6 +117,13 @@ Payload shape is checked before environment variables because Cursor exports `CL
 
 When `$CLAUDE_ENV_FILE` is set, env keys must match `[A-Za-z_][A-Za-z0-9_]*`; invalid keys return an encode error before any file write. When `$CLAUDE_ENV_FILE` is unset, `Result.Env` on SessionStart is a no-op (not an error) and key validation is skipped.
 
+### Exit codes
+
+| Constant | Value | When |
+|---|---|---|
+| `claudehook.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `claudehook.FailBlockExit` | `2` | Runner should use when `WithFailPolicy(FailBlock)` is active |
+
 ## Copilot codec
 
 `agenthooks.CopilotCodec` decodes GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format and encodes `agenthooks.Result` into flat camelCase stdout JSON.
@@ -165,8 +172,9 @@ Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
 
 | Constant | Value | When |
 |---|---|---|
-| `CopilotPreToolErrorExit` | `1` | Runner should use when a `preToolUse` handler returns an error (fail-closed deny) |
-| `CopilotWarnExit` | `2` | `Encode` returns this for documented `permissionRequest` deny and `postToolUseFailure` context paths |
+| `copilothook.HandlerErrorExit` / `CopilotHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `copilothook.PreToolErrorExit` / `CopilotPreToolErrorExit` | `1` | Same value; use when a `preToolUse` handler returns an error (fail-closed deny) |
+| `copilothook.WarnExit` / `CopilotWarnExit` | `2` | `Encode` returns this for documented `permissionRequest` deny and `postToolUseFailure` context paths |
 
 Copilot-specific limitations (`BlockPrompt`, `Env`, most `HaltSession` cases) are reported via `Unsupported`.
 
@@ -220,8 +228,8 @@ Dedicated shell, MCP, and file events are **folded** into unified pre/post tool 
 
 | Constant | Value | When |
 |---|---|---|
-| `CursorHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `CursorWarnExit` | `2` | `Encode` returns this for permission-gating deny |
+| `cursorhook.HandlerErrorExit` / `CursorHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `cursorhook.PermissionDenyExit` / `CursorWarnExit` | `2` | `Encode` returns this for permission-gating deny |
 
 Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preToolUse) are reported via `Unsupported`.
 
@@ -234,7 +242,7 @@ Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preTo
 - Tests: [`agenthooks/event_test.go`](../agenthooks/event_test.go)
 - Claude codec: [`agenthooks/claude.go`](../agenthooks/claude.go) — `ClaudeCodec`, `CodecFor`
 - Tests: [`agenthooks/claude_test.go`](../agenthooks/claude_test.go)
-- Copilot codec: [`agenthooks/copilot.go`](../agenthooks/copilot.go) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
+- Copilot codec: [`agenthooks/copilot.go`](../agenthooks/copilot.go) — `CopilotCodec`, `CopilotHandlerErrorExit`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
 - Tests: [`agenthooks/copilot_test.go`](../agenthooks/copilot_test.go)
 - Cursor codec: [`agenthooks/cursor.go`](../agenthooks/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit` (adapts `cursorhook`)
 - Tests: [`agenthooks/cursor_test.go`](../agenthooks/cursor_test.go)

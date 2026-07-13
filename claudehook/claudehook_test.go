@@ -224,13 +224,28 @@ func TestMux_FailPolicy(t *testing.T) {
 	})
 
 	code := mux.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claudehook.WithFailPolicy(claudehook.FailOpen))
-	if code != 1 {
-		t.Fatalf("FailOpen exit = %d, want 1", code)
+	if code != claudehook.HandlerErrorExit {
+		t.Fatalf("FailOpen exit = %d, want %d", code, claudehook.HandlerErrorExit)
 	}
 	code = mux.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claudehook.WithFailPolicy(claudehook.FailBlock))
-	if code != 2 {
-		t.Fatalf("FailBlock exit = %d, want 2", code)
+	if code != claudehook.FailBlockExit {
+		t.Fatalf("FailBlock exit = %d, want %d", code, claudehook.FailBlockExit)
 	}
+}
+
+func TestMux_OnDuplicatePanics(t *testing.T) {
+	mux := claudehook.NewMux()
+	claudehook.On(mux, func(ctx context.Context, ev claudehook.PreToolUse) (claudehook.PreToolUseOutput, error) {
+		return claudehook.PreToolUseOutput{}, nil
+	})
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic on duplicate handler registration")
+		}
+	}()
+	claudehook.On(mux, func(ctx context.Context, ev claudehook.PreToolUse) (claudehook.PreToolUseOutput, error) {
+		return claudehook.PreToolUseOutput{}, nil
+	})
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {

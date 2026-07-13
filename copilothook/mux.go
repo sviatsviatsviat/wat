@@ -33,6 +33,9 @@ func On[E Event, O any](m *Mux, fn func(context.Context, E) (O, error)) {
 	}
 	var zero E
 	name := zero.EventName()
+	if _, exists := m.handlers[name]; exists {
+		panic(fmt.Sprintf("copilothook: duplicate handler for %s", name))
+	}
 	m.handlers[name] = registeredHandler{
 		eventName: name,
 		fn: func(ctx context.Context, ev Event) (any, error) {
@@ -49,7 +52,7 @@ func On[E Event, O any](m *Mux, fn func(context.Context, E) (O, error)) {
 func (m *Mux) Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Writer, opts ...Option) int {
 	if m == nil {
 		_, _ = fmt.Fprintln(errw, "copilothook: nil mux")
-		return 1
+		return HandlerErrorExit
 	}
 	cfg := m.cfg
 	applyOptions(&cfg, opts...)
@@ -57,12 +60,12 @@ func (m *Mux) Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Wr
 	raw, err := io.ReadAll(in)
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "copilothook: read stdin: %v\n", err)
-		return 1
+		return HandlerErrorExit
 	}
 	ev, err := Decode(raw, WithEvent(cfg.eventHint))
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "copilothook: decode: %v\n", err)
-		return 1
+		return HandlerErrorExit
 	}
 	h, ok := m.handlers[ev.EventName()]
 	if !ok {
@@ -74,7 +77,7 @@ func (m *Mux) Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Wr
 		if ev.EventName() == EventPreToolUse {
 			return PreToolErrorExit
 		}
-		return 1
+		return HandlerErrorExit
 	}
 	if result == nil {
 		return 0
@@ -85,12 +88,12 @@ func (m *Mux) Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Wr
 	stdout, code, err := Encode(ev.EventName(), result)
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "copilothook: encode: %v\n", err)
-		return 1
+		return HandlerErrorExit
 	}
 	if len(stdout) > 0 {
 		if _, err := out.Write(stdout); err != nil {
 			_, _ = fmt.Fprintf(errw, "copilothook: write stdout: %v\n", err)
-			return 1
+			return HandlerErrorExit
 		}
 	}
 	return code

@@ -74,6 +74,17 @@ func TestDecode_CamelCaseRequiresWithEvent(t *testing.T) {
 	}
 }
 
+func TestDecode_InvalidTypedEvent(t *testing.T) {
+	raw := []byte(`{"hook_event_name":"PreToolUse","session_id":"s1","cwd":"/w","tool_name":123}`)
+	_, err := copilothook.Decode(raw)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !errors.Is(err, copilothook.ErrDecodePayload) {
+		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
+	}
+}
+
 func TestDecode_VSCodeStop(t *testing.T) {
 	ev, err := copilothook.Decode([]byte(copilotVSCodeStop))
 	if err != nil {
@@ -527,6 +538,21 @@ func TestMux_Serve_PreToolDeny(t *testing.T) {
 	if !strings.Contains(stdout.String(), `"permissionDecision":"deny"`) {
 		t.Fatalf("stdout=%s", stdout.String())
 	}
+}
+
+func TestMux_OnDuplicatePanics(t *testing.T) {
+	mux := copilothook.NewMux()
+	copilothook.On(mux, func(ctx context.Context, ev copilothook.PreToolUse) (copilothook.PreToolOutput, error) {
+		return copilothook.PreToolOutput{}, nil
+	})
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic on duplicate handler registration")
+		}
+	}()
+	copilothook.On(mux, func(ctx context.Context, ev copilothook.PreToolUse) (copilothook.PreToolOutput, error) {
+		return copilothook.PreToolOutput{}, nil
+	})
 }
 
 func TestToolInputAs_Bash(t *testing.T) {

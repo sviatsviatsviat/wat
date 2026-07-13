@@ -124,7 +124,7 @@ func TestMux_Serve_WithGetenv(t *testing.T) {
 	stderr.Reset()
 	code = mux.Serve(
 		context.Background(),
-		strings.NewReader(`{}`),
+		strings.NewReader(`{"conversation_id":"c1","hook_event_name":"workspaceOpen","cursor_version":"1.7.2","workspace_roots":["/w"]}`),
 		new(bytes.Buffer),
 		&stderr,
 		WithGetenv(func(key string) string {

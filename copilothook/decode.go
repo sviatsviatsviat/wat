@@ -27,7 +27,7 @@ var decoders = map[string]decodeFn{
 func decodeAs[T Event](raw []byte, received, canonical string) (Event, error) {
 	var ev T
 	if err := json.Unmarshal(raw, &ev); err != nil {
-		return nil, fmt.Errorf("copilothook: decode %T: %w", ev, err)
+		return nil, fmt.Errorf("copilothook: decode %T: %w", ev, fmt.Errorf("%w: %w", ErrDecodePayload, err))
 	}
 	envelopeAccessorForValue(&ev).envelopePtr().setEnvelopeMeta(received, canonical, raw)
 	return ev, nil

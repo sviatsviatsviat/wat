@@ -3,8 +3,11 @@ package agenthooks
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/cursorhook"
 )
 
 const cursorShell = `{
@@ -364,6 +367,21 @@ func TestCursorDecode_Matrix(t *testing.T) {
 				tt.check(t, ev)
 			}
 		})
+	}
+}
+
+func TestCursorDecode_RequiresEventHint(t *testing.T) {
+	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
+	c := &CursorCodec{}
+	_, err := c.Decode([]byte(raw), "")
+	if err == nil {
+		t.Fatal("expected error without eventHint")
+	}
+	if !errors.Is(err, cursorhook.ErrEventNameRequired) {
+		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
+	}
+	if !strings.Contains(err.Error(), "eventHint") {
+		t.Fatalf("error = %v", err)
 	}
 }
 

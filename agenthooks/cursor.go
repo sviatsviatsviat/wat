@@ -41,6 +41,9 @@ func (c *CursorCodec) Decode(raw []byte, eventHint string) (*Event, error) {
 			ev.Kind = k
 		}
 	}
+	if ev.Name == "" {
+		return nil, mapCursorDecodeError(cursorhook.ErrEventNameRequired)
+	}
 	return ev, nil
 }
 

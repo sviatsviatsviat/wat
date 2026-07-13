@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -117,6 +118,31 @@ func TestDecode_AfterFileEdit(t *testing.T) {
 	}
 	if !bytes.Equal(cursorhook.RawBytes(ev), []byte(cursorAfterFileEdit)) {
 		t.Fatal("Raw not preserved")
+	}
+}
+
+func TestDecode_RequiresWithEvent(t *testing.T) {
+	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
+	_, err := cursorhook.Decode([]byte(raw))
+	if err == nil {
+		t.Fatal("expected error without WithEvent")
+	}
+	if !errors.Is(err, cursorhook.ErrEventNameRequired) {
+		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
+	}
+	if !strings.Contains(err.Error(), "WithEvent") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestDecode_InvalidTypedEvent(t *testing.T) {
+	raw := []byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":123}`)
+	_, err := cursorhook.Decode(raw)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !errors.Is(err, cursorhook.ErrDecodePayload) {
+		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
 	}
 }
 

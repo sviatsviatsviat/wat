@@ -11,6 +11,9 @@ import (
 // an error. Copilot command hooks fail-closed on non-zero exits other than 2.
 const CopilotPreToolErrorExit = copilothook.PreToolErrorExit
 
+// CopilotHandlerErrorExit is exit code 1 for handler errors under fail-open policy.
+const CopilotHandlerErrorExit = copilothook.HandlerErrorExit
+
 // CopilotWarnExit is exit code 2. Copilot treats it as a warning by default;
 // for permissionRequest it means deny, and for postToolUseFailure it carries
 // additionalContext in stdout.
