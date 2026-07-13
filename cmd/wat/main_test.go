@@ -61,11 +61,11 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "no .wat/ project found",
 		},
 		{
-			name:       "stub_install",
+			name:       "install_without_project",
 			args:       []string{"install"},
 			wantErr:    true,
-			wantCode:   2,
-			wantOutput: "not implemented",
+			wantCode:   3,
+			wantOutput: "no .wat/ project found",
 		},
 		{
 			name:       "stub_port",
