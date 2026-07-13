@@ -1,22 +1,8 @@
 package portconfig
 
-import "github.com/sviatsviatsviat/wat/agenthooks"
-
-var claudeEventForKind = map[agenthooks.Kind]string{
-	agenthooks.KindSessionStart:      "SessionStart",
-	agenthooks.KindSessionEnd:        "SessionEnd",
-	agenthooks.KindUserPrompt:        "UserPromptSubmit",
-	agenthooks.KindPreTool:           "PreToolUse",
-	agenthooks.KindPostTool:          "PostToolUse",
-	agenthooks.KindPostToolFailure:   "PostToolUseFailure",
-	agenthooks.KindPermissionRequest: "PermissionRequest",
-	agenthooks.KindSubagentStart:     "SubagentStart",
-	agenthooks.KindSubagentStop:      "SubagentStop",
-	agenthooks.KindStop:              "Stop",
-	agenthooks.KindPreCompact:        "PreCompact",
-	agenthooks.KindNotification:      "Notification",
-	agenthooks.KindAgentError:        "StopFailure",
-}
+import (
+	"github.com/sviatsviatsviat/wat/agenthooks"
+)
 
 var copilotEventForKind = map[agenthooks.Kind]string{
 	agenthooks.KindSessionStart:      "sessionStart",
@@ -56,7 +42,6 @@ func invertKindEvent(m map[agenthooks.Kind]string) map[string]agenthooks.Kind {
 }
 
 var (
-	claudeKindForEvent  = invertKindEvent(claudeEventForKind)
 	copilotKindForEvent = buildCopilotKindForEvent()
 	cursorKindForEvent  = buildCursorKindForEvent()
 )

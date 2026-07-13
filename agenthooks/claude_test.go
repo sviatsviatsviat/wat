@@ -516,30 +516,6 @@ func TestClaudeEncode_PermissionRequestContext(t *testing.T) {
 	}
 }
 
-func TestValidEnvKey(t *testing.T) {
-	tests := []struct {
-		key  string
-		want bool
-	}{
-		{key: "FOO", want: true},
-		{key: "_PRIVATE", want: true},
-		{key: "VAR2", want: true},
-		{key: "", want: false},
-		{key: "2BAD", want: false},
-		{key: "FOO=BAR", want: false},
-		{key: "FOO\nBAR", want: false},
-		{key: "FOO;BAR", want: false},
-		{key: "FÖO", want: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.key, func(t *testing.T) {
-			if got := validEnvKey(tt.key); got != tt.want {
-				t.Fatalf("validEnvKey(%q) = %v, want %v", tt.key, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestClaudeEncode_PostToolUpdatedOutput(t *testing.T) {
 	c := &ClaudeCodec{}
 	ev := &Event{Agent: Claude, Kind: KindPostTool, Name: "PostToolUse"}
@@ -583,7 +559,7 @@ func TestClaudeDecode_InvalidJSON(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "claude: decode payload") {
+	if !strings.Contains(err.Error(), "claude:") {
 		t.Fatalf("error = %v", err)
 	}
 }

@@ -20,3 +20,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Serve options `WithDialect`, `WithEvent`, and `WithGetenv` for explicit dialect, Copilot event hints, and testable environment lookup
 - `agenthooks/portconfig.Parse` and `Emit` for Claude Code, GitHub Copilot, and Cursor hook configuration files, preserving unmappable entries and native handler fields for same-dialect round-trip
 - `agenthooks/portconfig.Translate` for cross-agent hook config conversion with explicit warnings for lossy matchers, unsupported handler types, and unmappable events
+- `claudehook` package with typed Claude Code hook events, `Decode`/`Encode`, generic `Mux`/`On`/`Serve`/`Main`, and `claudehook/tools` lazy tool input helpers
+- `agenthooks.As` to re-decode unified events into native `claudehook` types for long-tail Claude events

@@ -155,7 +155,7 @@ func applyExplicitTimeout(e *Entry, from, to agenthooks.Dialect, timeoutWarned *
 func eventForKind(d agenthooks.Dialect, kind agenthooks.Kind) string {
 	switch d {
 	case agenthooks.Claude:
-		return claudeEventForKind[kind]
+		return agenthooks.ClaudeEventForKind[kind]
 	case agenthooks.Copilot:
 		return copilotEventForKind[kind]
 	case agenthooks.Cursor:

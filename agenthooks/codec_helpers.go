@@ -1,12 +1,13 @@
 package agenthooks
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/claudehook"
+)
 
 func cloneRaw(raw json.RawMessage) json.RawMessage {
-	if len(raw) == 0 {
-		return nil
-	}
-	return append(json.RawMessage(nil), raw...)
+	return claudehook.CloneRaw(raw)
 }
 
 // newToolCall builds a ToolCall from native tool metadata and extracts a shell

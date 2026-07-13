@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/claudehook"
 )
 
 // Config is a normalized hook configuration independent of any single agent's
@@ -62,5 +63,5 @@ func appendExtra(cfg *Config, event string, raw json.RawMessage) {
 }
 
 func cloneRaw(raw json.RawMessage) json.RawMessage {
-	return append(json.RawMessage(nil), raw...)
+	return claudehook.CloneRaw(raw)
 }

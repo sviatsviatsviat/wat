@@ -6,36 +6,18 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/agenthooks"
+	"github.com/sviatsviatsviat/wat/claudehook"
 )
 
-type claudeFile struct {
-	Hooks map[string][]claudeGroup `json:"hooks"`
-}
-
-type claudeGroup struct {
-	Matcher string            `json:"matcher,omitempty"`
-	If      json.RawMessage   `json:"if,omitempty"`
-	Hooks   []json.RawMessage `json:"hooks"`
-}
-
-type claudeHandler struct {
-	Type    string   `json:"type"`
-	Command string   `json:"command,omitempty"`
-	Args    []string `json:"args,omitempty"`
-	Prompt  string   `json:"prompt,omitempty"`
-	URL     string   `json:"url,omitempty"`
-	Timeout int      `json:"timeout,omitempty"`
-}
-
 func parseClaude(data []byte) (Config, []Warning, error) {
-	var f claudeFile
+	var f claudehook.Settings
 	if err := json.Unmarshal(data, &f); err != nil {
 		return Config{}, nil, fmt.Errorf("portconfig: parse claude settings: %w", err)
 	}
 	cfg := Config{}
 	var warns []Warning
 	for event, groups := range f.Hooks {
-		kind, known := claudeKindForEvent[event]
+		kind, known := agenthooks.ClaudeKindForEvent(event)
 		if !known {
 			for _, g := range groups {
 				raw, err := json.Marshal(g)
@@ -64,8 +46,8 @@ func parseClaude(data []byte) (Config, []Warning, error) {
 }
 
 func claudeHandlerToEntry(event string, kind agenthooks.Kind, matcher string, groupIf json.RawMessage, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
-	var h claudeHandler
-	if err := json.Unmarshal(handlerRaw, &h); err != nil {
+	h, err := claudehook.ParseHandler(handlerRaw)
+	if err != nil {
 		return Entry{}, nil, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
 	}
 	var warns []Warning
@@ -95,7 +77,11 @@ func claudeHandlerToEntry(event string, kind agenthooks.Kind, matcher string, gr
 		e.URL = h.URL
 		return e, nil, warns, true
 	default:
-		groupRaw, err := json.Marshal(claudeGroup{Matcher: matcher, If: groupIf, Hooks: []json.RawMessage{handlerRaw}})
+		groupRaw, err := json.Marshal(claudehook.MatcherGroup{
+			Matcher: matcher,
+			If:      groupIf,
+			Hooks:   []json.RawMessage{handlerRaw},
+		})
 		if err != nil {
 			warns = append(warns, warnf("%s: handler type %q could not be preserved: %v", event, h.Type, err))
 			return Entry{}, nil, warns, false
@@ -106,11 +92,11 @@ func claudeHandlerToEntry(event string, kind agenthooks.Kind, matcher string, gr
 }
 
 func emitClaude(cfg Config) ([]byte, []Warning, error) {
-	f := claudeFile{Hooks: map[string][]claudeGroup{}}
+	f := claudehook.Settings{Hooks: map[string][]claudehook.MatcherGroup{}}
 	var warns []Warning
 	for kind, entries := range cfg.Hooks {
 		for _, e := range entries {
-			event := eventNameForEmit(e, claudeKindForEvent, claudeEventForKind)
+			event := eventNameForEmit(e, agenthooks.ClaudeKindForEventMap, agenthooks.ClaudeEventForKind)
 			if event == "" {
 				warns = append(warns, warnf("kind %q has no Claude Code event name; dropped", kind))
 				continue
@@ -120,7 +106,7 @@ func emitClaude(cfg Config) ([]byte, []Warning, error) {
 				warns = append(warns, warnf("%s: could not encode handler: %v", event, err))
 				continue
 			}
-			f.Hooks[event] = append(f.Hooks[event], claudeGroup{
+			f.Hooks[event] = append(f.Hooks[event], claudehook.MatcherGroup{
 				Matcher: e.Matcher,
 				If:      cloneRaw(e.ClaudeGroupIf),
 				Hooks:   []json.RawMessage{handlerRaw},
@@ -128,7 +114,7 @@ func emitClaude(cfg Config) ([]byte, []Warning, error) {
 		}
 	}
 	for _, extra := range cfg.Extras {
-		var g claudeGroup
+		var g claudehook.MatcherGroup
 		if err := json.Unmarshal(extra.Raw, &g); err != nil {
 			warns = append(warns, warnf("%s: could not restore extra entry: %v", extra.Event, err))
 			continue
@@ -141,8 +127,13 @@ func emitClaude(cfg Config) ([]byte, []Warning, error) {
 
 func claudeHandlerRaw(e Entry) (json.RawMessage, error) {
 	if len(e.Raw) == 0 {
-		h := claudeHandler{Type: e.Type, Command: e.Command, Prompt: e.Prompt, URL: e.URL, Timeout: e.TimeoutSec}
-		return json.Marshal(h)
+		return claudehook.MarshalHandler(claudehook.Handler{
+			Type:    e.Type,
+			Command: e.Command,
+			Prompt:  e.Prompt,
+			URL:     e.URL,
+			Timeout: e.TimeoutSec,
+		})
 	}
 	var m map[string]any
 	if err := json.Unmarshal(e.Raw, &m); err != nil {

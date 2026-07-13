@@ -1,13 +1,12 @@
 package agenthooks
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
+
+	"github.com/sviatsviatsviat/wat/claudehook"
 )
 
-// ClaudeCodec implements Codec for Claude Code hooks.
+// ClaudeCodec implements Codec for Claude Code hooks by adapting claudehook types.
 // Reference: https://code.claude.com/docs/en/hooks
 type ClaudeCodec struct {
 	// Getenv and AppendFile are injectable for tests. They back the
@@ -19,99 +18,18 @@ type ClaudeCodec struct {
 // Dialect returns Claude.
 func (c *ClaudeCodec) Dialect() Dialect { return Claude }
 
-// claudePayload is a superset decode of every Claude Code event we normalize.
-type claudePayload struct {
-	SessionID            string          `json:"session_id"`
-	TranscriptPath       string          `json:"transcript_path"`
-	Cwd                  string          `json:"cwd"`
-	HookEventName        string          `json:"hook_event_name"`
-	AgentID              string          `json:"agent_id"`
-	AgentType            string          `json:"agent_type"`
-	Source               string          `json:"source"`
-	Reason               string          `json:"reason"`
-	Model                string          `json:"model"`
-	Prompt               string          `json:"prompt"`
-	ToolName             string          `json:"tool_name"`
-	ToolInput            json.RawMessage `json:"tool_input"`
-	ToolUseID            string          `json:"tool_use_id"`
-	ToolResponse         json.RawMessage `json:"tool_response"`
-	Error                string          `json:"error"`
-	StopHookActive       bool            `json:"stop_hook_active"`
-	LastAssistantMessage string          `json:"last_assistant_message"`
-	Trigger              string          `json:"trigger"`
-	CustomInstructions   string          `json:"custom_instructions"`
-	Message              string          `json:"message"`
-	NotificationType     string          `json:"notification_type"`
-	ErrorType            string          `json:"error_type"`
-}
-
-var claudeKinds = map[string]Kind{
-	"SessionStart":       KindSessionStart,
-	"SessionEnd":         KindSessionEnd,
-	"UserPromptSubmit":   KindUserPrompt,
-	"PreToolUse":         KindPreTool,
-	"PostToolUse":        KindPostTool,
-	"PostToolUseFailure": KindPostToolFailure,
-	"PermissionRequest":  KindPermissionRequest,
-	"SubagentStart":      KindSubagentStart,
-	"SubagentStop":       KindSubagentStop,
-	"Stop":               KindStop,
-	"PreCompact":         KindPreCompact,
-	"Notification":       KindNotification,
-	"StopFailure":        KindAgentError,
-}
-
 // Decode parses a Claude Code hook stdin payload into a unified Event.
 func (c *ClaudeCodec) Decode(raw []byte, eventHint string) (*Event, error) {
-	var p claudePayload
-	if err := json.Unmarshal(raw, &p); err != nil {
-		return nil, fmt.Errorf("claude: decode payload: %w", err)
+	native, err := claudehook.Decode(raw)
+	if err != nil {
+		return nil, fmt.Errorf("claude: %w", err)
 	}
-	name := p.HookEventName
-	if name == "" {
-		name = eventHint
-	}
-	kind, ok := claudeKinds[name]
-	if !ok {
-		kind = KindOther
-	}
-	ev := &Event{
-		Agent:          Claude,
-		Kind:           kind,
-		Name:           name,
-		Session:        p.SessionID,
-		Cwd:            p.Cwd,
-		TranscriptPath: p.TranscriptPath,
-		Raw:            append(json.RawMessage(nil), raw...),
-	}
-	switch kind {
-	case KindSessionStart:
-		ev.Life = &Lifecycle{Source: p.Source, Model: p.Model}
-	case KindSessionEnd:
-		ev.Life = &Lifecycle{Reason: p.Reason}
-	case KindUserPrompt:
-		ev.Prompt = p.Prompt
-	case KindPreTool, KindPermissionRequest:
-		ev.Tool = newToolCall(p.ToolName, p.ToolInput, p.ToolUseID)
-	case KindPostTool:
-		ev.Tool = newToolCall(p.ToolName, p.ToolInput, p.ToolUseID)
-		ev.Result = &ToolResult{Raw: cloneRaw(p.ToolResponse), Text: rawToText(p.ToolResponse)}
-	case KindPostToolFailure:
-		ev.Tool = newToolCall(p.ToolName, p.ToolInput, p.ToolUseID)
-		ev.Result = &ToolResult{Error: p.Error}
-	case KindSubagentStart:
-		ev.Subagent = &Subagent{ID: p.AgentID, Type: p.AgentType}
-	case KindSubagentStop:
-		ev.Subagent = &Subagent{ID: p.AgentID, Type: p.AgentType, Summary: p.LastAssistantMessage}
-		ev.Turn = &TurnEnd{StopHookActive: p.StopHookActive, LastAssistantMessage: p.LastAssistantMessage}
-	case KindStop:
-		ev.Turn = &TurnEnd{StopHookActive: p.StopHookActive, LastAssistantMessage: p.LastAssistantMessage}
-	case KindPreCompact:
-		ev.Compact = &CompactInfo{Trigger: p.Trigger, CustomInstructions: p.CustomInstructions}
-	case KindNotification:
-		ev.Note = &Note{Type: p.NotificationType, Message: p.Message}
-	case KindAgentError:
-		ev.Note = &Note{Type: p.ErrorType, Message: p.Message}
+	ev := mapClaudeEvent(native, raw)
+	if ev.Name == "" && eventHint != "" {
+		ev.Name = eventHint
+		if k, ok := ClaudeKindForEvent(eventHint); ok {
+			ev.Kind = k
+		}
 	}
 	return ev, nil
 }
@@ -126,167 +44,37 @@ func (c *ClaudeCodec) Encode(ev *Event, res Result) ([]byte, int, error) {
 	if res.IsZero() {
 		return nil, 0, nil
 	}
-	out := map[string]any{}
-	hso := map[string]any{}
-
-	if res.HaltSession {
-		out["continue"] = false
-		if res.Reason != "" {
-			out["stopReason"] = res.Reason
-		}
+	out := mapClaudeOutput(ev, res)
+	var opts []claudehook.Option
+	if c.Getenv != nil {
+		opts = append(opts, claudehook.WithGetenv(c.Getenv))
 	}
-	if res.UserMessage != "" {
-		out["systemMessage"] = res.UserMessage
+	if c.AppendFile != nil {
+		opts = append(opts, claudehook.WithAppendFile(c.AppendFile))
 	}
-
-	switch ev.Kind {
-	case KindPreTool:
-		if d := res.Decision.String(); d != "" {
-			hso["permissionDecision"] = d
-			if res.Reason != "" {
-				hso["permissionDecisionReason"] = res.Reason
-			}
-		} else if res.UpdatedInput != nil {
-			hso["permissionDecision"] = "allow"
-		}
-		if res.UpdatedInput != nil {
-			hso["updatedInput"] = res.UpdatedInput
-		}
-		if res.Context != "" {
-			hso["additionalContext"] = res.Context
-		}
-	case KindPermissionRequest:
-		if d := res.Decision.String(); d != "" {
-			dec := map[string]any{"behavior": d}
-			if res.UpdatedInput != nil {
-				dec["updatedInput"] = res.UpdatedInput
-			}
-			if res.Reason != "" {
-				dec["message"] = res.Reason
-			}
-			hso["decision"] = dec
-		}
-		if res.Context != "" {
-			hso["additionalContext"] = res.Context
-		}
-	case KindPostTool, KindPostToolFailure:
-		if res.Decision == DecisionDeny {
-			out["decision"] = "block"
-			if res.Reason != "" {
-				out["reason"] = res.Reason
-			}
-		}
-		if res.UpdatedOutput != nil {
-			hso["updatedToolOutput"] = *res.UpdatedOutput
-		}
-		if res.Context != "" {
-			hso["additionalContext"] = res.Context
-		}
-	case KindUserPrompt:
-		if res.BlockPrompt || res.Decision == DecisionDeny {
-			out["decision"] = "block"
-			if res.Reason != "" {
-				out["reason"] = res.Reason
-			}
-		}
-		if res.Context != "" {
-			hso["additionalContext"] = res.Context
-		}
-		if res.SetTitle != "" {
-			hso["sessionTitle"] = res.SetTitle
-		}
-	case KindStop, KindSubagentStop:
-		if res.FollowUp != "" {
-			out["decision"] = "block"
-			out["reason"] = res.FollowUp
-		}
-		if res.Context != "" {
-			hso["additionalContext"] = res.Context
-		}
-	case KindSessionStart:
-		if res.Context != "" {
-			hso["additionalContext"] = res.Context
-		}
-		if res.SetTitle != "" {
-			hso["sessionTitle"] = res.SetTitle
-		}
-		if len(res.Env) > 0 {
-			if err := c.writeEnvFile(res.Env); err != nil {
-				return nil, 0, err
-			}
-		}
-	default:
-		if res.Context != "" {
-			hso["additionalContext"] = res.Context
-		}
+	b, err := claudehook.Encode(ev.Name, out, opts...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("claude: %w", err)
 	}
-
-	if len(hso) > 0 {
-		hso["hookEventName"] = ev.Name
-		out["hookSpecificOutput"] = hso
-	}
-	if len(out) == 0 {
-		return nil, 0, nil
-	}
-	b, err := json.Marshal(out)
 	return b, 0, err
 }
 
-func (c *ClaudeCodec) writeEnvFile(env map[string]string) error {
-	getenv := c.Getenv
-	if getenv == nil {
-		getenv = os.Getenv
+// As re-decodes Event.Raw into a claudehook native event type.
+func As[T claudehook.Event](ev *Event) (T, error) {
+	var zero T
+	if ev == nil || len(ev.Raw) == 0 {
+		return zero, fmt.Errorf("claude: As: empty event")
 	}
-	path := getenv("CLAUDE_ENV_FILE")
-	if path == "" {
-		return nil
+	if ev.Agent != Claude {
+		return zero, fmt.Errorf("claude: As: event is %v, not Claude", ev.Agent)
 	}
-	appendFile := c.AppendFile
-	if appendFile == nil {
-		appendFile = func(p string, data []byte) error {
-			f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600) //nolint:gosec // CLAUDE_ENV_FILE path from agent env
-			if err != nil {
-				return err
-			}
-			defer func() { _ = f.Close() }()
-			_, err = f.Write(data)
-			return err
-		}
+	native, err := claudehook.Decode(ev.Raw)
+	if err != nil {
+		return zero, err
 	}
-	var buf []byte
-	for k, v := range env {
-		if !validEnvKey(k) {
-			return fmt.Errorf("claude: invalid env key %q", k)
-		}
-		buf = append(buf, []byte(fmt.Sprintf("export %s=%s\n", k, shellSingleQuote(v)))...)
+	typed, ok := native.(T)
+	if !ok {
+		return zero, fmt.Errorf("claude: As: decoded %T, want %T", native, zero)
 	}
-	return appendFile(path, buf)
-}
-
-// shellSingleQuote wraps s in single quotes using POSIX-safe escaping.
-func shellSingleQuote(s string) string {
-	if s == "" {
-		return "''"
-	}
-	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
-}
-
-// validEnvKey reports whether k is a valid ASCII shell export name.
-func validEnvKey(k string) bool {
-	if k == "" {
-		return false
-	}
-	for i := 0; i < len(k); i++ {
-		c := k[i]
-		if i == 0 {
-			if c != '_' && (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') {
-				return false
-			}
-			continue
-		}
-		if c != '_' && (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') && (c < '0' || c > '9') {
-			return false
-		}
-	}
-	return true
+	return typed, nil
 }
