@@ -1,0 +1,8 @@
+{
+  "hook_event_name": "Stop",
+  "session_id": "s2",
+  "timestamp": "2026-07-12T10:00:00Z",
+  "cwd": "/w",
+  "transcript_path": "/tmp/t",
+  "stop_reason": "end_turn"
+}

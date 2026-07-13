@@ -1,0 +1,9 @@
+{
+  "sessionId": "s1",
+  "timestamp": 1760000000000,
+  "cwd": "/w",
+  "toolName": "bash",
+  "toolArgs": {
+    "command": "git push --force"
+  }
+}

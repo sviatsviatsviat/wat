@@ -1,0 +1,6 @@
+{
+  "session_id": "s",
+  "cwd": "/home/user/proj",
+  "hook_event_name": "Stop",
+  "stop_reason": "end_turn"
+}

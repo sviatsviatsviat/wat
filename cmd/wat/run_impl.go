@@ -53,24 +53,12 @@ func runHook(cfg runConfig, deps runDeps) int {
 		return exitRuntimeFailure
 	}
 
-	key, err := hookBuildCacheKey(watDir, deps)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "wat run: %v\n", err)
-		return exitRuntimeFailure
-	}
-	binPath := hooksBinaryPath(watDir, key)
-
-	if _, err := deps.stat(binPath); err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			_, _ = fmt.Fprintf(stderr, "wat run: stat %s: %v\n", binPath, err)
-			return exitRuntimeFailure
+	binPath, exitCode, ok := ensureHookBinary(watDir, deps)
+	if !ok {
+		if exitCode == exitBuildFailed && cfg.failClosed {
+			return exitFailClosed
 		}
-		if ok := buildHookBinary(watDir, binPath, deps); !ok {
-			if cfg.failClosed {
-				return exitFailClosed
-			}
-			return exitBuildFailed
-		}
+		return exitCode
 	}
 
 	cmd := deps.command(binPath)
@@ -223,6 +211,27 @@ func hooksBinaryPath(watDir, key string) string {
 	return filepath.Join(watDir, ".cache", key, name)
 }
 
+// ensureHookBinary returns the content-addressed hooks binary path, building it on
+// cache miss. When ok is false, exitCode is exitBuildFailed or exitRuntimeFailure.
+func ensureHookBinary(watDir string, deps runDeps) (binPath string, exitCode int, ok bool) {
+	key, err := hookBuildCacheKey(watDir, deps)
+	if err != nil {
+		return "", exitRuntimeFailure, false
+	}
+	binPath = hooksBinaryPath(watDir, key)
+
+	if _, err := deps.stat(binPath); err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			_, _ = fmt.Fprintf(stderr, "wat run: stat %s: %v\n", binPath, err)
+			return "", exitRuntimeFailure, false
+		}
+		if buildOK := buildHookBinary(watDir, binPath, deps); !buildOK {
+			return "", exitBuildFailed, false
+		}
+	}
+	return binPath, exitOK, true
+}
+
 func buildHookBinary(watDir, binPath string, deps runDeps) bool {
 	cacheDir := filepath.Dir(binPath)
 	if err := deps.mkdirAll(cacheDir, 0o755); err != nil {
@@ -246,4 +255,3 @@ func buildHookBinary(watDir, binPath string, deps runDeps) bool {
 	_, _ = fmt.Fprintf(stderr, "wat run: go build failed in %s\n", watDir)
 	return false
 }
-

@@ -80,11 +80,21 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "-from",
 		},
 		{
-			name:       "stub_test",
+			name:       "test_missing_fixture",
 			args:       []string{"test"},
 			wantErr:    true,
-			wantCode:   2,
-			wantOutput: "not implemented",
+			wantCode:   1,
+			wantOutput: "--fixture is required",
+		},
+		{
+			name:       "test_help",
+			args:       []string{"test", "--help"},
+			wantOutput: "-verbose",
+		},
+		{
+			name:       "test_help_fixture_flag",
+			args:       []string{"test", "--help"},
+			wantOutput: "-fixture",
 		},
 		{
 			name:       "stub_doctor",
