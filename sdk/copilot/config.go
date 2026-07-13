@@ -1,6 +1,10 @@
 package copilot
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+)
 
 // File is the GitHub Copilot hooks.json shape.
 type File struct {
@@ -34,30 +38,17 @@ type Handler struct {
 
 // ParseHandler decodes native handler JSON into a Handler.
 func ParseHandler(raw json.RawMessage) (Handler, error) {
-	var h Handler
-	if len(raw) == 0 {
-		return h, nil
-	}
-	err := json.Unmarshal(raw, &h)
-	return h, err
+	return hookkit.ParseHandler[Handler](raw)
 }
 
 // MarshalHandler encodes a Handler as native handler JSON.
 func MarshalHandler(h Handler) (json.RawMessage, error) {
-	return json.Marshal(h)
+	return hookkit.MarshalHandler(h)
 }
 
 // Handlers encodes typed handlers as native handler JSON blobs.
 func Handlers(h ...Handler) ([]json.RawMessage, error) {
-	out := make([]json.RawMessage, 0, len(h))
-	for _, handler := range h {
-		raw, err := MarshalHandler(handler)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, raw)
-	}
-	return out, nil
+	return hookkit.Handlers(h...)
 }
 
 // TimeoutSeconds returns the configured timeout in seconds.

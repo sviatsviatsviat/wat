@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 // Mux registers typed hook handlers and runs the hook process lifecycle.
@@ -57,46 +59,37 @@ func (m *Mux) Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Wr
 	cfg := m.cfg
 	applyOptions(&cfg, opts...)
 
-	raw, err := io.ReadAll(in)
-	if err != nil {
-		_, _ = fmt.Fprintf(errw, "claude: read stdin: %v\n", err)
-		return HandlerErrorExit
-	}
-	ev, err := Decode(raw)
-	if err != nil {
-		_, _ = fmt.Fprintf(errw, "claude: decode: %v\n", err)
-		return HandlerErrorExit
-	}
-	h, ok := m.handlers[ev.EventName()]
-	if !ok {
-		return 0
-	}
-	result, err := h.fn(ctx, ev)
-	if err != nil {
-		_, _ = fmt.Fprintln(errw, err.Error())
-		if cfg.policy == FailBlock {
-			return FailBlockExit
-		}
-		return HandlerErrorExit
-	}
-	if result == nil {
-		return 0
-	}
-	if z, ok := result.(interface{ isZero() bool }); ok && z.isZero() {
-		return 0
-	}
-	stdout, err := Encode(ev.EventName(), result, cfg.encodeOpts()...)
-	if err != nil {
-		_, _ = fmt.Fprintf(errw, "claude: encode: %v\n", err)
-		return HandlerErrorExit
-	}
-	if len(stdout) > 0 {
-		if _, err := out.Write(stdout); err != nil {
-			_, _ = fmt.Fprintf(errw, "claude: write stdout: %v\n", err)
+	return hookkit.ServeLoop(ctx, in, out, errw, hookkit.ServeHooks{
+		Label:            "claude",
+		HandlerErrorExit: HandlerErrorExit,
+		Decode: func(raw []byte) (string, any, error) {
+			ev, err := Decode(raw)
+			if err != nil {
+				return "", nil, err
+			}
+			return ev.EventName(), ev, nil
+		},
+		Lookup: func(eventName string) (func(context.Context, any) (any, error), bool) {
+			h, ok := m.handlers[eventName]
+			if !ok {
+				return nil, false
+			}
+			return func(ctx context.Context, ev any) (any, error) {
+				return h.fn(ctx, ev.(Event))
+			}, true
+		},
+		IsZeroResult: isZeroOutput,
+		OnHandlerError: func(string, error) int {
+			if cfg.policy == FailBlock {
+				return FailBlockExit
+			}
 			return HandlerErrorExit
-		}
-	}
-	return 0
+		},
+		Encode: func(eventName string, result any) ([]byte, int, error) {
+			stdout, err := Encode(eventName, result, cfg.encodeOpts()...)
+			return stdout, 0, err
+		},
+	})
 }
 
 // Main runs Serve with os.Stdin, os.Stdout, and os.Stderr, then os.Exit.

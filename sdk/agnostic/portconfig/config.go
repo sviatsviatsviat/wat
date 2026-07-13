@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
-	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 // Config is a normalized hook configuration independent of any single agent's
@@ -63,5 +63,5 @@ func appendExtra(cfg *Config, event string, raw json.RawMessage) {
 }
 
 func cloneRaw(raw json.RawMessage) json.RawMessage {
-	return claude.CloneRaw(raw)
+	return hookkit.CloneRaw(raw)
 }

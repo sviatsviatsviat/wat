@@ -1,6 +1,10 @@
 package cursor
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+)
 
 // envelopeAccessor provides compile-time-checked envelope metadata access.
 type envelopeAccessor interface {
@@ -10,11 +14,12 @@ type envelopeAccessor interface {
 func (e *Envelope) setEnvelopeMeta(received, canonical string, raw json.RawMessage) {
 	e.receivedName = received
 	e.canonical = canonical
-	e.decodedRaw = cloneRaw(raw)
+	e.decodedRaw = hookkit.CloneRaw(raw)
 }
 
-func (e *Envelope) decodedRawBytes() json.RawMessage {
-	return cloneRaw(e.decodedRaw)
+// DecodedRaw returns the untouched JSON stored on the envelope.
+func (e *Envelope) DecodedRaw() json.RawMessage {
+	return hookkit.CloneRaw(e.decodedRaw)
 }
 
 func envelopeAccessorForEvent(ev Event) envelopeAccessor {

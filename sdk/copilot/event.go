@@ -3,6 +3,8 @@ package copilot
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 // Event is implemented by every decoded GitHub Copilot hook event.
@@ -89,7 +91,7 @@ func (e PreToolUse) ShellCommand() string {
 	if !isShellToolName(e.NativeToolName()) {
 		return ""
 	}
-	return extractShellCommand(e.Input())
+	return hookkit.ExtractShellCommand(e.Input())
 }
 
 // PostToolUse is the postToolUse hook event.
@@ -138,7 +140,7 @@ func (e PostToolUse) ResultText() string {
 
 // ResultRaw returns the tool result JSON from either wire format.
 func (e PostToolUse) ResultRaw() json.RawMessage {
-	if raw := extractRawObjectField(e.decodedRawBytes(), "toolResult", "tool_result"); raw != nil {
+	if raw := extractRawObjectField(e.DecodedRaw(), "toolResult", "tool_result"); raw != nil {
 		return raw
 	}
 	if e.ToolResult.TextResultForLLM != "" || e.ToolResult.ResultType != "" {
@@ -159,10 +161,10 @@ func extractRawObjectField(raw json.RawMessage, camelKey, snakeKey string) json.
 		return nil
 	}
 	if b, ok := fields[camelKey]; ok && len(b) > 0 && string(b) != "null" {
-		return cloneRaw(b)
+		return hookkit.CloneRaw(b)
 	}
 	if b, ok := fields[snakeKey]; ok && len(b) > 0 && string(b) != "null" {
-		return cloneRaw(b)
+		return hookkit.CloneRaw(b)
 	}
 	return nil
 }
@@ -290,7 +292,7 @@ func (e PermissionRequest) ShellCommand() string {
 	if !isShellToolName(e.NativeToolName()) {
 		return ""
 	}
-	return extractShellCommand(e.Input())
+	return hookkit.ExtractShellCommand(e.Input())
 }
 
 // SubagentStart is the subagentStart hook event.
@@ -513,19 +515,6 @@ func (e RawEvent) EventName() string {
 		return e.receivedName
 	}
 	return "unknown"
-}
-
-func extractShellCommand(input json.RawMessage) string {
-	if len(input) == 0 {
-		return ""
-	}
-	var args struct {
-		Command string `json:"command"`
-	}
-	if json.Unmarshal(input, &args) != nil {
-		return ""
-	}
-	return args.Command
 }
 
 func isShellToolName(name string) bool {

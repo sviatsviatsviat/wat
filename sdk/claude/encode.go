@@ -3,7 +3,8 @@ package claude
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 // Encode renders a typed output struct as Claude Code stdout JSON.
@@ -12,7 +13,7 @@ func Encode(eventName string, out any, opts ...Option) ([]byte, error) {
 	if eventName == "" {
 		return nil, fmt.Errorf("claude: encode: empty event name")
 	}
-	out = normalizeOutput(out)
+	out = hookkit.NormalizeOutput(out)
 	if out == nil || isZeroOutput(out) {
 		return nil, nil
 	}
@@ -39,41 +40,19 @@ func Encode(eventName string, out any, opts ...Option) ([]byte, error) {
 	return json.Marshal(top)
 }
 
-func normalizeOutput(out any) any {
-	if out == nil {
-		return nil
-	}
-	v := reflect.ValueOf(out)
-	if v.Kind() != reflect.Pointer {
-		return out
-	}
-	if v.IsNil() {
-		return nil
-	}
-	return v.Elem().Interface()
-}
-
 func isZeroOutput(out any) bool {
 	if z, ok := out.(interface{ isZero() bool }); ok {
 		return z.isZero()
 	}
-	return reflect.ValueOf(out).IsZero()
+	return hookkit.IsZeroOutput(out)
 }
 
 func validateEncodePair(eventName string, out any) error {
-	if eventName == "" {
-		return nil
-	}
 	allowed, ok := allowedEventsForOutput(out)
 	if !ok {
 		return fmt.Errorf("claude: encode: unsupported output type %T", out)
 	}
-	for _, name := range allowed {
-		if eventName == name {
-			return nil
-		}
-	}
-	return fmt.Errorf("claude: encode: event %q incompatible with output type %T", eventName, out)
+	return hookkit.ValidateEncodePair("claude", eventName, out, allowed, nil)
 }
 
 func allowedEventsForOutput(out any) ([]string, bool) {

@@ -1,6 +1,10 @@
 package tools
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+)
 
 // Copilot builtin tool name constants (camelCase CLI wire names).
 const (
@@ -47,10 +51,5 @@ type WebFetchInput struct {
 
 // ToolInputAs decodes raw tool input JSON into T.
 func ToolInputAs[T any](raw json.RawMessage) (T, error) {
-	var v T
-	if len(raw) == 0 {
-		return v, nil
-	}
-	err := json.Unmarshal(raw, &v)
-	return v, err
+	return hookkit.ToolInputAs[T](raw)
 }

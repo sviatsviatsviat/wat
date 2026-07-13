@@ -3,11 +3,11 @@ package agnostic
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/copilot"
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 func cloneRaw(raw json.RawMessage) json.RawMessage {
-	return copilot.CloneRaw(raw)
+	return hookkit.CloneRaw(raw)
 }
 
 // newToolCall builds a ToolCall from native tool metadata and extracts a shell
@@ -22,23 +22,9 @@ func newToolCall(native string, input json.RawMessage, id string) *ToolCall {
 		MCP:    mcp,
 	}
 	if name == ToolBash {
-		tc.Shell = extractShellCommand(input)
+		tc.Shell = hookkit.ExtractShellCommand(input)
 	}
 	return tc
-}
-
-// extractShellCommand reads the command string from a shell tool input object.
-func extractShellCommand(input json.RawMessage) string {
-	if len(input) == 0 {
-		return ""
-	}
-	var args struct {
-		Command string `json:"command"`
-	}
-	if json.Unmarshal(input, &args) != nil {
-		return ""
-	}
-	return args.Command
 }
 
 // rawToText extracts a best-effort textual form of a tool_response value.

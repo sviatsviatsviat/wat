@@ -3,13 +3,14 @@ package cursor
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 // Encode renders a typed output struct as Cursor stdout JSON and returns the
 // process exit code.
 func Encode(eventName string, out any) ([]byte, int, error) {
-	out = normalizeOutput(out)
+	out = hookkit.NormalizeOutput(out)
 	if out == nil || isZeroOutput(out) {
 		return nil, 0, nil
 	}
@@ -35,41 +36,19 @@ func Encode(eventName string, out any) ([]byte, int, error) {
 	}
 }
 
-func normalizeOutput(out any) any {
-	if out == nil {
-		return nil
-	}
-	v := reflect.ValueOf(out)
-	if v.Kind() != reflect.Pointer {
-		return out
-	}
-	if v.IsNil() {
-		return nil
-	}
-	return v.Elem().Interface()
-}
-
 func isZeroOutput(out any) bool {
 	if z, ok := out.(interface{ isZero() bool }); ok {
 		return z.isZero()
 	}
-	return reflect.ValueOf(out).IsZero()
+	return hookkit.IsZeroOutput(out)
 }
 
 func validateEncodePair(eventName string, out any) error {
-	if eventName == "" {
-		return nil
-	}
 	allowed, ok := allowedEventsForOutput(out)
 	if !ok {
 		return fmt.Errorf("cursor: encode: unsupported output type %T", out)
 	}
-	for _, name := range allowed {
-		if eventName == name {
-			return nil
-		}
-	}
-	return fmt.Errorf("cursor: encode: event %q incompatible with output type %T", eventName, out)
+	return hookkit.ValidateEncodePair("cursor", eventName, out, allowed, nil)
 }
 
 func allowedEventsForOutput(out any) ([]string, bool) {

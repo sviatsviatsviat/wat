@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 type decodeFn func([]byte, string, string) (Event, error)
@@ -56,7 +58,7 @@ func Decode(raw []byte, opts ...Option) (Event, error) {
 
 	received := env.HookEventName
 	if received == "" {
-		received = cfg.eventHint
+		received = cfg.eventHint.Hint
 	}
 	if received == "" {
 		return nil, ErrEventNameRequired
@@ -67,7 +69,7 @@ func Decode(raw []byte, opts ...Option) (Event, error) {
 		return fn(raw, received, canonical)
 	}
 	env.setEnvelopeMeta(received, "", raw)
-	return RawEvent{Envelope: env, Raw: cloneRaw(raw)}, nil
+	return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
 }
 
 // ParseEvent reads and decodes a hook payload from r.
@@ -79,37 +81,24 @@ func ParseEvent(r io.Reader, opts ...Option) (Event, error) {
 	return Decode(raw, opts...)
 }
 
-func cloneRaw(raw []byte) json.RawMessage {
-	if len(raw) == 0 {
-		return nil
-	}
-	return append(json.RawMessage(nil), raw...)
-}
-
 // RawBytes returns the untouched JSON for an event when available.
 func RawBytes(ev Event) json.RawMessage {
-	switch e := ev.(type) {
-	case RawEvent:
-		return cloneRaw(e.Raw)
-	default:
-		if raw := decodedRawFrom(ev); len(raw) > 0 {
-			return cloneRaw(raw)
-		}
-		b, err := json.Marshal(ev)
-		if err != nil {
-			return nil
-		}
-		return b
+	var rawEventRaw json.RawMessage
+	if e, ok := ev.(RawEvent); ok {
+		rawEventRaw = e.Raw
 	}
-}
-
-func decodedRawFrom(ev Event) json.RawMessage {
-	return envelopeAccessorForEvent(ev).envelopePtr().decodedRawBytes()
+	var accessor hookkit.EnvelopeAccessor
+	if rawEventRaw == nil {
+		accessor = envelopeAccessorForEvent(ev).envelopePtr()
+	}
+	return hookkit.RawBytes(ev, rawEventRaw, accessor, func(v any) ([]byte, error) {
+		return json.Marshal(v)
+	})
 }
 
 // CloneRaw copies raw JSON for independent mutation.
 func CloneRaw(raw json.RawMessage) json.RawMessage {
-	return cloneRaw(raw)
+	return hookkit.CloneRaw(raw)
 }
 
 // EnvelopeOf returns the shared envelope from a decoded event.

@@ -1,6 +1,10 @@
 package cursor
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+)
 
 // Event is implemented by every decoded Cursor hook event.
 type Event interface {
@@ -76,7 +80,7 @@ func (e PreToolUse) ShellCommand() string {
 	if e.ToolName != "Shell" && e.ToolName != "shell" {
 		return ""
 	}
-	return extractShellCommand(e.ToolInput)
+	return hookkit.ExtractShellCommand(e.ToolInput)
 }
 
 // PostToolUse is the postToolUse hook event.
@@ -364,17 +368,4 @@ func (e RawEvent) EventName() string {
 		return e.canonical
 	}
 	return e.receivedName
-}
-
-func extractShellCommand(input json.RawMessage) string {
-	if len(input) == 0 {
-		return ""
-	}
-	var v struct {
-		Command string `json:"command"`
-	}
-	if json.Unmarshal(input, &v) != nil {
-		return ""
-	}
-	return v.Command
 }

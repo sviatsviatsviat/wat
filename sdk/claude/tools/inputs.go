@@ -3,6 +3,8 @@ package tools
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 // BashInput is the input schema for the Bash tool.
@@ -99,12 +101,7 @@ type ExitPlanModeInput struct {
 
 // ToolInputAs decodes raw tool input JSON into T.
 func ToolInputAs[T any](raw json.RawMessage) (T, error) {
-	var v T
-	if len(raw) == 0 {
-		return v, nil
-	}
-	err := json.Unmarshal(raw, &v)
-	return v, err
+	return hookkit.ToolInputAs[T](raw)
 }
 
 // IsMCPTool reports whether name is an MCP tool and returns server and tool parts.

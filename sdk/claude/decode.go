@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+
+	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
 )
 
 type decodeFn func([]byte) (Event, error)
@@ -62,13 +64,13 @@ func Decode(raw []byte) (Event, error) {
 	name := env.HookEventName
 	if name == "" {
 		env.setDecodedRaw(raw)
-		return RawEvent{Envelope: env, Raw: cloneRaw(raw)}, nil
+		return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
 	}
 	if fn, ok := decoders[name]; ok {
 		return fn(raw)
 	}
 	env.setDecodedRaw(raw)
-	return RawEvent{Envelope: env, Raw: cloneRaw(raw)}, nil
+	return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
 }
 
 // ParseEvent reads and decodes a hook payload from r.
@@ -80,37 +82,24 @@ func ParseEvent(r io.Reader) (Event, error) {
 	return Decode(raw)
 }
 
-func cloneRaw(raw []byte) json.RawMessage {
-	if len(raw) == 0 {
-		return nil
-	}
-	return append(json.RawMessage(nil), raw...)
-}
-
 // RawBytes returns the untouched JSON for an event when available.
 func RawBytes(ev Event) json.RawMessage {
-	switch e := ev.(type) {
-	case RawEvent:
-		return cloneRaw(e.Raw)
-	default:
-		if raw := decodedRawFrom(ev); len(raw) > 0 {
-			return cloneRaw(raw)
-		}
-		b, err := json.Marshal(ev)
-		if err != nil {
-			return nil
-		}
-		return b
+	var rawEventRaw json.RawMessage
+	if e, ok := ev.(RawEvent); ok {
+		rawEventRaw = e.Raw
 	}
-}
-
-func decodedRawFrom(ev Event) json.RawMessage {
-	return envelopeAccessorForEvent(ev).envelopePtr().decodedRawBytes()
+	var accessor hookkit.EnvelopeAccessor
+	if rawEventRaw == nil {
+		accessor = envelopeAccessorForEvent(ev).envelopePtr()
+	}
+	return hookkit.RawBytes(ev, rawEventRaw, accessor, func(v any) ([]byte, error) {
+		return json.Marshal(v)
+	})
 }
 
 // CloneRaw copies raw JSON for independent mutation.
 func CloneRaw(raw json.RawMessage) json.RawMessage {
-	return cloneRaw(raw)
+	return hookkit.CloneRaw(raw)
 }
 
 // EnvelopeOf returns the shared envelope from a decoded event.
