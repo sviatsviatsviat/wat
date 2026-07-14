@@ -130,7 +130,7 @@ Observe-only handlers accept decoded events but produce no hook stdout JSON.
 | `SessionStart` | `SessionStartResult` | `Context` |
 | `SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart` | — | observe-only (no result) |
 
-Helpers such as `PreToolDeny`, `PostToolContext`, and `StopFollowUp` construct common results. Multiple handlers for the same kind merge at the native JSON layer.
+Each result-producing handler receives a hook-scoped builder interface (`PreToolResults`, `PostToolResults`, `StopResults`, and others) as its third parameter. Use the builder to construct common results (`r.Deny`, `r.Context`, `r.FollowUp`, …); return a typed zero literal (`PreToolResult{}`) for no opinion, or set advanced fields directly on the result struct (`UpdatedInput`, `UpdatedOutput`). Multiple handlers for the same kind merge at the native JSON layer.
 
 ### Agent-only capabilities
 

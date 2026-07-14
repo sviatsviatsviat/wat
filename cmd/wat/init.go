@@ -127,7 +127,7 @@ import (
 )
 
 func main() {
-	agnostic.OnPreTool(func(ctx context.Context, ev *agnostic.Event) (agnostic.PreToolResult, error) {
+	agnostic.OnPreTool(func(ctx context.Context, ev *agnostic.Event, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
 		// Guard: block force pushes, escalate other git pushes to the user.
 		// Fires on PreToolUse (Claude/Copilot) and on preToolUse /
 		// beforeShellExecution (Cursor); ev.Tool.Shell is the extracted command.
@@ -136,22 +136,22 @@ func main() {
 		case strings.Contains(cmd, "push --force"), strings.Contains(cmd, "push -f"):
 			// → Claude: permissionDecision:"deny"; Copilot: permissionDecision:"deny";
 			//   Cursor: permission:"deny" + agent_message.
-			return agnostic.PreToolDeny("force pushes are not allowed; rebase and push normally"), nil
+			return r.Deny("force pushes are not allowed; rebase and push normally"), nil
 		case strings.HasPrefix(cmd, "git push"):
 			// → "ask" where supported; Copilot cloud agent downgrades ask to deny.
-			return agnostic.PreToolAsk("agent wants to push to the remote"), nil
+			return r.Ask("agent wants to push to the remote"), nil
 		}
 		return agnostic.PreToolResult{}, nil // zero = no opinion, default flow
 	}).
-		OnPostTool(func(ctx context.Context, ev *agnostic.Event) (agnostic.PostToolResult, error) {
+		OnPostTool(func(ctx context.Context, ev *agnostic.Event, r agnostic.PostToolResults) (agnostic.PostToolResult, error) {
 			// Command: after any file edit, tell the model which test command applies.
 			// → additionalContext / additional_context on each dialect.
 			if ev.Tool.Name == agnostic.ToolEdit || ev.Tool.Name == agnostic.ToolWrite {
-				return agnostic.PostToolContext("Run go test ./... to verify this change."), nil
+				return r.Context("Run go test ./... to verify this change."), nil
 			}
 			return agnostic.PostToolResult{}, nil
 		}).
-		OnStop(func(ctx context.Context, ev *agnostic.Event) (agnostic.StopResult, error) {
+		OnStop(func(ctx context.Context, ev *agnostic.Event, r agnostic.StopResults) (agnostic.StopResult, error) {
 			// Stop gate: refuse to finish the turn while the build is red.
 			// → Claude/Copilot: decision:"block"+reason; Cursor: followup_message.
 			// Loop guards differ per agent, so check both before re-blocking.
@@ -159,7 +159,7 @@ func main() {
 				return agnostic.StopResult{}, nil // already retried; let it stop
 			}
 			if err := exec.CommandContext(ctx, "go", "build", "./...").Run(); err != nil {
-				return agnostic.StopFollowUp("go build ./... fails; fix the build before finishing"), nil
+				return r.FollowUp("go build ./... fails; fix the build before finishing"), nil
 			}
 			return agnostic.StopResult{}, nil
 		})

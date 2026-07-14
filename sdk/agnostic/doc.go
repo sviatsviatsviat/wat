@@ -8,11 +8,13 @@
 // and sdk/agnostic/cursor. Shared event and result types live in
 // sdk/agnostic/internal/model.
 //
-// Hook handlers return kind-specific result types (PreToolResult, PostToolResult,
-// StopResult, and others) so only portable fields compile. Observe-only kinds use
-// OnSessionEnd, OnUserPrompt, OnPreCompact, OnSubagentStart, or OnAny with
-// ObserveHandler. Register handlers with OnPreTool, OnPostTool, and the other
-// typed On methods, then call run.Main from github.com/sviatsviatsviat/wat/sdk/run.
+// Hook handlers receive a hook-scoped result builder (PreToolResults,
+// PostToolResults, and others) and return kind-specific result types
+// (PreToolResult, PostToolResult, StopResult, and others) so only portable
+// fields compile. Observe-only kinds use OnSessionEnd, OnUserPrompt,
+// OnPreCompact, OnSubagentStart, or OnAny with ObserveHandler. Register
+// handlers with OnPreTool, OnPostTool, and the other typed On methods, then
+// call run.Main from github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Agent-only capabilities (BlockPrompt, Env, HaltSession, and others) belong in
 // sdk/claude, sdk/copilot, and sdk/cursor.

@@ -20,10 +20,10 @@ func resetTest(t *testing.T) {
 func TestServe_MergeDispatch(t *testing.T) {
 	resetTest(t)
 	payload := `{"session_id":"s","hook_event_name":"PostToolUse","tool_name":"Read","tool_response":"file contents"}`
-	OnPostTool(func(ctx context.Context, ev *Event) (PostToolResult, error) {
-		return PostToolContext("first"), nil
-	}).OnPostTool(func(ctx context.Context, ev *Event) (PostToolResult, error) {
-		return PostToolContext("second"), nil
+	OnPostTool(func(ctx context.Context, ev *Event, r PostToolResults) (PostToolResult, error) {
+		return r.Context("first"), nil
+	}).OnPostTool(func(ctx context.Context, ev *Event, r PostToolResults) (PostToolResult, error) {
+		return r.Context("second"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -46,10 +46,10 @@ func TestServe_MergeDispatch(t *testing.T) {
 
 func TestServe_DecisionPrecedence(t *testing.T) {
 	resetTest(t)
-	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
-		return PreToolAllow(), nil
-	}).OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
-		return PreToolDeny("blocked"), nil
+	OnPreTool(func(ctx context.Context, ev *Event, r PreToolResults) (PreToolResult, error) {
+		return r.Allow(), nil
+	}).OnPreTool(func(ctx context.Context, ev *Event, r PreToolResults) (PreToolResult, error) {
+		return r.Deny("blocked"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -64,7 +64,7 @@ func TestServe_DecisionPrecedence(t *testing.T) {
 
 func TestServe_WithDialectOverride(t *testing.T) {
 	resetTest(t)
-	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
+	OnPreTool(func(ctx context.Context, ev *Event, _ PreToolResults) (PreToolResult, error) {
 		return PreToolResult{}, nil
 	})
 
@@ -86,8 +86,8 @@ func TestServe_WithDialectOverride(t *testing.T) {
 
 func TestServe_WithEvent(t *testing.T) {
 	resetTest(t)
-	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
-		return PreToolDeny("nope"), nil
+	OnPreTool(func(ctx context.Context, ev *Event, r PreToolResults) (PreToolResult, error) {
+		return r.Deny("nope"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -144,7 +144,7 @@ func TestServe_WithGetenv(t *testing.T) {
 
 func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
 	resetTest(t)
-	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
+	OnPreTool(func(ctx context.Context, ev *Event, _ PreToolResults) (PreToolResult, error) {
 		return PreToolResult{}, errors.New("boom")
 	})
 
@@ -189,9 +189,9 @@ func TestServe_EmptyStdin(t *testing.T) {
 }
 
 func TestServe_PreToolDenyAllAgents(t *testing.T) {
-	denyShell := func(ctx context.Context, ev *Event) (PreToolResult, error) {
+	denyShell := func(ctx context.Context, ev *Event, r PreToolResults) (PreToolResult, error) {
 		if ev.Tool != nil && ev.Tool.Shell != "" {
-			return PreToolDeny("destructive command blocked"), nil
+			return r.Deny("destructive command blocked"), nil
 		}
 		return PreToolResult{}, nil
 	}
@@ -253,8 +253,8 @@ func TestServe_OnAnyObserveOnly(t *testing.T) {
 	OnAny(func(ctx context.Context, ev *Event) error {
 		return nil
 	})
-	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
-		return PreToolDeny("blocked"), nil
+	OnPreTool(func(ctx context.Context, ev *Event, r PreToolResults) (PreToolResult, error) {
+		return r.Deny("blocked"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -272,8 +272,8 @@ func TestResetHandlers_OwnerScoped(t *testing.T) {
 	claude.ResetHandlers()
 
 	payload := `{"session_id":"s","hook_event_name":"PostToolUse","tool_name":"Read","tool_response":"file contents"}`
-	OnPostTool(func(ctx context.Context, ev *Event) (PostToolResult, error) {
-		return PostToolContext("from-agnostic"), nil
+	OnPostTool(func(ctx context.Context, ev *Event, r PostToolResults) (PostToolResult, error) {
+		return r.Context("from-agnostic"), nil
 	})
 	claude.On(func(ctx context.Context, ev claude.PostToolUse) (claude.PostToolUseOutput, error) {
 		return claude.PostToolUseOutput{AdditionalContext: "from-claude"}, nil
@@ -299,8 +299,8 @@ func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 	claude.ResetHandlers()
 
 	payload := `{"session_id":"s","hook_event_name":"PostToolUse","tool_name":"Read","tool_response":"file contents"}`
-	OnPostTool(func(ctx context.Context, ev *Event) (PostToolResult, error) {
-		return PostToolContext("from-agnostic"), nil
+	OnPostTool(func(ctx context.Context, ev *Event, r PostToolResults) (PostToolResult, error) {
+		return r.Context("from-agnostic"), nil
 	})
 	claude.On(func(ctx context.Context, ev claude.PostToolUse) (claude.PostToolUseOutput, error) {
 		return claude.PostToolUseOutput{AdditionalContext: "from-claude"}, nil

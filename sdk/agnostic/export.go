@@ -185,26 +185,3 @@ func InputAs[T any](t *ToolCall) (T, error) { return model.InputAs[T](t) }
 func NormalizeToolName(native string) (name string, mcp bool) {
 	return model.NormalizeToolName(native)
 }
-
-// PreToolAllow returns an allow verdict for PreTool events.
-func PreToolAllow() PreToolResult { return model.PreToolAllow() }
-
-// PreToolDeny returns a deny verdict for PreTool events.
-func PreToolDeny(reason string) PreToolResult { return model.PreToolDeny(reason) }
-
-// PreToolAsk returns an ask verdict for PreTool events.
-func PreToolAsk(reason string) PreToolResult { return model.PreToolAsk(reason) }
-
-// PostToolContext returns a context-injection-only PostTool result.
-func PostToolContext(text string) PostToolResult { return model.PostToolContext(text) }
-
-// PostToolFailureContext returns recovery guidance for PostToolFailure events.
-func PostToolFailureContext(text string) PostToolFailureResult {
-	return model.PostToolFailureContext(text)
-}
-
-// StopFollowUp returns a stop-gate result with a follow-up instruction.
-func StopFollowUp(text string) StopResult { return model.StopFollowUp(text) }
-
-// SessionStartContext returns a context-injection-only SessionStart result.
-func SessionStartContext(text string) SessionStartResult { return model.SessionStartContext(text) }

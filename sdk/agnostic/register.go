@@ -13,19 +13,19 @@ import (
 )
 
 // PreToolHandler handles portable PreTool events.
-type PreToolHandler func(ctx context.Context, ev *Event) (PreToolResult, error)
+type PreToolHandler func(ctx context.Context, ev *Event, results PreToolResults) (PreToolResult, error)
 
 // PostToolHandler handles portable PostTool events.
-type PostToolHandler func(ctx context.Context, ev *Event) (PostToolResult, error)
+type PostToolHandler func(ctx context.Context, ev *Event, results PostToolResults) (PostToolResult, error)
 
 // PostToolFailureHandler handles portable PostToolFailure events.
-type PostToolFailureHandler func(ctx context.Context, ev *Event) (PostToolFailureResult, error)
+type PostToolFailureHandler func(ctx context.Context, ev *Event, results PostToolFailureResults) (PostToolFailureResult, error)
 
 // StopHandler handles portable Stop and SubagentStop events.
-type StopHandler func(ctx context.Context, ev *Event) (StopResult, error)
+type StopHandler func(ctx context.Context, ev *Event, results StopResults) (StopResult, error)
 
 // SessionStartHandler handles portable SessionStart events.
-type SessionStartHandler func(ctx context.Context, ev *Event) (SessionStartResult, error)
+type SessionStartHandler func(ctx context.Context, ev *Event, results SessionStartResults) (SessionStartResult, error)
 
 // ObserveHandler handles observe-only portable events with no hook response.
 type ObserveHandler func(ctx context.Context, ev *Event) error
@@ -35,37 +35,67 @@ type Chain struct{}
 
 // OnPreTool registers a handler for PreTool events across all agents.
 func OnPreTool(fn PreToolHandler) *Chain {
-	registerResultHandler(KindPreTool, fn)
+	if fn == nil {
+		return &Chain{}
+	}
+	registerResultHandler(KindPreTool, func(ctx context.Context, ev *Event) (PreToolResult, error) {
+		return fn(ctx, ev, preToolResults{})
+	})
 	return &Chain{}
 }
 
 // OnPostTool registers a handler for PostTool events across all agents.
 func OnPostTool(fn PostToolHandler) *Chain {
-	registerResultHandler(KindPostTool, fn)
+	if fn == nil {
+		return &Chain{}
+	}
+	registerResultHandler(KindPostTool, func(ctx context.Context, ev *Event) (PostToolResult, error) {
+		return fn(ctx, ev, postToolResults{})
+	})
 	return &Chain{}
 }
 
 // OnPostToolFailure registers a handler for PostToolFailure events across all agents.
 func OnPostToolFailure(fn PostToolFailureHandler) *Chain {
-	registerResultHandler(KindPostToolFailure, fn)
+	if fn == nil {
+		return &Chain{}
+	}
+	registerResultHandler(KindPostToolFailure, func(ctx context.Context, ev *Event) (PostToolFailureResult, error) {
+		return fn(ctx, ev, postToolFailureResults{})
+	})
 	return &Chain{}
 }
 
 // OnStop registers a handler for Stop events across all agents.
 func OnStop(fn StopHandler) *Chain {
-	registerResultHandler(KindStop, fn)
+	if fn == nil {
+		return &Chain{}
+	}
+	registerResultHandler(KindStop, func(ctx context.Context, ev *Event) (StopResult, error) {
+		return fn(ctx, ev, stopResults{})
+	})
 	return &Chain{}
 }
 
 // OnSubagentStop registers a handler for SubagentStop events across all agents.
 func OnSubagentStop(fn StopHandler) *Chain {
-	registerResultHandler(KindSubagentStop, fn)
+	if fn == nil {
+		return &Chain{}
+	}
+	registerResultHandler(KindSubagentStop, func(ctx context.Context, ev *Event) (StopResult, error) {
+		return fn(ctx, ev, stopResults{})
+	})
 	return &Chain{}
 }
 
 // OnSessionStart registers a handler for SessionStart events across all agents.
 func OnSessionStart(fn SessionStartHandler) *Chain {
-	registerResultHandler(KindSessionStart, fn)
+	if fn == nil {
+		return &Chain{}
+	}
+	registerResultHandler(KindSessionStart, func(ctx context.Context, ev *Event) (SessionStartResult, error) {
+		return fn(ctx, ev, sessionStartResults{})
+	})
 	return &Chain{}
 }
 
@@ -101,31 +131,56 @@ func OnAny(fn ObserveHandler) *Chain {
 
 // OnPostTool registers another PostTool handler on the chain.
 func (c *Chain) OnPostTool(fn PostToolHandler) *Chain {
-	registerResultHandler(KindPostTool, fn)
+	if fn == nil {
+		return c
+	}
+	registerResultHandler(KindPostTool, func(ctx context.Context, ev *Event) (PostToolResult, error) {
+		return fn(ctx, ev, postToolResults{})
+	})
 	return c
 }
 
 // OnPostToolFailure registers another PostToolFailure handler on the chain.
 func (c *Chain) OnPostToolFailure(fn PostToolFailureHandler) *Chain {
-	registerResultHandler(KindPostToolFailure, fn)
+	if fn == nil {
+		return c
+	}
+	registerResultHandler(KindPostToolFailure, func(ctx context.Context, ev *Event) (PostToolFailureResult, error) {
+		return fn(ctx, ev, postToolFailureResults{})
+	})
 	return c
 }
 
 // OnStop registers another Stop handler on the chain.
 func (c *Chain) OnStop(fn StopHandler) *Chain {
-	registerResultHandler(KindStop, fn)
+	if fn == nil {
+		return c
+	}
+	registerResultHandler(KindStop, func(ctx context.Context, ev *Event) (StopResult, error) {
+		return fn(ctx, ev, stopResults{})
+	})
 	return c
 }
 
 // OnSubagentStop registers another SubagentStop handler on the chain.
 func (c *Chain) OnSubagentStop(fn StopHandler) *Chain {
-	registerResultHandler(KindSubagentStop, fn)
+	if fn == nil {
+		return c
+	}
+	registerResultHandler(KindSubagentStop, func(ctx context.Context, ev *Event) (StopResult, error) {
+		return fn(ctx, ev, stopResults{})
+	})
 	return c
 }
 
 // OnSessionStart registers another SessionStart handler on the chain.
 func (c *Chain) OnSessionStart(fn SessionStartHandler) *Chain {
-	registerResultHandler(KindSessionStart, fn)
+	if fn == nil {
+		return c
+	}
+	registerResultHandler(KindSessionStart, func(ctx context.Context, ev *Event) (SessionStartResult, error) {
+		return fn(ctx, ev, sessionStartResults{})
+	})
 	return c
 }
 
@@ -161,7 +216,12 @@ func (c *Chain) OnAny(fn ObserveHandler) *Chain {
 
 // OnPreTool registers another PreTool handler on the chain.
 func (c *Chain) OnPreTool(fn PreToolHandler) *Chain {
-	registerResultHandler(KindPreTool, fn)
+	if fn == nil {
+		return c
+	}
+	registerResultHandler(KindPreTool, func(ctx context.Context, ev *Event) (PreToolResult, error) {
+		return fn(ctx, ev, preToolResults{})
+	})
 	return c
 }
 
