@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/portconfig"
 )
 
 type portConfig struct {

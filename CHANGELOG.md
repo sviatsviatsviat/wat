@@ -23,8 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `agnostic.CursorCodec` decodes and encodes Cursor hooks, folding dedicated shell/MCP/file events into unified pre/post tool kinds
 - `agnostic.On`, `OnAny`, and chainable `Chain` replace `agnostic.Mux`; hook scripts call `run.Main` (reads `WAT_AGENT` / `WAT_EVENT` automatically)
 - Serve options `WithDialect`, `WithEvent`, and `WithGetenv` for explicit dialect, Copilot event hints, and testable environment lookup
-- `sdk/agnostic/portconfig.Parse` and `Emit` for Claude Code, GitHub Copilot, and Cursor hook configuration files, preserving unmappable entries and native handler fields for same-dialect round-trip
-- `sdk/agnostic/portconfig.Translate` for cross-agent hook config conversion with explicit warnings for lossy matchers, unsupported handler types, and unmappable events
 - `claude` package with typed Claude Code hook events, `Decode`/`Encode`, `On`/`Chain` registering into `sdk/run` (`On` panics on duplicate handler registration), and `sdk/claude/tools` lazy tool input helpers
 - `copilot` package with typed GitHub Copilot hook events, dual-format `Decode`/`Encode`, `On`/`Chain` registering into `sdk/run` (`On` panics on duplicate handler registration), `WithEvent` for camelCase payloads, and `sdk/copilot/tools` lazy tool input helpers
 - `cursor` package with typed Cursor hook events (21 surfaces), `Decode`/`Encode` (`ErrEventNameRequired` when `hook_event_name` and `WithEvent` are both absent), `On`/`Chain` registering into `sdk/run`, `WithEvent` for payloads missing `hook_event_name`, and `sdk/cursor/tools` lazy tool input helpers

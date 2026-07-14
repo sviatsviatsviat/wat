@@ -1,7 +1,8 @@
-package portconfig
+package model
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
@@ -51,26 +52,35 @@ type NativeEntry struct {
 // Warning describes information lost or approximated during parse or emit.
 type Warning string
 
-func appendEntry(cfg *Config, kind agnostic.Kind, e Entry) {
+// Warnf formats a warning message.
+func Warnf(format string, args ...any) Warning {
+	return Warning(fmt.Sprintf(format, args...))
+}
+
+// AppendEntry adds a hook entry to cfg.
+func AppendEntry(cfg *Config, kind agnostic.Kind, e Entry) {
 	if cfg.Hooks == nil {
 		cfg.Hooks = make(map[agnostic.Kind][]Entry)
 	}
 	cfg.Hooks[kind] = append(cfg.Hooks[kind], e)
 }
 
-func appendExtra(cfg *Config, event string, raw json.RawMessage) {
-	cfg.Extras = append(cfg.Extras, NativeEntry{Event: event, Raw: cloneRaw(raw)})
+// AppendExtra adds an unmappable native entry to cfg.
+func AppendExtra(cfg *Config, event string, raw json.RawMessage) {
+	cfg.Extras = append(cfg.Extras, NativeEntry{Event: event, Raw: CloneRaw(raw)})
 }
 
-func cloneRaw(raw json.RawMessage) json.RawMessage {
+// CloneRaw returns a copy of raw JSON.
+func CloneRaw(raw json.RawMessage) json.RawMessage {
 	return hookkit.CloneRaw(raw)
 }
 
-func parseHandlerJSON[T any](event string, handlerRaw json.RawMessage) (T, []Warning, bool) {
+// ParseHandlerJSON decodes handler JSON into T, returning warnings on failure.
+func ParseHandlerJSON[T any](event string, handlerRaw json.RawMessage) (T, []Warning, bool) {
 	h, err := hookkit.ParseHandler[T](handlerRaw)
 	if err != nil {
 		var zero T
-		return zero, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
+		return zero, []Warning{Warnf("%s: invalid handler JSON: %v", event, err)}, false
 	}
 	return h, nil, true
 }

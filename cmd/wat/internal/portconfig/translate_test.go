@@ -336,3 +336,60 @@ func TestTranslate_claudeGroupIfRule(t *testing.T) {
 		t.Errorf("expected group if permission rule warning, got %v", warns)
 	}
 }
+
+func TestTranslate_complexRegexKeptVerbatim(t *testing.T) {
+	raw := `{"hooks":{"PreToolUse":[{"matcher":"Bash{1,3}","hooks":[{"type":"command","command":"x.sh"}]}]}}`
+	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), "Bash{1,3}") {
+		t.Fatalf("complex regex should stay unchanged: %s", out)
+	}
+	found := false
+	for _, w := range warns {
+		if strings.Contains(string(w), "complex regex kept verbatim") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected complex regex warning, got %v", warns)
+	}
+}
+
+func TestTranslate_sourceNamedRegexWarns(t *testing.T) {
+	raw := `{"hooks":{"PreToolUse":[{"matcher":"^bash$","hooks":[{"type":"command","command":"x.sh"}]}]}}`
+	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), "^bash$") {
+		t.Fatalf("source-named regex should stay unchanged: %s", out)
+	}
+	found := false
+	for _, w := range warns {
+		if strings.Contains(string(w), "complex regex kept verbatim") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected complex regex warning for ^bash$, got %v", warns)
+	}
+}
+
+func TestTranslate_unknownTokenAlwaysWarns(t *testing.T) {
+	raw := `{"hooks":{"PreToolUse":[{"matcher":"unknownTool","hooks":[{"type":"command","command":"x.sh"}]}]}}`
+	_, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, w := range warns {
+		if strings.Contains(string(w), `matcher token "unknownTool"`) {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected warning for unknown token, got %v", warns)
+	}
+}

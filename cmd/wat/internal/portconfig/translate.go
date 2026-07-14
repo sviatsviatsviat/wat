@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
@@ -98,7 +99,7 @@ func prepareForTarget(cfg *Config, from, to agnostic.Dialect) []Warning {
 	cfg.Hooks = filtered
 
 	for _, extra := range cfg.Extras {
-		warns = append(warns, warnf("%s: native entry not portable to %s; not ported", extra.Event, to))
+		warns = append(warns, model.Warnf("%s: native entry not portable to %s; not ported", extra.Event, to))
 	}
 	cfg.Extras = nil
 	return warns
@@ -110,14 +111,14 @@ func adaptEntry(e *Entry, kind agnostic.Kind, from, to agnostic.Dialect, timeout
 		if event == "" {
 			event = string(kind)
 		}
-		return []Warning{warnf("%s: no %s equivalent; not ported", event, to)}, false
+		return []Warning{model.Warnf("%s: no %s equivalent; not ported", event, to)}, false
 	}
 	if w, ok := handlerSupportedOnTarget(*e, kind, to); !ok {
 		return w, false
 	}
 	var warns []Warning
 	if from == agnostic.Cursor && to != agnostic.Cursor && agnostic.IsCursorDedicatedEvent(e.NativeEvent) {
-		warns = append(warns, warnf("%s: Cursor dedicated event maps to generic %s on %s; review matcher and payload semantics",
+		warns = append(warns, model.Warnf("%s: Cursor dedicated event maps to generic %s on %s; review matcher and payload semantics",
 			e.NativeEvent, eventForKind(to, kind), to))
 	}
 	if from == agnostic.Claude {
@@ -144,7 +145,7 @@ func applyExplicitTimeout(e *Entry, from, to agnostic.Dialect, timeoutWarned *bo
 	}
 	var warns []Warning
 	if !*timeoutWarned {
-		warns = append(warns, warnf("unset timeout: %s default %ds vs %s default %ds; emitting explicit %ds from source",
+		warns = append(warns, model.Warnf("unset timeout: %s default %ds vs %s default %ds; emitting explicit %ds from source",
 			from, fromDefault, to, toDefault, fromDefault))
 		*timeoutWarned = true
 	}
@@ -173,7 +174,7 @@ func handlerSupportedOnTarget(e Entry, kind agnostic.Kind, to agnostic.Dialect) 
 			if event == "" {
 				event = eventForKind(to, kind)
 			}
-			return []Warning{warnf("%s: Cursor has no http hooks; not ported", event)}, false
+			return []Warning{model.Warnf("%s: Cursor has no http hooks; not ported", event)}, false
 		}
 	case agnostic.Copilot:
 		switch e.Type {
@@ -183,14 +184,14 @@ func handlerSupportedOnTarget(e Entry, kind agnostic.Kind, to agnostic.Dialect) 
 				if event == "" {
 					event = eventForKind(to, kind)
 				}
-				return []Warning{warnf("%s: Copilot supports prompt hooks only on sessionStart; not ported", event)}, false
+				return []Warning{model.Warnf("%s: Copilot supports prompt hooks only on sessionStart; not ported", event)}, false
 			}
 		default:
 			event := e.NativeEvent
 			if event == "" {
 				event = eventForKind(to, kind)
 			}
-			return []Warning{warnf("%s: unsupported handler type %q on Copilot; not ported", event, e.Type)}, false
+			return []Warning{model.Warnf("%s: unsupported handler type %q on Copilot; not ported", event, e.Type)}, false
 		}
 	}
 	return nil, true
@@ -198,7 +199,7 @@ func handlerSupportedOnTarget(e Entry, kind agnostic.Kind, to agnostic.Dialect) 
 
 func claudeIfWarnings(groupIf, handlerRaw json.RawMessage) []Warning {
 	if len(groupIf) > 0 || hasJSONField(handlerRaw, "if") {
-		return []Warning{warnf("Claude if permission rule has no target equivalent")}
+		return []Warning{model.Warnf("Claude if permission rule has no target equivalent")}
 	}
 	return nil
 }
@@ -236,7 +237,7 @@ func droppedRawFieldWarnings(from agnostic.Dialect, raw json.RawMessage) []Warni
 	if len(dropped) == 0 {
 		return nil
 	}
-	return []Warning{warnf("handler fields not portable to other agents: %s", strings.Join(dropped, ", "))}
+	return []Warning{model.Warnf("handler fields not portable to other agents: %s", strings.Join(dropped, ", "))}
 }
 
 func defaultTimeoutFor(d agnostic.Dialect) int {
@@ -268,8 +269,12 @@ func translateMatcher(matcher string, kind agnostic.Kind, from, to agnostic.Dial
 		if m := copilotAnchoredPattern.FindStringSubmatch(matcher); len(m) == 2 {
 			original := matcher
 			matcher = m[1]
-			warns = append(warns, warnf("matcher %q: Copilot anchored regex un-anchored for %s", original, to))
+			warns = append(warns, model.Warnf("matcher %q: Copilot anchored regex un-anchored for %s", original, to))
 		}
+	}
+	if !isSimpleAlternation(matcher) && !isSingleSimpleToken(matcher) {
+		warns = append(warns, model.Warnf("matcher %q: complex regex kept verbatim for %s", matcher, to))
+		return matcher, warns
 	}
 	matcher, tokenWarns := translateToolTokens(matcher, to)
 	warns = append(warns, tokenWarns...)
@@ -277,7 +282,7 @@ func translateMatcher(matcher string, kind agnostic.Kind, from, to agnostic.Dial
 		if isSimpleAlternation(matcher) {
 			matcher = "^(?:" + matcher + ")$"
 		} else if !copilotAnchoredPattern.MatchString(matcher) {
-			warns = append(warns, warnf("matcher %q: complex regex kept verbatim for Copilot; verify anchored form", matcher))
+			warns = append(warns, model.Warnf("matcher %q: complex regex kept verbatim for Copilot; verify anchored form", matcher))
 		}
 	}
 	return matcher, warns
@@ -294,7 +299,7 @@ func translateToolTokens(matcher string, to agnostic.Dialect) (string, []Warning
 		canon, mcp := agnostic.NormalizeToolName(tok)
 		if mcp {
 			out = append(out, tok)
-			warns = append(warns, warnf("matcher %q: MCP tool pattern kept verbatim; verify %s naming", tok, to))
+			warns = append(warns, model.Warnf("matcher %q: MCP tool pattern kept verbatim; verify %s naming", tok, to))
 			continue
 		}
 		if native, ok := target[canon]; ok {
@@ -302,9 +307,7 @@ func translateToolTokens(matcher string, to agnostic.Dialect) (string, []Warning
 			continue
 		}
 		out = append(out, tok)
-		if canon != tok {
-			warns = append(warns, warnf("matcher token %q has no %s equivalent; kept verbatim", tok, to))
-		}
+		warns = append(warns, model.Warnf("matcher token %q has no %s equivalent; kept verbatim", tok, to))
 	}
 	return strings.Join(out, sep), warns
 }
@@ -313,6 +316,23 @@ func splitMatcherTokens(matcher string) []string {
 	return strings.FieldsFunc(matcher, func(r rune) bool {
 		return r == '|' || r == ','
 	})
+}
+
+func isSingleSimpleToken(matcher string) bool {
+	parts := splitMatcherTokens(matcher)
+	if len(parts) != 1 {
+		return false
+	}
+	tok := strings.TrimSpace(parts[0])
+	if tok == "" {
+		return false
+	}
+	for _, r := range tok {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' && r != '-' {
+			return false
+		}
+	}
+	return true
 }
 
 func isSimpleAlternation(matcher string) bool {

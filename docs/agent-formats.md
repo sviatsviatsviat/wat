@@ -1,6 +1,6 @@
 # Agent hook formats
 
-Reference for tool names, MCP naming, and payload conventions across Claude Code, GitHub Copilot, and Cursor. Use this when implementing normalization, codecs, matchers, or portconfig translation.
+Reference for tool names, MCP naming, and payload conventions across Claude Code, GitHub Copilot, and Cursor. Use this when implementing normalization, codecs, matchers, or `wat port` config translation.
 
 Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference), [copilot-sdk#869](https://github.com/github/copilot-sdk/issues/869).
 
@@ -235,7 +235,7 @@ Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preTo
 
 ## Related code
 
-- Config porting: [`sdk/agnostic/portconfig`](../sdk/agnostic/portconfig/) — `Parse`, `Emit`, `Translate`
+- Config porting: `wat port --from` / `--to` (see [`cmd/wat/port.go`](../cmd/wat/port.go))
 - Detection: [`sdk/agnostic/dialect.go`](../sdk/agnostic/dialect.go) — `ParseDialect`, `Detect`
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
 - Normalization: [`sdk/agnostic/event.go`](../sdk/agnostic/event.go) — `NormalizeToolName`, `InputAs`
