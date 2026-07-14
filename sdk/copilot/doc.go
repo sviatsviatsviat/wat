@@ -1,6 +1,7 @@
 // Package copilot is the GitHub Copilot hook SDK. Hook authors register
-// typed handlers with On into the shared run registry, then call run.Main
-// from github.com/sviatsviatsviat/wat/sdk/run with run.WithEvent when needed.
+// typed handlers with On (chainable via Chain) into the shared run registry,
+// then call run.Main from github.com/sviatsviatsviat/wat/sdk/run with
+// run.WithEvent when needed.
 //
 // Encode returns flat camelCase stdout JSON and a process exit code. camelCase
 // payloads require run.WithEvent (or Decode WithEvent) unless hook_event_name

@@ -44,21 +44,10 @@ func NewRegistry() *Registry {
 	}
 }
 
-// Default returns the package-level singleton registry.
-func Default() *Registry {
-	return defaultRegistry
-}
-
 // Reset clears handlers on the default registry but preserves registered dialects.
 // It is intended for tests.
 func Reset() {
 	defaultRegistry.resetHandlers()
-}
-
-// ResetDialect clears handlers for dialect on the default registry but preserves
-// dialect ops and handlers for other dialects. It is intended for tests.
-func ResetDialect(dialect string) {
-	defaultRegistry.resetDialectHandlers(dialect)
 }
 
 // ResetOwner removes handlers registered by owner on the default registry.
@@ -148,15 +137,6 @@ func (r *Registry) resetHandlers() {
 	r.anyHandlers = make(map[string][]ownedProducer)
 	for name := range r.handlers {
 		r.handlers[name] = make(map[string][]ownedProducer)
-	}
-}
-
-func (r *Registry) resetDialectHandlers(dialect string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	delete(r.anyHandlers, dialect)
-	if r.handlers[dialect] != nil {
-		r.handlers[dialect] = make(map[string][]ownedProducer)
 	}
 }
 

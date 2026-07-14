@@ -16,7 +16,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 | `envelope_meta.go` | Compile-time envelope metadata (raw JSON preservation) |
 | `event.go` | Typed inbound event structs |
 | `output.go` | Typed handler response structs |
-| `decode.go` | `Decode`, `ParseEvent`, `RawBytes`, `EnvelopeOf` |
+| `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf` |
 | `encode.go` | `Encode` (wire mapping) |
 | `mux.go` | `On`, fluent `Chain` methods, registers into `sdk/run` |
 | `options.go` | Encode and run configuration (`WithEvent`, `WithFailPolicy`, …) |
@@ -172,7 +172,7 @@ Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
 
 | Constant | Value | When |
 |---|---|---|
-| `copilot.HandlerErrorExit` / `CopilotHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `copilot.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
 | `copilot.PreToolErrorExit` / `CopilotPreToolErrorExit` | `1` | Same value; use when a `preToolUse` handler returns an error (fail-closed deny) |
 | `copilot.WarnExit` / `CopilotWarnExit` | `2` | `Encode` returns this for documented `permissionRequest` deny and `postToolUseFailure` context paths |
 
@@ -242,7 +242,7 @@ Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preTo
 - Tests: [`sdk/agnostic/event_test.go`](../sdk/agnostic/event_test.go)
 - Claude codec: [`sdk/agnostic/claude.go`](../sdk/agnostic/claude.go) — `ClaudeCodec`, `CodecFor`
 - Tests: [`sdk/agnostic/claude_test.go`](../sdk/agnostic/claude_test.go)
-- Copilot codec: [`sdk/agnostic/copilot.go`](../sdk/agnostic/copilot.go) — `CopilotCodec`, `CopilotHandlerErrorExit`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
+- Copilot codec: [`sdk/agnostic/copilot.go`](../sdk/agnostic/copilot.go) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
 - Tests: [`sdk/agnostic/copilot_test.go`](../sdk/agnostic/copilot_test.go)
 - Cursor codec: [`sdk/agnostic/cursor.go`](../sdk/agnostic/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit` (adapts `cursor`)
 - Tests: [`sdk/agnostic/cursor_test.go`](../sdk/agnostic/cursor_test.go)

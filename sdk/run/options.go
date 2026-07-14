@@ -13,7 +13,6 @@ type Config struct {
 	Dialect        string
 	EventHint      string
 	Getenv         func(string) string
-	FailClosed     bool
 	dialectConfigs map[string]any
 }
 
@@ -76,13 +75,6 @@ func WithEvent(name string) Option {
 func WithGetenv(getenv func(string) string) Option {
 	return func(c *Config) {
 		c.Getenv = getenv
-	}
-}
-
-// WithFailClosed selects fail-closed handler error behavior where supported.
-func WithFailClosed(failClosed bool) Option {
-	return func(c *Config) {
-		c.FailClosed = failClosed
 	}
 }
 

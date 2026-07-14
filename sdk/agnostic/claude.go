@@ -68,23 +68,3 @@ func mapClaudeDecodeError(err error) error {
 		return fmt.Errorf("claude: %w", err)
 	}
 }
-
-// As re-decodes Event.Raw into a claude native event type.
-func As[T claude.Event](ev *Event) (T, error) {
-	var zero T
-	if ev == nil || len(ev.Raw) == 0 {
-		return zero, fmt.Errorf("claude: As: empty event")
-	}
-	if ev.Agent != Claude {
-		return zero, fmt.Errorf("claude: As: event is %v, not Claude", ev.Agent)
-	}
-	native, err := claude.Decode(ev.Raw)
-	if err != nil {
-		return zero, err
-	}
-	typed, ok := native.(T)
-	if !ok {
-		return zero, fmt.Errorf("claude: As: decoded %T, want %T", native, zero)
-	}
-	return typed, nil
-}

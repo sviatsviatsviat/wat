@@ -3,7 +3,6 @@ package claude
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
@@ -73,15 +72,6 @@ func Decode(raw []byte) (Event, error) {
 	return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
 }
 
-// ParseEvent reads and decodes a hook payload from r.
-func ParseEvent(r io.Reader) (Event, error) {
-	raw, err := io.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("claude: read payload: %w", err)
-	}
-	return Decode(raw)
-}
-
 // RawBytes returns the untouched JSON for an event when available.
 func RawBytes(ev Event) json.RawMessage {
 	var rawEventRaw json.RawMessage
@@ -95,11 +85,6 @@ func RawBytes(ev Event) json.RawMessage {
 	return hookkit.RawBytes(ev, rawEventRaw, accessor, func(v any) ([]byte, error) {
 		return json.Marshal(v)
 	})
-}
-
-// CloneRaw copies raw JSON for independent mutation.
-func CloneRaw(raw json.RawMessage) json.RawMessage {
-	return hookkit.CloneRaw(raw)
 }
 
 // EnvelopeOf returns the shared envelope from a decoded event.

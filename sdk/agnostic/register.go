@@ -32,26 +32,10 @@ func (c *Chain) On(kind Kind, fn HandlerFunc) *Chain {
 	return c
 }
 
-// OnAny registers another catch-all handler on the chain.
-func (c *Chain) OnAny(fn HandlerFunc) *Chain {
-	registerAny(fn)
-	return c
-}
-
-// Run executes the shared hook lifecycle via run.Main.
-func (c *Chain) Run(opts ...run.Option) {
-	run.Main(opts...)
-}
-
 // Serve reads a hook payload from in, dispatches registered handlers, writes
 // encoded stdout to out, diagnostics to errw, and returns the process exit code.
 func Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Writer, opts ...run.Option) int {
 	return run.Serve(ctx, in, out, errw, opts...)
-}
-
-// Main runs Serve with os.Stdin, os.Stdout, and os.Stderr, then os.Exit.
-func Main(opts ...run.Option) {
-	run.Main(opts...)
 }
 
 // WithDialect forces a dialect instead of auto-detection.

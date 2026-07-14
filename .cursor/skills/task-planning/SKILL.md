@@ -50,7 +50,7 @@ Copy and tailor this block into every new or updated task plan:
 
 ## Planning workflow
 
-1. Read the design section and any prototype under `plan/agenthooks/`.
+1. Read the design section in `plan/hooks-abstraction-design.md` and the shipped SDK under `sdk/`.
 2. List **in scope** vs **deferred** (name the future task file).
 3. Ask the user when a cross-task dependency is ambiguous (e.g. minimal type stub now vs full feature later).
 4. Add **Definition of done** before handing off to implementation.

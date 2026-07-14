@@ -53,7 +53,7 @@ func CacheWarm(deps Deps, ctx Context) []Result {
 			Group:   "cache",
 			Status:  Warn,
 			Message: "cannot compute cache key for current hook sources",
-			Fix:     "run wat test --fixture testdata/fixtures/ to warm the cache after fixing .wat/",
+			Fix:     "run wat test --fixture testdata/fixtures/claude/pre_tool_force_push.json to warm the cache after fixing .wat/",
 		}}
 	}
 	key, err := deps.HookBuildCacheKey(ctx.WatDir)
@@ -62,7 +62,7 @@ func CacheWarm(deps Deps, ctx Context) []Result {
 			Group:   "cache",
 			Status:  Warn,
 			Message: "cannot compute cache key for current hook sources",
-			Fix:     "run wat test --fixture testdata/fixtures/ to warm the cache after fixing .wat/",
+			Fix:     "run wat test --fixture testdata/fixtures/claude/pre_tool_force_push.json to warm the cache after fixing .wat/",
 		}}
 	}
 	binPath := deps.HooksBinaryPath(ctx.WatDir, key)
@@ -72,7 +72,7 @@ func CacheWarm(deps Deps, ctx Context) []Result {
 				Group:   "cache",
 				Status:  Warn,
 				Message: "no cached binary for current hook sources",
-				Fix:     "run wat test --fixture testdata/fixtures/ to warm the cache",
+				Fix:     "run wat test --fixture testdata/fixtures/claude/pre_tool_force_push.json to warm the cache",
 			}}
 		}
 		return []Result{{

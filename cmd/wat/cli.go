@@ -22,13 +22,12 @@ type subcommand struct {
 }
 
 type subcommandRunner struct {
-	name        string
-	summary     string
-	long        string
-	fs          *flag.FlagSet
-	shared      *sharedFlags
-	run         func() int
-	notImplNote string
+	name    string
+	summary string
+	long    string
+	fs      *flag.FlagSet
+	shared  *sharedFlags
+	run     func() int
 }
 
 var subcommands = []subcommand{
@@ -120,9 +119,6 @@ func (c *subcommandRunner) helpText() string {
 			_ = tw.Flush()
 			fmt.Fprint(&b, "\n")
 		}
-	}
-	if c.notImplNote != "" {
-		fmt.Fprintf(&b, "%s\n", c.notImplNote)
 	}
 	return b.String()
 }

@@ -675,14 +675,28 @@ func TestParseHandler_RoundTrip(t *testing.T) {
 }
 
 func TestHandlers_EncodesMultiple(t *testing.T) {
-	blobs, err := hookkit.Handlers(
-		copilot.Handler{Type: "command", Command: "a"},
-		copilot.Handler{Type: "command", Command: "b"},
-	)
-	if err != nil {
-		t.Fatal(err)
+	handlers := []copilot.Handler{
+		{Type: "command", Command: "a"},
+		{Type: "command", Command: "b"},
+	}
+	blobs := make([]json.RawMessage, 0, len(handlers))
+	for _, h := range handlers {
+		raw, err := hookkit.MarshalHandler(h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		blobs = append(blobs, raw)
 	}
 	if len(blobs) != 2 {
 		t.Fatalf("len = %d", len(blobs))
+	}
+	for i, wantCommand := range []string{"a", "b"} {
+		got, err := hookkit.ParseHandler[copilot.Handler](blobs[i])
+		if err != nil {
+			t.Fatalf("blobs[%d]: parse: %v", i, err)
+		}
+		if got.Command != wantCommand {
+			t.Fatalf("blobs[%d].Command = %q, want %q", i, got.Command, wantCommand)
+		}
 	}
 }

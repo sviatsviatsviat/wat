@@ -4,7 +4,6 @@ package main
 const (
 	exitOK             = 0
 	exitUsage          = 1
-	exitNotImplemented = 2
 	exitRuntimeFailure = 3
 	exitCheckFailed    = 4
 
@@ -14,7 +13,6 @@ const (
 	exitBuildFailed = 1
 
 	// exitFailClosed is used when --fail-closed is set and the hook script build
-	// fails; it intentionally matches exitNotImplemented (2) because many agents
-	// interpret exit code 2 as block/deny.
+	// fails. Exit code 2 is chosen because many agents interpret it as block/deny.
 	exitFailClosed = 2
 )

@@ -26,12 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `sdk/agnostic/portconfig.Parse` and `Emit` for Claude Code, GitHub Copilot, and Cursor hook configuration files, preserving unmappable entries and native handler fields for same-dialect round-trip
 - `sdk/agnostic/portconfig.Translate` for cross-agent hook config conversion with explicit warnings for lossy matchers, unsupported handler types, and unmappable events
 - `claude` package with typed Claude Code hook events, `Decode`/`Encode`, `On`/`Chain` registering into `sdk/run` (`On` panics on duplicate handler registration), and `sdk/claude/tools` lazy tool input helpers
-- `agnostic.As` to re-decode unified events into native `claude` types for long-tail Claude events
 - `copilot` package with typed GitHub Copilot hook events, dual-format `Decode`/`Encode`, `On`/`Chain` registering into `sdk/run` (`On` panics on duplicate handler registration), `WithEvent` for camelCase payloads, and `sdk/copilot/tools` lazy tool input helpers
-- `cursor` package with typed Cursor hook events (21 surfaces), `Decode`/`Encode` (`ErrEventNameRequired` when `hook_event_name` and `WithEvent` are both absent), `On`/`Chain` registering into `sdk/run`, `WithEvent` for payloads missing `hook_event_name`, `sdk/cursor/tools` lazy tool input helpers, and env helpers (`CURSOR_PROJECT_DIR`, `CURSOR_VERSION`)
-- `agnostic.AsCursor` to re-decode unified events into native `cursor` types
+- `cursor` package with typed Cursor hook events (21 surfaces), `Decode`/`Encode` (`ErrEventNameRequired` when `hook_event_name` and `WithEvent` are both absent), `On`/`Chain` registering into `sdk/run`, `WithEvent` for payloads missing `hook_event_name`, and `sdk/cursor/tools` lazy tool input helpers
 - `claude.EnvelopeOf` and decode error sentinels (`ErrEmptyPayload`, `ErrDecodePayload`) for stable envelope access and error handling
 - `claude.Handler.TimeoutSeconds` for hook config timeout lookup
-- `claude.HandlerErrorExit`, `claude.FailBlockExit`, `copilot.HandlerErrorExit`, and `agnostic.CopilotHandlerErrorExit` for named handler-error exit codes
+- `claude.HandlerErrorExit` and `copilot.HandlerErrorExit` for handler-error exit codes
+- `claude.FailBlockExit` for fail-closed blocking when `WithFailPolicy(FailBlock)` is active
 - Decoder registry parity tests in `claude` and `copilot` (`envelope_meta_test.go`)
 - Typed decode failures in `copilot` and `cursor` wrap `ErrDecodePayload` for stable `errors.Is` checks

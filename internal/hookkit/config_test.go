@@ -31,7 +31,7 @@ func TestHandlers(t *testing.T) {
 	type handler struct {
 		Type string `json:"type"`
 	}
-	raws, err := Handlers(
+	raws, err := handlers(
 		handler{Type: "command"},
 		handler{Type: "prompt"},
 	)

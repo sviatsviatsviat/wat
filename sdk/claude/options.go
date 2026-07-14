@@ -81,19 +81,3 @@ func WithAppendFile(appendFile func(path string, data []byte) error) Option {
 		c.appendFile = appendFile
 	}
 }
-
-// WithRunGetenv injects environment lookup for claude handlers at serve time.
-func WithRunGetenv(getenv func(string) string) run.Option {
-	return func(c *run.Config) {
-		rc := claudeRunConfig(c)
-		rc.getenv = getenv
-	}
-}
-
-// WithRunAppendFile injects file append for claude handlers at serve time.
-func WithRunAppendFile(appendFile func(path string, data []byte) error) run.Option {
-	return func(c *run.Config) {
-		rc := claudeRunConfig(c)
-		rc.appendFile = appendFile
-	}
-}

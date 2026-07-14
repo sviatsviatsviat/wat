@@ -11,7 +11,7 @@
 
 **Module graph:** `wat` depends on `sdk/agnostic`. Per-agent SDKs do not depend on `sdk/agnostic`.
 
-**Design docs:** Local-only `plan/` directory (gitignored). Prototype code in `plan/agenthooks/` is reference material for tasks 02–10.
+**Design docs:** Local-only `plan/` directory (gitignored) for task and design notes.
 
 **Development environment:** Linux Dev Container — see [.devcontainer/README.md](.devcontainer/README.md). Workspace lives on named volume `wat-workspace` at `/workspaces/wat` (no Windows bind mount).
 

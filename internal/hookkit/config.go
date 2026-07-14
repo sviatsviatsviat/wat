@@ -27,8 +27,8 @@ func MarshalHandler[T any](h T) (json.RawMessage, error) {
 	return json.Marshal(h)
 }
 
-// Handlers encodes typed handlers as native handler JSON blobs.
-func Handlers[T any](h ...T) ([]json.RawMessage, error) {
+// handlers encodes typed handlers as native handler JSON blobs.
+func handlers[T any](h ...T) ([]json.RawMessage, error) {
 	out := make([]json.RawMessage, 0, len(h))
 	for _, handler := range h {
 		raw, err := MarshalHandler(handler)

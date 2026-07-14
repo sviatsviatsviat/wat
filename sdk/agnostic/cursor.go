@@ -67,26 +67,6 @@ func (c *CursorCodec) Encode(ev *Event, res Result) ([]byte, int, error) {
 	return b, code, err
 }
 
-// AsCursor re-decodes Event.Raw into a cursor native event type.
-func AsCursor[T cursor.Event](ev *Event) (T, error) {
-	var zero T
-	if ev == nil || len(ev.Raw) == 0 {
-		return zero, fmt.Errorf("cursor: AsCursor: empty event")
-	}
-	if ev.Agent != Cursor {
-		return zero, fmt.Errorf("cursor: AsCursor: event is %v, not Cursor", ev.Agent)
-	}
-	native, err := cursor.Decode(ev.Raw, cursor.WithEvent(ev.Name))
-	if err != nil {
-		return zero, err
-	}
-	typed, ok := native.(T)
-	if !ok {
-		return zero, fmt.Errorf("cursor: AsCursor: decoded %T, want %T", native, zero)
-	}
-	return typed, nil
-}
-
 func mapCursorDecodeError(err error) error {
 	switch {
 	case errors.Is(err, cursor.ErrDecodePayload), errors.Is(err, cursor.ErrEmptyPayload):

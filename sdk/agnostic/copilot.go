@@ -11,9 +11,6 @@ import (
 // an error. Copilot command hooks fail-closed on non-zero exits other than 2.
 const CopilotPreToolErrorExit = copilot.PreToolErrorExit
 
-// CopilotHandlerErrorExit is exit code 1 for handler errors under fail-open policy.
-const CopilotHandlerErrorExit = copilot.HandlerErrorExit
-
 // CopilotWarnExit is exit code 2. Copilot treats it as a warning by default;
 // for permissionRequest it means deny, and for postToolUseFailure it carries
 // additionalContext in stdout.
@@ -78,26 +75,6 @@ func mapCopilotDecodeError(err error) error {
 	default:
 		return fmt.Errorf("copilot: %w", err)
 	}
-}
-
-// AsCopilot re-decodes Event.Raw into a copilot native event type.
-func AsCopilot[T copilot.Event](ev *Event) (T, error) {
-	var zero T
-	if ev == nil || len(ev.Raw) == 0 {
-		return zero, fmt.Errorf("copilot: AsCopilot: empty event")
-	}
-	if ev.Agent != Copilot {
-		return zero, fmt.Errorf("copilot: AsCopilot: event is %v, not Copilot", ev.Agent)
-	}
-	native, err := copilot.Decode(ev.Raw, copilot.WithEvent(ev.Name))
-	if err != nil {
-		return zero, err
-	}
-	typed, ok := native.(T)
-	if !ok {
-		return zero, fmt.Errorf("copilot: AsCopilot: decoded %T, want %T", native, zero)
-	}
-	return typed, nil
 }
 
 func copilotEncodeEventName(ev *Event) string {

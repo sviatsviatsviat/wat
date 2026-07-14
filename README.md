@@ -29,7 +29,7 @@ Run `wat help` for the command list or `wat <command> -h` for per-command flags.
 |------|---------|
 | `0` | Success |
 | `1` | Usage error (unknown command, invalid flags) |
-| `2` | Command not yet implemented |
+| `2` | `wat run --fail-closed` build failure (block/deny) |
 | `3` | Runtime failure (missing project, I/O error, translation failure) |
 | `4` | `wat doctor` check failure |
 
