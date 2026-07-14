@@ -49,12 +49,6 @@ func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
 	return name, nil
 }
 
-// On registers a typed handler for event type E into the shared run registry.
-func On[E Event, O any](fn func(context.Context, E) (O, error)) *Chain {
-	registerHandler(fn)
-	return &Chain{}
-}
-
 func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return

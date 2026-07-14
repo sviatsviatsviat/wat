@@ -18,7 +18,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 | `output.go` | Typed handler response structs |
 | `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf` |
 | `encode.go` | `Encode` (wire mapping) |
-| `mux.go` | `On`, fluent `Chain` methods, registers into `sdk/run` |
+| `mux.go` | Fluent `Chain` methods, registers into `sdk/run` |
 | `options.go` | Encode and run configuration (`WithEvent`, `WithFailPolicy`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
@@ -112,9 +112,9 @@ Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) a
 | `SubagentStop` | yes | yes | yes | `OnSubagentStop` |
 | `Stop` | yes | yes | yes | `OnStop` |
 | `PreCompact` | yes | yes | yes | `OnPreCompact` (observe-only) |
-| `PermissionRequest` | yes | yes | no | no — use `claude.On` / `copilot.On` |
-| `Notification` | yes | yes | no | no — use `claude.On` / `copilot.On` |
-| `AgentError` | yes | yes | no | no — use `claude.On` / `copilot.On` |
+| `PermissionRequest` | yes | yes | no | no — use `Chain.PermissionRequest` on `sdk/claude` / `sdk/copilot` |
+| `Notification` | yes | yes | no | no — use `Chain.Notification` on `sdk/claude` / `sdk/copilot` |
+| `AgentError` | yes | yes | no | no — decode-only typed events (`StopFailure`, `errorOccurred`) |
 | `Other` | yes | yes | yes | no |
 
 Observe-only handlers accept decoded events but produce no hook stdout JSON.
@@ -322,5 +322,5 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`sdk/agnostic/copilot/codec_test.go`](../sdk/agnostic/copilot/codec_test.go)
 - Cursor codec: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit`
 - Tests: [`sdk/agnostic/cursor/codec_test.go`](../sdk/agnostic/cursor/codec_test.go)
-- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `On`/`Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` lazy tool input helpers
+- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` lazy tool input helpers
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)
