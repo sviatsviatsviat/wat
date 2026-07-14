@@ -275,8 +275,8 @@ func TestResetHandlers_OwnerScoped(t *testing.T) {
 	OnPostTool(func(ctx context.Context, ev *Event, r PostToolResults) (PostToolResult, error) {
 		return r.Context("from-agnostic"), nil
 	})
-	claude.On(func(ctx context.Context, ev claude.PostToolUse) (claude.PostToolUseOutput, error) {
-		return claude.PostToolUseOutput{AdditionalContext: "from-claude"}, nil
+	new(claude.Chain).PostToolUse(func(ctx context.Context, ev claude.PostToolUse, r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
+		return r.Context("from-claude"), nil
 	})
 
 	ResetHandlers()
@@ -302,8 +302,8 @@ func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 	OnPostTool(func(ctx context.Context, ev *Event, r PostToolResults) (PostToolResult, error) {
 		return r.Context("from-agnostic"), nil
 	})
-	claude.On(func(ctx context.Context, ev claude.PostToolUse) (claude.PostToolUseOutput, error) {
-		return claude.PostToolUseOutput{AdditionalContext: "from-claude"}, nil
+	new(claude.Chain).PostToolUse(func(ctx context.Context, ev claude.PostToolUse, r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
+		return r.Context("from-claude"), nil
 	})
 
 	var stdout bytes.Buffer

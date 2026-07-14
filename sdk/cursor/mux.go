@@ -95,33 +95,69 @@ func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
 }
 
 // BeforeShellExecution registers a beforeShellExecution handler.
-func (c *Chain) BeforeShellExecution(fn func(context.Context, BeforeShellExecution) (PermissionOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) BeforeShellExecution(fn func(context.Context, BeforeShellExecution, PermissionResults) (PermissionOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev BeforeShellExecution) (PermissionOutput, error) {
+		return fn(ctx, ev, permissionResults{})
+	})
+	return &Chain{}
 }
 
 // BeforeMCPExecution registers a beforeMCPExecution handler.
-func (c *Chain) BeforeMCPExecution(fn func(context.Context, BeforeMCPExecution) (PermissionOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) BeforeMCPExecution(fn func(context.Context, BeforeMCPExecution, PermissionResults) (PermissionOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev BeforeMCPExecution) (PermissionOutput, error) {
+		return fn(ctx, ev, permissionResults{})
+	})
+	return &Chain{}
 }
 
 // AfterFileEdit registers an afterFileEdit handler.
-func (c *Chain) AfterFileEdit(fn func(context.Context, AfterFileEdit) (PostToolOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) AfterFileEdit(fn func(context.Context, AfterFileEdit, PostToolResults) (PostToolOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev AfterFileEdit) (PostToolOutput, error) {
+		return fn(ctx, ev, postToolResults{})
+	})
+	return &Chain{}
 }
 
 // BeforeSubmitPrompt registers a beforeSubmitPrompt handler.
-func (c *Chain) BeforeSubmitPrompt(fn func(context.Context, BeforeSubmitPrompt) (BeforeSubmitPromptOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) BeforeSubmitPrompt(fn func(context.Context, BeforeSubmitPrompt, BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev BeforeSubmitPrompt) (BeforeSubmitPromptOutput, error) {
+		return fn(ctx, ev, beforeSubmitPromptResults{})
+	})
+	return &Chain{}
 }
 
 // Stop registers a stop handler.
-func (c *Chain) Stop(fn func(context.Context, Stop) (StopOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) Stop(fn func(context.Context, Stop, StopResults) (StopOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev Stop) (StopOutput, error) {
+		return fn(ctx, ev, stopResults{})
+	})
+	return &Chain{}
 }
 
 // SessionStart registers a sessionStart handler.
-func (c *Chain) SessionStart(fn func(context.Context, SessionStart) (SessionStartOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) SessionStart(fn func(context.Context, SessionStart, SessionStartResults) (SessionStartOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
+		return fn(ctx, ev, sessionStartResults{})
+	})
+	return &Chain{}
 }
 
 // ResetHandlers clears cursor registration tracking and cursor-owned handlers

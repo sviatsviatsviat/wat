@@ -117,58 +117,124 @@ func claudeConfigFrom(ctx context.Context) runtimeConfig {
 }
 
 // PreToolUse registers a PreToolUse handler.
-func (c *Chain) PreToolUse(fn func(context.Context, PreToolUse) (PreToolUseOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PreToolUse(fn func(context.Context, PreToolUse, PreToolUseResults) (PreToolUseOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PreToolUse) (PreToolUseOutput, error) {
+		return fn(ctx, ev, preToolUseResults{})
+	})
+	return &Chain{}
 }
 
 // PostToolUse registers a PostToolUse handler.
-func (c *Chain) PostToolUse(fn func(context.Context, PostToolUse) (PostToolUseOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PostToolUse(fn func(context.Context, PostToolUse, PostToolUseResults) (PostToolUseOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PostToolUse) (PostToolUseOutput, error) {
+		return fn(ctx, ev, postToolUseResults{})
+	})
+	return &Chain{}
 }
 
 // PostToolUseFailure registers a PostToolUseFailure handler.
-func (c *Chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailure) (PostToolUseOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailure, PostToolUseResults) (PostToolUseOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PostToolUseFailure) (PostToolUseOutput, error) {
+		return fn(ctx, ev, postToolUseResults{})
+	})
+	return &Chain{}
 }
 
 // PermissionRequest registers a PermissionRequest handler.
-func (c *Chain) PermissionRequest(fn func(context.Context, PermissionRequest) (PermissionRequestOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PermissionRequest(fn func(context.Context, PermissionRequest, PermissionRequestResults) (PermissionRequestOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
+		return fn(ctx, ev, permissionRequestResults{})
+	})
+	return &Chain{}
 }
 
 // UserPromptSubmit registers a UserPromptSubmit handler.
-func (c *Chain) UserPromptSubmit(fn func(context.Context, UserPromptSubmit) (UserPromptSubmitOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) UserPromptSubmit(fn func(context.Context, UserPromptSubmit, UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev UserPromptSubmit) (UserPromptSubmitOutput, error) {
+		return fn(ctx, ev, userPromptSubmitResults{})
+	})
+	return &Chain{}
 }
 
 // Stop registers a Stop handler.
-func (c *Chain) Stop(fn func(context.Context, Stop) (StopOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) Stop(fn func(context.Context, Stop, StopResults) (StopOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev Stop) (StopOutput, error) {
+		return fn(ctx, ev, stopResults{})
+	})
+	return &Chain{}
 }
 
 // SubagentStop registers a SubagentStop handler.
-func (c *Chain) SubagentStop(fn func(context.Context, SubagentStop) (StopOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) SubagentStop(fn func(context.Context, SubagentStop, StopResults) (StopOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev SubagentStop) (StopOutput, error) {
+		return fn(ctx, ev, stopResults{})
+	})
+	return &Chain{}
 }
 
 // SessionStart registers a SessionStart handler.
-func (c *Chain) SessionStart(fn func(context.Context, SessionStart) (SessionStartOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) SessionStart(fn func(context.Context, SessionStart, SessionStartResults) (SessionStartOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
+		return fn(ctx, ev, sessionStartResults{})
+	})
+	return &Chain{}
 }
 
 // SubagentStart registers a SubagentStart handler.
-func (c *Chain) SubagentStart(fn func(context.Context, SubagentStart) (CommonOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) SubagentStart(fn func(context.Context, SubagentStart, CommonResults) (CommonOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev SubagentStart) (CommonOutput, error) {
+		return fn(ctx, ev, commonResults{})
+	})
+	return &Chain{}
 }
 
 // Notification registers a Notification handler.
-func (c *Chain) Notification(fn func(context.Context, Notification) (CommonOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) Notification(fn func(context.Context, Notification, CommonResults) (CommonOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev Notification) (CommonOutput, error) {
+		return fn(ctx, ev, commonResults{})
+	})
+	return &Chain{}
 }
 
 // PreCompact registers a PreCompact handler.
-func (c *Chain) PreCompact(fn func(context.Context, PreCompact) (CommonOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PreCompact(fn func(context.Context, PreCompact, CommonResults) (CommonOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PreCompact) (CommonOutput, error) {
+		return fn(ctx, ev, commonResults{})
+	})
+	return &Chain{}
 }
 
 // ResetHandlers clears claude registration tracking and claude-owned handlers

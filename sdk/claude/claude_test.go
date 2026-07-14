@@ -51,11 +51,8 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 func TestMux_Serve_PreToolDeny(t *testing.T) {
 	run.Reset()
 	claude.ResetHandlers()
-	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
-		return claude.PreToolUseOutput{
-			Decision: claude.DecisionDeny,
-			Reason:   "destructive command",
-		}, nil
+	new(claude.Chain).PreToolUse(func(ctx context.Context, ev claude.PreToolUse, r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		return r.Deny("destructive command"), nil
 	})
 
 	var stdout bytes.Buffer
@@ -222,7 +219,7 @@ func TestDecode_InvalidJSON(t *testing.T) {
 func TestMux_FailPolicy(t *testing.T) {
 	run.Reset()
 	claude.ResetHandlers()
-	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+	new(claude.Chain).PreToolUse(func(ctx context.Context, ev claude.PreToolUse, _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return claude.PreToolUseOutput{}, context.Canceled
 	})
 
@@ -232,7 +229,7 @@ func TestMux_FailPolicy(t *testing.T) {
 	}
 	run.Reset()
 	claude.ResetHandlers()
-	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+	new(claude.Chain).PreToolUse(func(ctx context.Context, ev claude.PreToolUse, _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return claude.PreToolUseOutput{}, context.Canceled
 	})
 	code = run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailBlock))
@@ -244,7 +241,7 @@ func TestMux_FailPolicy(t *testing.T) {
 func TestMux_OnDuplicatePanics(t *testing.T) {
 	run.Reset()
 	claude.ResetHandlers()
-	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+	new(claude.Chain).PreToolUse(func(ctx context.Context, ev claude.PreToolUse, _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return claude.PreToolUseOutput{}, nil
 	})
 	defer func() {
@@ -252,7 +249,7 @@ func TestMux_OnDuplicatePanics(t *testing.T) {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+	new(claude.Chain).PreToolUse(func(ctx context.Context, ev claude.PreToolUse, _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return claude.PreToolUseOutput{}, nil
 	})
 }

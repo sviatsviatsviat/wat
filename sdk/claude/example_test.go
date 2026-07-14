@@ -7,10 +7,10 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleOn() {
-	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+func ExampleChain() {
+	new(claude.Chain).PreToolUse(func(ctx context.Context, ev claude.PreToolUse, r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		if ev.ToolName == "Bash" {
-			return claude.PreToolUseOutput{Decision: claude.DecisionDeny, Reason: "blocked"}, nil
+			return r.Deny("blocked"), nil
 		}
 		return claude.PreToolUseOutput{}, nil
 	})

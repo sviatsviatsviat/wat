@@ -7,10 +7,10 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleOn() {
-	cursor.On(func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
+func ExampleChain() {
+	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, ev cursor.BeforeShellExecution, r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		if ev.Command == "rm -rf /" {
-			return cursor.PermissionOutput{Decision: cursor.DecisionDeny, AgentMessage: "blocked"}, nil
+			return r.Deny("blocked"), nil
 		}
 		return cursor.PermissionOutput{}, nil
 	})

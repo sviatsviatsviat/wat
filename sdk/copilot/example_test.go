@@ -7,10 +7,10 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleOn() {
-	copilot.On(func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
+func ExampleChain() {
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, ev copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		if ev.ToolName == "powershell" {
-			return copilot.PreToolOutput{Decision: copilot.DecisionDeny, Reason: "blocked"}, nil
+			return r.Deny("blocked"), nil
 		}
 		return copilot.PreToolOutput{}, nil
 	})

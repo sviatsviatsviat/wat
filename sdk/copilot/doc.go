@@ -1,7 +1,7 @@
 // Package copilot is the GitHub Copilot hook SDK. Hook authors register
-// typed handlers with On (chainable via Chain) into the shared run registry,
-// then call run.Main from github.com/sviatsviatsviat/wat/sdk/run with
-// run.WithEvent when needed.
+// typed handlers with Chain methods into the shared run registry, then call
+// run.Main from github.com/sviatsviatsviat/wat/sdk/run with run.WithEvent when
+// needed.
 //
 // Encode returns flat camelCase stdout JSON and a process exit code. camelCase
 // payloads require run.WithEvent (or Decode WithEvent) unless hook_event_name
@@ -9,13 +9,13 @@
 //
 // Example:
 //
-//	copilot.On(func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
+//	new(copilot.Chain).PreToolUse(func(ctx context.Context, ev copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
 //	    if ev.NativeToolName() == "bash" {
-//	        return copilot.PreToolOutput{Decision: copilot.DecisionDeny, Reason: "blocked"}, nil
+//	        return r.Deny("blocked"), nil
 //	    }
 //	    return copilot.PreToolOutput{}, nil
 //	})
 //	run.Main(run.WithEvent("preToolUse"))
 //
-// See ExampleOn in example_test.go for a runnable example.
+// See ExampleChain in example_test.go for a runnable example.
 package copilot

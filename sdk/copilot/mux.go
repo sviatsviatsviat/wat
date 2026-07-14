@@ -99,33 +99,69 @@ func handlerErrorExit(eventName string) int {
 }
 
 // PreToolUse registers a PreToolUse handler.
-func (c *Chain) PreToolUse(fn func(context.Context, PreToolUse) (PreToolOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PreToolUse(fn func(context.Context, PreToolUse, PreToolResults) (PreToolOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PreToolUse) (PreToolOutput, error) {
+		return fn(ctx, ev, preToolResults{})
+	})
+	return &Chain{}
 }
 
 // PostToolUse registers a PostToolUse handler.
-func (c *Chain) PostToolUse(fn func(context.Context, PostToolUse) (PostToolOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PostToolUse(fn func(context.Context, PostToolUse, PostToolResults) (PostToolOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PostToolUse) (PostToolOutput, error) {
+		return fn(ctx, ev, postToolResults{})
+	})
+	return &Chain{}
 }
 
 // PostToolUseFailure registers a PostToolUseFailure handler.
-func (c *Chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailure) (PostToolFailureOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailure, PostToolFailureResults) (PostToolFailureOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PostToolUseFailure) (PostToolFailureOutput, error) {
+		return fn(ctx, ev, postToolFailureResults{})
+	})
+	return &Chain{}
 }
 
 // AgentStop registers an AgentStop handler.
-func (c *Chain) AgentStop(fn func(context.Context, AgentStop) (StopOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) AgentStop(fn func(context.Context, AgentStop, StopResults) (StopOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev AgentStop) (StopOutput, error) {
+		return fn(ctx, ev, stopResults{})
+	})
+	return &Chain{}
 }
 
 // PermissionRequest registers a PermissionRequest handler.
-func (c *Chain) PermissionRequest(fn func(context.Context, PermissionRequest) (PermissionRequestOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) PermissionRequest(fn func(context.Context, PermissionRequest, PermissionRequestResults) (PermissionRequestOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
+		return fn(ctx, ev, permissionRequestResults{})
+	})
+	return &Chain{}
 }
 
 // SessionStart registers a SessionStart handler.
-func (c *Chain) SessionStart(fn func(context.Context, SessionStart) (SessionStartOutput, error)) *Chain {
-	return On(fn)
+func (c *Chain) SessionStart(fn func(context.Context, SessionStart, SessionStartResults) (SessionStartOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
+		return fn(ctx, ev, sessionStartResults{})
+	})
+	return &Chain{}
 }
 
 // ResetHandlers clears copilot registration tracking and copilot-owned handlers
