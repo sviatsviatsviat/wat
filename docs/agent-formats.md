@@ -92,9 +92,63 @@ Payload shape is checked before environment variables because Cursor exports `CL
 
 **Ambiguous cases:** Copilot payloads always win over `CLAUDE_PROJECT_DIR` in the environment. Env-only detection with only `CLAUDE_PROJECT_DIR` may misidentify Copilot in repos that also have `.claude/settings.json`; prefer payload evidence or an explicit `--agent` override.
 
+## Portable agnostic API
+
+Typed registration methods (`OnPreTool`, `OnPostTool`, `OnStop`, and others) accept only **portable** event kinds — those present on Claude Code, GitHub Copilot, and Cursor. Each kind has its own result type (`PreToolResult`, `PostToolResult`, `StopResult`, …) so hook authors can only set fields every agent can encode. Use `sdk/claude`, `sdk/copilot`, or `sdk/cursor` directly for agent-only capabilities.
+
+Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) and `OnAny` take an `ObserveHandler` that returns only `error` — no hook response.
+
+### Event support matrix
+
+| Unified `Kind` | Claude | Copilot | Cursor | Portable handler |
+|---|---|---|---|---|
+| `SessionStart` | yes | yes | yes | `OnSessionStart` |
+| `SessionEnd` | yes | yes | yes | `OnSessionEnd` (observe-only) |
+| `UserPrompt` | yes | yes | yes | `OnUserPrompt` (observe-only) |
+| `PreTool` | yes | yes | yes (+ dedicated pre-events) | `OnPreTool` |
+| `PostTool` | yes | yes | yes (+ dedicated post-events) | `OnPostTool` |
+| `PostToolFailure` | yes | yes | yes | `OnPostToolFailure` |
+| `SubagentStart` | yes | yes | yes | `OnSubagentStart` (observe-only) |
+| `SubagentStop` | yes | yes | yes | `OnSubagentStop` |
+| `Stop` | yes | yes | yes | `OnStop` |
+| `PreCompact` | yes | yes | yes | `OnPreCompact` (observe-only) |
+| `PermissionRequest` | yes | yes | no | no — use `claude.On` / `copilot.On` |
+| `Notification` | yes | yes | no | no — use `claude.On` / `copilot.On` |
+| `AgentError` | yes | yes | no | no — use `claude.On` / `copilot.On` |
+| `Other` | yes | yes | yes | no |
+
+Observe-only handlers accept decoded events but produce no hook stdout JSON.
+
+### Portable result types
+
+| Kind | Result type | Fields |
+|---|---|---|
+| `PreTool` | `PreToolResult` | `Decision`, `Reason`, `UpdatedInput` |
+| `PostTool` | `PostToolResult` | `UpdatedOutput`, `Context` |
+| `PostToolFailure` | `PostToolFailureResult` | `Context` |
+| `Stop`, `SubagentStop` | `StopResult` | `FollowUp` |
+| `SessionStart` | `SessionStartResult` | `Context` |
+| `SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart` | — | observe-only (no result) |
+
+Helpers such as `PreToolDeny`, `PostToolContext`, and `StopFollowUp` construct common results. Multiple handlers for the same kind merge at the native JSON layer.
+
+### Agent-only capabilities
+
+Register with the per-agent SDK when you need features outside the portable intersection:
+
+| Capability | Agents | SDK |
+|---|---|---|
+| `BlockPrompt`, `SetTitle` | Claude, Cursor (prompt) | `sdk/claude`, `sdk/cursor` |
+| `Env` | Claude (`CLAUDE_ENV_FILE`), Cursor (stdout JSON) | `sdk/claude`, `sdk/cursor` |
+| `HaltSession` | Claude (broad), Copilot (`permissionRequest` interrupt) | `sdk/claude`, `sdk/copilot` |
+| `UserMessage` | Claude (`systemMessage`), Cursor (`user_message`) | `sdk/claude`, `sdk/cursor` |
+| `PermissionRequest` handlers | Claude, Copilot | `sdk/claude`, `sdk/copilot` |
+| `Context` on `PreTool` | Claude only | `sdk/claude` |
+| `Decision` on `SubagentStart` | Cursor only | `sdk/cursor` |
+
 ## Claude codec
 
-`agnostic.ClaudeCodec` decodes Claude Code hook stdin into `agnostic.Event` and encodes `agnostic.Result` into Claude stdout JSON. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
+`agnostic.ClaudeCodec` decodes Claude Code hook stdin into `agnostic.Event` and encodes portable hook responses into Claude stdout JSON. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
 
 ### Event name mapping
 
@@ -107,15 +161,24 @@ Payload shape is checked before environment variables because Cursor exports `CL
 
 ### Encode surfaces
 
-| Event kind | Key `Result` fields → Claude JSON |
-|---|---|
-| PreTool | `Decision`, `Reason` → `hookSpecificOutput.permissionDecision`; `UpdatedInput`, `Context` |
-| UserPrompt | `BlockPrompt` / `Decision` → top-level `decision:block`; `Context`, `SetTitle` |
-| Stop / SubagentStop | `FollowUp` → top-level `decision:block` + `reason`; `Context` |
-| SessionStart | `Context`, `SetTitle`; `Env` → append `export KEY='value'` lines to `$CLAUDE_ENV_FILE` |
-| Any | `HaltSession` → `continue:false`; `UserMessage` → `systemMessage` |
+`ClaudeCodec` encodes only the portable result subset. Full Claude response shapes (including `BlockPrompt`, `Env`, `HaltSession`, `SetTitle`, `UserMessage`, and `PermissionRequest`) are available through `sdk/claude`.
 
-When `$CLAUDE_ENV_FILE` is set, env keys must match `[A-Za-z_][A-Za-z0-9_]*`; invalid keys return an encode error before any file write. When `$CLAUDE_ENV_FILE` is unset, `Result.Env` on SessionStart is a no-op (not an error) and key validation is skipped.
+| Event kind | Portable fields → Claude JSON |
+|---|---|
+| PreTool | `Decision`, `Reason` → `hookSpecificOutput.permissionDecision`; `UpdatedInput` |
+| PostTool | `UpdatedOutput` → `updatedToolOutput`; `Context` → `additionalContext` |
+| PostToolFailure | `Context` → `additionalContext` |
+| Stop / SubagentStop | `FollowUp` → top-level `decision:block` + `reason` |
+| SessionStart | `Context` → `additionalContext` |
+
+Agent-native encode surfaces (use `sdk/claude` directly):
+
+| Event kind | Key fields |
+|---|---|
+| UserPrompt | `BlockPrompt`, `Context`, `SetTitle` |
+| PermissionRequest | `Decision`, `UpdatedInput`, `HaltSession`, `Context` |
+| SessionStart | `Env` → `$CLAUDE_ENV_FILE` append |
+| Any | `HaltSession` → `continue:false`; `UserMessage` → `systemMessage` |
 
 ### Exit codes
 
@@ -126,7 +189,7 @@ When `$CLAUDE_ENV_FILE` is set, env keys must match `[A-Za-z_][A-Za-z0-9_]*`; in
 
 ## Copilot codec
 
-`agnostic.CopilotCodec` decodes GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format and encodes `agnostic.Result` into flat camelCase stdout JSON.
+`agnostic.CopilotCodec` decodes GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format and encodes portable hook responses into flat camelCase stdout JSON.
 
 ### Wire formats
 
@@ -159,14 +222,22 @@ Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
 
 ### Encode surfaces
 
-| Event kind | Key `Result` fields → Copilot JSON | Exit code |
+`CopilotCodec` encodes only the portable result subset. Full Copilot response shapes are available through `sdk/copilot`.
+
+| Event kind | Portable fields → Copilot JSON | Exit code |
 |---|---|---|
 | PreTool | `Decision`, `Reason` → `permissionDecision`, `permissionDecisionReason`; `UpdatedInput` → `modifiedArgs` | `0` |
 | PostTool | `UpdatedOutput` → `modifiedResult`; `Context` → `additionalContext` | `0` |
 | Stop / SubagentStop | `FollowUp` → `decision:block` + `reason` | `0` |
-| PermissionRequest | `Decision`, `Reason`, `HaltSession` → `behavior`, `message`, `interrupt` | `2` on deny |
 | PostToolFailure | `Context` → stdout text (recovery guidance) | `2` |
-| SessionStart / SubagentStart / Notification | `Context` → `additionalContext` | `0` |
+| SessionStart | `Context` → `additionalContext` | `0` |
+
+Agent-native encode surfaces (use `sdk/copilot` directly):
+
+| Event kind | Key fields | Exit code |
+|---|---|---|
+| PermissionRequest | `Decision`, `Reason`, `HaltSession` → `behavior`, `message`, `interrupt` | `2` on deny |
+| SubagentStart / Notification | `Context` → `additionalContext` | `0` |
 
 ### Exit codes
 
@@ -174,13 +245,11 @@ Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
 |---|---|---|
 | `copilot.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
 | `copilot.PreToolErrorExit` / `CopilotPreToolErrorExit` | `1` | Same value; use when a `preToolUse` handler returns an error (fail-closed deny) |
-| `copilot.WarnExit` / `CopilotWarnExit` | `2` | `Encode` returns this for documented `permissionRequest` deny and `postToolUseFailure` context paths |
-
-Copilot-specific limitations (`BlockPrompt`, `Env`, most `HaltSession` cases) are reported via `Unsupported`.
+| `copilot.WarnExit` / `CopilotWarnExit` | `2` | `Encode` returns this for documented `postToolUseFailure` context paths |
 
 ## Cursor codec
 
-`agnostic.CursorCodec` decodes Cursor hook stdin into `agnostic.Event` and encodes `agnostic.Result` into Cursor stdout JSON.
+`agnostic.CursorCodec` decodes Cursor hook stdin into `agnostic.Event` and encodes portable hook responses into Cursor stdout JSON.
 
 Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`; the full payload stays in `Event.Raw`.
 
@@ -214,15 +283,24 @@ Dedicated shell, MCP, and file events are **folded** into unified pre/post tool 
 
 ### Encode surfaces
 
-| Event kind | Key `Result` fields → Cursor JSON | Exit code |
+`CursorCodec` encodes only the portable result subset. Full Cursor response shapes are available through `sdk/cursor`.
+
+| Event kind | Portable fields → Cursor JSON | Exit code |
 |---|---|---|
-| PreTool / dedicated pre-events / SubagentStart / `beforeTabFileRead` | `Decision` → `permission`; `UserMessage` → `user_message`; `Reason` → `agent_message`; `UpdatedInput` → `updated_input` (preToolUse only) | `2` on deny |
-| UserPrompt (`beforeSubmitPrompt`) | `BlockPrompt` / `DecisionDeny` → `continue:false`; `UserMessage` → `user_message` | `0` |
-| PostTool (MCP: `postToolUse`, `afterMCPExecution`) | `UpdatedOutput` → `updated_mcp_tool_output`; `Context` → `additional_context` | `0` |
-| PostTool (shell/file: `afterShellExecution`, `afterFileEdit`) | `Context` → `additional_context`; `UpdatedOutput` unsupported | `0` |
+| PreTool / dedicated pre-events | `Decision` → `permission`; `Reason` → `agent_message`; `UpdatedInput` → `updated_input` (preToolUse only) | `2` on deny |
+| PostTool | `UpdatedOutput` → `updated_mcp_tool_output`; `Context` → `additional_context` | `0` |
+| PostToolFailure | `Context` → `additional_context` | `0` |
 | Stop / SubagentStop | `FollowUp` → `followup_message` | `0` |
-| SessionStart | `Env` → `env`; `Context` → `additional_context` | `0` |
-| PreCompact | `UserMessage` → `user_message` | `0` |
+| SessionStart | `Context` → `additional_context` | `0` |
+
+Agent-native encode surfaces (use `sdk/cursor` directly):
+
+| Event kind | Key fields | Exit code |
+|---|---|---|
+| SubagentStart / `beforeTabFileRead` | `Decision`, `UserMessage`, `Reason`, `UpdatedInput` | `2` on deny |
+| UserPrompt | `BlockPrompt`, `UserMessage` → `continue:false` | `0` |
+| SessionStart | `Env` → `env` | `0` |
+| PreCompact | `UserMessage` | `0` |
 
 ### Exit codes
 
@@ -231,8 +309,6 @@ Dedicated shell, MCP, and file events are **folded** into unified pre/post tool 
 | `cursor.HandlerErrorExit` / `CursorHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
 | `cursor.PermissionDenyExit` / `CursorWarnExit` | `2` | `Encode` returns this for permission-gating deny |
 
-Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preToolUse) are reported via `Unsupported`.
-
 ## Related code
 
 - Config porting: `wat port --from` / `--to` (see [`cmd/wat/port.go`](../cmd/wat/port.go))
@@ -240,7 +316,7 @@ Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preTo
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
 - Normalization: [`sdk/agnostic/internal/model/event.go`](../sdk/agnostic/internal/model/event.go) — `NormalizeToolName`, `InputAs`
 - Tests: [`sdk/agnostic/internal/model/event_test.go`](../sdk/agnostic/internal/model/event_test.go)
-- Claude codec: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `ClaudeCodec`, `CodecFor`
+- Claude codec: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `ClaudeCodec`
 - Tests: [`sdk/agnostic/claude/codec_test.go`](../sdk/agnostic/claude/codec_test.go)
 - Copilot codec: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
 - Tests: [`sdk/agnostic/copilot/codec_test.go`](../sdk/agnostic/copilot/codec_test.go)

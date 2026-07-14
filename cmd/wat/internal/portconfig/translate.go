@@ -253,7 +253,7 @@ func defaultTimeoutFor(d agnostic.Dialect) int {
 
 func kindHasToolMatcher(k agnostic.Kind) bool {
 	switch k {
-	case agnostic.KindPreTool, agnostic.KindPostTool, agnostic.KindPostToolFailure, agnostic.KindPermissionRequest:
+	case agnostic.KindPreTool, agnostic.KindPostTool, agnostic.KindPostToolFailure, agnostic.Kind("PermissionRequest"):
 		return true
 	default:
 		return false

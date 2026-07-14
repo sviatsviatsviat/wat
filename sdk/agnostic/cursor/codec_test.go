@@ -395,52 +395,20 @@ func TestCursorEncode_ZeroResult(t *testing.T) {
 	}
 }
 
-func TestCursorEncode_BeforeSubmitPromptBlock(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Cursor, Kind: model.KindUserPrompt, Name: "beforeSubmitPrompt"}
-	out, code, err := c.Encode(ev, model.Result{BlockPrompt: true, UserMessage: "blocked"})
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	var got map[string]any
-	if err := json.Unmarshal(out, &got); err != nil {
-		t.Fatal(err)
-	}
-	if got["continue"] != false || got["user_message"] != "blocked" {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCursorEncode_SessionStartEnv(t *testing.T) {
+func TestCursorEncode_SessionStartContext(t *testing.T) {
 	c := &Codec{}
 	ev := &model.Event{Agent: model.Cursor, Kind: model.KindSessionStart, Name: "sessionStart"}
-	out, code, err := c.Encode(ev, model.Result{Env: map[string]string{"K": "V"}, Context: "ctx"})
+	out, code, err := c.Encode(ev, model.Context("ctx"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
 	var got struct {
-		Env map[string]string `json:"env"`
-		Ctx string            `json:"additional_context"`
+		Ctx string `json:"additional_context"`
 	}
 	if err := json.Unmarshal(out, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Env["K"] != "V" || got.Ctx != "ctx" {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCursorEncode_TabFileReadDeny(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Cursor, Kind: model.KindOther, Name: "beforeTabFileRead"}
-	out, code, err := c.Encode(ev, model.Deny("no tab reads"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code != WarnExit {
-		t.Fatalf("exit code = %d, want %d", code, WarnExit)
-	}
-	if !strings.Contains(string(out), `"permission":"deny"`) {
+	if got.Ctx != "ctx" {
 		t.Fatalf("bad output: %s", out)
 	}
 }

@@ -90,12 +90,18 @@ func decodeFixtureSummary(agentFlag, eventHint string, payload []byte, getenv fu
 		return nil, agnostic.Unknown, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
 	}
 
-	codec, err := agnostic.CodecFor(dialect)
-	if err != nil {
-		return nil, dialect, err
+	var ev *agnostic.Event
+	var err error
+	switch dialect {
+	case agnostic.Claude:
+		ev, err = (&agnostic.ClaudeCodec{}).Decode(payload, eventHint)
+	case agnostic.Copilot:
+		ev, err = (&agnostic.CopilotCodec{}).Decode(payload, eventHint)
+	case agnostic.Cursor:
+		ev, err = (&agnostic.CursorCodec{}).Decode(payload, eventHint)
+	default:
+		return nil, dialect, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
 	}
-
-	ev, err := codec.Decode(payload, eventHint)
 	if err != nil {
 		if dialect == agnostic.Copilot && eventHint == "" {
 			return nil, dialect, fmt.Errorf("decode: %w (Copilot camelCase payloads require --event)", err)

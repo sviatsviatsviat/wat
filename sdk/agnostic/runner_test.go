@@ -19,20 +19,17 @@ func resetTest(t *testing.T) {
 
 func TestServe_MergeDispatch(t *testing.T) {
 	resetTest(t)
-	OnAny(func(ctx context.Context, ev *Event) (Result, error) {
-		return Context("from-any"), nil
-	})
-	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Context("from-kind"), nil
+	payload := `{"session_id":"s","hook_event_name":"PostToolUse","tool_name":"Read","tool_response":"file contents"}`
+	OnPostTool(func(ctx context.Context, ev *Event) (PostToolResult, error) {
+		return PostToolContext("first"), nil
+	}).OnPostTool(func(ctx context.Context, ev *Event) (PostToolResult, error) {
+		return PostToolContext("second"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
+	code := Serve(context.Background(), strings.NewReader(payload), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
-	}
-	if stdout.Len() == 0 {
-		t.Fatal("expected stdout")
 	}
 	var got struct {
 		HSO struct {
@@ -42,19 +39,17 @@ func TestServe_MergeDispatch(t *testing.T) {
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	want := "from-any\n\nfrom-kind"
-	if got.HSO.AdditionalContext != want {
-		t.Fatalf("context = %q, want %q", got.HSO.AdditionalContext, want)
+	if got.HSO.AdditionalContext != "first\n\nsecond" {
+		t.Fatalf("context = %q, want %q", got.HSO.AdditionalContext, "first\n\nsecond")
 	}
 }
 
 func TestServe_DecisionPrecedence(t *testing.T) {
 	resetTest(t)
-	OnAny(func(ctx context.Context, ev *Event) (Result, error) {
-		return Allow(), nil
-	})
-	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Deny("blocked"), nil
+	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
+		return PreToolAllow(), nil
+	}).OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
+		return PreToolDeny("blocked"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -69,8 +64,8 @@ func TestServe_DecisionPrecedence(t *testing.T) {
 
 func TestServe_WithDialectOverride(t *testing.T) {
 	resetTest(t)
-	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Result{}, nil
+	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
+		return PreToolResult{}, nil
 	})
 
 	var stderr bytes.Buffer
@@ -91,8 +86,8 @@ func TestServe_WithDialectOverride(t *testing.T) {
 
 func TestServe_WithEvent(t *testing.T) {
 	resetTest(t)
-	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Deny("nope"), nil
+	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
+		return PreToolDeny("nope"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -149,8 +144,8 @@ func TestServe_WithGetenv(t *testing.T) {
 
 func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
 	resetTest(t)
-	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Result{}, errors.New("boom")
+	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
+		return PreToolResult{}, errors.New("boom")
 	})
 
 	var stderr bytes.Buffer
@@ -194,11 +189,11 @@ func TestServe_EmptyStdin(t *testing.T) {
 }
 
 func TestServe_PreToolDenyAllAgents(t *testing.T) {
-	denyShell := func(ctx context.Context, ev *Event) (Result, error) {
+	denyShell := func(ctx context.Context, ev *Event) (PreToolResult, error) {
 		if ev.Tool != nil && ev.Tool.Shell != "" {
-			return Deny("destructive command blocked"), nil
+			return PreToolDeny("destructive command blocked"), nil
 		}
-		return Result{}, nil
+		return PreToolResult{}, nil
 	}
 
 	tests := []struct {
@@ -239,7 +234,7 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetTest(t)
-			On(KindPreTool, denyShell)
+			OnPreTool(denyShell)
 
 			var stdout, stderr bytes.Buffer
 			code := Serve(context.Background(), strings.NewReader(tt.payload), &stdout, &stderr, tt.opts...)
@@ -253,44 +248,22 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 	}
 }
 
-func TestOnNilIgnored(t *testing.T) {
+func TestServe_OnAnyObserveOnly(t *testing.T) {
 	resetTest(t)
-	On(KindPreTool, nil)
-	OnAny(nil)
-
-	var stdout bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
-	if code != 0 {
-		t.Fatalf("exit = %d", code)
-	}
-	if stdout.Len() != 0 {
-		t.Fatal("nil handlers should not register")
-	}
-}
-
-func TestOn_FluentChain(t *testing.T) {
-	resetTest(t)
-	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Context("first"), nil
-	}).On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Context("second"), nil
+	OnAny(func(ctx context.Context, ev *Event) error {
+		return nil
+	})
+	OnPreTool(func(ctx context.Context, ev *Event) (PreToolResult, error) {
+		return PreToolDeny("blocked"), nil
 	})
 
-	var stdout bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
+	var stdout, stderr bytes.Buffer
+	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
 	if code != 0 {
-		t.Fatalf("exit = %d", code)
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
-	var got struct {
-		HSO struct {
-			AdditionalContext string `json:"additionalContext"`
-		} `json:"hookSpecificOutput"`
-	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatal(err)
-	}
-	if got.HSO.AdditionalContext != "first\n\nsecond" {
-		t.Fatalf("context = %q, want %q", got.HSO.AdditionalContext, "first\n\nsecond")
+	if !strings.Contains(stdout.String(), "deny") {
+		t.Fatalf("stdout = %s", stdout.Bytes())
 	}
 }
 
@@ -298,17 +271,18 @@ func TestResetHandlers_OwnerScoped(t *testing.T) {
 	run.Reset()
 	claude.ResetHandlers()
 
-	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Context("from-agnostic"), nil
+	payload := `{"session_id":"s","hook_event_name":"PostToolUse","tool_name":"Read","tool_response":"file contents"}`
+	OnPostTool(func(ctx context.Context, ev *Event) (PostToolResult, error) {
+		return PostToolContext("from-agnostic"), nil
 	})
-	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
-		return claude.PreToolUseOutput{AdditionalContext: "from-claude"}, nil
+	claude.On(func(ctx context.Context, ev claude.PostToolUse) (claude.PostToolUseOutput, error) {
+		return claude.PostToolUseOutput{AdditionalContext: "from-claude"}, nil
 	})
 
 	ResetHandlers()
 
 	var stdout bytes.Buffer
-	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
+	code := run.Serve(context.Background(), strings.NewReader(payload), &stdout, &bytes.Buffer{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -324,15 +298,16 @@ func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 	resetTest(t)
 	claude.ResetHandlers()
 
-	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
-		return Context("from-agnostic"), nil
+	payload := `{"session_id":"s","hook_event_name":"PostToolUse","tool_name":"Read","tool_response":"file contents"}`
+	OnPostTool(func(ctx context.Context, ev *Event) (PostToolResult, error) {
+		return PostToolContext("from-agnostic"), nil
 	})
-	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
-		return claude.PreToolUseOutput{AdditionalContext: "from-claude"}, nil
+	claude.On(func(ctx context.Context, ev claude.PostToolUse) (claude.PostToolUseOutput, error) {
+		return claude.PostToolUseOutput{AdditionalContext: "from-claude"}, nil
 	})
 
 	var stdout bytes.Buffer
-	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
+	code := run.Serve(context.Background(), strings.NewReader(payload), &stdout, &bytes.Buffer{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}

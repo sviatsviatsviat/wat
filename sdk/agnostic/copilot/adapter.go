@@ -103,34 +103,10 @@ func mapOutput(ev *model.Event, res model.Result) any {
 		return out
 	case model.KindStop, model.KindSubagentStop:
 		return sdkcopilot.StopOutput{Reason: res.FollowUp}
-	case model.KindPermissionRequest:
-		if res.Decision == model.DecisionUnset {
-			return nil
-		}
-		out := sdkcopilot.PermissionRequestOutput{Message: res.Reason}
-		switch res.Decision {
-		case model.DecisionAllow:
-			out.Behavior = "allow"
-		case model.DecisionDeny:
-			out.Behavior = "deny"
-			if res.HaltSession {
-				out.Interrupt = true
-			}
-		case model.DecisionAsk:
-			out.Behavior = "deny"
-			out.SuppressWarnExit = true
-		default:
-			return nil
-		}
-		return out
 	case model.KindPostToolFailure:
 		return sdkcopilot.PostToolFailureOutput{Context: res.Context}
 	case model.KindSessionStart:
 		return sdkcopilot.SessionStartOutput{AdditionalContext: res.Context}
-	case model.KindSubagentStart:
-		return sdkcopilot.SubagentStartOutput{AdditionalContext: res.Context}
-	case model.KindNotification:
-		return sdkcopilot.NotificationOutput{AdditionalContext: res.Context}
 	default:
 		return nil
 	}

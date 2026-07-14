@@ -1,7 +1,6 @@
 package model
 
 import (
-	"maps"
 	"testing"
 )
 
@@ -42,43 +41,6 @@ func TestMerge_otherFields(t *testing.T) {
 		}
 	})
 
-	t.Run("env merge", func(t *testing.T) {
-		a := Result{Env: map[string]string{"A": "1", "B": "2"}}
-		b := Result{Env: map[string]string{"B": "override", "C": "3"}}
-		origA := maps.Clone(a.Env)
-		got := Merge(a, b)
-		if got.Env["A"] != "1" || got.Env["B"] != "override" || got.Env["C"] != "3" {
-			t.Fatalf("env = %v", got.Env)
-		}
-		if a.Env["B"] != origA["B"] {
-			t.Fatalf("caller env mutated: %v, want %v", a.Env, origA)
-		}
-	})
-
-	t.Run("env clone when b empty", func(t *testing.T) {
-		a := Result{Env: map[string]string{"A": "1"}}
-		origA := maps.Clone(a.Env)
-		got := Merge(a, Result{})
-		got.Env["A"] = "mutated"
-		if !maps.Equal(a.Env, origA) {
-			t.Fatalf("caller env mutated: %v, want %v", a.Env, origA)
-		}
-		if got.Env["A"] != "mutated" {
-			t.Fatalf("returned env = %v", got.Env)
-		}
-	})
-
-	t.Run("bool OR", func(t *testing.T) {
-		got := Merge(Result{BlockPrompt: false}, Result{HaltSession: true})
-		if got.BlockPrompt || !got.HaltSession {
-			t.Fatalf("got BlockPrompt=%v HaltSession=%v", got.BlockPrompt, got.HaltSession)
-		}
-		got = Merge(got, Result{BlockPrompt: true})
-		if !got.BlockPrompt || !got.HaltSession {
-			t.Fatalf("got BlockPrompt=%v HaltSession=%v", got.BlockPrompt, got.HaltSession)
-		}
-	})
-
 	t.Run("updated output replacement", func(t *testing.T) {
 		first := "first"
 		second := "second"
@@ -99,8 +61,6 @@ func TestResult_IsZero(t *testing.T) {
 		{name: "allow", r: Allow(), want: false},
 		{name: "deny", r: Deny("r"), want: false},
 		{name: "context", r: Context("c"), want: false},
-		{name: "block prompt", r: Result{BlockPrompt: true}, want: false},
-		{name: "env", r: Result{Env: map[string]string{"K": "V"}}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

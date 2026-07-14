@@ -58,7 +58,7 @@ func (c *Codec) Encode(ev *model.Event, res model.Result) ([]byte, int, error) {
 	}
 	out := mapOutput(ev, res)
 	if out == nil {
-		return nil, 0, nil
+		return nil, 0, fmt.Errorf("copilot: encode: %s has no portable encode surface", ev.Kind)
 	}
 	b, code, err := sdkcopilot.Encode(encodeEventName(ev), out)
 	if err != nil {

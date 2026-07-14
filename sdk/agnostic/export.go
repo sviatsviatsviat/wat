@@ -30,9 +30,17 @@ type (
 	Lifecycle = model.Lifecycle
 	// Decision is the unified gate verdict for pre-events.
 	Decision = model.Decision
-	// Result is the unified hook response.
-	Result = model.Result
-	// Codec decodes native payloads and encodes unified results.
+	// PreToolResult is the portable hook response for PreTool events.
+	PreToolResult = model.PreToolResult
+	// PostToolResult is the portable hook response for PostTool events.
+	PostToolResult = model.PostToolResult
+	// PostToolFailureResult is the portable hook response for PostToolFailure events.
+	PostToolFailureResult = model.PostToolFailureResult
+	// StopResult is the portable hook response for Stop and SubagentStop events.
+	StopResult = model.StopResult
+	// SessionStartResult is the portable hook response for SessionStart events.
+	SessionStartResult = model.SessionStartResult
+	// Codec decodes native payloads and encodes wire results.
 	Codec = model.Codec
 )
 
@@ -58,8 +66,6 @@ const (
 	KindPostTool = model.KindPostTool
 	// KindPostToolFailure is the normalized category for failed post-tool events.
 	KindPostToolFailure = model.KindPostToolFailure
-	// KindPermissionRequest is the normalized category for permission request events.
-	KindPermissionRequest = model.KindPermissionRequest
 	// KindSubagentStart is the normalized category for subagent start events.
 	KindSubagentStart = model.KindSubagentStart
 	// KindSubagentStop is the normalized category for subagent stop events.
@@ -68,10 +74,6 @@ const (
 	KindStop = model.KindStop
 	// KindPreCompact is the normalized category for pre-compaction events.
 	KindPreCompact = model.KindPreCompact
-	// KindNotification is the normalized category for notification events.
-	KindNotification = model.KindNotification
-	// KindAgentError is the normalized category for agent runtime error events.
-	KindAgentError = model.KindAgentError
 	// KindOther is the normalized category for events with no dedicated mapping.
 	KindOther = model.KindOther
 
@@ -184,17 +186,25 @@ func NormalizeToolName(native string) (name string, mcp bool) {
 	return model.NormalizeToolName(native)
 }
 
-// Allow returns an allow verdict.
-func Allow() Result { return model.Allow() }
+// PreToolAllow returns an allow verdict for PreTool events.
+func PreToolAllow() PreToolResult { return model.PreToolAllow() }
 
-// Deny returns a deny verdict with an agent-facing reason.
-func Deny(reason string) Result { return model.Deny(reason) }
+// PreToolDeny returns a deny verdict for PreTool events.
+func PreToolDeny(reason string) PreToolResult { return model.PreToolDeny(reason) }
 
-// Ask returns an escalate-to-user verdict with an agent-facing reason.
-func Ask(reason string) Result { return model.Ask(reason) }
+// PreToolAsk returns an ask verdict for PreTool events.
+func PreToolAsk(reason string) PreToolResult { return model.PreToolAsk(reason) }
 
-// Context returns a context-injection-only result.
-func Context(text string) Result { return model.Context(text) }
+// PostToolContext returns a context-injection-only PostTool result.
+func PostToolContext(text string) PostToolResult { return model.PostToolContext(text) }
 
-// Merge combines b into a.
-func Merge(a, b Result) Result { return model.Merge(a, b) }
+// PostToolFailureContext returns recovery guidance for PostToolFailure events.
+func PostToolFailureContext(text string) PostToolFailureResult {
+	return model.PostToolFailureContext(text)
+}
+
+// StopFollowUp returns a stop-gate result with a follow-up instruction.
+func StopFollowUp(text string) StopResult { return model.StopFollowUp(text) }
+
+// SessionStartContext returns a context-injection-only SessionStart result.
+func SessionStartContext(text string) SessionStartResult { return model.SessionStartContext(text) }

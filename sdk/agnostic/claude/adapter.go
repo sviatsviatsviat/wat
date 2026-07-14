@@ -57,74 +57,34 @@ func mapEvent(native sdkclaude.Event, raw []byte) *model.Event {
 }
 
 func mapOutput(ev *model.Event, res model.Result) any {
-	common := sdkclaude.Common{}
-	if res.HaltSession {
-		f := false
-		common.Continue = &f
-		common.StopReason = res.Reason
-	}
-	if res.UserMessage != "" {
-		common.SystemMessage = res.UserMessage
-	}
-
 	switch ev.Kind {
 	case model.KindPreTool:
-		out := sdkclaude.PreToolUseOutput{Common: common}
+		out := sdkclaude.PreToolUseOutput{}
 		if d := res.Decision.String(); d != "" {
 			out.Decision = sdkclaude.PermissionDecision(d)
 			out.Reason = res.Reason
 		}
 		out.UpdatedInput = res.UpdatedInput
-		out.AdditionalContext = res.Context
 		return out
-	case model.KindPermissionRequest:
-		out := sdkclaude.PermissionRequestOutput{Common: common}
-		if d := res.Decision.String(); d != "" {
-			out.Behavior = d
-		}
-		out.UpdatedInput = res.UpdatedInput
-		out.Message = res.Reason
-		out.AdditionalContext = res.Context
-		if res.HaltSession {
-			out.Interrupt = true
-		}
-		return out
-	case model.KindPostTool, model.KindPostToolFailure:
-		out := sdkclaude.PostToolUseOutput{Common: common}
-		if res.Decision == model.DecisionDeny {
-			out.Block = true
-			out.Reason = res.Reason
-		}
+	case model.KindPostTool:
+		out := sdkclaude.PostToolUseOutput{}
 		if res.UpdatedOutput != nil {
 			out.UpdatedToolOutput = *res.UpdatedOutput
 		}
 		out.AdditionalContext = res.Context
 		return out
-	case model.KindUserPrompt:
-		out := sdkclaude.UserPromptSubmitOutput{Common: common}
-		if res.BlockPrompt || res.Decision == model.DecisionDeny {
-			out.Block = true
-			out.Reason = res.Reason
-		}
-		out.AdditionalContext = res.Context
-		out.SessionTitle = res.SetTitle
-		return out
+	case model.KindPostToolFailure:
+		return sdkclaude.PostToolUseOutput{AdditionalContext: res.Context}
 	case model.KindStop, model.KindSubagentStop:
-		out := sdkclaude.StopOutput{Common: common}
+		out := sdkclaude.StopOutput{}
 		if res.FollowUp != "" {
 			out.Block = true
 			out.Reason = res.FollowUp
 		}
-		out.AdditionalContext = res.Context
 		return out
 	case model.KindSessionStart:
-		return sdkclaude.SessionStartOutput{
-			Common:            common,
-			AdditionalContext: res.Context,
-			SessionTitle:      res.SetTitle,
-			Env:               res.Env,
-		}
+		return sdkclaude.SessionStartOutput{AdditionalContext: res.Context}
 	default:
-		return sdkclaude.CommonOutput{Common: common, AdditionalContext: res.Context}
+		return nil
 	}
 }

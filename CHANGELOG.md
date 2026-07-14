@@ -15,13 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `wat test --fixture` runs the user's hook script against a fixture JSON payload (file or stdin `-`); prints decoded unified event summary, hook stdout JSON, decision when present, and exit code; optional `--verbose` for expanded event fields and hook stderr; sample fixtures under `testdata/fixtures/`
 - `wat port --from` / `--to` translates hook configs between Claude Code, GitHub Copilot, and Cursor via `portconfig.Translate`; `-i` / `-o` select input and output files (default input: `.claude/settings.json`, `.github/hooks/wat.json`, or `.cursor/hooks.json` from cwd); warnings print to stderr and exit 0; translation errors exit 3
 - Unified `agnostic.Event` / `Kind` types and tool-name normalization for hook authors
-- Unified `agnostic.Result` / `Decision` types with `Merge` and `Unsupported` for hook handler responses
+- Kind-specific portable hook response types (`PreToolResult`, `PostToolResult`, `PostToolFailureResult`, `StopResult`, `SessionStartResult`) with typed `OnPreTool`, `OnPostTool`, and related registration methods; portable field matrix documented in `docs/agent-formats.md`
 - `agnostic.ParseDialect` and `agnostic.Detect` for hook payload dialect sniffing
-- `agnostic.Codec` and `agnostic.CodecFor` for dialect codec lookup
 - `agnostic.ClaudeCodec` for Claude Code stdin/stdout translation
 - `agnostic.CopilotCodec` for GitHub Copilot camelCase and VS Code hook payloads
 - `agnostic.CursorCodec` decodes and encodes Cursor hooks, folding dedicated shell/MCP/file events into unified pre/post tool kinds
-- `agnostic.On`, `OnAny`, and chainable `Chain` replace `agnostic.Mux`; hook scripts call `run.Main` (reads `WAT_AGENT` / `WAT_EVENT` automatically)
+- Typed `OnPreTool`, `OnPostTool`, `OnStop`, and related handlers plus observe-only `OnAny`, `OnSessionEnd`, and chainable `Chain`; hook scripts call `run.Main` (reads `WAT_AGENT` / `WAT_EVENT` automatically)
 - Serve options `WithDialect`, `WithEvent`, and `WithGetenv` for explicit dialect, Copilot event hints, and testable environment lookup
 - `claude` package with typed Claude Code hook events, `Decode`/`Encode`, `On`/`Chain` registering into `sdk/run` (`On` panics on duplicate handler registration), and `sdk/claude/tools` lazy tool input helpers
 - `copilot` package with typed GitHub Copilot hook events, dual-format `Decode`/`Encode`, `On`/`Chain` registering into `sdk/run` (`On` panics on duplicate handler registration), `WithEvent` for camelCase payloads, and `sdk/copilot/tools` lazy tool input helpers

@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -62,7 +60,7 @@ func TestClaudeDecode_InvalidJSONPreservesSentinel(t *testing.T) {
 }
 
 func TestClaudeDecodeEncode_PreToolDeny(t *testing.T) {
-	c := &Codec{Getenv: func(string) string { return "" }}
+	c := &Codec{}
 	ev, err := c.Decode([]byte(claudePreToolUse), "")
 	if err != nil {
 		t.Fatal(err)
@@ -97,7 +95,7 @@ func TestClaudeDecodeEncode_PreToolDeny(t *testing.T) {
 }
 
 func TestClaudeDecodeEncode_PreToolUpdatedInput(t *testing.T) {
-	c := &Codec{Getenv: func(string) string { return "" }}
+	c := &Codec{}
 	ev, err := c.Decode([]byte(claudePreToolUse), "")
 	if err != nil {
 		t.Fatal(err)
@@ -148,63 +146,16 @@ func TestClaudeEncode_SubagentStopFollowUp(t *testing.T) {
 	}
 }
 
-func TestClaudeEncode_SessionStartEnv(t *testing.T) {
-	dir := t.TempDir()
-	envPath := filepath.Join(dir, "env.sh")
-	var written []byte
-	c := &Codec{
-		Getenv: func(key string) string {
-			if key == "CLAUDE_ENV_FILE" {
-				return envPath
-			}
-			return ""
-		},
-		AppendFile: func(path string, data []byte) error {
-			if path != envPath {
-				t.Fatalf("unexpected path %q", path)
-			}
-			written = append(written, data...)
-			return os.WriteFile(path, written, 0o644)
-		},
-	}
+func TestClaudeEncode_SessionStartContext(t *testing.T) {
+	c := &Codec{}
 	ev := &model.Event{Agent: model.Claude, Kind: model.KindSessionStart, Name: "SessionStart"}
-	out, code, err := c.Encode(ev, model.Result{Env: map[string]string{"FOO": "bar", "BAZ": "qux"}})
+	out, code, err := c.Encode(ev, model.Context("boot notes"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
-	if out != nil {
-		t.Fatalf("env-only result should produce no stdout, got %q", out)
+	if !strings.Contains(string(out), `"additionalContext":"boot notes"`) {
+		t.Fatalf("bad output: %s", out)
 	}
-	wantLines := []string{`export FOO='bar'`, `export BAZ='qux'`}
-	got := string(written)
-	for _, line := range wantLines {
-		if !strings.Contains(got, line) {
-			t.Fatalf("env file = %q, want lines %v", got, wantLines)
-		}
-	}
-	data, err := os.ReadFile(envPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, line := range wantLines {
-		if !strings.Contains(string(data), line) {
-			t.Fatalf("file contents = %q, want lines %v", data, wantLines)
-		}
-	}
-
-	t.Run("shell metacharacters preserved", func(t *testing.T) {
-		written = nil
-		ev := &model.Event{Agent: model.Claude, Kind: model.KindSessionStart, Name: "SessionStart"}
-		unsafe := "$(rm -rf /) `whoami` $HOME"
-		_, code, err := c.Encode(ev, model.Result{Env: map[string]string{"UNSAFE": unsafe}})
-		if err != nil || code != 0 {
-			t.Fatalf("encode: %v code=%d", err, code)
-		}
-		want := "export UNSAFE='$(rm -rf /) `whoami` $HOME'\n"
-		if string(written) != want {
-			t.Fatalf("env file = %q, want %q", written, want)
-		}
-	})
 }
 
 func TestClaudeEncode_ZeroResult(t *testing.T) {
@@ -390,34 +341,6 @@ func TestClaudeDecode_Matrix(t *testing.T) {
 	}
 }
 
-func TestClaudeEncode_SessionStartEnvInvalidKey(t *testing.T) {
-	c := &Codec{
-		Getenv: func(key string) string {
-			if key == "CLAUDE_ENV_FILE" {
-				return "/tmp/env.sh"
-			}
-			return ""
-		},
-	}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindSessionStart, Name: "SessionStart"}
-	_, _, err := c.Encode(ev, model.Result{Env: map[string]string{"FOO\nBAR": "value"}})
-	if err == nil {
-		t.Fatal("expected error for invalid env key")
-	}
-	if !strings.Contains(err.Error(), "invalid env key") {
-		t.Fatalf("error = %v", err)
-	}
-}
-
-func TestClaudeEncode_SessionStartEnvInvalidKeyUnsetFile(t *testing.T) {
-	c := &Codec{Getenv: func(string) string { return "" }}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindSessionStart, Name: "SessionStart"}
-	_, code, err := c.Encode(ev, model.Result{Env: map[string]string{"FOO\nBAR": "value"}})
-	if err != nil || code != 0 {
-		t.Fatalf("unset CLAUDE_ENV_FILE should no-op invalid keys, got err=%v code=%d", err, code)
-	}
-}
-
 func TestClaudeEncode_NilEvent(t *testing.T) {
 	c := &Codec{}
 	_, _, err := c.Encode(nil, model.Deny("nope"))
@@ -479,42 +402,6 @@ func TestClaudeDecode_ToolInputNotAliased(t *testing.T) {
 	}
 }
 
-func TestClaudeEncode_PermissionRequestAllow(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindPermissionRequest, Name: "PermissionRequest"}
-	out, code, err := c.Encode(ev, model.Allow())
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"behavior":"allow"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestClaudeEncode_PermissionRequestAsk(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindPermissionRequest, Name: "PermissionRequest"}
-	out, code, err := c.Encode(ev, model.Ask("needs user confirmation"))
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"behavior":"ask"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestClaudeEncode_PermissionRequestContext(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindPermissionRequest, Name: "PermissionRequest"}
-	out, code, err := c.Encode(ev, model.Result{Decision: model.DecisionAllow, Context: "extra guidance"})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"additionalContext":"extra guidance"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
 func TestClaudeEncode_PostToolUpdatedOutput(t *testing.T) {
 	c := &Codec{}
 	ev := &model.Event{Agent: model.Claude, Kind: model.KindPostTool, Name: "PostToolUse"}
@@ -524,30 +411,6 @@ func TestClaudeEncode_PostToolUpdatedOutput(t *testing.T) {
 		t.Fatal(err, code)
 	}
 	if !strings.Contains(string(out), `"updatedToolOutput":"rewritten"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestClaudeEncode_HaltSession(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindStop, Name: "Stop"}
-	out, code, err := c.Encode(ev, model.Result{HaltSession: true, Reason: "policy violation"})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"continue":false`) || !strings.Contains(string(out), "policy violation") {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestClaudeEncode_UserPromptBlock(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindUserPrompt, Name: "UserPromptSubmit"}
-	out, code, err := c.Encode(ev, model.Result{BlockPrompt: true, Reason: "blocked prompt"})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "blocked prompt") {
 		t.Fatalf("bad output: %s", out)
 	}
 }

@@ -6,30 +6,162 @@ import (
 	"io"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// HandlerFunc handles a decoded hook event and returns a unified Result.
-type HandlerFunc func(ctx context.Context, ev *Event) (Result, error)
+// PreToolHandler handles portable PreTool events.
+type PreToolHandler func(ctx context.Context, ev *Event) (PreToolResult, error)
+
+// PostToolHandler handles portable PostTool events.
+type PostToolHandler func(ctx context.Context, ev *Event) (PostToolResult, error)
+
+// PostToolFailureHandler handles portable PostToolFailure events.
+type PostToolFailureHandler func(ctx context.Context, ev *Event) (PostToolFailureResult, error)
+
+// StopHandler handles portable Stop and SubagentStop events.
+type StopHandler func(ctx context.Context, ev *Event) (StopResult, error)
+
+// SessionStartHandler handles portable SessionStart events.
+type SessionStartHandler func(ctx context.Context, ev *Event) (SessionStartResult, error)
+
+// ObserveHandler handles observe-only portable events with no hook response.
+type ObserveHandler func(ctx context.Context, ev *Event) error
 
 // Chain supports fluent handler registration into the shared run registry.
 type Chain struct{}
 
-// On registers a handler for a normalized event kind across all agents.
-func On(kind Kind, fn HandlerFunc) *Chain {
-	registerKind(kind, fn)
+// OnPreTool registers a handler for PreTool events across all agents.
+func OnPreTool(fn PreToolHandler) *Chain {
+	registerResultHandler(KindPreTool, fn)
 	return &Chain{}
 }
 
-// OnAny registers a handler invoked for every event before kind-specific handlers.
-func OnAny(fn HandlerFunc) *Chain {
+// OnPostTool registers a handler for PostTool events across all agents.
+func OnPostTool(fn PostToolHandler) *Chain {
+	registerResultHandler(KindPostTool, fn)
+	return &Chain{}
+}
+
+// OnPostToolFailure registers a handler for PostToolFailure events across all agents.
+func OnPostToolFailure(fn PostToolFailureHandler) *Chain {
+	registerResultHandler(KindPostToolFailure, fn)
+	return &Chain{}
+}
+
+// OnStop registers a handler for Stop events across all agents.
+func OnStop(fn StopHandler) *Chain {
+	registerResultHandler(KindStop, fn)
+	return &Chain{}
+}
+
+// OnSubagentStop registers a handler for SubagentStop events across all agents.
+func OnSubagentStop(fn StopHandler) *Chain {
+	registerResultHandler(KindSubagentStop, fn)
+	return &Chain{}
+}
+
+// OnSessionStart registers a handler for SessionStart events across all agents.
+func OnSessionStart(fn SessionStartHandler) *Chain {
+	registerResultHandler(KindSessionStart, fn)
+	return &Chain{}
+}
+
+// OnSessionEnd registers an observe-only handler for SessionEnd events.
+func OnSessionEnd(fn ObserveHandler) *Chain {
+	registerObserveHandler(KindSessionEnd, fn)
+	return &Chain{}
+}
+
+// OnUserPrompt registers an observe-only handler for UserPrompt events.
+func OnUserPrompt(fn ObserveHandler) *Chain {
+	registerObserveHandler(KindUserPrompt, fn)
+	return &Chain{}
+}
+
+// OnPreCompact registers an observe-only handler for PreCompact events.
+func OnPreCompact(fn ObserveHandler) *Chain {
+	registerObserveHandler(KindPreCompact, fn)
+	return &Chain{}
+}
+
+// OnSubagentStart registers an observe-only handler for SubagentStart events.
+func OnSubagentStart(fn ObserveHandler) *Chain {
+	registerObserveHandler(KindSubagentStart, fn)
+	return &Chain{}
+}
+
+// OnAny registers an observe-only handler invoked for every event before kind-specific handlers.
+func OnAny(fn ObserveHandler) *Chain {
 	registerAny(fn)
 	return &Chain{}
 }
 
-// On registers another kind handler on the chain.
-func (c *Chain) On(kind Kind, fn HandlerFunc) *Chain {
-	registerKind(kind, fn)
+// OnPostTool registers another PostTool handler on the chain.
+func (c *Chain) OnPostTool(fn PostToolHandler) *Chain {
+	registerResultHandler(KindPostTool, fn)
+	return c
+}
+
+// OnPostToolFailure registers another PostToolFailure handler on the chain.
+func (c *Chain) OnPostToolFailure(fn PostToolFailureHandler) *Chain {
+	registerResultHandler(KindPostToolFailure, fn)
+	return c
+}
+
+// OnStop registers another Stop handler on the chain.
+func (c *Chain) OnStop(fn StopHandler) *Chain {
+	registerResultHandler(KindStop, fn)
+	return c
+}
+
+// OnSubagentStop registers another SubagentStop handler on the chain.
+func (c *Chain) OnSubagentStop(fn StopHandler) *Chain {
+	registerResultHandler(KindSubagentStop, fn)
+	return c
+}
+
+// OnSessionStart registers another SessionStart handler on the chain.
+func (c *Chain) OnSessionStart(fn SessionStartHandler) *Chain {
+	registerResultHandler(KindSessionStart, fn)
+	return c
+}
+
+// OnSessionEnd registers another observe-only SessionEnd handler on the chain.
+func (c *Chain) OnSessionEnd(fn ObserveHandler) *Chain {
+	registerObserveHandler(KindSessionEnd, fn)
+	return c
+}
+
+// OnUserPrompt registers another observe-only UserPrompt handler on the chain.
+func (c *Chain) OnUserPrompt(fn ObserveHandler) *Chain {
+	registerObserveHandler(KindUserPrompt, fn)
+	return c
+}
+
+// OnPreCompact registers another observe-only PreCompact handler on the chain.
+func (c *Chain) OnPreCompact(fn ObserveHandler) *Chain {
+	registerObserveHandler(KindPreCompact, fn)
+	return c
+}
+
+// OnSubagentStart registers another observe-only SubagentStart handler on the chain.
+func (c *Chain) OnSubagentStart(fn ObserveHandler) *Chain {
+	registerObserveHandler(KindSubagentStart, fn)
+	return c
+}
+
+// OnAny registers another observe-only catch-all handler on the chain.
+func (c *Chain) OnAny(fn ObserveHandler) *Chain {
+	registerAny(fn)
+	return c
+}
+
+// OnPreTool registers another PreTool handler on the chain.
+func (c *Chain) OnPreTool(fn PreToolHandler) *Chain {
+	registerResultHandler(KindPreTool, fn)
 	return c
 }
 
@@ -50,32 +182,60 @@ func WithEvent(name string) run.Option {
 	return run.WithEvent(name)
 }
 
-// WithGetenv injects environment lookup for Detect and ClaudeCodec encode.
+// WithGetenv injects environment lookup for Detect.
 func WithGetenv(getenv func(string) string) run.Option {
 	return run.WithGetenv(getenv)
 }
 
-func registerKind(kind Kind, fn HandlerFunc) {
+type wireResult interface {
+	Result() model.Result
+}
+
+func registerResultHandler[R wireResult](kind Kind, fn func(context.Context, *Event) (R, error)) {
 	if fn == nil {
 		return
 	}
+	wrap := func(ctx context.Context, ev *Event) (model.Result, error) {
+		res, err := fn(ctx, ev)
+		if err != nil {
+			return model.Result{}, err
+		}
+		return res.Result(), nil
+	}
 	for _, agent := range []Dialect{Claude, Copilot, Cursor} {
 		for _, eventName := range eventsForKind(agent, kind) {
-			registerAgnosticHandler(agent, eventName, kind, fn)
+			registerAgnosticHandler(agent, eventName, kind, wrap)
 		}
 	}
 }
 
-func registerAny(fn HandlerFunc) {
+func registerObserveHandler(kind Kind, fn ObserveHandler) {
+	if fn == nil {
+		return
+	}
+	wrap := func(ctx context.Context, ev *Event) (model.Result, error) {
+		if err := fn(ctx, ev); err != nil {
+			return model.Result{}, err
+		}
+		return model.Result{}, nil
+	}
+	for _, agent := range []Dialect{Claude, Copilot, Cursor} {
+		for _, eventName := range eventsForKind(agent, kind) {
+			registerAgnosticHandler(agent, eventName, kind, wrap)
+		}
+	}
+}
+
+func registerAny(fn ObserveHandler) {
 	if fn == nil {
 		return
 	}
 	for _, agent := range []Dialect{Claude, Copilot, Cursor} {
-		run.RegisterAnyHandler("agnostic", agent.String(), makeAgnosticProducer(agent, fn))
+		run.RegisterAnyHandler("agnostic", agent.String(), makeObserveProducer(agent, fn))
 	}
 }
 
-func registerAgnosticHandler(agent Dialect, eventName string, kind Kind, fn HandlerFunc) {
+func registerAgnosticHandler(agent Dialect, eventName string, kind Kind, fn func(context.Context, *Event) (model.Result, error)) {
 	run.RegisterHandler("agnostic", agent.String(), eventName, func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		codec, err := codecForServe(agent, cfg)
@@ -84,7 +244,7 @@ func registerAgnosticHandler(agent Dialect, eventName string, kind Kind, fn Hand
 		}
 		ev, err := codec.Decode(raw, cfg.EventHint)
 		if err != nil {
-			return nil, 1, fmt.Errorf("agnostic: decode: %w", err)
+			return nil, 1, err
 		}
 		if ev.Kind != kind {
 			return nil, 0, nil
@@ -98,7 +258,7 @@ func registerAgnosticHandler(agent Dialect, eventName string, kind Kind, fn Hand
 	})
 }
 
-func makeAgnosticProducer(agent Dialect, fn HandlerFunc) run.Producer {
+func makeObserveProducer(agent Dialect, fn ObserveHandler) run.Producer {
 	return func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		codec, err := codecForServe(agent, cfg)
@@ -107,26 +267,26 @@ func makeAgnosticProducer(agent Dialect, fn HandlerFunc) run.Producer {
 		}
 		ev, err := codec.Decode(raw, cfg.EventHint)
 		if err != nil {
-			return nil, 1, fmt.Errorf("agnostic: decode: %w", err)
+			return nil, 1, err
 		}
-		res, err := fn(ctx, ev)
-		if err != nil {
+		if err := fn(ctx, ev); err != nil {
 			return nil, handlerErrorExit(ev), err
 		}
-		stdout, code, err := codec.Encode(ev, res)
-		return stdout, code, err
+		return nil, 0, nil
 	}
 }
 
-func codecForServe(agent Dialect, cfg *run.Config) (Codec, error) {
-	codec, err := CodecFor(agent)
-	if err != nil {
-		return nil, err
+func codecForServe(agent Dialect, _ *run.Config) (Codec, error) {
+	switch agent {
+	case Claude:
+		return &claude.Codec{}, nil
+	case Copilot:
+		return &copilot.Codec{}, nil
+	case Cursor:
+		return &cursor.Codec{}, nil
+	default:
+		return nil, fmt.Errorf("agnostic: no codec for dialect %q", agent)
 	}
-	if cc, ok := codec.(*claude.Codec); ok {
-		claude.ApplyRunConfig(cc, cfg)
-	}
-	return codec, nil
 }
 
 func eventsForKind(agent Dialect, kind Kind) []string {

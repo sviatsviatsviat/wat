@@ -52,7 +52,7 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read hooks.go: %v", err)
 	}
-	if !strings.Contains(string(hooksBytes), "agnostic.On") {
+	if !strings.Contains(string(hooksBytes), "agnostic.OnPreTool") {
 		t.Fatalf("hooks.go missing handler registration: %q", string(hooksBytes))
 	}
 	if !strings.Contains(string(hooksBytes), "run.Main") {

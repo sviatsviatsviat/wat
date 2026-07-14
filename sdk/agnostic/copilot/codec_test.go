@@ -419,33 +419,6 @@ func TestCopilotEncode_SubagentStopFollowUp(t *testing.T) {
 	}
 }
 
-func TestCopilotEncode_PermissionRequestDenyInterrupt(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindPermissionRequest, Name: "permissionRequest"}
-	out, code, err := c.Encode(ev, model.Result{Decision: model.DecisionDeny, Reason: "blocked", HaltSession: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code != WarnExit {
-		t.Fatalf("code=%d, want %d", code, WarnExit)
-	}
-	if !strings.Contains(string(out), `"behavior":"deny"`) || !strings.Contains(string(out), `"interrupt":true`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCopilotEncode_PermissionRequestAsk(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindPermissionRequest, Name: "permissionRequest"}
-	out, code, err := c.Encode(ev, model.Ask("needs user confirmation"))
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	if !strings.Contains(string(out), `"behavior":"deny"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
 func TestCopilotEncode_PostToolFailureContext(t *testing.T) {
 	c := &Codec{}
 	ev := &model.Event{Agent: model.Copilot, Kind: model.KindPostToolFailure, Name: "postToolUseFailure"}

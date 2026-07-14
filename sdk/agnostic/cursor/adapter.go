@@ -129,55 +129,30 @@ func receivedName(native sdkcursor.Event) string {
 }
 
 func mapOutput(ev *model.Event, res model.Result) any {
-	switch {
-	case permissionEvent(ev):
+	switch ev.Kind {
+	case model.KindPreTool:
 		out := sdkcursor.PermissionOutput{}
 		if d := res.Decision.String(); d != "" {
 			out.Decision = sdkcursor.PermissionDecision(d)
 		}
-		out.UserMessage = res.UserMessage
 		out.AgentMessage = res.Reason
 		if res.UpdatedInput != nil && ev.Name == sdkcursor.EventPreToolUse {
 			out.UpdatedInput = res.UpdatedInput
 		}
 		return out
-	case ev.Kind == model.KindUserPrompt:
-		out := sdkcursor.BeforeSubmitPromptOutput{UserMessage: res.UserMessage}
-		if res.BlockPrompt || res.Decision == model.DecisionDeny {
-			f := false
-			out.Continue = &f
-			if out.UserMessage == "" {
-				out.UserMessage = res.Reason
-			}
-		}
-		return out
-	case ev.Kind == model.KindPostTool:
+	case model.KindPostTool:
 		out := sdkcursor.PostToolOutput{AdditionalContext: res.Context}
 		if res.UpdatedOutput != nil {
 			out.UpdatedMCPOutput = *res.UpdatedOutput
 		}
 		return out
-	case ev.Kind == model.KindStop, ev.Kind == model.KindSubagentStop:
+	case model.KindPostToolFailure:
+		return sdkcursor.PostToolOutput{AdditionalContext: res.Context}
+	case model.KindStop, model.KindSubagentStop:
 		return sdkcursor.StopOutput{FollowUpMessage: res.FollowUp}
-	case ev.Kind == model.KindSessionStart:
-		return sdkcursor.SessionStartOutput{Env: res.Env, AdditionalContext: res.Context}
-	case ev.Kind == model.KindPreCompact:
-		return sdkcursor.PreCompactOutput{UserMessage: res.UserMessage}
+	case model.KindSessionStart:
+		return sdkcursor.SessionStartOutput{AdditionalContext: res.Context}
 	default:
 		return nil
-	}
-}
-
-func permissionEvent(ev *model.Event) bool {
-	if ev == nil {
-		return false
-	}
-	switch ev.Kind {
-	case model.KindPreTool, model.KindSubagentStart:
-		return true
-	case model.KindOther:
-		return ev.Name == sdkcursor.EventBeforeTabFileRead
-	default:
-		return false
 	}
 }
