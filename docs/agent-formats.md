@@ -236,15 +236,15 @@ Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preTo
 ## Related code
 
 - Config porting: `wat port --from` / `--to` (see [`cmd/wat/port.go`](../cmd/wat/port.go))
-- Detection: [`sdk/agnostic/dialect.go`](../sdk/agnostic/dialect.go) — `ParseDialect`, `Detect`
+- Detection: [`sdk/agnostic/internal/model/dialect.go`](../sdk/agnostic/internal/model/dialect.go) — `ParseDialect`, `Detect`
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
-- Normalization: [`sdk/agnostic/event.go`](../sdk/agnostic/event.go) — `NormalizeToolName`, `InputAs`
-- Tests: [`sdk/agnostic/event_test.go`](../sdk/agnostic/event_test.go)
-- Claude codec: [`sdk/agnostic/claude.go`](../sdk/agnostic/claude.go) — `ClaudeCodec`, `CodecFor`
-- Tests: [`sdk/agnostic/claude_test.go`](../sdk/agnostic/claude_test.go)
-- Copilot codec: [`sdk/agnostic/copilot.go`](../sdk/agnostic/copilot.go) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
-- Tests: [`sdk/agnostic/copilot_test.go`](../sdk/agnostic/copilot_test.go)
-- Cursor codec: [`sdk/agnostic/cursor.go`](../sdk/agnostic/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit` (adapts `cursor`)
-- Tests: [`sdk/agnostic/cursor_test.go`](../sdk/agnostic/cursor_test.go)
+- Normalization: [`sdk/agnostic/internal/model/event.go`](../sdk/agnostic/internal/model/event.go) — `NormalizeToolName`, `InputAs`
+- Tests: [`sdk/agnostic/internal/model/event_test.go`](../sdk/agnostic/internal/model/event_test.go)
+- Claude codec: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `ClaudeCodec`, `CodecFor`
+- Tests: [`sdk/agnostic/claude/codec_test.go`](../sdk/agnostic/claude/codec_test.go)
+- Copilot codec: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
+- Tests: [`sdk/agnostic/copilot/codec_test.go`](../sdk/agnostic/copilot/codec_test.go)
+- Cursor codec: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit`
+- Tests: [`sdk/agnostic/cursor/codec_test.go`](../sdk/agnostic/cursor/codec_test.go)
 - Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `On`/`Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` lazy tool input helpers
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

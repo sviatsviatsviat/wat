@@ -34,6 +34,20 @@ const copilotVSCodeStop = `{
 const detectCursorShell = `{"conversation_id":"c1","cursor_version":"1.7.2","hook_event_name":"beforeShellExecution"}`
 const detectCursorStop = `{"conversation_id":"c1","cursor_version":"1.7.2","hook_event_name":"stop"}`
 
+const cursorShell = `{
+  "conversation_id": "c1",
+  "generation_id": "g1",
+  "model": "some-model",
+  "hook_event_name": "beforeShellExecution",
+  "cursor_version": "1.7.2",
+  "workspace_roots": ["/w"],
+  "user_email": null,
+  "transcript_path": null,
+  "command": "git push --force",
+  "cwd": "/w",
+  "sandbox": false
+}`
+
 func TestParseDialect(t *testing.T) {
 	tests := []struct {
 		name string

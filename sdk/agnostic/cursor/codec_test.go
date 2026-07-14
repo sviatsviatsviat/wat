@@ -1,4 +1,4 @@
-package agnostic
+package cursor
 
 import (
 	"bytes"
@@ -7,7 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/sdk/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 const cursorShell = `{
@@ -44,27 +45,27 @@ const cursorAfterFileEdit = `{
 }`
 
 func TestCursorDecodeEncode_ShellGuard(t *testing.T) {
-	c := &CursorCodec{}
+	c := &Codec{}
 	ev, err := c.Decode([]byte(cursorShell), "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ev.Kind != KindPreTool || ev.Name != "beforeShellExecution" || ev.Session != "c1" {
+	if ev.Kind != model.KindPreTool || ev.Name != "beforeShellExecution" || ev.Session != "c1" {
 		t.Fatalf("bad event: %+v", ev)
 	}
-	if ev.Tool == nil || ev.Tool.Name != ToolBash || ev.Tool.Shell != "git push --force" {
+	if ev.Tool == nil || ev.Tool.Name != model.ToolBash || ev.Tool.Shell != "git push --force" {
 		t.Fatalf("bad tool: %+v", ev.Tool)
 	}
 	if !bytes.Equal(ev.Raw, []byte(cursorShell)) {
 		t.Fatal("Raw not preserved")
 	}
 
-	out, code, err := c.Encode(ev, Deny("force push blocked"))
+	out, code, err := c.Encode(ev, model.Deny("force push blocked"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code != CursorWarnExit {
-		t.Fatalf("exit code = %d, want %d", code, CursorWarnExit)
+	if code != WarnExit {
+		t.Fatalf("exit code = %d, want %d", code, WarnExit)
 	}
 	var got map[string]any
 	if err := json.Unmarshal(out, &got); err != nil {
@@ -76,16 +77,16 @@ func TestCursorDecodeEncode_ShellGuard(t *testing.T) {
 }
 
 func TestCursorDecodeEncode_StopFollowUp(t *testing.T) {
-	c := &CursorCodec{}
+	c := &Codec{}
 	ev, err := c.Decode([]byte(cursorStop), "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ev.Kind != KindStop || ev.Turn == nil || ev.Turn.Status != "error" || ev.Turn.LoopCount != 1 {
+	if ev.Kind != model.KindStop || ev.Turn == nil || ev.Turn.Status != "error" || ev.Turn.LoopCount != 1 {
 		t.Fatalf("bad stop: %+v turn=%+v", ev, ev.Turn)
 	}
 
-	out, code, err := c.Encode(ev, Result{FollowUp: "retry with fixed creds"})
+	out, code, err := c.Encode(ev, model.Result{FollowUp: "retry with fixed creds"})
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -95,15 +96,15 @@ func TestCursorDecodeEncode_StopFollowUp(t *testing.T) {
 }
 
 func TestCursorDecode_AfterFileEdit(t *testing.T) {
-	c := &CursorCodec{}
+	c := &Codec{}
 	ev, err := c.Decode([]byte(cursorAfterFileEdit), "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ev.Kind != KindPostTool || ev.Name != "afterFileEdit" {
-		t.Fatalf("Kind=%v Name=%q", ev.Kind, ev.Name)
+	if ev.Kind != model.KindPostTool || ev.Name != "afterFileEdit" {
+		t.Fatalf("model.Kind=%v Name=%q", ev.Kind, ev.Name)
 	}
-	if ev.Tool == nil || ev.Tool.Name != ToolEdit || ev.Tool.Native != "afterFileEdit" {
+	if ev.Tool == nil || ev.Tool.Name != model.ToolEdit || ev.Tool.Native != "afterFileEdit" {
 		t.Fatalf("Tool=%+v", ev.Tool)
 	}
 	if !bytes.Equal(ev.Raw, []byte(cursorAfterFileEdit)) {
@@ -129,19 +130,19 @@ func TestCursorDecode_AfterFileEdit(t *testing.T) {
 }
 
 func TestCursorDecode_Matrix(t *testing.T) {
-	c := &CursorCodec{}
+	c := &Codec{}
 	tests := []struct {
 		name      string
 		raw       string
 		eventHint string
-		kind      Kind
-		check     func(t *testing.T, ev *Event)
+		kind      model.Kind
+		check     func(t *testing.T, ev *model.Event)
 	}{
 		{
 			name: "sessionStart",
 			raw:  `{"hook_event_name":"sessionStart","conversation_id":"c1","model":"gpt","is_background_agent":true,"cwd":"/w"}`,
-			kind: KindSessionStart,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindSessionStart,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Life == nil || ev.Life.Model != "gpt" || !ev.Life.Background {
 					t.Fatalf("Life=%+v", ev.Life)
 				}
@@ -150,8 +151,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "sessionEnd",
 			raw:  `{"hook_event_name":"sessionEnd","conversation_id":"c1","reason":"complete","is_background_agent":false}`,
-			kind: KindSessionEnd,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindSessionEnd,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Life == nil || ev.Life.Reason != "complete" {
 					t.Fatalf("Life=%+v", ev.Life)
 				}
@@ -160,8 +161,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "beforeSubmitPrompt",
 			raw:  `{"hook_event_name":"beforeSubmitPrompt","conversation_id":"c1","prompt":"hello"}`,
-			kind: KindUserPrompt,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindUserPrompt,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Prompt != "hello" {
 					t.Fatalf("Prompt=%q", ev.Prompt)
 				}
@@ -170,9 +171,9 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "preToolUse shell",
 			raw:  `{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`,
-			kind: KindPreTool,
-			check: func(t *testing.T, ev *Event) {
-				if ev.Tool == nil || ev.Tool.Name != ToolBash || ev.Tool.Shell != "ls" {
+			kind: model.KindPreTool,
+			check: func(t *testing.T, ev *model.Event) {
+				if ev.Tool == nil || ev.Tool.Name != model.ToolBash || ev.Tool.Shell != "ls" {
 					t.Fatalf("Tool=%+v", ev.Tool)
 				}
 			},
@@ -180,8 +181,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "postToolUse",
 			raw:  `{"hook_event_name":"postToolUse","conversation_id":"c1","tool_name":"Read","tool_output":"contents","duration":100}`,
-			kind: KindPostTool,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindPostTool,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Result == nil || ev.Result.Text != "contents" || ev.Result.DurationMs != 100 {
 					t.Fatalf("Result=%+v", ev.Result)
 				}
@@ -190,8 +191,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "postToolUseFailure",
 			raw:  `{"hook_event_name":"postToolUseFailure","conversation_id":"c1","tool_name":"Shell","error_message":"timeout","failure_type":"timeout","duration_ms":50}`,
-			kind: KindPostToolFailure,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindPostToolFailure,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Result == nil || ev.Result.Error != "timeout" || ev.Result.FailureType != "timeout" {
 					t.Fatalf("Result=%+v", ev.Result)
 				}
@@ -200,8 +201,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "beforeShellExecution",
 			raw:  cursorShell,
-			kind: KindPreTool,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindPreTool,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Name != "beforeShellExecution" || ev.Tool.Shell != "git push --force" {
 					t.Fatalf("event=%+v tool=%+v", ev, ev.Tool)
 				}
@@ -210,9 +211,9 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "afterShellExecution",
 			raw:  `{"hook_event_name":"afterShellExecution","conversation_id":"c1","command":"ls","output":"a\nb","duration":10}`,
-			kind: KindPostTool,
-			check: func(t *testing.T, ev *Event) {
-				if ev.Tool == nil || ev.Tool.Name != ToolBash || ev.Result.Text != "a\nb" {
+			kind: model.KindPostTool,
+			check: func(t *testing.T, ev *model.Event) {
+				if ev.Tool == nil || ev.Tool.Name != model.ToolBash || ev.Result.Text != "a\nb" {
 					t.Fatalf("tool=%+v result=%+v", ev.Tool, ev.Result)
 				}
 			},
@@ -220,8 +221,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "beforeMCPExecution",
 			raw:  `{"hook_event_name":"beforeMCPExecution","conversation_id":"c1","tool_name":"MCP:browser_navigate","tool_input":"{}"}`,
-			kind: KindPreTool,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindPreTool,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Tool == nil || !ev.Tool.MCP || ev.Tool.Name != "MCP:browser_navigate" {
 					t.Fatalf("Tool=%+v", ev.Tool)
 				}
@@ -230,8 +231,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "afterMCPExecution",
 			raw:  `{"hook_event_name":"afterMCPExecution","conversation_id":"c1","tool_name":"MCP:browser_navigate","result_json":"{}","duration_ms":5}`,
-			kind: KindPostTool,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindPostTool,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Tool == nil || !ev.Tool.MCP || ev.Result.Text != "{}" {
 					t.Fatalf("tool=%+v result=%+v", ev.Tool, ev.Result)
 				}
@@ -240,9 +241,9 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "beforeReadFile",
 			raw:  `{"hook_event_name":"beforeReadFile","conversation_id":"c1","file_path":"a.go","content":"package main"}`,
-			kind: KindPreTool,
-			check: func(t *testing.T, ev *Event) {
-				if ev.Tool == nil || ev.Tool.Name != ToolRead {
+			kind: model.KindPreTool,
+			check: func(t *testing.T, ev *model.Event) {
+				if ev.Tool == nil || ev.Tool.Name != model.ToolRead {
 					t.Fatalf("Tool=%+v", ev.Tool)
 				}
 				var input struct {
@@ -260,9 +261,9 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "afterFileEdit",
 			raw:  cursorAfterFileEdit,
-			kind: KindPostTool,
-			check: func(t *testing.T, ev *Event) {
-				if ev.Tool == nil || ev.Tool.Name != ToolEdit {
+			kind: model.KindPostTool,
+			check: func(t *testing.T, ev *model.Event) {
+				if ev.Tool == nil || ev.Tool.Name != model.ToolEdit {
 					t.Fatalf("Tool=%+v", ev.Tool)
 				}
 			},
@@ -270,8 +271,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "subagentStart",
 			raw:  `{"hook_event_name":"subagentStart","conversation_id":"c1","subagent_id":"sa1","subagent_type":"explore","task":"find files"}`,
-			kind: KindSubagentStart,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindSubagentStart,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Subagent == nil || ev.Subagent.ID != "sa1" || ev.Subagent.Type != "explore" {
 					t.Fatalf("Subagent=%+v", ev.Subagent)
 				}
@@ -280,8 +281,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "subagentStop",
 			raw:  `{"hook_event_name":"subagentStop","conversation_id":"c1","subagent_type":"explore","loop_count":2,"status":"completed"}`,
-			kind: KindSubagentStop,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindSubagentStop,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Subagent == nil || ev.Subagent.LoopCount != 2 {
 					t.Fatalf("Subagent=%+v", ev.Subagent)
 				}
@@ -290,8 +291,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "stop",
 			raw:  cursorStop,
-			kind: KindStop,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindStop,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Turn == nil || ev.Turn.LoopCount != 1 {
 					t.Fatalf("Turn=%+v", ev.Turn)
 				}
@@ -300,8 +301,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "preCompact",
 			raw:  `{"hook_event_name":"preCompact","conversation_id":"c1","trigger":"auto"}`,
-			kind: KindPreCompact,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindPreCompact,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Compact == nil || ev.Compact.Trigger != "auto" {
 					t.Fatalf("Compact=%+v", ev.Compact)
 				}
@@ -310,8 +311,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "afterAgentResponse",
 			raw:  `{"hook_event_name":"afterAgentResponse","conversation_id":"c1","text":"done"}`,
-			kind: KindOther,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindOther,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Note == nil || ev.Note.Message != "done" {
 					t.Fatalf("Note=%+v", ev.Note)
 				}
@@ -320,8 +321,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "afterAgentThought",
 			raw:  `{"hook_event_name":"afterAgentThought","conversation_id":"c1","text":"thinking"}`,
-			kind: KindOther,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindOther,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Note == nil || ev.Note.Type != "thought" || ev.Note.Message != "thinking" {
 					t.Fatalf("Note=%+v", ev.Note)
 				}
@@ -330,8 +331,8 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "beforeTabFileRead",
 			raw:  `{"hook_event_name":"beforeTabFileRead","conversation_id":"c1","file_path":"x.go","content":"x"}`,
-			kind: KindOther,
-			check: func(t *testing.T, ev *Event) {
+			kind: model.KindOther,
+			check: func(t *testing.T, ev *model.Event) {
 				if ev.Tool != nil {
 					t.Fatalf("tab event should not fold Tool, got %+v", ev.Tool)
 				}
@@ -340,12 +341,12 @@ func TestCursorDecode_Matrix(t *testing.T) {
 		{
 			name: "afterTabFileEdit",
 			raw:  `{"hook_event_name":"afterTabFileEdit","conversation_id":"c1","file_path":"x.go","edits":[]}`,
-			kind: KindOther,
+			kind: model.KindOther,
 		},
 		{
 			name: "workspaceOpen",
 			raw:  `{"hook_event_name":"workspaceOpen","cursor_version":"1.7.2","workspace_roots":["/w"]}`,
-			kind: KindOther,
+			kind: model.KindOther,
 		},
 	}
 	for _, tt := range tests {
@@ -355,7 +356,7 @@ func TestCursorDecode_Matrix(t *testing.T) {
 				t.Fatal(err)
 			}
 			if ev.Kind != tt.kind {
-				t.Fatalf("Kind=%v want %v", ev.Kind, tt.kind)
+				t.Fatalf("model.Kind=%v want %v", ev.Kind, tt.kind)
 			}
 			if ev.Name == "" {
 				t.Fatal("Name empty")
@@ -372,12 +373,12 @@ func TestCursorDecode_Matrix(t *testing.T) {
 
 func TestCursorDecode_RequiresEventHint(t *testing.T) {
 	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
-	c := &CursorCodec{}
+	c := &Codec{}
 	_, err := c.Decode([]byte(raw), "")
 	if err == nil {
 		t.Fatal("expected error without eventHint")
 	}
-	if !errors.Is(err, cursor.ErrEventNameRequired) {
+	if !errors.Is(err, sdkcursor.ErrEventNameRequired) {
 		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
 	}
 	if !strings.Contains(err.Error(), "eventHint") {
@@ -386,18 +387,18 @@ func TestCursorDecode_RequiresEventHint(t *testing.T) {
 }
 
 func TestCursorEncode_ZeroResult(t *testing.T) {
-	c := &CursorCodec{}
-	ev := &Event{Agent: Cursor, Kind: KindPreTool, Name: "beforeShellExecution"}
-	out, code, err := c.Encode(ev, Result{})
+	c := &Codec{}
+	ev := &model.Event{Agent: model.Cursor, Kind: model.KindPreTool, Name: "beforeShellExecution"}
+	out, code, err := c.Encode(ev, model.Result{})
 	if err != nil || code != 0 || out != nil {
 		t.Fatalf("zero result should be silent, got %q code=%d err=%v", out, code, err)
 	}
 }
 
 func TestCursorEncode_BeforeSubmitPromptBlock(t *testing.T) {
-	c := &CursorCodec{}
-	ev := &Event{Agent: Cursor, Kind: KindUserPrompt, Name: "beforeSubmitPrompt"}
-	out, code, err := c.Encode(ev, Result{BlockPrompt: true, UserMessage: "blocked"})
+	c := &Codec{}
+	ev := &model.Event{Agent: model.Cursor, Kind: model.KindUserPrompt, Name: "beforeSubmitPrompt"}
+	out, code, err := c.Encode(ev, model.Result{BlockPrompt: true, UserMessage: "blocked"})
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -411,9 +412,9 @@ func TestCursorEncode_BeforeSubmitPromptBlock(t *testing.T) {
 }
 
 func TestCursorEncode_SessionStartEnv(t *testing.T) {
-	c := &CursorCodec{}
-	ev := &Event{Agent: Cursor, Kind: KindSessionStart, Name: "sessionStart"}
-	out, code, err := c.Encode(ev, Result{Env: map[string]string{"K": "V"}, Context: "ctx"})
+	c := &Codec{}
+	ev := &model.Event{Agent: model.Cursor, Kind: model.KindSessionStart, Name: "sessionStart"}
+	out, code, err := c.Encode(ev, model.Result{Env: map[string]string{"K": "V"}, Context: "ctx"})
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -430,14 +431,14 @@ func TestCursorEncode_SessionStartEnv(t *testing.T) {
 }
 
 func TestCursorEncode_TabFileReadDeny(t *testing.T) {
-	c := &CursorCodec{}
-	ev := &Event{Agent: Cursor, Kind: KindOther, Name: "beforeTabFileRead"}
-	out, code, err := c.Encode(ev, Deny("no tab reads"))
+	c := &Codec{}
+	ev := &model.Event{Agent: model.Cursor, Kind: model.KindOther, Name: "beforeTabFileRead"}
+	out, code, err := c.Encode(ev, model.Deny("no tab reads"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code != CursorWarnExit {
-		t.Fatalf("exit code = %d, want %d", code, CursorWarnExit)
+	if code != WarnExit {
+		t.Fatalf("exit code = %d, want %d", code, WarnExit)
 	}
 	if !strings.Contains(string(out), `"permission":"deny"`) {
 		t.Fatalf("bad output: %s", out)
@@ -445,8 +446,8 @@ func TestCursorEncode_TabFileReadDeny(t *testing.T) {
 }
 
 func TestCursorEncode_NilEvent(t *testing.T) {
-	c := &CursorCodec{}
-	_, _, err := c.Encode(nil, Deny("nope"))
+	c := &Codec{}
+	_, _, err := c.Encode(nil, model.Deny("nope"))
 	if err == nil {
 		t.Fatal("expected error for nil event")
 	}

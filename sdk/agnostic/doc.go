@@ -4,6 +4,10 @@
 // and Detect, tool-name normalization, typed tool-input helpers, and dialect
 // codecs that translate native stdin/stdout JSON.
 //
+// Agent-specific codecs live under sdk/agnostic/claude, sdk/agnostic/copilot,
+// and sdk/agnostic/cursor. Shared event and result types live in
+// sdk/agnostic/internal/model.
+//
 // Result is the outbound hook handler response. Event.Result is a different
 // concept: incoming post-tool payload data on decoded events. Multiple handler
 // results merge via Merge; Unsupported reports fields a dialect cannot encode.

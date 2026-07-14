@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -122,13 +123,8 @@ func codecForServe(agent Dialect, cfg *run.Config) (Codec, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cc, ok := codec.(*ClaudeCodec); ok && cfg.Getenv != nil {
-		cc.Getenv = cfg.Getenv
-		if v := cfg.DialectConfig("claude"); v != nil {
-			if rc, ok := v.(*claudeRuntimeConfig); ok && rc != nil && rc.appendFile != nil {
-				cc.AppendFile = rc.appendFile
-			}
-		}
+	if cc, ok := codec.(*claude.Codec); ok {
+		claude.ApplyRunConfig(cc, cfg)
 	}
 	return codec, nil
 }
@@ -167,11 +163,6 @@ func handlerErrorExit(ev *Event) int {
 	default:
 		return 1
 	}
-}
-
-// claudeRuntimeConfig mirrors claude runtime fields needed for agnostic encode.
-type claudeRuntimeConfig struct {
-	appendFile func(path string, data []byte) error
 }
 
 // ResetHandlers clears only agnostic-registered handlers from the shared run registry.

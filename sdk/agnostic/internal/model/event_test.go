@@ -1,4 +1,4 @@
-package agnostic
+package model
 
 import (
 	"encoding/json"
