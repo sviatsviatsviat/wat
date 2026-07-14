@@ -8,8 +8,8 @@ import (
 )
 
 func ExampleChain() {
-	new(claude.Chain).PreToolUse(func(ctx context.Context, ev claude.PreToolUse, r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
-		if ev.ToolName == "Bash" {
+	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.PreToolUseHook, r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		if hook.Event.ToolName == "Bash" {
 			return r.Deny("blocked"), nil
 		}
 		return claude.PreToolUseOutput{}, nil

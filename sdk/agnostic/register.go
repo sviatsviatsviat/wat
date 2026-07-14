@@ -13,22 +13,34 @@ import (
 )
 
 // PreToolHandler handles portable PreTool events.
-type PreToolHandler func(ctx context.Context, ev *Event, results PreToolResults) (PreToolResult, error)
+type PreToolHandler func(ctx context.Context, hook PreToolHook, results PreToolResults) (PreToolResult, error)
 
 // PostToolHandler handles portable PostTool events.
-type PostToolHandler func(ctx context.Context, ev *Event, results PostToolResults) (PostToolResult, error)
+type PostToolHandler func(ctx context.Context, hook PostToolHook, results PostToolResults) (PostToolResult, error)
 
 // PostToolFailureHandler handles portable PostToolFailure events.
-type PostToolFailureHandler func(ctx context.Context, ev *Event, results PostToolFailureResults) (PostToolFailureResult, error)
+type PostToolFailureHandler func(ctx context.Context, hook PostToolFailureHook, results PostToolFailureResults) (PostToolFailureResult, error)
 
 // StopHandler handles portable Stop and SubagentStop events.
-type StopHandler func(ctx context.Context, ev *Event, results StopResults) (StopResult, error)
+type StopHandler func(ctx context.Context, hook StopHook, results StopResults) (StopResult, error)
 
 // SessionStartHandler handles portable SessionStart events.
-type SessionStartHandler func(ctx context.Context, ev *Event, results SessionStartResults) (SessionStartResult, error)
+type SessionStartHandler func(ctx context.Context, hook SessionStartHook, results SessionStartResults) (SessionStartResult, error)
 
-// ObserveHandler handles observe-only portable events with no hook response.
-type ObserveHandler func(ctx context.Context, ev *Event) error
+// SessionEndHandler handles observe-only SessionEnd events.
+type SessionEndHandler func(ctx context.Context, hook SessionEndHook) error
+
+// UserPromptHandler handles observe-only UserPrompt events.
+type UserPromptHandler func(ctx context.Context, hook UserPromptHook) error
+
+// PreCompactHandler handles observe-only PreCompact events.
+type PreCompactHandler func(ctx context.Context, hook PreCompactHook) error
+
+// SubagentStartHandler handles observe-only SubagentStart events.
+type SubagentStartHandler func(ctx context.Context, hook SubagentStartHook) error
+
+// AnyHandler handles every event before kind-specific handlers with no hook response.
+type AnyHandler func(ctx context.Context, hook AnyHook) error
 
 // Chain supports fluent handler registration into the shared run registry.
 type Chain struct{}
@@ -39,7 +51,11 @@ func OnPreTool(fn PreToolHandler) *Chain {
 		return &Chain{}
 	}
 	registerResultHandler(KindPreTool, func(ctx context.Context, ev *Event) (PreToolResult, error) {
-		return fn(ctx, ev, preToolResults{})
+		typed, err := PreToolEventFrom(ev)
+		if err != nil {
+			return PreToolResult{}, err
+		}
+		return fn(ctx, preToolHook(run.InvocationFrom(ctx), typed), preToolResults{})
 	})
 	return &Chain{}
 }
@@ -50,7 +66,11 @@ func OnPostTool(fn PostToolHandler) *Chain {
 		return &Chain{}
 	}
 	registerResultHandler(KindPostTool, func(ctx context.Context, ev *Event) (PostToolResult, error) {
-		return fn(ctx, ev, postToolResults{})
+		typed, err := PostToolEventFrom(ev)
+		if err != nil {
+			return PostToolResult{}, err
+		}
+		return fn(ctx, postToolHook(run.InvocationFrom(ctx), typed), postToolResults{})
 	})
 	return &Chain{}
 }
@@ -61,7 +81,11 @@ func OnPostToolFailure(fn PostToolFailureHandler) *Chain {
 		return &Chain{}
 	}
 	registerResultHandler(KindPostToolFailure, func(ctx context.Context, ev *Event) (PostToolFailureResult, error) {
-		return fn(ctx, ev, postToolFailureResults{})
+		typed, err := PostToolFailureEventFrom(ev)
+		if err != nil {
+			return PostToolFailureResult{}, err
+		}
+		return fn(ctx, postToolFailureHook(run.InvocationFrom(ctx), typed), postToolFailureResults{})
 	})
 	return &Chain{}
 }
@@ -72,7 +96,11 @@ func OnStop(fn StopHandler) *Chain {
 		return &Chain{}
 	}
 	registerResultHandler(KindStop, func(ctx context.Context, ev *Event) (StopResult, error) {
-		return fn(ctx, ev, stopResults{})
+		typed, err := StopEventFrom(ev)
+		if err != nil {
+			return StopResult{}, err
+		}
+		return fn(ctx, stopHook(run.InvocationFrom(ctx), typed), stopResults{})
 	})
 	return &Chain{}
 }
@@ -83,7 +111,11 @@ func OnSubagentStop(fn StopHandler) *Chain {
 		return &Chain{}
 	}
 	registerResultHandler(KindSubagentStop, func(ctx context.Context, ev *Event) (StopResult, error) {
-		return fn(ctx, ev, stopResults{})
+		typed, err := StopEventFrom(ev)
+		if err != nil {
+			return StopResult{}, err
+		}
+		return fn(ctx, stopHook(run.InvocationFrom(ctx), typed), stopResults{})
 	})
 	return &Chain{}
 }
@@ -94,135 +126,122 @@ func OnSessionStart(fn SessionStartHandler) *Chain {
 		return &Chain{}
 	}
 	registerResultHandler(KindSessionStart, func(ctx context.Context, ev *Event) (SessionStartResult, error) {
-		return fn(ctx, ev, sessionStartResults{})
+		typed, err := SessionStartEventFrom(ev)
+		if err != nil {
+			return SessionStartResult{}, err
+		}
+		return fn(ctx, sessionStartHook(run.InvocationFrom(ctx), typed), sessionStartResults{})
 	})
 	return &Chain{}
 }
 
 // OnSessionEnd registers an observe-only handler for SessionEnd events.
-func OnSessionEnd(fn ObserveHandler) *Chain {
-	registerObserveHandler(KindSessionEnd, fn)
+func OnSessionEnd(fn SessionEndHandler) *Chain {
+	registerObserveHandler(KindSessionEnd, func(ctx context.Context, ev *Event) error {
+		typed, err := SessionEndEventFrom(ev)
+		if err != nil {
+			return err
+		}
+		return fn(ctx, sessionEndHook(run.InvocationFrom(ctx), typed))
+	})
 	return &Chain{}
 }
 
 // OnUserPrompt registers an observe-only handler for UserPrompt events.
-func OnUserPrompt(fn ObserveHandler) *Chain {
-	registerObserveHandler(KindUserPrompt, fn)
+func OnUserPrompt(fn UserPromptHandler) *Chain {
+	registerObserveHandler(KindUserPrompt, func(ctx context.Context, ev *Event) error {
+		typed, err := UserPromptEventFrom(ev)
+		if err != nil {
+			return err
+		}
+		return fn(ctx, userPromptHook(run.InvocationFrom(ctx), typed))
+	})
 	return &Chain{}
 }
 
 // OnPreCompact registers an observe-only handler for PreCompact events.
-func OnPreCompact(fn ObserveHandler) *Chain {
-	registerObserveHandler(KindPreCompact, fn)
+func OnPreCompact(fn PreCompactHandler) *Chain {
+	registerObserveHandler(KindPreCompact, func(ctx context.Context, ev *Event) error {
+		typed, err := PreCompactEventFrom(ev)
+		if err != nil {
+			return err
+		}
+		return fn(ctx, preCompactHook(run.InvocationFrom(ctx), typed))
+	})
 	return &Chain{}
 }
 
 // OnSubagentStart registers an observe-only handler for SubagentStart events.
-func OnSubagentStart(fn ObserveHandler) *Chain {
-	registerObserveHandler(KindSubagentStart, fn)
+func OnSubagentStart(fn SubagentStartHandler) *Chain {
+	registerObserveHandler(KindSubagentStart, func(ctx context.Context, ev *Event) error {
+		typed, err := SubagentStartEventFrom(ev)
+		if err != nil {
+			return err
+		}
+		return fn(ctx, subagentStartHook(run.InvocationFrom(ctx), typed))
+	})
 	return &Chain{}
 }
 
 // OnAny registers an observe-only handler invoked for every event before kind-specific handlers.
-func OnAny(fn ObserveHandler) *Chain {
+func OnAny(fn AnyHandler) *Chain {
 	registerAny(fn)
 	return &Chain{}
 }
 
 // OnPostTool registers another PostTool handler on the chain.
 func (c *Chain) OnPostTool(fn PostToolHandler) *Chain {
-	if fn == nil {
-		return c
-	}
-	registerResultHandler(KindPostTool, func(ctx context.Context, ev *Event) (PostToolResult, error) {
-		return fn(ctx, ev, postToolResults{})
-	})
-	return c
+	return OnPostTool(fn)
 }
 
 // OnPostToolFailure registers another PostToolFailure handler on the chain.
 func (c *Chain) OnPostToolFailure(fn PostToolFailureHandler) *Chain {
-	if fn == nil {
-		return c
-	}
-	registerResultHandler(KindPostToolFailure, func(ctx context.Context, ev *Event) (PostToolFailureResult, error) {
-		return fn(ctx, ev, postToolFailureResults{})
-	})
-	return c
+	return OnPostToolFailure(fn)
 }
 
 // OnStop registers another Stop handler on the chain.
 func (c *Chain) OnStop(fn StopHandler) *Chain {
-	if fn == nil {
-		return c
-	}
-	registerResultHandler(KindStop, func(ctx context.Context, ev *Event) (StopResult, error) {
-		return fn(ctx, ev, stopResults{})
-	})
-	return c
+	return OnStop(fn)
 }
 
 // OnSubagentStop registers another SubagentStop handler on the chain.
 func (c *Chain) OnSubagentStop(fn StopHandler) *Chain {
-	if fn == nil {
-		return c
-	}
-	registerResultHandler(KindSubagentStop, func(ctx context.Context, ev *Event) (StopResult, error) {
-		return fn(ctx, ev, stopResults{})
-	})
-	return c
+	return OnSubagentStop(fn)
 }
 
 // OnSessionStart registers another SessionStart handler on the chain.
 func (c *Chain) OnSessionStart(fn SessionStartHandler) *Chain {
-	if fn == nil {
-		return c
-	}
-	registerResultHandler(KindSessionStart, func(ctx context.Context, ev *Event) (SessionStartResult, error) {
-		return fn(ctx, ev, sessionStartResults{})
-	})
-	return c
+	return OnSessionStart(fn)
 }
 
 // OnSessionEnd registers another observe-only SessionEnd handler on the chain.
-func (c *Chain) OnSessionEnd(fn ObserveHandler) *Chain {
-	registerObserveHandler(KindSessionEnd, fn)
-	return c
+func (c *Chain) OnSessionEnd(fn SessionEndHandler) *Chain {
+	return OnSessionEnd(fn)
 }
 
 // OnUserPrompt registers another observe-only UserPrompt handler on the chain.
-func (c *Chain) OnUserPrompt(fn ObserveHandler) *Chain {
-	registerObserveHandler(KindUserPrompt, fn)
-	return c
+func (c *Chain) OnUserPrompt(fn UserPromptHandler) *Chain {
+	return OnUserPrompt(fn)
 }
 
 // OnPreCompact registers another observe-only PreCompact handler on the chain.
-func (c *Chain) OnPreCompact(fn ObserveHandler) *Chain {
-	registerObserveHandler(KindPreCompact, fn)
-	return c
+func (c *Chain) OnPreCompact(fn PreCompactHandler) *Chain {
+	return OnPreCompact(fn)
 }
 
 // OnSubagentStart registers another observe-only SubagentStart handler on the chain.
-func (c *Chain) OnSubagentStart(fn ObserveHandler) *Chain {
-	registerObserveHandler(KindSubagentStart, fn)
-	return c
+func (c *Chain) OnSubagentStart(fn SubagentStartHandler) *Chain {
+	return OnSubagentStart(fn)
 }
 
 // OnAny registers another observe-only catch-all handler on the chain.
-func (c *Chain) OnAny(fn ObserveHandler) *Chain {
-	registerAny(fn)
-	return c
+func (c *Chain) OnAny(fn AnyHandler) *Chain {
+	return OnAny(fn)
 }
 
 // OnPreTool registers another PreTool handler on the chain.
 func (c *Chain) OnPreTool(fn PreToolHandler) *Chain {
-	if fn == nil {
-		return c
-	}
-	registerResultHandler(KindPreTool, func(ctx context.Context, ev *Event) (PreToolResult, error) {
-		return fn(ctx, ev, preToolResults{})
-	})
-	return c
+	return OnPreTool(fn)
 }
 
 // Serve reads a hook payload from in, dispatches registered handlers, writes
@@ -269,7 +288,7 @@ func registerResultHandler[R wireResult](kind Kind, fn func(context.Context, *Ev
 	}
 }
 
-func registerObserveHandler(kind Kind, fn ObserveHandler) {
+func registerObserveHandler(kind Kind, fn func(context.Context, *Event) error) {
 	if fn == nil {
 		return
 	}
@@ -286,12 +305,12 @@ func registerObserveHandler(kind Kind, fn ObserveHandler) {
 	}
 }
 
-func registerAny(fn ObserveHandler) {
+func registerAny(fn AnyHandler) {
 	if fn == nil {
 		return
 	}
 	for _, agent := range []Dialect{Claude, Copilot, Cursor} {
-		run.RegisterAnyHandler("agnostic", agent.String(), makeObserveProducer(agent, fn))
+		run.RegisterAnyHandler("agnostic", agent.String(), makeAnyProducer(agent, fn))
 	}
 }
 
@@ -318,7 +337,7 @@ func registerAgnosticHandler(agent Dialect, eventName string, kind Kind, fn func
 	})
 }
 
-func makeObserveProducer(agent Dialect, fn ObserveHandler) run.Producer {
+func makeAnyProducer(agent Dialect, fn AnyHandler) run.Producer {
 	return func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		codec, err := codecForServe(agent, cfg)
@@ -329,7 +348,7 @@ func makeObserveProducer(agent Dialect, fn ObserveHandler) run.Producer {
 		if err != nil {
 			return nil, 1, err
 		}
-		if err := fn(ctx, ev); err != nil {
+		if err := fn(ctx, anyHook(run.InvocationFrom(ctx), AnyEventFrom(ev))); err != nil {
 			return nil, handlerErrorExit(ev), err
 		}
 		return nil, 0, nil

@@ -35,7 +35,7 @@ func (preToolUseResults) Defer() PreToolUseOutput {
 	return PreToolUseOutput{Decision: DecisionDefer}
 }
 
-// PostToolUseResults constructs PostToolUse and PostToolUseFailure hook responses.
+// PostToolUseResults constructs PostToolUse hook responses.
 type PostToolUseResults interface {
 	// Context returns a context-injection-only PostToolUse result.
 	Context(text string) PostToolUseOutput
@@ -53,6 +53,19 @@ func (postToolUseResults) Context(text string) PostToolUseOutput {
 // Block returns a block result with an agent-facing reason.
 func (postToolUseResults) Block(reason string) PostToolUseOutput {
 	return PostToolUseOutput{Block: true, Reason: reason}
+}
+
+// PostToolUseFailureResults constructs PostToolUseFailure hook responses.
+type PostToolUseFailureResults interface {
+	// Context returns recovery guidance for PostToolUseFailure events.
+	Context(text string) PostToolUseOutput
+}
+
+type postToolUseFailureResults struct{}
+
+// Context returns recovery guidance for PostToolUseFailure events.
+func (postToolUseFailureResults) Context(text string) PostToolUseOutput {
+	return PostToolUseOutput{AdditionalContext: text}
 }
 
 // PermissionRequestResults constructs PermissionRequest hook responses.
@@ -114,15 +127,41 @@ func (sessionStartResults) Context(text string) SessionStartOutput {
 	return SessionStartOutput{AdditionalContext: text}
 }
 
-// CommonResults constructs CommonOutput hook responses for observe-only events.
-type CommonResults interface {
-	// Context returns a context-injection-only CommonOutput result.
+// SubagentStartResults constructs SubagentStart hook responses.
+type SubagentStartResults interface {
+	// Context returns a context-injection-only SubagentStart result.
 	Context(text string) CommonOutput
 }
 
-type commonResults struct{}
+type subagentStartResults struct{}
 
-// Context returns a context-injection-only CommonOutput result.
-func (commonResults) Context(text string) CommonOutput {
+// Context returns a context-injection-only SubagentStart result.
+func (subagentStartResults) Context(text string) CommonOutput {
+	return CommonOutput{AdditionalContext: text}
+}
+
+// NotificationResults constructs Notification hook responses.
+type NotificationResults interface {
+	// Context returns a context-injection-only Notification result.
+	Context(text string) CommonOutput
+}
+
+type notificationResults struct{}
+
+// Context returns a context-injection-only Notification result.
+func (notificationResults) Context(text string) CommonOutput {
+	return CommonOutput{AdditionalContext: text}
+}
+
+// PreCompactResults constructs PreCompact hook responses.
+type PreCompactResults interface {
+	// Context returns a context-injection-only PreCompact result.
+	Context(text string) CommonOutput
+}
+
+type preCompactResults struct{}
+
+// Context returns a context-injection-only PreCompact result.
+func (preCompactResults) Context(text string) CommonOutput {
 	return CommonOutput{AdditionalContext: text}
 }

@@ -106,3 +106,29 @@ type sessionStartResults struct{}
 func (sessionStartResults) Context(text string) SessionStartOutput {
 	return SessionStartOutput{AdditionalContext: text}
 }
+
+// SubagentStartResults constructs subagentStart hook responses.
+type SubagentStartResults interface {
+	// Context returns a context-injection-only SubagentStart result.
+	Context(text string) SubagentStartOutput
+}
+
+type subagentStartResults struct{}
+
+// Context returns a context-injection-only SubagentStart result.
+func (subagentStartResults) Context(text string) SubagentStartOutput {
+	return SubagentStartOutput{AdditionalContext: text}
+}
+
+// NotificationResults constructs notification hook responses.
+type NotificationResults interface {
+	// Context returns a context-injection-only Notification result.
+	Context(text string) NotificationOutput
+}
+
+type notificationResults struct{}
+
+// Context returns a context-injection-only Notification result.
+func (notificationResults) Context(text string) NotificationOutput {
+	return NotificationOutput{AdditionalContext: text}
+}

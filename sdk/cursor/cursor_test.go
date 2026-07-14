@@ -472,7 +472,7 @@ func TestEncode_PermissionUpdatedInputEmptyEventName(t *testing.T) {
 func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 	run.Reset()
 	cursor.ResetHandlers()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, ev cursor.BeforeShellExecution, r cursor.PermissionResults) (cursor.PermissionOutput, error) {
+	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecutionHook, r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		return r.Deny("blocked"), nil
 	})
 	var stdout bytes.Buffer
@@ -488,7 +488,7 @@ func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 func TestMux_OnDuplicatePanics(t *testing.T) {
 	run.Reset()
 	cursor.ResetHandlers()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, ev cursor.BeforeShellExecution, _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
+	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecutionHook, _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		return cursor.PermissionOutput{}, nil
 	})
 	defer func() {
@@ -496,7 +496,7 @@ func TestMux_OnDuplicatePanics(t *testing.T) {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, ev cursor.BeforeShellExecution, _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
+	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecutionHook, _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		return cursor.PermissionOutput{}, nil
 	})
 }

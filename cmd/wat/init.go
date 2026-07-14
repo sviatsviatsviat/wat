@@ -127,11 +127,11 @@ import (
 )
 
 func main() {
-	agnostic.OnPreTool(func(ctx context.Context, ev *agnostic.Event, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
+	agnostic.OnPreTool(func(ctx context.Context, hook agnostic.PreToolHook, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
 		// Guard: block force pushes, escalate other git pushes to the user.
 		// Fires on PreToolUse (Claude/Copilot) and on preToolUse /
-		// beforeShellExecution (Cursor); ev.Tool.Shell is the extracted command.
-		cmd := ev.Tool.Shell
+		// beforeShellExecution (Cursor); hook.Tool.Shell is the extracted command.
+		cmd := hook.Tool.Shell
 		switch {
 		case strings.Contains(cmd, "push --force"), strings.Contains(cmd, "push -f"):
 			// → Claude: permissionDecision:"deny"; Copilot: permissionDecision:"deny";
@@ -143,19 +143,19 @@ func main() {
 		}
 		return agnostic.PreToolResult{}, nil // zero = no opinion, default flow
 	}).
-		OnPostTool(func(ctx context.Context, ev *agnostic.Event, r agnostic.PostToolResults) (agnostic.PostToolResult, error) {
+		OnPostTool(func(ctx context.Context, hook agnostic.PostToolHook, r agnostic.PostToolResults) (agnostic.PostToolResult, error) {
 			// Command: after any file edit, tell the model which test command applies.
 			// → additionalContext / additional_context on each dialect.
-			if ev.Tool.Name == agnostic.ToolEdit || ev.Tool.Name == agnostic.ToolWrite {
+			if hook.Tool.Name == agnostic.ToolEdit || hook.Tool.Name == agnostic.ToolWrite {
 				return r.Context("Run go test ./... to verify this change."), nil
 			}
 			return agnostic.PostToolResult{}, nil
 		}).
-		OnStop(func(ctx context.Context, ev *agnostic.Event, r agnostic.StopResults) (agnostic.StopResult, error) {
+		OnStop(func(ctx context.Context, hook agnostic.StopHook, r agnostic.StopResults) (agnostic.StopResult, error) {
 			// Stop gate: refuse to finish the turn while the build is red.
 			// → Claude/Copilot: decision:"block"+reason; Cursor: followup_message.
 			// Loop guards differ per agent, so check both before re-blocking.
-			if ev.Turn.StopHookActive || ev.Turn.LoopCount > 2 {
+			if hook.Turn.StopHookActive || hook.Turn.LoopCount > 2 {
 				return agnostic.StopResult{}, nil // already retried; let it stop
 			}
 			if err := exec.CommandContext(ctx, "go", "build", "./...").Run(); err != nil {

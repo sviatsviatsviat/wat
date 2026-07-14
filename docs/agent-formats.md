@@ -18,6 +18,9 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 | `output.go` | Typed handler response structs |
 | `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf` |
 | `encode.go` | `Encode` (wire mapping) |
+| `events.go` | Normalized typed events (`PreToolEvent`, …) — **agnostic only** |
+| `hook.go` | Hook wrappers embedding typed event + `run.Invocation` + `Raw()` |
+| `results.go` | Hook-scoped result builder interfaces (one per Chain/`On*` method) |
 | `mux.go` | Fluent `Chain` methods, registers into `sdk/run` |
 | `options.go` | Encode and run configuration (`WithEvent`, `WithFailPolicy`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
@@ -96,7 +99,29 @@ Payload shape is checked before environment variables because Cursor exports `CL
 
 Typed registration methods (`OnPreTool`, `OnPostTool`, `OnStop`, and others) accept only **portable** event kinds — those present on Claude Code, GitHub Copilot, and Cursor. Each kind has its own result type (`PreToolResult`, `PostToolResult`, `StopResult`, …) so hook authors can only set fields every agent can encode. Use `sdk/claude`, `sdk/copilot`, or `sdk/cursor` directly for agent-only capabilities.
 
-Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) and `OnAny` take an `ObserveHandler` that returns only `error` — no hook response.
+Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) and `OnAny` take per-kind observe handlers that return only `error` — no hook response. Each handler receives a hook wrapper (typed event + `run.Invocation`) instead of a bare `*Event`.
+
+### Handler signatures
+
+All four SDKs use the same handler shapes. Result-producing handlers take `(ctx, hook, results)`; observe-only handlers take `(ctx, hook) error`. Access event fields on the hook (embedded typed event in agnostic; `hook.Event` in per-agent SDKs). Use `hook.Invocation()` for serve-time settings (`Dialect`, `EventHint`, `Getenv`, `DialectConfig`) and `hook.Raw()` for the untouched native JSON.
+
+| Category | agnostic | claude / copilot / cursor |
+|---|---|---|
+| Result | `(ctx, hook PreToolHook, r PreToolResults) (PreToolResult, error)` — hook embeds **`PreToolEvent`** (normalized) | `(ctx, hook PreToolUseHook, r PreToolUseResults) (PreToolUseOutput, error)` — hook embeds **native typed event** via `hook.Event` |
+| Observe | `(ctx, hook SessionEndHook) error` — hook embeds **`SessionEndEvent`** | `(ctx, hook SessionEndHook) error` — hook embeds native typed event via `hook.Event` |
+| Catch-all | `OnAny(func(ctx, hook AnyHook) error)` — `AnyEvent` includes `Kind` | `Chain.OnAny(...)` |
+
+**Not in handler signatures:** bare `*Event` (agnostic) or cross-kind event blobs. Exported `agnostic.Event` remains for codecs, `wat test` summaries, and manual re-decode via `hook.Raw()`.
+
+### Hook-scoped result builders
+
+Each result-producing Chain method or `On*` registration injects a builder interface scoped to that hook only — one exported builder type per Chain/`On*` method, even when method sets are identical. Shared unexported implementation is fine; shared exported interfaces are not. Examples:
+
+- `PostToolUseFailureResults` exposes only `Context` (not `Block` from post-success hooks).
+- Claude `SubagentStartResults`, `NotificationResults`, and `PreCompactResults` are separate types (not a shared `CommonResults`).
+- Cursor `BeforeReadFileResults` and `BeforeTabFileReadResults` are separate from shell/MCP `PermissionResults` where encode surfaces differ.
+
+Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …). Return a typed zero literal for no opinion, or set advanced fields directly on the result/output struct returned by the handler.
 
 ### Event support matrix
 
@@ -130,7 +155,7 @@ Observe-only handlers accept decoded events but produce no hook stdout JSON.
 | `SessionStart` | `SessionStartResult` | `Context` |
 | `SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart` | — | observe-only (no result) |
 
-Each result-producing handler receives a hook-scoped builder interface (`PreToolResults`, `PostToolResults`, `StopResults`, and others) as its third parameter. Use the builder to construct common results (`r.Deny`, `r.Context`, `r.FollowUp`, …); return a typed zero literal (`PreToolResult{}`) for no opinion, or set advanced fields directly on the result struct (`UpdatedInput`, `UpdatedOutput`). Multiple handlers for the same kind merge at the native JSON layer.
+Each result-producing handler receives a hook-scoped builder interface (`PreToolResults`, `PostToolResults`, `StopResults`, and others) as its third parameter. See **Hook-scoped result builders** above. Multiple handlers for the same kind merge at the native JSON layer.
 
 ### Agent-only capabilities
 
@@ -145,6 +170,16 @@ Register with the per-agent SDK when you need features outside the portable inte
 | `PermissionRequest` handlers | Claude, Copilot | `sdk/claude`, `sdk/copilot` |
 | `Context` on `PreTool` | Claude only | `sdk/claude` |
 | `Decision` on `SubagentStart` | Cursor only | `sdk/cursor` |
+
+### Per-agent Chain coverage
+
+Each per-agent SDK exposes a fluent `Chain` with one method per native hook surface (or shared builder where wire encode is identical). `Chain.OnAny` registers an observe-only catch-all handler. Claude-only `KindOther` events decode but have no dedicated Chain method unless registered via `OnAny`.
+
+| SDK | Chain methods | Decode-only / `OnAny` |
+|---|---|---|
+| **claude** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`, `Stop`, `SubagentStop`, `SessionStart`, `SubagentStart`, `Notification`, `PreCompact`, `SessionEnd`, `OnAny` | ~18 additional Claude events (`Setup`, `TaskCreated`, …) → `KindOther`; use `OnAny` or per-agent decode |
+| **copilot** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `AgentStop`, `SubagentStop`, `PermissionRequest`, `SessionStart`, `SubagentStart`, `Notification`, `SessionEnd`, `UserPromptSubmitted`, `PreCompact`, `ErrorOccurred`, `OnAny` | Full 13-event surface covered |
+| **cursor** | All 21 native events including `PreToolUse`, dedicated shell/MCP/file/tab hooks, lifecycle/telemetry observe methods, `OnAny` | Full 21-event surface covered |
 
 ## Claude codec
 

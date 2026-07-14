@@ -73,3 +73,73 @@ type sessionStartResults struct{}
 func (sessionStartResults) Context(text string) SessionStartOutput {
 	return SessionStartOutput{AdditionalContext: text}
 }
+
+type permissionGateResults struct{}
+
+func (permissionGateResults) allow() PermissionOutput {
+	return PermissionOutput{Decision: DecisionAllow}
+}
+
+func (permissionGateResults) deny(agentMessage string) PermissionOutput {
+	return PermissionOutput{Decision: DecisionDeny, AgentMessage: agentMessage}
+}
+
+// BeforeReadFileResults constructs beforeReadFile hook responses.
+type BeforeReadFileResults interface {
+	Allow() PermissionOutput
+	Deny(agentMessage string) PermissionOutput
+}
+
+type beforeReadFileResults struct{ permissionGateResults }
+
+// Allow returns an allow verdict.
+func (r beforeReadFileResults) Allow() PermissionOutput { return r.allow() }
+
+// Deny returns a deny verdict with an agent-facing message.
+func (r beforeReadFileResults) Deny(agentMessage string) PermissionOutput {
+	return r.deny(agentMessage)
+}
+
+// BeforeTabFileReadResults constructs beforeTabFileRead hook responses.
+type BeforeTabFileReadResults interface {
+	Allow() PermissionOutput
+	Deny(agentMessage string) PermissionOutput
+}
+
+type beforeTabFileReadResults struct{ permissionGateResults }
+
+// Allow returns an allow verdict.
+func (r beforeTabFileReadResults) Allow() PermissionOutput { return r.allow() }
+
+// Deny returns a deny verdict with an agent-facing message.
+func (r beforeTabFileReadResults) Deny(agentMessage string) PermissionOutput {
+	return r.deny(agentMessage)
+}
+
+// SubagentStartResults constructs subagentStart hook responses.
+type SubagentStartResults interface {
+	Allow() PermissionOutput
+	Deny(agentMessage string) PermissionOutput
+}
+
+type subagentStartResults struct{ permissionGateResults }
+
+// Allow returns an allow verdict.
+func (r subagentStartResults) Allow() PermissionOutput { return r.allow() }
+
+// Deny returns a deny verdict with an agent-facing message.
+func (r subagentStartResults) Deny(agentMessage string) PermissionOutput {
+	return r.deny(agentMessage)
+}
+
+// PreCompactResults constructs preCompact hook responses.
+type PreCompactResults interface {
+	UserMessage(text string) PreCompactOutput
+}
+
+type preCompactResults struct{}
+
+// UserMessage returns a preCompact result with a user-facing message.
+func (preCompactResults) UserMessage(text string) PreCompactOutput {
+	return PreCompactOutput{UserMessage: text}
+}

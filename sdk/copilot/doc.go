@@ -9,8 +9,8 @@
 //
 // Example:
 //
-//	new(copilot.Chain).PreToolUse(func(ctx context.Context, ev copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
-//	    if ev.NativeToolName() == "bash" {
+//	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+//	    if hook.Event.NativeToolName() == "bash" {
 //	        return r.Deny("blocked"), nil
 //	    }
 //	    return copilot.PreToolOutput{}, nil

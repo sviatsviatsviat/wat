@@ -8,8 +8,8 @@ import (
 )
 
 func ExampleChain() {
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, ev copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
-		if ev.ToolName == "powershell" {
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+		if hook.Event.ToolName == "powershell" {
 			return r.Deny("blocked"), nil
 		}
 		return copilot.PreToolOutput{}, nil

@@ -518,7 +518,7 @@ func TestTimestamp_UnmarshalJSON(t *testing.T) {
 func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 	run.Reset()
 	copilot.ResetHandlers()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, ev copilot.PreToolUse, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return copilot.PreToolOutput{}, errors.New("boom")
 	})
 	var stdout bytes.Buffer
@@ -531,7 +531,7 @@ func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 func TestMux_Serve_PreToolDeny(t *testing.T) {
 	run.Reset()
 	copilot.ResetHandlers()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, ev copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return r.Deny("nope"), nil
 	})
 	var stdout bytes.Buffer
@@ -547,7 +547,7 @@ func TestMux_Serve_PreToolDeny(t *testing.T) {
 func TestMux_OnDuplicatePanics(t *testing.T) {
 	run.Reset()
 	copilot.ResetHandlers()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, ev copilot.PreToolUse, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return copilot.PreToolOutput{}, nil
 	})
 	defer func() {
@@ -555,7 +555,7 @@ func TestMux_OnDuplicatePanics(t *testing.T) {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, ev copilot.PreToolUse, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return copilot.PreToolOutput{}, nil
 	})
 }

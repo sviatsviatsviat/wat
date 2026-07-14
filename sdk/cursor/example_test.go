@@ -8,8 +8,8 @@ import (
 )
 
 func ExampleChain() {
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, ev cursor.BeforeShellExecution, r cursor.PermissionResults) (cursor.PermissionOutput, error) {
-		if ev.Command == "rm -rf /" {
+	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecutionHook, r cursor.PermissionResults) (cursor.PermissionOutput, error) {
+		if hook.Event.Command == "rm -rf /" {
 			return r.Deny("blocked"), nil
 		}
 		return cursor.PermissionOutput{}, nil
