@@ -3,7 +3,7 @@ package claude
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // MergeOutputs combines native Claude stdout JSON from multiple handlers.

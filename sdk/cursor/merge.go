@@ -3,7 +3,7 @@ package cursor
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // MergeOutputs combines native Cursor stdout JSON from multiple handlers.

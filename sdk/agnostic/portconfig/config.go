@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // Config is a normalized hook configuration independent of any single agent's

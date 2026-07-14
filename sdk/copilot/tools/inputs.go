@@ -3,7 +3,7 @@ package tools
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // Copilot builtin tool name constants (camelCase CLI wire names).

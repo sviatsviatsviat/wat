@@ -3,7 +3,7 @@ package cursor
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // Event is implemented by every decoded Cursor hook event.

@@ -3,7 +3,7 @@ package cursor
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // File is the Cursor hooks.json shape.

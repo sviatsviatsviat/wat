@@ -3,7 +3,7 @@ package copilot
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // File is the GitHub Copilot hooks.json shape.

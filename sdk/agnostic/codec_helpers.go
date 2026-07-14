@@ -3,7 +3,7 @@ package agnostic
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 func cloneRaw(raw json.RawMessage) json.RawMessage {

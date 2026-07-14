@@ -1,6 +1,6 @@
 package cursor
 
-import "github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
 
 // Option configures Decode.
 type Option func(*decodeConfig)

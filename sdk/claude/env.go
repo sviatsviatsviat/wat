@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // WriteEnvFile appends export lines for env to CLAUDE_ENV_FILE when set.

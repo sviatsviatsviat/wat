@@ -3,7 +3,7 @@ package claude
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // Settings is the Claude Code settings.json hooks section shape.

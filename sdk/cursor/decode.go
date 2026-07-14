@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 type decodeFn func([]byte, string, string) (Event, error)
