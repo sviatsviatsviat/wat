@@ -37,7 +37,7 @@ func (c *Codec) Decode(raw []byte, eventHint string) (*model.Event, error) {
 	if err != nil {
 		return nil, mapDecodeError(err)
 	}
-	ev := mapEvent(native, raw)
+	ev := MapEvent(native, raw)
 	if ev.Name == "" && eventHint != "" {
 		ev.Name = eventHint
 		if k, ok := KindForEvent(eventHint); ok {
@@ -56,7 +56,7 @@ func (c *Codec) Encode(ev *model.Event, res model.Result) ([]byte, int, error) {
 	if res.IsZero() {
 		return nil, 0, nil
 	}
-	out := mapOutput(ev, res)
+	out := MapOutput(ev, res)
 	if out == nil {
 		return nil, 0, fmt.Errorf("copilot: encode: %s has no portable encode surface", ev.Kind)
 	}

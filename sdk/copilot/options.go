@@ -1,6 +1,8 @@
 package copilot
 
-import "github.com/sviatsviatsviat/wat/internal/hookkit"
+import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+)
 
 // Option configures Decode.
 type Option func(*decodeConfig)
@@ -25,11 +27,4 @@ func WithEvent(name string) Option {
 	return func(c *decodeConfig) {
 		hookkit.ApplyHintOptions(&c.eventHint, hookkit.WithEventHint(name))
 	}
-}
-
-func decodeWithHint(raw []byte, hint string) (Event, error) {
-	if hint == "" {
-		return Decode(raw)
-	}
-	return Decode(raw, WithEvent(hint))
 }

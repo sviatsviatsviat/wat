@@ -6,26 +6,40 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 ## Per-agent SDK skeleton
 
-`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same file layout. Each can be used without `agnostic`; `agnostic` adapts them through `ClaudeCodec`, `CopilotCodec`, and `CursorCodec`.
+`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`; `agnostic` adapts them through `ClaudeCodec`, `CopilotCodec`, and `CursorCodec`.
 
-| File | Role |
-|------|------|
+Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed `Chain` registration method for that event. Shared wire and registration infrastructure lives under `internal/`.
+
+| Location | Role |
+|----------|------|
 | `doc.go` | Package overview |
-| `events.go` | Native `hook_event_name` constants |
+| `<event>.go` | Event struct, output, results, `Chain` method, decode registration, encode for one hook |
+| `registry.go` | Event-name constants, alias tables |
 | `envelope.go` | Shared payload fields |
 | `envelope_meta.go` | Compile-time envelope metadata (raw JSON preservation) |
-| `event.go` | Typed inbound event structs |
-| `output.go` | Typed handler response structs |
 | `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf` |
-| `encode.go` | `Encode` (wire mapping) |
-| `events.go` | Normalized typed events (`PreToolEvent`, …) — **agnostic only** |
+| `encode.go` | `Encode` router (wire mapping) |
+| `register.go` | Handler registration (`registerHandler`, dialect init) |
+| `chain.go` | `Chain` type and `OnAny` |
 | `hook.go` | Hook wrappers embedding typed event + `run.Invocation` + `Raw()` |
-| `results.go` | Hook-scoped result builder interfaces (one per Chain/`On*` method) |
-| `mux.go` | Fluent `Chain` methods, registers into `sdk/run` |
-| `options.go` | Encode and run configuration (`WithEvent`, `WithFailPolicy`, …) |
+| `options.go` | Decode configuration (`WithEvent`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
+| `internal/decode.go` | Decoder registry |
+| `internal/register.go` | Duplicate-registration tracking |
 | `tools/` | Optional lazy tool-input schemas |
+
+**Agnostic** uses the same root vertical-slice layout for portable hook kinds (`pretool.go`, `stop.go`, …):
+
+| Location | Role |
+|----------|------|
+| `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, …) |
+| `register_handlers.go` | Shared registration infra (`registerResultHandler`, …) |
+| `register.go` | `Serve`, run options, `ResetHandlers` |
+| `types.go`, `codecs.go` | Public type aliases and codec re-exports |
+| `claude/`, `copilot/`, `cursor/` | Per-event codec adapter slices (`pretooluse.go`, `map.go`, `registry.go`, …) |
+
+Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
 
 **Intentional protocol differences** (do not expect parity):
 

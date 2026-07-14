@@ -1,0 +1,11 @@
+package claude
+
+import (
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+)
+
+func mapPermissionRequest(e sdkclaude.PermissionRequest, ev *model.Event) {
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput, e.ToolUseID)
+}

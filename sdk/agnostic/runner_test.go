@@ -315,39 +315,3 @@ func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 		t.Fatalf("stdout = %s", stdout.Bytes())
 	}
 }
-
-func TestHandlerErrorExit(t *testing.T) {
-	tests := []struct {
-		name string
-		ev   *Event
-		want int
-	}{
-		{
-			name: "copilot pre tool",
-			ev:   &Event{Agent: Copilot, Kind: KindPreTool},
-			want: CopilotPreToolErrorExit,
-		},
-		{
-			name: "copilot stop",
-			ev:   &Event{Agent: Copilot, Kind: KindStop},
-			want: 1,
-		},
-		{
-			name: "cursor",
-			ev:   &Event{Agent: Cursor, Kind: KindPreTool},
-			want: CursorHandlerErrorExit,
-		},
-		{
-			name: "claude",
-			ev:   &Event{Agent: Claude, Kind: KindPreTool},
-			want: 1,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := handlerErrorExit(tt.ev); got != tt.want {
-				t.Fatalf("handlerErrorExit() = %d, want %d", got, tt.want)
-			}
-		})
-	}
-}

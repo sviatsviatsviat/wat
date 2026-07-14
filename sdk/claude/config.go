@@ -1,6 +1,8 @@
 package claude
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // Settings is the Claude Code settings.json hooks section shape.
 type Settings struct {

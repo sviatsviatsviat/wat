@@ -1,7 +1,6 @@
 package cursor
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -43,6 +42,9 @@ func isZeroOutput(out any) bool {
 	return hookkit.IsZeroOutput(out)
 }
 
+// IsZeroOutput reports whether out is an empty hook response.
+func IsZeroOutput(out any) bool { return isZeroOutput(out) }
+
 func validateEncodePair(eventName string, out any) error {
 	allowed, ok := allowedEventsForOutput(out)
 	if !ok {
@@ -80,95 +82,4 @@ func allowedEventsForOutput(out any) ([]string, bool) {
 	default:
 		return nil, false
 	}
-}
-
-func encodePermission(eventName string, o PermissionOutput) ([]byte, int, error) {
-	out := map[string]any{}
-	if o.Decision != "" {
-		out["permission"] = string(o.Decision)
-	}
-	if o.UserMessage != "" {
-		out["user_message"] = o.UserMessage
-	}
-	if o.AgentMessage != "" {
-		out["agent_message"] = o.AgentMessage
-	}
-	if o.UpdatedInput != nil && (eventName == "" || eventName == EventPreToolUse) {
-		out["updated_input"] = o.UpdatedInput
-	}
-	if len(out) == 0 {
-		return nil, 0, nil
-	}
-	b, err := json.Marshal(out)
-	if err != nil {
-		return nil, 0, err
-	}
-	exitCode := 0
-	if o.Decision == DecisionDeny {
-		exitCode = PermissionDenyExit
-	}
-	return b, exitCode, nil
-}
-
-func encodeBeforeSubmitPrompt(o BeforeSubmitPromptOutput) ([]byte, int, error) {
-	out := map[string]any{}
-	if o.Continue != nil {
-		out["continue"] = *o.Continue
-	}
-	if o.UserMessage != "" {
-		out["user_message"] = o.UserMessage
-	}
-	if len(out) == 0 {
-		return nil, 0, nil
-	}
-	b, err := json.Marshal(out)
-	return b, 0, err
-}
-
-func encodePostTool(o PostToolOutput) ([]byte, int, error) {
-	out := map[string]any{}
-	if o.UpdatedMCPOutput != nil {
-		out["updated_mcp_tool_output"] = o.UpdatedMCPOutput
-	}
-	if o.AdditionalContext != "" {
-		out["additional_context"] = o.AdditionalContext
-	}
-	if len(out) == 0 {
-		return nil, 0, nil
-	}
-	b, err := json.Marshal(out)
-	return b, 0, err
-}
-
-func encodeStop(o StopOutput) ([]byte, int, error) {
-	if o.FollowUpMessage == "" {
-		return nil, 0, nil
-	}
-	out := map[string]any{"followup_message": o.FollowUpMessage}
-	b, err := json.Marshal(out)
-	return b, 0, err
-}
-
-func encodeSessionStart(o SessionStartOutput) ([]byte, int, error) {
-	out := map[string]any{}
-	if len(o.Env) > 0 {
-		out["env"] = o.Env
-	}
-	if o.AdditionalContext != "" {
-		out["additional_context"] = o.AdditionalContext
-	}
-	if len(out) == 0 {
-		return nil, 0, nil
-	}
-	b, err := json.Marshal(out)
-	return b, 0, err
-}
-
-func encodePreCompact(o PreCompactOutput) ([]byte, int, error) {
-	if o.UserMessage == "" {
-		return nil, 0, nil
-	}
-	out := map[string]any{"user_message": o.UserMessage}
-	b, err := json.Marshal(out)
-	return b, 0, err
 }

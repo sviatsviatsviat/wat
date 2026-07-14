@@ -5,41 +5,15 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal"
 )
 
 type decodeFn func([]byte) (Event, error)
 
-var decoders = map[string]decodeFn{
-	EventSessionStart:        decodeAs[SessionStart],
-	EventSetup:               decodeAs[Setup],
-	EventSessionEnd:          decodeAs[SessionEnd],
-	EventUserPromptSubmit:    decodeAs[UserPromptSubmit],
-	EventUserPromptExpansion: decodeAs[UserPromptExpansion],
-	EventPreToolUse:          decodeAs[PreToolUse],
-	EventPostToolUse:         decodeAs[PostToolUse],
-	EventPostToolUseFailure:  decodeAs[PostToolUseFailure],
-	EventPostToolBatch:       decodeAs[PostToolBatch],
-	EventPermissionRequest:   decodeAs[PermissionRequest],
-	EventPermissionDenied:    decodeAs[PermissionDenied],
-	EventSubagentStart:       decodeAs[SubagentStart],
-	EventSubagentStop:        decodeAs[SubagentStop],
-	EventTaskCreated:         decodeAs[TaskCreated],
-	EventTaskCompleted:       decodeAs[TaskCompleted],
-	EventStop:                decodeAs[Stop],
-	EventStopFailure:         decodeAs[StopFailure],
-	EventTeammateIdle:        decodeAs[TeammateIdle],
-	EventNotification:        decodeAs[Notification],
-	EventMessageDisplay:      decodeAs[MessageDisplay],
-	EventInstructionsLoaded:  decodeAs[InstructionsLoaded],
-	EventConfigChange:        decodeAs[ConfigChange],
-	EventCwdChanged:          decodeAs[CwdChanged],
-	EventFileChanged:         decodeAs[FileChanged],
-	EventWorktreeCreate:      decodeAs[WorktreeCreate],
-	EventWorktreeRemove:      decodeAs[WorktreeRemove],
-	EventPreCompact:          decodeAs[PreCompact],
-	EventPostCompact:         decodeAs[PostCompact],
-	EventElicitation:         decodeAs[Elicitation],
-	EventElicitationResult:   decodeAs[ElicitationResult],
+func registerDecoder(name string, fn decodeFn) {
+	internal.RegisterDecoder(name, func(raw []byte, _, _ string) (any, error) {
+		return fn(raw)
+	})
 }
 
 func decodeAs[T Event](raw []byte) (Event, error) {
@@ -65,8 +39,12 @@ func Decode(raw []byte) (Event, error) {
 		env.setDecodedRaw(raw)
 		return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
 	}
-	if fn, ok := decoders[name]; ok {
-		return fn(raw)
+	if fn, ok := internal.DecoderFor(name); ok {
+		ev, err := fn(raw, name, name)
+		if err != nil {
+			return nil, err
+		}
+		return ev.(Event), nil
 	}
 	env.setDecodedRaw(raw)
 	return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil

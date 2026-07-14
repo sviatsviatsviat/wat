@@ -1,7 +1,6 @@
 package copilot
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -47,6 +46,9 @@ func isZeroOutput(out any) bool {
 	return hookkit.IsZeroOutput(out)
 }
 
+// IsZeroOutput reports whether out is an empty hook response.
+func IsZeroOutput(out any) bool { return isZeroOutput(out) }
+
 func validateEncodePair(eventName string, out any) error {
 	allowed, ok := allowedEventsForOutput(out)
 	if !ok {
@@ -82,93 +84,4 @@ func allowedEventsForOutput(out any) ([]string, bool) {
 	default:
 		return nil, false
 	}
-}
-
-func encodePreTool(o PreToolOutput) ([]byte, int, error) {
-	out := map[string]any{}
-	if o.Decision != "" {
-		out["permissionDecision"] = string(o.Decision)
-		if o.Reason != "" {
-			out["permissionDecisionReason"] = o.Reason
-		}
-	}
-	if o.ModifiedArgs != nil {
-		out["modifiedArgs"] = o.ModifiedArgs
-	}
-	if len(out) == 0 {
-		return nil, 0, nil
-	}
-	b, err := json.Marshal(out)
-	return b, 0, err
-}
-
-func encodePostTool(o PostToolOutput) ([]byte, int, error) {
-	out := map[string]any{}
-	if o.ModifiedResult != "" {
-		out["modifiedResult"] = map[string]any{
-			"resultType":       "success",
-			"textResultForLlm": o.ModifiedResult,
-		}
-	}
-	if o.AdditionalContext != "" {
-		out["additionalContext"] = o.AdditionalContext
-	}
-	if len(out) == 0 {
-		return nil, 0, nil
-	}
-	b, err := json.Marshal(out)
-	return b, 0, err
-}
-
-func encodeStop(o StopOutput) ([]byte, int, error) {
-	if o.Reason == "" {
-		return nil, 0, nil
-	}
-	out := map[string]any{
-		"decision": "block",
-		"reason":   o.Reason,
-	}
-	b, err := json.Marshal(out)
-	return b, 0, err
-}
-
-func encodePermissionRequest(o PermissionRequestOutput) ([]byte, int, error) {
-	if o.Behavior == "" && o.Message == "" && !o.Interrupt {
-		return nil, 0, nil
-	}
-	out := map[string]any{}
-	if o.Behavior != "" {
-		out["behavior"] = o.Behavior
-	}
-	if o.Message != "" {
-		out["message"] = o.Message
-	}
-	if o.Interrupt {
-		out["interrupt"] = true
-	}
-	b, err := json.Marshal(out)
-	if err != nil {
-		return nil, 0, err
-	}
-	exitCode := 0
-	if o.Behavior == "deny" && !o.SuppressWarnExit {
-		exitCode = WarnExit
-	}
-	return b, exitCode, err
-}
-
-func encodePostToolFailure(o PostToolFailureOutput) ([]byte, int, error) {
-	if o.Context == "" {
-		return nil, 0, nil
-	}
-	return []byte(o.Context), WarnExit, nil
-}
-
-func encodeAdditionalContext(context string) ([]byte, int, error) {
-	if context == "" {
-		return nil, 0, nil
-	}
-	out := map[string]any{"additionalContext": context}
-	b, err := json.Marshal(out)
-	return b, 0, err
 }

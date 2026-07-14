@@ -1,6 +1,8 @@
 package claude
 
-import "errors"
+import (
+	"errors"
+)
 
 // Decode error sentinels for stable error handling across packages.
 var (

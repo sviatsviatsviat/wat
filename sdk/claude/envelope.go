@@ -1,6 +1,8 @@
 package claude
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // PermissionMode is the Claude Code permission mode on hook events.
 type PermissionMode string

@@ -1,6 +1,10 @@
 package cursor
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sviatsviatsviat/wat/sdk/cursor/internal"
+)
 
 func TestEnvelopeAccessorForEveryDecoder(t *testing.T) {
 	cases := []struct {
@@ -43,7 +47,7 @@ func TestEnvelopeAccessorForEveryDecoder(t *testing.T) {
 		})
 	}
 
-	for name := range decoders {
+	for _, name := range internal.RegisteredDecoders() {
 		if !covered[name] {
 			t.Errorf("decoder %q has no envelope accessor test case", name)
 		}
@@ -74,11 +78,11 @@ func TestDecoderRegistryMatchesEventConstants(t *testing.T) {
 		EventAfterTabFileEdit,
 		EventWorkspaceOpen,
 	}
-	if len(decoders) != len(want) {
-		t.Fatalf("decoder count = %d, want %d", len(decoders), len(want))
+	if len(internal.RegisteredDecoders()) != len(want) {
+		t.Fatalf("decoder count = %d, want %d", len(internal.RegisteredDecoders()), len(want))
 	}
 	for _, name := range want {
-		if _, ok := decoders[name]; !ok {
+		if _, ok := internal.DecoderFor(name); !ok {
 			t.Fatalf("missing decoder for %q", name)
 		}
 	}

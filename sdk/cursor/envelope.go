@@ -1,6 +1,8 @@
 package cursor
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // HandlerErrorExit is exit code 1. The runner should use this when a handler
 // returns an error under Cursor's default fail-open policy.

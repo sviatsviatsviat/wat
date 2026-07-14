@@ -5,32 +5,15 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/sdk/cursor/internal"
 )
 
 type decodeFn func([]byte, string, string) (Event, error)
 
-var decoders = map[string]decodeFn{
-	EventSessionStart:         decodeAs[SessionStart],
-	EventSessionEnd:           decodeAs[SessionEnd],
-	EventBeforeSubmitPrompt:   decodeAs[BeforeSubmitPrompt],
-	EventPreToolUse:           decodeAs[PreToolUse],
-	EventPostToolUse:          decodeAs[PostToolUse],
-	EventPostToolUseFailure:   decodeAs[PostToolUseFailure],
-	EventBeforeShellExecution: decodeAs[BeforeShellExecution],
-	EventAfterShellExecution:  decodeAs[AfterShellExecution],
-	EventBeforeMCPExecution:   decodeAs[BeforeMCPExecution],
-	EventAfterMCPExecution:    decodeAs[AfterMCPExecution],
-	EventBeforeReadFile:       decodeAs[BeforeReadFile],
-	EventAfterFileEdit:        decodeAs[AfterFileEdit],
-	EventSubagentStart:        decodeAs[SubagentStart],
-	EventSubagentStop:         decodeAs[SubagentStop],
-	EventStop:                 decodeAs[Stop],
-	EventPreCompact:           decodeAs[PreCompact],
-	EventAfterAgentResponse:   decodeAs[AfterAgentResponse],
-	EventAfterAgentThought:    decodeAs[AfterAgentThought],
-	EventBeforeTabFileRead:    decodeAs[BeforeTabFileRead],
-	EventAfterTabFileEdit:     decodeAs[AfterTabFileEdit],
-	EventWorkspaceOpen:        decodeAs[WorkspaceOpen],
+func registerDecoder(name string, fn decodeFn) {
+	internal.RegisterDecoder(name, func(raw []byte, received, canonical string) (any, error) {
+		return fn(raw, received, canonical)
+	})
 }
 
 func decodeAs[T Event](raw []byte, received, canonical string) (Event, error) {
@@ -44,11 +27,16 @@ func decodeAs[T Event](raw []byte, received, canonical string) (Event, error) {
 
 // Decode parses a Cursor hook stdin payload into a typed Event.
 func Decode(raw []byte, opts ...Option) (Event, error) {
+	cfg := defaultDecodeConfig()
+	applyOptions(&cfg, opts...)
+	return DecodeWithHint(raw, cfg.eventHint.Hint)
+}
+
+// DecodeWithHint parses raw using an explicit event hint.
+func DecodeWithHint(raw []byte, eventHint string) (Event, error) {
 	if len(raw) == 0 {
 		return nil, ErrEmptyPayload
 	}
-	cfg := defaultDecodeConfig()
-	applyOptions(&cfg, opts...)
 
 	var env Envelope
 	if err := json.Unmarshal(raw, &env); err != nil {
@@ -57,15 +45,19 @@ func Decode(raw []byte, opts ...Option) (Event, error) {
 
 	received := env.HookEventName
 	if received == "" {
-		received = cfg.eventHint.Hint
+		received = eventHint
 	}
 	if received == "" {
 		return nil, ErrEventNameRequired
 	}
 
 	canonical := received
-	if fn, ok := decoders[canonical]; ok {
-		return fn(raw, received, canonical)
+	if fn, ok := internal.DecoderFor(canonical); ok {
+		ev, err := fn(raw, received, canonical)
+		if err != nil {
+			return nil, err
+		}
+		return ev.(Event), nil
 	}
 	env.setEnvelopeMeta(received, "", raw)
 	return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
@@ -89,4 +81,8 @@ func RawBytes(ev Event) json.RawMessage {
 // EnvelopeOf returns the shared envelope from a decoded event.
 func EnvelopeOf(ev Event) Envelope {
 	return *envelopeAccessorForEvent(ev).envelopePtr()
+}
+
+func decodeWithHint(raw []byte, hint string) (Event, error) {
+	return DecodeWithHint(raw, hint)
 }

@@ -1,0 +1,46 @@
+package cursor
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
+// PreToolUse is the preToolUse hook event.
+type PreToolUse struct {
+	Envelope
+	// ToolName is the tool name.
+	ToolName string `json:"tool_name"`
+	// ToolInput is the native tool input JSON.
+	ToolInput json.RawMessage `json:"tool_input"`
+	// ToolUseID is the tool use identifier.
+	ToolUseID string `json:"tool_use_id"`
+}
+
+// EventName returns the canonical hook event name.
+func (PreToolUse) EventName() string { return EventPreToolUse }
+
+// ShellCommand extracts the shell command when the tool is Shell.
+func (e PreToolUse) ShellCommand() string {
+	if e.ToolName != "Shell" && e.ToolName != "shell" {
+		return ""
+	}
+	return hookkit.ExtractShellCommand(e.ToolInput)
+}
+
+func init() {
+	registerDecoder(EventPreToolUse, decodeAs[PreToolUse])
+}
+
+// PreToolUse registers a preToolUse handler.
+func (c *Chain) PreToolUse(fn func(context.Context, PreToolUseHook, PermissionResults) (PermissionOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PreToolUse) (PermissionOutput, error) {
+		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionResults{})
+	})
+	return &Chain{}
+}
