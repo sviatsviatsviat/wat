@@ -4,15 +4,16 @@ import (
 	"context"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleMux() {
-	mux := claude.NewMux()
-	claude.On(mux, func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+func ExampleOn() {
+	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
 		if ev.ToolName == "Bash" {
 			return claude.PreToolUseOutput{Decision: claude.DecisionDeny, Reason: "blocked"}, nil
 		}
 		return claude.PreToolUseOutput{}, nil
 	})
-	// Hook entrypoint: mux.Main()
+	// Hook entrypoint: run.Main()
+	_ = run.Main
 }

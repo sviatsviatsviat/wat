@@ -1,8 +1,8 @@
 // Package cursor is the Cursor hook SDK. Hook authors register typed
-// handlers; the SDK decodes stdin JSON, dispatches by event, encodes stdout,
-// and selects exit codes per the Cursor hook protocol.
+// handlers with On into the shared run registry, then call run.Main from
+// github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Permission-gating events return exit code 2 on deny. Handler errors exit 1
 // under Cursor's default fail-open policy. Payloads without hook_event_name
-// require WithEvent when calling Decode or Serve.
+// require run.WithEvent when dispatching hooks.
 package cursor

@@ -1,6 +1,10 @@
 package claude
 
-import "os"
+import (
+	"os"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
 
 // FailPolicy selects exit behavior when a handler returns an error.
 type FailPolicy int
@@ -12,19 +16,13 @@ const (
 	FailBlock
 )
 
-// Option configures Mux Serve/Main and Encode side effects.
+// Option configures Encode side effects.
 type Option func(*runtimeConfig)
 
 type runtimeConfig struct {
 	policy     FailPolicy
 	getenv     func(string) string
 	appendFile func(path string, data []byte) error
-}
-
-func applyOptions(cfg *runtimeConfig, opts ...Option) {
-	for _, opt := range opts {
-		opt(cfg)
-	}
 }
 
 func defaultRuntimeConfig() runtimeConfig {
@@ -34,14 +32,43 @@ func defaultRuntimeConfig() runtimeConfig {
 	}
 }
 
-// WithFailPolicy sets handler error exit behavior.
-func WithFailPolicy(p FailPolicy) Option {
-	return func(c *runtimeConfig) {
-		c.policy = p
+func applyOptions(cfg *runtimeConfig, opts ...Option) {
+	for _, opt := range opts {
+		opt(cfg)
 	}
 }
 
-// WithGetenv injects environment lookup for CLAUDE_ENV_FILE side effects.
+func (c runtimeConfig) encodeOpts() []Option {
+	var opts []Option
+	if c.getenv != nil {
+		opts = append(opts, WithGetenv(c.getenv))
+	}
+	if c.appendFile != nil {
+		opts = append(opts, WithAppendFile(c.appendFile))
+	}
+	return opts
+}
+
+func claudeRunConfig(cfg *run.Config) *runtimeConfig {
+	if v := cfg.DialectConfig("claude"); v != nil {
+		if rc, ok := v.(*runtimeConfig); ok && rc != nil {
+			return rc
+		}
+	}
+	rc := defaultRuntimeConfig()
+	cfg.SetDialectConfig("claude", &rc)
+	return &rc
+}
+
+// WithFailPolicy sets handler error exit behavior for claude handlers.
+func WithFailPolicy(p FailPolicy) run.Option {
+	return func(c *run.Config) {
+		rc := claudeRunConfig(c)
+		rc.policy = p
+	}
+}
+
+// WithGetenv injects environment lookup for CLAUDE_ENV_FILE Encode side effects.
 func WithGetenv(getenv func(string) string) Option {
 	return func(c *runtimeConfig) {
 		c.getenv = getenv
@@ -55,13 +82,18 @@ func WithAppendFile(appendFile func(path string, data []byte) error) Option {
 	}
 }
 
-func (c runtimeConfig) encodeOpts() []Option {
-	var opts []Option
-	if c.getenv != nil {
-		opts = append(opts, WithGetenv(c.getenv))
+// WithRunGetenv injects environment lookup for claude handlers at serve time.
+func WithRunGetenv(getenv func(string) string) run.Option {
+	return func(c *run.Config) {
+		rc := claudeRunConfig(c)
+		rc.getenv = getenv
 	}
-	if c.appendFile != nil {
-		opts = append(opts, WithAppendFile(c.appendFile))
+}
+
+// WithRunAppendFile injects file append for claude handlers at serve time.
+func WithRunAppendFile(appendFile func(path string, data []byte) error) run.Option {
+	return func(c *run.Config) {
+		rc := claudeRunConfig(c)
+		rc.appendFile = appendFile
 	}
-	return opts
 }

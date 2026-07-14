@@ -52,8 +52,11 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read hooks.go: %v", err)
 	}
-	if !strings.Contains(string(hooksBytes), "agnostic.NewMux") {
-		t.Fatalf("hooks.go missing mux usage: %q", string(hooksBytes))
+	if !strings.Contains(string(hooksBytes), "agnostic.On") {
+		t.Fatalf("hooks.go missing handler registration: %q", string(hooksBytes))
+	}
+	if !strings.Contains(string(hooksBytes), "run.Main") {
+		t.Fatalf("hooks.go missing run.Main: %q", string(hooksBytes))
 	}
 	if !strings.Contains(string(hooksBytes), "github.com/sviatsviatsviat/wat/sdk/agnostic") {
 		t.Fatalf("hooks.go missing agnostic import: %q", string(hooksBytes))

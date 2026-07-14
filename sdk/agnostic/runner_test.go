@@ -7,19 +7,27 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func TestMux_Serve_MergeDispatch(t *testing.T) {
-	mux := NewMux()
-	mux.OnAny(func(ctx context.Context, ev *Event) (Result, error) {
+func resetTest(t *testing.T) {
+	t.Helper()
+	ResetHandlers()
+}
+
+func TestServe_MergeDispatch(t *testing.T) {
+	resetTest(t)
+	OnAny(func(ctx context.Context, ev *Event) (Result, error) {
 		return Context("from-any"), nil
 	})
-	mux.On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
 		return Context("from-kind"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := mux.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
+	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
@@ -40,17 +48,17 @@ func TestMux_Serve_MergeDispatch(t *testing.T) {
 	}
 }
 
-func TestMux_Serve_DecisionPrecedence(t *testing.T) {
-	mux := NewMux()
-	mux.OnAny(func(ctx context.Context, ev *Event) (Result, error) {
+func TestServe_DecisionPrecedence(t *testing.T) {
+	resetTest(t)
+	OnAny(func(ctx context.Context, ev *Event) (Result, error) {
 		return Allow(), nil
 	})
-	mux.On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
 		return Deny("blocked"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := mux.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
+	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
@@ -59,14 +67,14 @@ func TestMux_Serve_DecisionPrecedence(t *testing.T) {
 	}
 }
 
-func TestMux_Serve_WithDialectOverride(t *testing.T) {
-	mux := NewMux()
-	mux.On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+func TestServe_WithDialectOverride(t *testing.T) {
+	resetTest(t)
+	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
 		return Result{}, nil
 	})
 
 	var stderr bytes.Buffer
-	code := mux.Serve(
+	code := Serve(
 		context.Background(),
 		strings.NewReader(copilotCamelPreToolUse),
 		new(bytes.Buffer),
@@ -81,14 +89,14 @@ func TestMux_Serve_WithDialectOverride(t *testing.T) {
 	}
 }
 
-func TestMux_Serve_WithEvent(t *testing.T) {
-	mux := NewMux()
-	mux.On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+func TestServe_WithEvent(t *testing.T) {
+	resetTest(t)
+	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
 		return Deny("nope"), nil
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := mux.Serve(
+	code := Serve(
 		context.Background(),
 		strings.NewReader(copilotCamelPreToolUse),
 		&stdout,
@@ -103,11 +111,11 @@ func TestMux_Serve_WithEvent(t *testing.T) {
 	}
 }
 
-func TestMux_Serve_WithGetenv(t *testing.T) {
-	mux := NewMux()
+func TestServe_WithGetenv(t *testing.T) {
+	resetTest(t)
 
 	var stderr bytes.Buffer
-	code := mux.Serve(
+	code := Serve(
 		context.Background(),
 		strings.NewReader(`{}`),
 		new(bytes.Buffer),
@@ -122,7 +130,7 @@ func TestMux_Serve_WithGetenv(t *testing.T) {
 	}
 
 	stderr.Reset()
-	code = mux.Serve(
+	code = Serve(
 		context.Background(),
 		strings.NewReader(`{"conversation_id":"c1","hook_event_name":"workspaceOpen","cursor_version":"1.7.2","workspace_roots":["/w"]}`),
 		new(bytes.Buffer),
@@ -139,14 +147,14 @@ func TestMux_Serve_WithGetenv(t *testing.T) {
 	}
 }
 
-func TestMux_Serve_HandlerErrorCopilotPreTool(t *testing.T) {
-	mux := NewMux()
-	mux.On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
+	resetTest(t)
+	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
 		return Result{}, errors.New("boom")
 	})
 
 	var stderr bytes.Buffer
-	code := mux.Serve(
+	code := Serve(
 		context.Background(),
 		strings.NewReader(copilotCamelPreToolUse),
 		new(bytes.Buffer),
@@ -161,10 +169,10 @@ func TestMux_Serve_HandlerErrorCopilotPreTool(t *testing.T) {
 	}
 }
 
-func TestMux_Serve_ZeroHandlers(t *testing.T) {
-	mux := NewMux()
+func TestServe_ZeroHandlers(t *testing.T) {
+	resetTest(t)
 	var stdout, stderr bytes.Buffer
-	code := mux.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
+	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -173,10 +181,10 @@ func TestMux_Serve_ZeroHandlers(t *testing.T) {
 	}
 }
 
-func TestMux_Serve_EmptyStdin(t *testing.T) {
-	mux := NewMux()
+func TestServe_EmptyStdin(t *testing.T) {
+	resetTest(t)
 	var stderr bytes.Buffer
-	code := mux.Serve(context.Background(), strings.NewReader(""), new(bytes.Buffer), &stderr)
+	code := Serve(context.Background(), strings.NewReader(""), new(bytes.Buffer), &stderr)
 	if code != 1 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -185,7 +193,7 @@ func TestMux_Serve_EmptyStdin(t *testing.T) {
 	}
 }
 
-func TestMux_Serve_PreToolDenyAllAgents(t *testing.T) {
+func TestServe_PreToolDenyAllAgents(t *testing.T) {
 	denyShell := func(ctx context.Context, ev *Event) (Result, error) {
 		if ev.Tool != nil && ev.Tool.Shell != "" {
 			return Deny("destructive command blocked"), nil
@@ -196,7 +204,7 @@ func TestMux_Serve_PreToolDenyAllAgents(t *testing.T) {
 	tests := []struct {
 		name       string
 		payload    string
-		opts       []Option
+		opts       []run.Option
 		wantExit   int
 		wantStdout func(string) bool
 	}{
@@ -211,7 +219,7 @@ func TestMux_Serve_PreToolDenyAllAgents(t *testing.T) {
 		{
 			name:     "copilot",
 			payload:  copilotCamelPreToolUse,
-			opts:     []Option{WithEvent("preToolUse")},
+			opts:     []run.Option{WithEvent("preToolUse")},
 			wantExit: 0,
 			wantStdout: func(s string) bool {
 				return strings.Contains(s, `"permissionDecision":"deny"`) &&
@@ -230,11 +238,11 @@ func TestMux_Serve_PreToolDenyAllAgents(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mux := NewMux()
-			mux.On(KindPreTool, denyShell)
+			resetTest(t)
+			On(KindPreTool, denyShell)
 
 			var stdout, stderr bytes.Buffer
-			code := mux.Serve(context.Background(), strings.NewReader(tt.payload), &stdout, &stderr, tt.opts...)
+			code := Serve(context.Background(), strings.NewReader(tt.payload), &stdout, &stderr, tt.opts...)
 			if code != tt.wantExit {
 				t.Fatalf("exit = %d, want %d; stderr = %q", code, tt.wantExit, stderr.String())
 			}
@@ -245,15 +253,91 @@ func TestMux_Serve_PreToolDenyAllAgents(t *testing.T) {
 	}
 }
 
-func TestMux_OnNilIgnored(t *testing.T) {
-	mux := NewMux()
-	mux.On(KindPreTool, nil)
-	mux.OnAny(nil)
-	if len(mux.kindHandlers[KindPreTool]) != 0 {
-		t.Fatal("nil On handler should be ignored")
+func TestOnNilIgnored(t *testing.T) {
+	resetTest(t)
+	On(KindPreTool, nil)
+	OnAny(nil)
+
+	var stdout bytes.Buffer
+	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
+	if code != 0 {
+		t.Fatalf("exit = %d", code)
 	}
-	if len(mux.anyHandlers) != 0 {
-		t.Fatal("nil OnAny handler should be ignored")
+	if stdout.Len() != 0 {
+		t.Fatal("nil handlers should not register")
+	}
+}
+
+func TestOn_FluentChain(t *testing.T) {
+	resetTest(t)
+	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+		return Context("first"), nil
+	}).On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+		return Context("second"), nil
+	})
+
+	var stdout bytes.Buffer
+	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
+	if code != 0 {
+		t.Fatalf("exit = %d", code)
+	}
+	var got struct {
+		HSO struct {
+			AdditionalContext string `json:"additionalContext"`
+		} `json:"hookSpecificOutput"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.HSO.AdditionalContext != "first\n\nsecond" {
+		t.Fatalf("context = %q, want %q", got.HSO.AdditionalContext, "first\n\nsecond")
+	}
+}
+
+func TestResetHandlers_OwnerScoped(t *testing.T) {
+	run.Reset()
+	claude.ResetHandlers()
+
+	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+		return Context("from-agnostic"), nil
+	})
+	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+		return claude.PreToolUseOutput{AdditionalContext: "from-claude"}, nil
+	})
+
+	ResetHandlers()
+
+	var stdout bytes.Buffer
+	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
+	if code != 0 {
+		t.Fatalf("exit = %d", code)
+	}
+	if strings.Contains(stdout.String(), "from-agnostic") {
+		t.Fatalf("agnostic handler should be cleared; stdout = %s", stdout.Bytes())
+	}
+	if !strings.Contains(stdout.String(), "from-claude") {
+		t.Fatalf("claude handler should remain; stdout = %s", stdout.Bytes())
+	}
+}
+
+func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
+	resetTest(t)
+	claude.ResetHandlers()
+
+	On(KindPreTool, func(ctx context.Context, ev *Event) (Result, error) {
+		return Context("from-agnostic"), nil
+	})
+	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+		return claude.PreToolUseOutput{AdditionalContext: "from-claude"}, nil
+	})
+
+	var stdout bytes.Buffer
+	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
+	if code != 0 {
+		t.Fatalf("exit = %d", code)
+	}
+	if !strings.Contains(stdout.String(), "from-agnostic") || !strings.Contains(stdout.String(), "from-claude") {
+		t.Fatalf("stdout = %s", stdout.Bytes())
 	}
 }
 
@@ -286,7 +370,7 @@ func TestHandlerErrorExit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := handlerErrorExit(tt.ev, errors.New("x")); got != tt.want {
+			if got := handlerErrorExit(tt.ev); got != tt.want {
 				t.Fatalf("handlerErrorExit() = %d, want %d", got, tt.want)
 			}
 		})

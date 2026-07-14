@@ -18,8 +18,8 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 | `output.go` | Typed handler response structs |
 | `decode.go` | `Decode`, `ParseEvent`, `RawBytes`, `EnvelopeOf` |
 | `encode.go` | `Encode` (wire mapping) |
-| `mux.go` | `NewMux`, `On`, `Serve`, `Main` |
-| `options.go` | Runtime configuration (`WithEvent`, `WithFailPolicy`, …) |
+| `mux.go` | `On`, fluent `Chain` methods, registers into `sdk/run` |
+| `options.go` | Encode and run configuration (`WithEvent`, `WithFailPolicy`, …) |
 | `config.go` | Native hook config helpers (`ParseHandler`, `Handlers`) |
 | `errors.go` | Decode error sentinels |
 | `tools/` | Optional lazy tool-input schemas |
@@ -246,5 +246,5 @@ Cursor-specific limitations (`HaltSession`, `SetTitle`, `Ask` on non-shell preTo
 - Tests: [`sdk/agnostic/copilot_test.go`](../sdk/agnostic/copilot_test.go)
 - Cursor codec: [`sdk/agnostic/cursor.go`](../sdk/agnostic/cursor.go) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit` (adapts `cursor`)
 - Tests: [`sdk/agnostic/cursor_test.go`](../sdk/agnostic/cursor_test.go)
-- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Mux`/`On`/`Serve`/`Main`, `sdk/cursor/tools` lazy tool input helpers
+- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `On`/`Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` lazy tool input helpers
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

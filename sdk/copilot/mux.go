@@ -2,96 +2,137 @@ package copilot
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"io"
-	"os"
+	"sync"
 
-	"github.com/sviatsviatsviat/wat/sdk/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// Mux registers typed hook handlers and runs the hook process lifecycle.
-type Mux struct {
-	handlers map[string]registeredHandler
-	cfg      runtimeConfig
+// Chain supports fluent handler registration into the shared run registry.
+type Chain struct{}
+
+var (
+	registeredMu sync.Mutex
+	registered   = make(map[string]bool)
+)
+
+func init() {
+	run.RegisterDialect("copilot", run.DialectOps{
+		Detect:    detectPayload,
+		EventName: eventNameFromRaw,
+		Merge:     MergeOutputs,
+	})
 }
 
-type registeredHandler struct {
-	fn        func(context.Context, Event) (any, error)
-	eventName string
-}
-
-// NewMux returns an empty handler mux.
-func NewMux() *Mux {
-	return &Mux{
-		handlers: make(map[string]registeredHandler),
-		cfg:      defaultDecodeConfig(),
+func detectPayload(raw []byte, getenv func(string) string) bool {
+	var probe map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &probe); err != nil {
+		return false
 	}
+	has := func(k string) bool { _, ok := probe[k]; return ok }
+	if has("cursor_version") || has("conversation_id") {
+		return false
+	}
+	return has("sessionId") || (has("hook_event_name") && has("timestamp"))
 }
 
-// On registers a typed handler for event type E.
-func On[E Event, O any](m *Mux, fn func(context.Context, E) (O, error)) {
-	if m == nil || fn == nil {
+func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
+	ev, err := decodeWithHint(raw, eventHint)
+	if err != nil {
+		return "", err
+	}
+	name := ev.EventName()
+	if name == "" {
+		return "", fmt.Errorf("copilot: empty event name")
+	}
+	return name, nil
+}
+
+// On registers a typed handler for event type E into the shared run registry.
+func On[E Event, O any](fn func(context.Context, E) (O, error)) *Chain {
+	registerHandler(fn)
+	return &Chain{}
+}
+
+func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
+	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
-	if _, exists := m.handlers[name]; exists {
+
+	registeredMu.Lock()
+	if registered[name] {
+		registeredMu.Unlock()
 		panic(fmt.Sprintf("copilot: duplicate handler for %s", name))
 	}
-	m.handlers[name] = registeredHandler{
-		eventName: name,
-		fn: func(ctx context.Context, ev Event) (any, error) {
-			typed, ok := ev.(E)
-			if !ok {
-				return nil, fmt.Errorf("copilot: handler for %s received %T", name, ev)
-			}
-			return fn(ctx, typed)
-		},
-	}
-}
+	registered[name] = true
+	registeredMu.Unlock()
 
-// Serve reads stdin, dispatches the registered handler, writes stdout, and returns the exit code.
-func (m *Mux) Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Writer, opts ...Option) int {
-	if m == nil {
-		_, _ = fmt.Fprintln(errw, "copilot: nil mux")
-		return HandlerErrorExit
-	}
-	cfg := m.cfg
-	applyOptions(&cfg, opts...)
-
-	return hookkit.ServeLoop(ctx, in, out, errw, hookkit.ServeHooks{
-		Label:            "copilot",
-		HandlerErrorExit: HandlerErrorExit,
-		Decode: func(raw []byte) (string, any, error) {
-			ev, err := Decode(raw, WithEvent(cfg.eventHint.Hint))
-			if err != nil {
-				return "", nil, err
-			}
-			return ev.EventName(), ev, nil
-		},
-		Lookup: func(eventName string) (func(context.Context, any) (any, error), bool) {
-			h, ok := m.handlers[eventName]
-			if !ok {
-				return nil, false
-			}
-			return func(ctx context.Context, ev any) (any, error) {
-				return h.fn(ctx, ev.(Event))
-			}, true
-		},
-		IsZeroResult: isZeroOutput,
-		OnHandlerError: func(eventName string, err error) int {
-			if eventName == EventPreToolUse {
-				return PreToolErrorExit
-			}
-			return HandlerErrorExit
-		},
-		Encode: func(eventName string, result any) ([]byte, int, error) {
-			return Encode(eventName, result)
-		},
+	run.RegisterHandler("copilot", "copilot", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
+		cfg := run.ConfigFrom(ctx)
+		ev, err := decodeWithHint(raw, cfg.EventHint)
+		if err != nil {
+			return nil, HandlerErrorExit, err
+		}
+		typed, ok := ev.(E)
+		if !ok {
+			return nil, HandlerErrorExit, fmt.Errorf("copilot: handler for %s received %T", name, ev)
+		}
+		result, err := fn(ctx, typed)
+		if err != nil {
+			return nil, handlerErrorExit(name), err
+		}
+		if isZeroOutput(result) {
+			return nil, 0, nil
+		}
+		return Encode(name, result)
 	})
 }
 
-// Main runs Serve with os.Stdin, os.Stdout, and os.Stderr, then os.Exit.
-func (m *Mux) Main(opts ...Option) {
-	os.Exit(m.Serve(context.Background(), os.Stdin, os.Stdout, os.Stderr, opts...))
+func handlerErrorExit(eventName string) int {
+	if eventName == EventPreToolUse {
+		return PreToolErrorExit
+	}
+	return HandlerErrorExit
+}
+
+// PreToolUse registers a PreToolUse handler.
+func (c *Chain) PreToolUse(fn func(context.Context, PreToolUse) (PreToolOutput, error)) *Chain {
+	return On(fn)
+}
+
+// PostToolUse registers a PostToolUse handler.
+func (c *Chain) PostToolUse(fn func(context.Context, PostToolUse) (PostToolOutput, error)) *Chain {
+	return On(fn)
+}
+
+// PostToolUseFailure registers a PostToolUseFailure handler.
+func (c *Chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailure) (PostToolFailureOutput, error)) *Chain {
+	return On(fn)
+}
+
+// AgentStop registers an AgentStop handler.
+func (c *Chain) AgentStop(fn func(context.Context, AgentStop) (StopOutput, error)) *Chain {
+	return On(fn)
+}
+
+// PermissionRequest registers a PermissionRequest handler.
+func (c *Chain) PermissionRequest(fn func(context.Context, PermissionRequest) (PermissionRequestOutput, error)) *Chain {
+	return On(fn)
+}
+
+// SessionStart registers a SessionStart handler.
+func (c *Chain) SessionStart(fn func(context.Context, SessionStart) (SessionStartOutput, error)) *Chain {
+	return On(fn)
+}
+
+// ResetHandlers clears copilot registration tracking and copilot-owned handlers
+// in the shared run registry. It is intended for tests.
+func ResetHandlers() {
+	registeredMu.Lock()
+	registered = make(map[string]bool)
+	registeredMu.Unlock()
+	run.ResetOwner("copilot")
 }

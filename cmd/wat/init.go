@@ -119,20 +119,18 @@ const watHooksGo = `package main
 
 import (
 	"context"
-	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func main() {
-	mux := agnostic.NewMux()
-
-	// Guard: block force pushes, escalate other git pushes to the user.
-	// Fires on PreToolUse (Claude/Copilot) and on preToolUse /
-	// beforeShellExecution (Cursor); ev.Tool.Shell is the extracted command.
-	mux.On(agnostic.KindPreTool, func(ctx context.Context, ev *agnostic.Event) (agnostic.Result, error) {
+	agnostic.On(agnostic.KindPreTool, func(ctx context.Context, ev *agnostic.Event) (agnostic.Result, error) {
+		// Guard: block force pushes, escalate other git pushes to the user.
+		// Fires on PreToolUse (Claude/Copilot) and on preToolUse /
+		// beforeShellExecution (Cursor); ev.Tool.Shell is the extracted command.
 		cmd := ev.Tool.Shell
 		switch {
 		case strings.Contains(cmd, "push --force"), strings.Contains(cmd, "push -f"):
@@ -144,37 +142,28 @@ func main() {
 			return agnostic.Ask("agent wants to push to the remote"), nil
 		}
 		return agnostic.Result{}, nil // zero Result = no opinion, default flow
-	})
+	}).
+		On(agnostic.KindPostTool, func(ctx context.Context, ev *agnostic.Event) (agnostic.Result, error) {
+			// Command: after any file edit, tell the model which test command applies.
+			// → additionalContext / additional_context on each dialect.
+			if ev.Tool.Name == agnostic.ToolEdit || ev.Tool.Name == agnostic.ToolWrite {
+				return agnostic.Context("Run go test ./... to verify this change."), nil
+			}
+			return agnostic.Result{}, nil
+		}).
+		On(agnostic.KindStop, func(ctx context.Context, ev *agnostic.Event) (agnostic.Result, error) {
+			// Stop gate: refuse to finish the turn while the build is red.
+			// → Claude/Copilot: decision:"block"+reason; Cursor: followup_message.
+			// Loop guards differ per agent, so check both before re-blocking.
+			if ev.Turn.StopHookActive || ev.Turn.LoopCount > 2 {
+				return agnostic.Result{}, nil // already retried; let it stop
+			}
+			if err := exec.CommandContext(ctx, "go", "build", "./...").Run(); err != nil {
+				return agnostic.Result{FollowUp: "go build ./... fails; fix the build before finishing"}, nil
+			}
+			return agnostic.Result{}, nil
+		})
 
-	// Command: after any file edit, tell the model which test command applies.
-	// → additionalContext / additional_context on each dialect.
-	mux.On(agnostic.KindPostTool, func(ctx context.Context, ev *agnostic.Event) (agnostic.Result, error) {
-		if ev.Tool.Name == agnostic.ToolEdit || ev.Tool.Name == agnostic.ToolWrite {
-			return agnostic.Context("Run go test ./... to verify this change."), nil
-		}
-		return agnostic.Result{}, nil
-	})
-
-	// Stop gate: refuse to finish the turn while the build is red.
-	// → Claude/Copilot: decision:"block"+reason; Cursor: followup_message.
-	// Loop guards differ per agent, so check both before re-blocking.
-	mux.On(agnostic.KindStop, func(ctx context.Context, ev *agnostic.Event) (agnostic.Result, error) {
-		if ev.Turn.StopHookActive || ev.Turn.LoopCount > 2 {
-			return agnostic.Result{}, nil // already retried; let it stop
-		}
-		if err := exec.CommandContext(ctx, "go", "build", "./...").Run(); err != nil {
-			return agnostic.Result{FollowUp: "go build ./... fails; fix the build before finishing"}, nil
-		}
-		return agnostic.Result{}, nil
-	})
-
-	var opts []agnostic.Option
-	if v := os.Getenv("WAT_AGENT"); v != "" {
-		opts = append(opts, agnostic.WithDialect(agnostic.ParseDialect(v)))
-	}
-	if v := os.Getenv("WAT_EVENT"); v != "" {
-		opts = append(opts, agnostic.WithEvent(v))
-	}
-	mux.Main(opts...) // stdin → detect agent → decode → dispatch → encode → exit
+	run.Main() // reads WAT_AGENT/WAT_EVENT, dispatches, merges, exits
 }
 `

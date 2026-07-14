@@ -10,6 +10,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 const copilotCamelPreToolUse = `{
@@ -514,24 +515,26 @@ func TestTimestamp_UnmarshalJSON(t *testing.T) {
 }
 
 func TestMux_Serve_PreToolHandlerError(t *testing.T) {
-	mux := copilot.NewMux()
-	copilot.On(mux, func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
+	run.Reset()
+	copilot.ResetHandlers()
+	copilot.On(func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
 		return copilot.PreToolOutput{}, errors.New("boom")
 	})
 	var stdout bytes.Buffer
-	code := mux.Serve(context.Background(), strings.NewReader(copilotCamelPreToolUse), &stdout, &bytes.Buffer{}, copilot.WithEvent("preToolUse"))
+	code := run.Serve(context.Background(), strings.NewReader(copilotCamelPreToolUse), &stdout, &bytes.Buffer{}, run.WithEvent("preToolUse"))
 	if code != copilot.PreToolErrorExit {
 		t.Fatalf("exit = %d, want %d", code, copilot.PreToolErrorExit)
 	}
 }
 
 func TestMux_Serve_PreToolDeny(t *testing.T) {
-	mux := copilot.NewMux()
-	copilot.On(mux, func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
+	run.Reset()
+	copilot.ResetHandlers()
+	copilot.On(func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
 		return copilot.PreToolOutput{Decision: copilot.DecisionDeny, Reason: "nope"}, nil
 	})
 	var stdout bytes.Buffer
-	code := mux.Serve(context.Background(), strings.NewReader(copilotCamelPreToolUse), &stdout, &bytes.Buffer{}, copilot.WithEvent("preToolUse"))
+	code := run.Serve(context.Background(), strings.NewReader(copilotCamelPreToolUse), &stdout, &bytes.Buffer{}, run.WithEvent("preToolUse"))
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -541,8 +544,9 @@ func TestMux_Serve_PreToolDeny(t *testing.T) {
 }
 
 func TestMux_OnDuplicatePanics(t *testing.T) {
-	mux := copilot.NewMux()
-	copilot.On(mux, func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
+	run.Reset()
+	copilot.ResetHandlers()
+	copilot.On(func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
 		return copilot.PreToolOutput{}, nil
 	})
 	defer func() {
@@ -550,7 +554,7 @@ func TestMux_OnDuplicatePanics(t *testing.T) {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	copilot.On(mux, func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
+	copilot.On(func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
 		return copilot.PreToolOutput{}, nil
 	})
 }

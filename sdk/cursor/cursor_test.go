@@ -10,6 +10,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/tools"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 const cursorShell = `{
@@ -469,15 +470,16 @@ func TestEncode_PermissionUpdatedInputEmptyEventName(t *testing.T) {
 }
 
 func TestMux_Serve_BeforeShellDeny(t *testing.T) {
-	mux := cursor.NewMux()
-	cursor.On(mux, func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
+	run.Reset()
+	cursor.ResetHandlers()
+	cursor.On(func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
 		return cursor.PermissionOutput{
 			Decision:     cursor.DecisionDeny,
 			AgentMessage: "blocked",
 		}, nil
 	})
 	var stdout bytes.Buffer
-	code := mux.Serve(context.Background(), strings.NewReader(cursorShell), &stdout, &bytes.Buffer{})
+	code := run.Serve(context.Background(), strings.NewReader(cursorShell), &stdout, &bytes.Buffer{})
 	if code != cursor.PermissionDenyExit {
 		t.Fatalf("exit code = %d, want %d", code, cursor.PermissionDenyExit)
 	}
@@ -487,8 +489,9 @@ func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 }
 
 func TestMux_OnDuplicatePanics(t *testing.T) {
-	mux := cursor.NewMux()
-	cursor.On(mux, func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
+	run.Reset()
+	cursor.ResetHandlers()
+	cursor.On(func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
 		return cursor.PermissionOutput{}, nil
 	})
 	defer func() {
@@ -496,7 +499,7 @@ func TestMux_OnDuplicatePanics(t *testing.T) {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	cursor.On(mux, func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
+	cursor.On(func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
 		return cursor.PermissionOutput{}, nil
 	})
 }

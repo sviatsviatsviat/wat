@@ -10,10 +10,8 @@
 // Use CodecFor to obtain a dialect codec; ClaudeCodec, CopilotCodec, and
 // CursorCodec decode native stdin and encode Result for their respective agents.
 //
-// Hook scripts register handlers on a Mux with On and OnAny, then call Main
-// (or Serve for testable I/O). Serve reads stdin, detects or accepts a dialect
-// (WithDialect), decodes via CodecFor, runs OnAny then kind-specific handlers
-// and merges results, encodes stdout, and returns the exit code. WithEvent
-// supplies the Copilot camelCase event name when the payload omits it;
-// WithGetenv injects environment lookup for Detect and ClaudeCodec encode.
+// Hook scripts register handlers with On and OnAny (chainable via Chain), then
+// call run.Main from github.com/sviatsviatsviat/wat/sdk/run. Handlers register
+// into a shared singleton registry alongside per-agent SDK handlers. WithDialect,
+// WithEvent, and WithGetenv configure run.Main and run.Serve.
 package agnostic

@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleMux() {
-	mux := cursor.NewMux()
-	cursor.On(mux, func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
-		if ev.Command == "git push --force" {
-			return cursor.PermissionOutput{
-				Decision:     cursor.DecisionDeny,
-				AgentMessage: "force push blocked",
-			}, nil
+func ExampleOn() {
+	cursor.On(func(ctx context.Context, ev cursor.BeforeShellExecution) (cursor.PermissionOutput, error) {
+		if ev.Command == "rm -rf /" {
+			return cursor.PermissionOutput{Decision: cursor.DecisionDeny, AgentMessage: "blocked"}, nil
 		}
 		return cursor.PermissionOutput{}, nil
 	})
-	// Hook entrypoint: mux.Main()
+	// Hook entrypoint: run.Main()
+	_ = run.Main
 }

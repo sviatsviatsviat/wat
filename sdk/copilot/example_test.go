@@ -4,15 +4,16 @@ import (
 	"context"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleMux() {
-	mux := copilot.NewMux()
-	copilot.On(mux, func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
-		if ev.NativeToolName() == "bash" {
+func ExampleOn() {
+	copilot.On(func(ctx context.Context, ev copilot.PreToolUse) (copilot.PreToolOutput, error) {
+		if ev.ToolName == "powershell" {
 			return copilot.PreToolOutput{Decision: copilot.DecisionDeny, Reason: "blocked"}, nil
 		}
 		return copilot.PreToolOutput{}, nil
 	})
-	// Hook entrypoint: mux.Main(copilot.WithEvent("preToolUse"))
+	// Hook entrypoint: run.Main(run.WithEvent("preToolUse"))
+	_ = run.Main
 }

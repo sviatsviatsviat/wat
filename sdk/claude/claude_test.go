@@ -12,6 +12,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 const claudePreToolUse = `{
@@ -48,8 +49,9 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 }
 
 func TestMux_Serve_PreToolDeny(t *testing.T) {
-	mux := claude.NewMux()
-	claude.On(mux, func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+	run.Reset()
+	claude.ResetHandlers()
+	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
 		return claude.PreToolUseOutput{
 			Decision: claude.DecisionDeny,
 			Reason:   "destructive command",
@@ -57,7 +59,7 @@ func TestMux_Serve_PreToolDeny(t *testing.T) {
 	})
 
 	var stdout bytes.Buffer
-	code := mux.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
+	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &bytes.Buffer{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -218,24 +220,31 @@ func TestDecode_InvalidJSON(t *testing.T) {
 }
 
 func TestMux_FailPolicy(t *testing.T) {
-	mux := claude.NewMux()
-	claude.On(mux, func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+	run.Reset()
+	claude.ResetHandlers()
+	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
 		return claude.PreToolUseOutput{}, context.Canceled
 	})
 
-	code := mux.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailOpen))
+	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailOpen))
 	if code != claude.HandlerErrorExit {
 		t.Fatalf("FailOpen exit = %d, want %d", code, claude.HandlerErrorExit)
 	}
-	code = mux.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailBlock))
+	run.Reset()
+	claude.ResetHandlers()
+	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+		return claude.PreToolUseOutput{}, context.Canceled
+	})
+	code = run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailBlock))
 	if code != claude.FailBlockExit {
 		t.Fatalf("FailBlock exit = %d, want %d", code, claude.FailBlockExit)
 	}
 }
 
 func TestMux_OnDuplicatePanics(t *testing.T) {
-	mux := claude.NewMux()
-	claude.On(mux, func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+	run.Reset()
+	claude.ResetHandlers()
+	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
 		return claude.PreToolUseOutput{}, nil
 	})
 	defer func() {
@@ -243,7 +252,7 @@ func TestMux_OnDuplicatePanics(t *testing.T) {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	claude.On(mux, func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
+	claude.On(func(ctx context.Context, ev claude.PreToolUse) (claude.PreToolUseOutput, error) {
 		return claude.PreToolUseOutput{}, nil
 	})
 }
