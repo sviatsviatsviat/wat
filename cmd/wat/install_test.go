@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -57,10 +58,7 @@ func TestInstallProject_freshInstallAll(t *testing.T) {
 	for event, groups := range settings.Hooks {
 		for _, g := range groups {
 			for _, raw := range g.Hooks {
-				h, err := claude.ParseHandler(raw)
-				if err != nil {
-					continue
-				}
+				h := parseHandler[claude.Handler](t, raw)
 				if strings.Contains(h.Command, "run --agent claude --event "+event) {
 					if !strings.HasPrefix(h.Command, watAbs+" ") {
 						t.Fatalf("claude command should use watAbs prefix: %q", h.Command)
@@ -126,7 +124,7 @@ func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 		Version: 1,
 		Hooks: map[string][]json.RawMessage{
 			"sessionStart": {
-				mustCursorRaw(t, cursor.Handler{Type: cursor.HandlerTypeCommand, Command: "echo unrelated"}),
+				mustHandlerRaw(t, cursor.Handler{Type: cursor.HandlerTypeCommand, Command: "echo unrelated"}),
 			},
 		},
 	}
@@ -159,10 +157,7 @@ func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 		t.Fatalf("parse %s: %v", cursorPath, err)
 	}
 	raw := got.Hooks["sessionStart"][0]
-	h, err := cursor.ParseHandler(raw)
-	if err != nil {
-		t.Fatalf("parse unrelated handler: %v", err)
-	}
+	h := parseHandler[cursor.Handler](t, raw)
 	if h.Command != "echo unrelated" {
 		t.Fatalf("unrelated command changed: %q", h.Command)
 	}
@@ -189,7 +184,7 @@ func TestInstallProject_reinstallReplacesWatEntries(t *testing.T) {
 		Version: 1,
 		Hooks: map[string][]json.RawMessage{
 			"preToolUse": {
-				mustCursorRaw(t, cursor.Handler{Type: cursor.HandlerTypeCommand, Command: watAbs + " run --agent cursor --event preToolUse"}),
+				mustHandlerRaw(t, cursor.Handler{Type: cursor.HandlerTypeCommand, Command: watAbs + " run --agent cursor --event preToolUse"}),
 			},
 		},
 	}
@@ -219,10 +214,7 @@ func TestInstallProject_reinstallReplacesWatEntries(t *testing.T) {
 	handlers := got.Hooks["preToolUse"]
 	var watCount int
 	for _, raw := range handlers {
-		h, err := cursor.ParseHandler(raw)
-		if err != nil {
-			continue
-		}
+		h := parseHandler[cursor.Handler](t, raw)
 		if strings.Contains(h.Command, "run --agent cursor --event preToolUse") {
 			watCount++
 		}
@@ -274,13 +266,13 @@ func TestUpsertClaudeGroups_preservesUnrelatedRemovesWatManaged(t *testing.T) {
 		{
 			Matcher: "Bash",
 			Hooks: []json.RawMessage{
-				mustClaudeRaw(t, claude.Handler{Type: "command", Command: "echo unrelated"}),
+				mustHandlerRaw(t, claude.Handler{Type: "command", Command: "echo unrelated"}),
 			},
 		},
 		{
 			Hooks: []json.RawMessage{
-				mustClaudeRaw(t, claude.Handler{Type: "command", Command: watAbs + " run --agent claude --event " + event}),
-				mustClaudeRaw(t, claude.Handler{Type: "command", Command: "echo keep-me"}),
+				mustHandlerRaw(t, claude.Handler{Type: "command", Command: watAbs + " run --agent claude --event " + event}),
+				mustHandlerRaw(t, claude.Handler{Type: "command", Command: "echo keep-me"}),
 			},
 		},
 	}
@@ -292,17 +284,17 @@ func TestUpsertClaudeGroups_preservesUnrelatedRemovesWatManaged(t *testing.T) {
 	if got[0].Matcher != "Bash" {
 		t.Fatalf("first group matcher = %q, want Bash", got[0].Matcher)
 	}
-	if h := parseClaudeHandler(t, got[0].Hooks[0]); h.Command != "echo unrelated" {
+	if h := parseHandler[claude.Handler](t, got[0].Hooks[0]); h.Command != "echo unrelated" {
 		t.Fatalf("unrelated matcher-group command changed: %q", h.Command)
 	}
-	if h := parseClaudeHandler(t, got[1].Hooks[0]); h.Command != "echo keep-me" {
+	if h := parseHandler[claude.Handler](t, got[1].Hooks[0]); h.Command != "echo keep-me" {
 		t.Fatalf("unrelated default-group command removed: %q", h.Command)
 	}
 	watCount := countClaudeWatHandlers(t, got[1].Hooks, "claude", event)
 	if watCount != 1 {
 		t.Fatalf("default group wat handler count = %d, want 1", watCount)
 	}
-	if h := parseClaudeHandler(t, got[1].Hooks[len(got[1].Hooks)-1]); h.Command != cmd {
+	if h := parseHandler[claude.Handler](t, got[1].Hooks[len(got[1].Hooks)-1]); h.Command != cmd {
 		t.Fatalf("new wat command = %q, want %q", h.Command, cmd)
 	}
 }
@@ -315,13 +307,13 @@ func TestUpsertClaudeGroups_dropsEmptyGroups(t *testing.T) {
 	groups := []claude.MatcherGroup{
 		{
 			Hooks: []json.RawMessage{
-				mustClaudeRaw(t, claude.Handler{Type: "command", Command: watAbs + " run --agent claude --event " + event}),
+				mustHandlerRaw(t, claude.Handler{Type: "command", Command: watAbs + " run --agent claude --event " + event}),
 			},
 		},
 		{
 			Matcher: "Write",
 			Hooks: []json.RawMessage{
-				mustClaudeRaw(t, claude.Handler{Type: "command", Command: "echo unrelated"}),
+				mustHandlerRaw(t, claude.Handler{Type: "command", Command: "echo unrelated"}),
 			},
 		},
 	}
@@ -349,12 +341,12 @@ func TestUpsertClaudeGroups_multipleDefaultGroupsOnlyFirstGetsWat(t *testing.T) 
 	groups := []claude.MatcherGroup{
 		{
 			Hooks: []json.RawMessage{
-				mustClaudeRaw(t, claude.Handler{Type: "command", Command: "echo first-default"}),
+				mustHandlerRaw(t, claude.Handler{Type: "command", Command: "echo first-default"}),
 			},
 		},
 		{
 			Hooks: []json.RawMessage{
-				mustClaudeRaw(t, claude.Handler{Type: "command", Command: "echo second-default"}),
+				mustHandlerRaw(t, claude.Handler{Type: "command", Command: "echo second-default"}),
 			},
 		},
 	}
@@ -363,7 +355,7 @@ func TestUpsertClaudeGroups_multipleDefaultGroupsOnlyFirstGetsWat(t *testing.T) 
 	if len(got) != 2 {
 		t.Fatalf("group count = %d, want 2", len(got))
 	}
-	if h := parseClaudeHandler(t, got[0].Hooks[0]); h.Command != "echo first-default" {
+	if h := parseHandler[claude.Handler](t, got[0].Hooks[0]); h.Command != "echo first-default" {
 		t.Fatalf("first default group unrelated hook changed: %q", h.Command)
 	}
 	if countClaudeWatHandlers(t, got[0].Hooks, "claude", event) != 1 {
@@ -372,7 +364,7 @@ func TestUpsertClaudeGroups_multipleDefaultGroupsOnlyFirstGetsWat(t *testing.T) 
 	if countClaudeWatHandlers(t, got[1].Hooks, "claude", event) != 0 {
 		t.Fatalf("second default group should not receive wat handler")
 	}
-	if h := parseClaudeHandler(t, got[1].Hooks[0]); h.Command != "echo second-default" {
+	if h := parseHandler[claude.Handler](t, got[1].Hooks[0]); h.Command != "echo second-default" {
 		t.Fatalf("second default group structure changed: %q", h.Command)
 	}
 }
@@ -395,7 +387,7 @@ func TestInstallProject_claudeMergePreservesUnrelated(t *testing.T) {
 				{
 					Matcher: "Bash",
 					Hooks: []json.RawMessage{
-						mustClaudeRaw(t, claude.Handler{Type: "command", Command: "echo unrelated"}),
+						mustHandlerRaw(t, claude.Handler{Type: "command", Command: "echo unrelated"}),
 					},
 				},
 			},
@@ -436,7 +428,7 @@ func TestInstallProject_claudeMergePreservesUnrelated(t *testing.T) {
 	if groups[0].Matcher != "Bash" {
 		t.Fatalf("matcher group lost: %q", groups[0].Matcher)
 	}
-	if h := parseClaudeHandler(t, groups[0].Hooks[0]); h.Command != "echo unrelated" {
+	if h := parseHandler[claude.Handler](t, groups[0].Hooks[0]); h.Command != "echo unrelated" {
 		t.Fatalf("unrelated matcher-group command changed: %q", h.Command)
 	}
 }
@@ -460,7 +452,7 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 			event: {
 				{
 					Hooks: []json.RawMessage{
-						mustClaudeRaw(t, claude.Handler{Type: "command", Command: watAbs + " run --agent claude --event " + event}),
+						mustHandlerRaw(t, claude.Handler{Type: "command", Command: watAbs + " run --agent claude --event " + event}),
 					},
 				},
 			},
@@ -496,7 +488,7 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 	var watCount int
 	for _, g := range got.Hooks[event] {
 		for _, raw := range g.Hooks {
-			h := parseClaudeHandler(t, raw)
+			h := parseHandler[claude.Handler](t, raw)
 			if strings.Contains(h.Command, "run --agent claude --event "+event) {
 				watCount++
 			}
@@ -507,38 +499,29 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 	}
 }
 
-func mustCursorRaw(t *testing.T, h cursor.Handler) json.RawMessage {
+func mustHandlerRaw[T any](t *testing.T, h T) json.RawMessage {
 	t.Helper()
-	raw, err := cursor.MarshalHandler(h)
+	raw, err := hookkit.MarshalHandler(h)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return raw
 }
 
-func mustClaudeRaw(t *testing.T, h claude.Handler) json.RawMessage {
+func parseHandler[T any](t *testing.T, raw json.RawMessage) T {
 	t.Helper()
-	raw, err := claude.MarshalHandler(h)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return raw
-}
-
-func parseClaudeHandler(t *testing.T, raw json.RawMessage) claude.Handler {
-	t.Helper()
-	h, err := claude.ParseHandler(raw)
+	parsed, err := hookkit.ParseHandler[T](raw)
 	if err != nil {
 		t.Fatalf("parse handler: %v", err)
 	}
-	return h
+	return parsed
 }
 
 func countClaudeWatHandlers(t *testing.T, hooks []json.RawMessage, agent, event string) int {
 	t.Helper()
 	var n int
 	for _, raw := range hooks {
-		h := parseClaudeHandler(t, raw)
+		h := parseHandler[claude.Handler](t, raw)
 		if strings.Contains(h.Command, "run --agent "+agent+" --event "+event) {
 			n++
 		}

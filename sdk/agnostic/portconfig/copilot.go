@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 )
@@ -39,11 +40,10 @@ func parseCopilot(data []byte) (Config, []Warning, error) {
 }
 
 func copilotHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
-	h, err := copilot.ParseHandler(handlerRaw)
-	if err != nil {
-		return Entry{}, nil, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
+	h, warns, ok := parseHandlerJSON[copilot.Handler](event, handlerRaw)
+	if !ok {
+		return Entry{}, nil, warns, false
 	}
-	var warns []Warning
 	e := Entry{
 		Kind:        kind,
 		NativeEvent: event,
@@ -138,7 +138,7 @@ func copilotHandlerRaw(e Entry) (json.RawMessage, error) {
 		default:
 			h.Type = e.Type
 		}
-		return copilot.MarshalHandler(h)
+		return hookkit.MarshalHandler(h)
 	}
 	var m map[string]any
 	if err := json.Unmarshal(e.Raw, &m); err != nil {

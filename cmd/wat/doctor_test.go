@@ -220,7 +220,7 @@ func TestRunDoctor_invalidEventInConfig(t *testing.T) {
 		Hooks: map[string][]claude.MatcherGroup{
 			event: {{
 				Hooks: []json.RawMessage{
-					mustClaudeRaw(t, claude.Handler{Type: "command", Command: badCmd}),
+					mustHandlerRaw(t, claude.Handler{Type: "command", Command: badCmd}),
 				},
 			}},
 		},

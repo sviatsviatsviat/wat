@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
@@ -45,11 +46,10 @@ func parseCursor(data []byte) (Config, []Warning, error) {
 }
 
 func cursorHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
-	h, err := cursor.ParseHandler(handlerRaw)
-	if err != nil {
-		return Entry{}, nil, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
+	h, warns, ok := parseHandlerJSON[cursor.Handler](event, handlerRaw)
+	if !ok {
+		return Entry{}, nil, warns, false
 	}
-	var warns []Warning
 	e := Entry{
 		Kind:        kind,
 		NativeEvent: event,
@@ -114,5 +114,5 @@ func cursorHandlerRaw(e Entry) (json.RawMessage, error) {
 	if e.Type != "" && e.Type != cursor.HandlerTypeCommand {
 		h.Type = e.Type
 	}
-	return cursor.MarshalHandler(h)
+	return hookkit.MarshalHandler(h)
 }

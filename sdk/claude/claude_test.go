@@ -359,37 +359,3 @@ func TestIsMCPTool(t *testing.T) {
 		t.Fatalf("IsMCPTool = %q, %q, %v", server, tool, ok)
 	}
 }
-
-func TestParseHandler_RoundTrip(t *testing.T) {
-	raw, err := claude.MarshalHandler(claude.Handler{
-		Type:    "command",
-		Command: "echo hi",
-		Timeout: 30,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	h, err := claude.ParseHandler(raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if h.Type != "command" || h.Command != "echo hi" || h.Timeout != 30 {
-		t.Fatalf("handler = %+v", h)
-	}
-	if h.TimeoutSeconds() != 30 {
-		t.Fatalf("TimeoutSeconds = %d", h.TimeoutSeconds())
-	}
-}
-
-func TestHandlers_EncodesMultiple(t *testing.T) {
-	blobs, err := claude.Handlers(
-		claude.Handler{Type: "command", Command: "a"},
-		claude.Handler{Type: "command", Command: "b"},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(blobs) != 2 {
-		t.Fatalf("len = %d", len(blobs))
-	}
-}

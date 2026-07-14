@@ -3,8 +3,8 @@ package portconfig
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 // Config is a normalized hook configuration independent of any single agent's
@@ -64,4 +64,13 @@ func appendExtra(cfg *Config, event string, raw json.RawMessage) {
 
 func cloneRaw(raw json.RawMessage) json.RawMessage {
 	return hookkit.CloneRaw(raw)
+}
+
+func parseHandlerJSON[T any](event string, handlerRaw json.RawMessage) (T, []Warning, bool) {
+	h, err := hookkit.ParseHandler[T](handlerRaw)
+	if err != nil {
+		var zero T
+		return zero, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
+	}
+	return h, nil, true
 }

@@ -20,7 +20,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 | `encode.go` | `Encode` (wire mapping) |
 | `mux.go` | `On`, fluent `Chain` methods, registers into `sdk/run` |
 | `options.go` | Encode and run configuration (`WithEvent`, `WithFailPolicy`, …) |
-| `config.go` | Native hook config helpers (`ParseHandler`, `Handlers`) |
+| `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
 | `tools/` | Optional lazy tool-input schemas |
 

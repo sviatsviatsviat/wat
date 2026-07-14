@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -208,7 +209,7 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 		for _, groups := range settings.Hooks {
 			for _, g := range groups {
 				for _, raw := range g.Hooks {
-					h, err := claude.ParseHandler(raw)
+					h, err := hookkit.ParseHandler[claude.Handler](raw)
 					if err != nil {
 						continue
 					}
@@ -222,38 +223,24 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 		}
 		return cmds, nil
 	case "copilot":
-		var f copilot.File
-		if err := readInstallJSON(deps, path, &f); err != nil {
-			return nil, err
-		}
-		return flatWatCommands(f.Hooks, func(raw json.RawMessage) (string, bool) {
-			h, err := copilot.ParseHandler(raw)
-			if err != nil {
-				return "", false
-			}
-			if h.Type != "" && h.Type != "command" {
-				return "", false
-			}
-			return h.Command, true
-		})
+		return collectFlatWatCommands[copilot.File](deps, path, copilot.ParseFlatCommand)
 	case "cursor":
-		var f cursor.File
-		if err := readInstallJSON(deps, path, &f); err != nil {
-			return nil, err
-		}
-		return flatWatCommands(f.Hooks, func(raw json.RawMessage) (string, bool) {
-			h, err := cursor.ParseHandler(raw)
-			if err != nil {
-				return "", false
-			}
-			if h.Type != "" && h.Type != cursor.HandlerTypeCommand {
-				return "", false
-			}
-			return h.Command, true
-		})
+		return collectFlatWatCommands[cursor.File](deps, path, cursor.ParseFlatCommand)
 	default:
 		return nil, fmt.Errorf("unknown agent %q", agent)
 	}
+}
+
+type flatHooksConfig interface {
+	HooksMap() map[string][]json.RawMessage
+}
+
+func collectFlatWatCommands[F flatHooksConfig](deps Deps, path string, parseCommand func(json.RawMessage) (string, bool)) ([]string, error) {
+	var f F
+	if err := readInstallJSON(deps, path, &f); err != nil {
+		return nil, err
+	}
+	return flatWatCommands(f.HooksMap(), parseCommand)
 }
 
 func flatWatCommands(hooks map[string][]json.RawMessage, getCommand func(json.RawMessage) (string, bool)) ([]string, error) {

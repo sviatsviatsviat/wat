@@ -513,21 +513,3 @@ func TestTools_ShellInput(t *testing.T) {
 		t.Fatalf("Command=%q", input.Command)
 	}
 }
-
-func TestParseHandler_roundTrip(t *testing.T) {
-	raw := []byte(`{"command":"x.sh","matcher":"Shell","timeout":20,"loop_limit":3}`)
-	h, err := cursor.ParseHandler(raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if h.Command != "x.sh" || h.Matcher != "Shell" || h.TimeoutSeconds() != 20 || h.LoopLimit != 3 {
-		t.Fatalf("handler=%+v", h)
-	}
-	out, err := cursor.MarshalHandler(h)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(out), `"loop_limit":3`) {
-		t.Fatalf("marshal=%s", out)
-	}
-}

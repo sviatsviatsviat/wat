@@ -14,6 +14,21 @@ type File struct {
 	Hooks map[string][]json.RawMessage `json:"hooks"`
 }
 
+// HooksMap returns hook entries keyed by event name.
+func (f File) HooksMap() map[string][]json.RawMessage {
+	return f.Hooks
+}
+
+// ParseFlatCommand decodes native handler JSON and returns the shell command when type is empty or command.
+func ParseFlatCommand(raw json.RawMessage) (string, bool) {
+	return hookkit.ParseFlatCommand(raw)
+}
+
+// MarshalFlatCommand encodes a command-type handler as native hooks.json JSON.
+func MarshalFlatCommand(command string) (json.RawMessage, error) {
+	return hookkit.MarshalFlatCommand(command)
+}
+
 // Handler is a GitHub Copilot hook handler definition.
 type Handler struct {
 	// Type is the handler kind: command, http, or prompt.
@@ -34,21 +49,6 @@ type Handler struct {
 	TimeoutSec int `json:"timeoutSec,omitempty"`
 	// Timeout is an alternate timeout field in seconds.
 	Timeout int `json:"timeout,omitempty"`
-}
-
-// ParseHandler decodes native handler JSON into a Handler.
-func ParseHandler(raw json.RawMessage) (Handler, error) {
-	return hookkit.ParseHandler[Handler](raw)
-}
-
-// MarshalHandler encodes a Handler as native handler JSON.
-func MarshalHandler(h Handler) (json.RawMessage, error) {
-	return hookkit.MarshalHandler(h)
-}
-
-// Handlers encodes typed handlers as native handler JSON blobs.
-func Handlers(h ...Handler) ([]json.RawMessage, error) {
-	return hookkit.Handlers(h...)
 }
 
 // TimeoutSeconds returns the configured timeout in seconds.

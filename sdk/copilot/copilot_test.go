@@ -629,36 +629,25 @@ func TestSniffFormat(t *testing.T) {
 	}
 }
 
-func TestParseHandler_RoundTrip(t *testing.T) {
-	raw, err := copilot.MarshalHandler(copilot.Handler{
-		Type:       "command",
-		Bash:       "echo hi",
-		TimeoutSec: 30,
-	})
-	if err != nil {
-		t.Fatal(err)
+func TestHandler_EffectiveCommand(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		h    copilot.Handler
+		want string
+	}{
+		{name: "command", h: copilot.Handler{Command: "wat run"}, want: "wat run"},
+		{name: "bash", h: copilot.Handler{Bash: "echo hi"}, want: "echo hi"},
+		{name: "powershell", h: copilot.Handler{PowerShell: "Write-Host hi"}, want: "Write-Host hi"},
+		{name: "command precedence", h: copilot.Handler{Command: "a", Bash: "b", PowerShell: "c"}, want: "a"},
+		{name: "bash over powershell", h: copilot.Handler{Bash: "b", PowerShell: "c"}, want: "b"},
 	}
-	h, err := copilot.ParseHandler(raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if h.Bash != "echo hi" || h.TimeoutSec != 30 {
-		t.Fatalf("handler = %+v", h)
-	}
-	if h.TimeoutSeconds() != 30 || h.EffectiveCommand() != "echo hi" {
-		t.Fatalf("helpers = %d, %q", h.TimeoutSeconds(), h.EffectiveCommand())
-	}
-}
-
-func TestHandlers_EncodesMultiple(t *testing.T) {
-	blobs, err := copilot.Handlers(
-		copilot.Handler{Type: "command", Command: "a"},
-		copilot.Handler{Type: "command", Command: "b"},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(blobs) != 2 {
-		t.Fatalf("len = %d", len(blobs))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := tt.h.EffectiveCommand(); got != tt.want {
+				t.Fatalf("EffectiveCommand() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

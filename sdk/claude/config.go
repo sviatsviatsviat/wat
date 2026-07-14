@@ -1,10 +1,6 @@
 package claude
 
-import (
-	"encoding/json"
-
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
-)
+import "encoding/json"
 
 // Settings is the Claude Code settings.json hooks section shape.
 type Settings struct {
@@ -20,7 +16,7 @@ type MatcherGroup struct {
 	Matcher string `json:"matcher,omitempty"`
 	// If is a Claude-only group-level permission rule when present.
 	If json.RawMessage `json:"if,omitempty"`
-	// Hooks holds native handler JSON. Use ParseHandler and MarshalHandler for typed access.
+	// Hooks holds native handler JSON blobs.
 	Hooks []json.RawMessage `json:"hooks"`
 }
 
@@ -60,21 +56,6 @@ type Handler struct {
 	StatusMessage string `json:"statusMessage,omitempty"`
 	// Once runs the handler only once per session when true.
 	Once bool `json:"once,omitempty"`
-}
-
-// ParseHandler decodes native handler JSON into a Handler.
-func ParseHandler(raw json.RawMessage) (Handler, error) {
-	return hookkit.ParseHandler[Handler](raw)
-}
-
-// MarshalHandler encodes a Handler as native handler JSON.
-func MarshalHandler(h Handler) (json.RawMessage, error) {
-	return hookkit.MarshalHandler(h)
-}
-
-// Handlers encodes typed handlers as native handler JSON blobs.
-func Handlers(h ...Handler) ([]json.RawMessage, error) {
-	return hookkit.Handlers(h...)
 }
 
 // TimeoutSeconds returns the configured handler timeout in seconds.

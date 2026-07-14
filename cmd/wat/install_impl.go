@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/checks"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -172,7 +173,7 @@ func upsertClaudeGroups(groups []claude.MatcherGroup, cmd, agent, event, watAbs 
 	for _, g := range groups {
 		var kept []json.RawMessage
 		for _, raw := range g.Hooks {
-			h, err := claude.ParseHandler(raw)
+			h, err := hookkit.ParseHandler[claude.Handler](raw)
 			if err != nil {
 				kept = append(kept, raw)
 				continue
@@ -195,14 +196,14 @@ func upsertClaudeGroups(groups []claude.MatcherGroup, cmd, agent, event, watAbs 
 	added := false
 	for i := range out {
 		if out[i].Matcher == "" && len(out[i].If) == 0 {
-			raw, _ := claude.MarshalHandler(claude.Handler{Type: "command", Command: cmd})
+			raw, _ := hookkit.MarshalHandler(claude.Handler{Type: "command", Command: cmd})
 			out[i].Hooks = append(out[i].Hooks, raw)
 			added = true
 			break
 		}
 	}
 	if !added {
-		raw, _ := claude.MarshalHandler(claude.Handler{Type: "command", Command: cmd})
+		raw, _ := hookkit.MarshalHandler(claude.Handler{Type: "command", Command: cmd})
 		out = append(out, claude.MatcherGroup{Hooks: []json.RawMessage{raw}})
 	}
 	return out
@@ -211,77 +212,57 @@ func upsertClaudeGroups(groups []claude.MatcherGroup, cmd, agent, event, watAbs 
 func installCopilot(root, watAbs string, deps installDeps) error {
 	path := filepath.Join(root, ".github", "hooks", "wat.json")
 	f := copilot.File{Version: 1, Hooks: map[string][]json.RawMessage{}}
-
 	if err := readInstallJSON(path, &f, deps); err != nil {
 		return err
 	}
-	if f.Hooks == nil {
-		f.Hooks = map[string][]json.RawMessage{}
-	}
-	if f.Version == 0 {
-		f.Version = 1
-	}
-
+	initFlatHooksFile(&f.Hooks, &f.Version)
 	events, err := checks.ExpectedInstallEvents("copilot")
 	if err != nil {
 		return err
 	}
-	for _, event := range events {
-		cmd := watRunCommand(watAbs, "copilot", event)
-		f.Hooks[event] = upsertFlatHandlers(f.Hooks[event], cmd, "copilot", event, watAbs, func(raw json.RawMessage) (string, bool) {
-			h, err := copilot.ParseHandler(raw)
-			if err != nil {
-				return "", false
-			}
-			if h.Type != "" && h.Type != "command" {
-				return "", false
-			}
-			return h.Command, true
-		}, func(cmd string) json.RawMessage {
-			raw, _ := copilot.MarshalHandler(copilot.Handler{Type: "command", Command: cmd})
-			return raw
-		})
-	}
-
+	upsertFlatHookEvents(f.Hooks, "copilot", watAbs, events, copilot.ParseFlatCommand, marshalCopilotCommand)
 	return writeInstallJSON(path, f, deps)
 }
 
 func installCursor(root, watAbs string, deps installDeps) error {
 	path := filepath.Join(root, ".cursor", "hooks.json")
 	f := cursor.File{Version: 1, Hooks: map[string][]json.RawMessage{}}
-
 	if err := readInstallJSON(path, &f, deps); err != nil {
 		return err
 	}
-	if f.Hooks == nil {
-		f.Hooks = map[string][]json.RawMessage{}
-	}
-	if f.Version == 0 {
-		f.Version = 1
-	}
-
+	initFlatHooksFile(&f.Hooks, &f.Version)
 	events, err := checks.ExpectedInstallEvents("cursor")
 	if err != nil {
 		return err
 	}
-	for _, event := range events {
-		cmd := watRunCommand(watAbs, "cursor", event)
-		f.Hooks[event] = upsertFlatHandlers(f.Hooks[event], cmd, "cursor", event, watAbs, func(raw json.RawMessage) (string, bool) {
-			h, err := cursor.ParseHandler(raw)
-			if err != nil {
-				return "", false
-			}
-			if h.Type != "" && h.Type != cursor.HandlerTypeCommand {
-				return "", false
-			}
-			return h.Command, true
-		}, func(cmd string) json.RawMessage {
-			raw, _ := cursor.MarshalHandler(cursor.Handler{Type: cursor.HandlerTypeCommand, Command: cmd})
-			return raw
-		})
-	}
-
+	upsertFlatHookEvents(f.Hooks, "cursor", watAbs, events, cursor.ParseFlatCommand, marshalCursorCommand)
 	return writeInstallJSON(path, f, deps)
+}
+
+func initFlatHooksFile(hooks *map[string][]json.RawMessage, version *int) {
+	if *hooks == nil {
+		*hooks = map[string][]json.RawMessage{}
+	}
+	if *version == 0 {
+		*version = 1
+	}
+}
+
+func upsertFlatHookEvents(hooks map[string][]json.RawMessage, agent, watAbs string, events []string, parseCommand func(json.RawMessage) (string, bool), marshalCommand func(string) json.RawMessage) {
+	for _, event := range events {
+		cmd := watRunCommand(watAbs, agent, event)
+		hooks[event] = upsertFlatHandlers(hooks[event], cmd, agent, event, watAbs, parseCommand, marshalCommand)
+	}
+}
+
+func marshalCopilotCommand(cmd string) json.RawMessage {
+	raw, _ := copilot.MarshalFlatCommand(cmd)
+	return raw
+}
+
+func marshalCursorCommand(cmd string) json.RawMessage {
+	raw, _ := cursor.MarshalFlatCommand(cmd)
+	return raw
 }
 
 func readInstallJSON(path string, dest any, deps installDeps) error {

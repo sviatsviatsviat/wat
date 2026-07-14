@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
@@ -46,11 +47,10 @@ func parseClaude(data []byte) (Config, []Warning, error) {
 }
 
 func claudeHandlerToEntry(event string, kind agnostic.Kind, matcher string, groupIf json.RawMessage, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
-	h, err := claude.ParseHandler(handlerRaw)
-	if err != nil {
-		return Entry{}, nil, []Warning{warnf("%s: invalid handler JSON: %v", event, err)}, false
+	h, warns, ok := parseHandlerJSON[claude.Handler](event, handlerRaw)
+	if !ok {
+		return Entry{}, nil, warns, false
 	}
-	var warns []Warning
 	e := Entry{
 		Kind:          kind,
 		NativeEvent:   event,
@@ -127,7 +127,7 @@ func emitClaude(cfg Config) ([]byte, []Warning, error) {
 
 func claudeHandlerRaw(e Entry) (json.RawMessage, error) {
 	if len(e.Raw) == 0 {
-		return claude.MarshalHandler(claude.Handler{
+		return hookkit.MarshalHandler(claude.Handler{
 			Type:    e.Type,
 			Command: e.Command,
 			Prompt:  e.Prompt,

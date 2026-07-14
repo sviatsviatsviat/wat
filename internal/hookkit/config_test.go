@@ -51,3 +51,39 @@ func TestHandlers(t *testing.T) {
 		}
 	}
 }
+
+func TestParseFlatCommand(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name   string
+		raw    string
+		want   string
+		wantOK bool
+	}{
+		{name: "command type", raw: `{"type":"command","command":"wat run"}`, want: "wat run", wantOK: true},
+		{name: "empty type", raw: `{"command":"wat run"}`, want: "wat run", wantOK: true},
+		{name: "prompt type", raw: `{"type":"prompt","command":"ignored"}`, want: "", wantOK: false},
+		{name: "invalid json", raw: `{`, want: "", wantOK: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, ok := ParseFlatCommand(json.RawMessage(tt.raw))
+			if ok != tt.wantOK || got != tt.want {
+				t.Fatalf("ParseFlatCommand() = (%q, %v), want (%q, %v)", got, ok, tt.want, tt.wantOK)
+			}
+		})
+	}
+}
+
+func TestMarshalFlatCommand_roundTrip(t *testing.T) {
+	t.Parallel()
+	raw, err := MarshalFlatCommand("wat run --agent copilot --event stop")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, ok := ParseFlatCommand(raw)
+	if !ok || got != "wat run --agent copilot --event stop" {
+		t.Fatalf("ParseFlatCommand() = (%q, %v)", got, ok)
+	}
+}
