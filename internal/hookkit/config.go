@@ -43,6 +43,9 @@ func Handlers[T any](h ...T) ([]json.RawMessage, error) {
 // ParseFlatCommand decodes copilot or cursor flat handler JSON and returns the command
 // when type is empty or command.
 func ParseFlatCommand(raw json.RawMessage) (string, bool) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return "", false
+	}
 	h, err := ParseHandler[FlatCommandHandler](raw)
 	if err != nil {
 		return "", false

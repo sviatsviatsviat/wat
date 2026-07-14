@@ -56,6 +56,12 @@ func TestApplyOrphanDetail(t *testing.T) {
 	if _, ok := dst["permissionDecisionReason"]; ok {
 		t.Fatalf("detail should not apply when decision exists: %v", dst)
 	}
+
+	dst = map[string]any{}
+	ApplyOrphanDetail(dst, "permissionDecision", "permissionDecisionReason", nil)
+	if _, ok := dst["permissionDecisionReason"]; ok {
+		t.Fatalf("nil detail should not be stored: %v", dst)
+	}
 }
 
 func TestJoinContext(t *testing.T) {

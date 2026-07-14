@@ -83,6 +83,50 @@ func TestParseClaude_mappableAndExtras(t *testing.T) {
 	}
 }
 
+func TestParse_invalidHandlerPreservedInExtras(t *testing.T) {
+	const copilotInvalid = `{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [{"command": ["not-a-string"]}]
+  }
+}`
+	cfg, warns, err := Parse([]byte(copilotInvalid), agnostic.Copilot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.Hooks[agnostic.KindPreTool]) != 0 {
+		t.Fatalf("invalid handler should not map: %+v", cfg.Hooks[agnostic.KindPreTool])
+	}
+	if len(cfg.Extras) != 1 {
+		t.Fatalf("want 1 extra, got %d", len(cfg.Extras))
+	}
+	if cfg.Extras[0].Event != "preToolUse" {
+		t.Fatalf("extra event = %q", cfg.Extras[0].Event)
+	}
+	wantRaw := json.RawMessage(`{"command": ["not-a-string"]}`)
+	if !rawJSONEqual(cfg.Extras[0].Raw, wantRaw) {
+		t.Fatalf("extra raw = %s, want %s", cfg.Extras[0].Raw, wantRaw)
+	}
+	if len(warns) == 0 || !strings.Contains(string(warns[0]), "invalid handler JSON") {
+		t.Fatalf("want parse warning, got %v", warns)
+	}
+
+	out, emitWarns, err := Emit(cfg, agnostic.Copilot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(emitWarns) != 0 {
+		t.Fatalf("emit warnings = %v", emitWarns)
+	}
+	cfg2, _, err := Parse(out, agnostic.Copilot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg2.Extras) != 1 || !rawJSONEqual(cfg2.Extras[0].Raw, wantRaw) {
+		t.Fatalf("round-trip extra = %+v", cfg2.Extras)
+	}
+}
+
 func TestParseCopilot_timeoutAndCommand(t *testing.T) {
 	cfg, _, err := Parse([]byte(copilotSettings), agnostic.Copilot)
 	if err != nil {

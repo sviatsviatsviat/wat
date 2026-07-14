@@ -25,4 +25,9 @@ func TestRawBytes(t *testing.T) {
 	if string(got) != string(raw) {
 		t.Fatalf("RawBytes(raw event) = %q", got)
 	}
+	empty := json.RawMessage{}
+	got = RawBytes(nil, empty, env, nil)
+	if string(got) != `{"x":1}` {
+		t.Fatalf("RawBytes(empty raw) = %q, want accessor fallback", got)
+	}
 }

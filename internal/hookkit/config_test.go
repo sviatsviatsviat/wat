@@ -64,6 +64,8 @@ func TestParseFlatCommand(t *testing.T) {
 		{name: "empty type", raw: `{"command":"wat run"}`, want: "wat run", wantOK: true},
 		{name: "prompt type", raw: `{"type":"prompt","command":"ignored"}`, want: "", wantOK: false},
 		{name: "invalid json", raw: `{`, want: "", wantOK: false},
+		{name: "nil raw", raw: "", want: "", wantOK: false},
+		{name: "json null", raw: `null`, want: "", wantOK: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -73,6 +75,14 @@ func TestParseFlatCommand(t *testing.T) {
 				t.Fatalf("ParseFlatCommand() = (%q, %v), want (%q, %v)", got, ok, tt.want, tt.wantOK)
 			}
 		})
+	}
+}
+
+func TestParseFlatCommand_nilRaw(t *testing.T) {
+	t.Parallel()
+	got, ok := ParseFlatCommand(nil)
+	if ok || got != "" {
+		t.Fatalf("ParseFlatCommand(nil) = (%q, %v), want (\"\", false)", got, ok)
 	}
 }
 

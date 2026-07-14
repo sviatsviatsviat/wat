@@ -21,6 +21,9 @@ func ApplyRankedDecision(dst, src map[string]any, decisionKey, detailKey string,
 
 // ApplyOrphanDetail copies detailKey when dst has no decision yet.
 func ApplyOrphanDetail(dst map[string]any, decisionKey, detailKey string, value any) {
+	if value == nil {
+		return
+	}
 	if _, has := dst[decisionKey]; !has && value != "" {
 		dst[detailKey] = value
 	}

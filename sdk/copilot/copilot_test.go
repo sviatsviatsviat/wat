@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
@@ -649,5 +650,39 @@ func TestHandler_EffectiveCommand(t *testing.T) {
 				t.Fatalf("EffectiveCommand() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestParseHandler_RoundTrip(t *testing.T) {
+	raw, err := hookkit.MarshalHandler(copilot.Handler{
+		Type:       "command",
+		Bash:       "echo hi",
+		TimeoutSec: 30,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, err := hookkit.ParseHandler[copilot.Handler](raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.Bash != "echo hi" || h.TimeoutSec != 30 {
+		t.Fatalf("handler = %+v", h)
+	}
+	if h.TimeoutSeconds() != 30 || h.EffectiveCommand() != "echo hi" {
+		t.Fatalf("helpers = %d, %q", h.TimeoutSeconds(), h.EffectiveCommand())
+	}
+}
+
+func TestHandlers_EncodesMultiple(t *testing.T) {
+	blobs, err := hookkit.Handlers(
+		copilot.Handler{Type: "command", Command: "a"},
+		copilot.Handler{Type: "command", Command: "b"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(blobs) != 2 {
+		t.Fatalf("len = %d", len(blobs))
 	}
 }

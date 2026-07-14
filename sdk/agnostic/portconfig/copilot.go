@@ -42,7 +42,7 @@ func parseCopilot(data []byte) (Config, []Warning, error) {
 func copilotHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.RawMessage) (Entry, json.RawMessage, []Warning, bool) {
 	h, warns, ok := parseHandlerJSON[copilot.Handler](event, handlerRaw)
 	if !ok {
-		return Entry{}, nil, warns, false
+		return Entry{}, cloneRaw(handlerRaw), warns, false
 	}
 	e := Entry{
 		Kind:        kind,
