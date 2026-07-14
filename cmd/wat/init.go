@@ -47,7 +47,7 @@ func initProject(root string, force bool, command func(string, ...string) *exec.
 
 	watDir := filepath.Join(absRoot, ".wat")
 	cacheDir := filepath.Join(watDir, ".cache")
-	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0o750); err != nil {
 		return fmt.Errorf("create %s: %w", cacheDir, err)
 	}
 
@@ -71,7 +71,7 @@ func initProject(root string, force bool, command func(string, ...string) *exec.
 		return err
 	}
 
-	if err := os.WriteFile(hooksPath, []byte(watHooksGo), 0o644); err != nil {
+	if err := os.WriteFile(hooksPath, []byte(watHooksGo), 0o600); err != nil {
 		return fmt.Errorf("write %s: %w", hooksPath, err)
 	}
 
@@ -90,7 +90,7 @@ func writeFileIfMissing(path string, contents []byte) error {
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("stat %s: %w", path, err)
 	}
-	if err := os.WriteFile(path, contents, 0o644); err != nil {
+	if err := os.WriteFile(path, contents, 0o600); err != nil {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	return nil
