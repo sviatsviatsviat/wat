@@ -7,7 +7,7 @@ import (
 )
 
 func mapPostToolUse(e sdkcursor.PostToolUse, ev *model.Event) {
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput, e.ToolUseID)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 	ev.Result = &model.ToolResult{Text: e.ToolOutput, DurationMs: e.DurationMillis()}
 }
 

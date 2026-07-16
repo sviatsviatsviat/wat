@@ -82,25 +82,14 @@ type ToolCall struct {
 	Name string
 	// Native is the exact original tool name (Bash vs bash vs Shell).
 	Native string
-	// Input is the native tool input JSON.
-	Input json.RawMessage
+	// Input is the typed tool input for this call.
+	Input ToolInput
 	// ID is the tool_use_id or tool call id when available.
 	ID string
 	// Shell is the command string for shell execution tools when available.
 	Shell string
 	// MCP is true when the call targets an MCP server tool.
 	MCP bool
-}
-
-// InputAs decodes the native tool input into T.
-// A nil ToolCall or empty Input returns the zero value of T with no error.
-func InputAs[T any](t *ToolCall) (T, error) {
-	var v T
-	if t == nil || len(t.Input) == 0 {
-		return v, nil
-	}
-	err := json.Unmarshal(t.Input, &v)
-	return v, err
 }
 
 // ToolResult describes the outcome of a completed or failed tool call.

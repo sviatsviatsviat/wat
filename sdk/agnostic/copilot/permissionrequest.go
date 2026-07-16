@@ -7,5 +7,5 @@ import (
 )
 
 func mapPermissionRequest(e sdkcopilot.PermissionRequest, ev *model.Event) {
-	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input(), "")
+	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
 }

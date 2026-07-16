@@ -22,9 +22,11 @@ func NewToolCall(native string, input json.RawMessage, id string) *model.ToolCal
 	tc := &model.ToolCall{
 		Name:   name,
 		Native: native,
-		Input:  CloneRaw(input),
 		ID:     id,
 		MCP:    mcp,
+	}
+	if name != "" || native != "" || len(input) > 0 {
+		tc.Input = model.NewToolInput(name, native, input)
 	}
 	if name == model.ToolBash {
 		tc.Shell = hookkit.ExtractShellCommand(input)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -12,8 +13,8 @@ type PostToolUse struct {
 	Envelope
 	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
-	// ToolInput is the native tool input JSON.
-	ToolInput json.RawMessage `json:"tool_input"`
+	// ToolInput is the typed tool input for ToolName.
+	ToolInput tools.Input `json:"-"`
 	// ToolUseID is the tool use identifier.
 	ToolUseID string `json:"tool_use_id"`
 	// ToolResponse is the tool response JSON.
@@ -26,7 +27,11 @@ type PostToolUse struct {
 func (PostToolUse) EventName() string { return EventPostToolUse }
 
 func init() {
-	registerDecoder(EventPostToolUse, decodeAs[PostToolUse])
+	registerDecoder(EventPostToolUse, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *PostToolUse, raw []byte) {
+			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
+		})
+	})
 }
 
 // PostToolUseOutput is the response for PostToolUse and PostToolUseFailure events.

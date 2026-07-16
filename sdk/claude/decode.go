@@ -17,8 +17,12 @@ func registerDecoder(name string, fn decodeFn) {
 }
 
 func decodeAs[T Event](raw []byte) (Event, error) {
-	var ev T
-	if err := json.Unmarshal(raw, &ev); err != nil {
+	return decodeAsAndThen[T](raw, nil)
+}
+
+func decodeAsAndThen[T Event](raw []byte, after func(*T, []byte)) (Event, error) {
+	ev, err := hookkit.DecodeAsAndThen(raw, after)
+	if err != nil {
 		return nil, fmt.Errorf("claude: decode %T: %w", ev, fmt.Errorf("%w: %w", ErrDecodePayload, err))
 	}
 	envelopeAccessorForValue(&ev).envelopePtr().setDecodedRaw(raw)

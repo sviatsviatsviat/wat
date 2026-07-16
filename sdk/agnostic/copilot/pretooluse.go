@@ -7,7 +7,7 @@ import (
 )
 
 func mapPreToolUse(e sdkcopilot.PreToolUse, ev *model.Event) {
-	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input(), "")
+	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
 }
 
 func mapPreToolOutput(res model.Result) any {

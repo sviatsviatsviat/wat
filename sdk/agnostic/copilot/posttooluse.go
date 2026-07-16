@@ -7,7 +7,7 @@ import (
 )
 
 func mapPostToolUse(e sdkcopilot.PostToolUse, ev *model.Event) {
-	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input(), "")
+	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
 	ev.Result = &model.ToolResult{Raw: adapter.CloneRaw(e.ResultRaw()), Text: e.ResultText()}
 }
 

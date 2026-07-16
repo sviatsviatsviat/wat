@@ -10,7 +10,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
-	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -359,9 +358,13 @@ func TestDecode_ToolInputNotAliased(t *testing.T) {
 	}
 	pre := ev.(copilot.PreToolUse)
 	rawCopy := bytes.Clone(copilot.RawBytes(ev))
-	pre.ToolArgs[0] = '{'
+	got := pre.ToolArgs.Raw()
+	got[0] = 'X'
 	if !bytes.Equal(copilot.RawBytes(ev), rawCopy) {
-		t.Fatal("mutating ToolArgs affected RawBytes")
+		t.Fatal("mutating ToolArgs.Raw() copy affected RawBytes")
+	}
+	if bytes.Equal(pre.ToolArgs.Raw(), got) {
+		t.Fatal("ToolArgs.Raw() did not return a defensive copy")
 	}
 }
 
@@ -560,13 +563,15 @@ func TestMux_OnDuplicatePanics(t *testing.T) {
 	})
 }
 
-func TestToolInputAs_Bash(t *testing.T) {
-	input, err := tools.ToolInputAs[tools.BashInput](json.RawMessage(`{"command":"ls -la"}`))
+func TestToolInput_AsBash(t *testing.T) {
+	ev, err := copilot.Decode([]byte(`{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"Bash","toolArgs":{"command":"ls -la"}}`), copilot.WithEvent("preToolUse"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if input.Command != "ls -la" {
-		t.Fatalf("Command=%q", input.Command)
+	pre := ev.(copilot.PreToolUse)
+	input, ok := pre.Input().AsBash()
+	if !ok || input.Command != "ls -la" {
+		t.Fatalf("AsBash = %+v, %v", input, ok)
 	}
 }
 

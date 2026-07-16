@@ -3,7 +3,6 @@ package claude_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -11,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude"
-	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -318,41 +316,63 @@ func TestRawBytes_PreservesTypedDecode(t *testing.T) {
 	}
 }
 
-func TestToolInputAs_GrepCaseInsensitive(t *testing.T) {
-	input, err := tools.ToolInputAs[tools.GrepInput](json.RawMessage(`{"pattern":"foo","-i":true}`))
+func TestToolInput_AsGrepCaseInsensitive(t *testing.T) {
+	raw := []byte(`{"session_id":"s","hook_event_name":"PreToolUse","tool_name":"Grep","tool_input":{"pattern":"foo","-i":true},"tool_use_id":"t1"}`)
+	ev, err := claude.Decode(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !input.CaseInsensitive {
-		t.Fatal("expected CaseInsensitive from -i key")
+	pre, ok := ev.(claude.PreToolUse)
+	if !ok {
+		t.Fatalf("got %T", ev)
+	}
+	input, ok := pre.ToolInput.AsGrep()
+	if !ok || !input.CaseInsensitive {
+		t.Fatalf("AsGrep = %+v, %v", input, ok)
 	}
 }
 
-func TestToolInputAs_AskUserQuestionMultiSelect(t *testing.T) {
-	input, err := tools.ToolInputAs[tools.AskUserQuestionInput](json.RawMessage(`{
-		"questions":[{"question":"Pick","header":"H","options":[{"label":"A"}],"multiSelect":true}]
-	}`))
+func TestToolInput_AsAskUserQuestionMultiSelect(t *testing.T) {
+	raw := []byte(`{"session_id":"s","hook_event_name":"PreToolUse","tool_name":"AskUserQuestion","tool_input":{"questions":[{"question":"Pick","header":"H","options":[{"label":"A"}],"multiSelect":true}]},"tool_use_id":"t1"}`)
+	ev, err := claude.Decode(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(input.Questions) != 1 || !input.Questions[0].MultiSelect {
-		t.Fatalf("MultiSelect not decoded: %+v", input.Questions[0])
+	pre := ev.(claude.PreToolUse)
+	input, ok := pre.ToolInput.AsAskUserQuestion()
+	if !ok || len(input.Questions) != 1 || !input.Questions[0].MultiSelect {
+		t.Fatalf("AsAskUserQuestion = %+v, %v", input, ok)
 	}
 }
 
-func TestToolInputAs_Bash(t *testing.T) {
-	input, err := tools.ToolInputAs[tools.BashInput](json.RawMessage(`{"command":"ls -la","description":"list"}`))
+func TestToolInput_AsBash(t *testing.T) {
+	raw := []byte(`{"session_id":"s","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la","description":"list"},"tool_use_id":"t1"}`)
+	ev, err := claude.Decode(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if input.Command != "ls -la" {
-		t.Fatalf("Command = %q", input.Command)
+	pre := ev.(claude.PreToolUse)
+	input, ok := pre.ToolInput.AsBash()
+	if !ok || input.Command != "ls -la" {
+		t.Fatalf("AsBash = %+v, %v", input, ok)
+	}
+	if _, ok := pre.ToolInput.AsWrite(); ok {
+		t.Fatal("AsWrite should be false for Bash")
 	}
 }
 
-func TestIsMCPTool(t *testing.T) {
-	server, tool, ok := tools.IsMCPTool("mcp__github__create_issue")
-	if !ok || server != "github" || tool != "create_issue" {
-		t.Fatalf("IsMCPTool = %q, %q, %v", server, tool, ok)
+func TestToolInput_AsMCPTool(t *testing.T) {
+	raw := []byte(`{"session_id":"s","hook_event_name":"PreToolUse","tool_name":"mcp__github__create_issue","tool_input":{"title":"bug"},"tool_use_id":"t1"}`)
+	ev, err := claude.Decode(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pre := ev.(claude.PreToolUse)
+	mcp, ok := pre.ToolInput.AsMCPTool()
+	if !ok || mcp.Server != "github" || mcp.Tool != "create_issue" {
+		t.Fatalf("AsMCPTool = %+v, %v", mcp, ok)
+	}
+	if _, ok := pre.ToolInput.AsBash(); ok {
+		t.Fatal("AsBash should be false for MCP tool")
 	}
 }

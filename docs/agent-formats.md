@@ -27,7 +27,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `errors.go` | Decode error sentinels |
 | `internal/decode.go` | Decoder registry |
 | `internal/register.go` | Duplicate-registration tracking |
-| `tools/` | Optional lazy tool-input schemas |
+| `tools/` | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
 
 **Agnostic** uses the same root vertical-slice layout for portable hook kinds (`pretool.go`, `stop.go`, …):
 
@@ -363,7 +363,7 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Config porting: `wat port --from` / `--to` (see [`cmd/wat/port.go`](../cmd/wat/port.go))
 - Detection: [`sdk/agnostic/internal/model/dialect.go`](../sdk/agnostic/internal/model/dialect.go) — `ParseDialect`, `Detect`
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
-- Normalization: [`sdk/agnostic/internal/model/event.go`](../sdk/agnostic/internal/model/event.go) — `NormalizeToolName`, `InputAs`
+- Normalization: [`sdk/agnostic/internal/model/event.go`](../sdk/agnostic/internal/model/event.go) — `NormalizeToolName`; [`toolinput.go`](../sdk/agnostic/internal/model/toolinput.go) — `ToolInput` with `AsBash`, `AsWrite`, and related accessors
 - Tests: [`sdk/agnostic/internal/model/event_test.go`](../sdk/agnostic/internal/model/event_test.go)
 - Claude codec: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `ClaudeCodec`
 - Tests: [`sdk/agnostic/claude/codec_test.go`](../sdk/agnostic/claude/codec_test.go)
@@ -371,5 +371,5 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`sdk/agnostic/copilot/codec_test.go`](../sdk/agnostic/copilot/codec_test.go)
 - Cursor codec: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit`
 - Tests: [`sdk/agnostic/cursor/codec_test.go`](../sdk/agnostic/cursor/codec_test.go)
-- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` lazy tool input helpers
+- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

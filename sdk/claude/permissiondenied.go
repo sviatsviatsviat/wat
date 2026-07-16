@@ -2,8 +2,8 @@ package claude
 
 import (
 	"context"
-	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -12,8 +12,8 @@ type PermissionDenied struct {
 	Envelope
 	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
-	// ToolInput is the native tool input JSON.
-	ToolInput json.RawMessage `json:"tool_input"`
+	// ToolInput is the typed tool input for ToolName.
+	ToolInput tools.Input `json:"-"`
 	// ToolUseID is the tool use identifier.
 	ToolUseID string `json:"tool_use_id"`
 	// Reason is the classifier denial reason.
@@ -24,7 +24,11 @@ type PermissionDenied struct {
 func (PermissionDenied) EventName() string { return EventPermissionDenied }
 
 func init() {
-	registerDecoder(EventPermissionDenied, decodeAs[PermissionDenied])
+	registerDecoder(EventPermissionDenied, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *PermissionDenied, raw []byte) {
+			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
+		})
+	})
 }
 
 // PermissionDeniedOutput is the response for PermissionDenied events.

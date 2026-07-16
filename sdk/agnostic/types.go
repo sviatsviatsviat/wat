@@ -66,12 +66,6 @@ type StopResult = model.StopResult
 // SessionStartResult is the portable hook response for SessionStart events.
 type SessionStartResult = model.SessionStartResult
 
-// ToolCall describes the tool invocation a pre/post tool event refers to.
-type ToolCall = model.ToolCall
-
-// ToolResult holds post-tool outcome details on decoded events.
-type ToolResult = model.ToolResult
-
 // ParseDialect parses a dialect name from a CLI flag or config value.
 func ParseDialect(s string) Dialect { return model.ParseDialect(s) }
 
@@ -79,20 +73,6 @@ func ParseDialect(s string) Dialect { return model.ParseDialect(s) }
 func Detect(payload []byte, getenv func(string) string) Dialect {
 	return model.Detect(payload, getenv)
 }
-
-// Canonical tool name constants.
-const (
-	ToolBash      = model.ToolBash
-	ToolEdit      = model.ToolEdit
-	ToolWrite     = model.ToolWrite
-	ToolRead      = model.ToolRead
-	ToolGlob      = model.ToolGlob
-	ToolGrep      = model.ToolGrep
-	ToolTask      = model.ToolTask
-	ToolWebFetch  = model.ToolWebFetch
-	ToolWebSearch = model.ToolWebSearch
-	ToolDelete    = model.ToolDelete
-)
 
 // NormalizeToolName maps a native tool name onto the canonical vocabulary.
 func NormalizeToolName(name string) (canonical string, mcp bool) {

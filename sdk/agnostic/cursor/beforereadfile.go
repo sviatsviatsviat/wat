@@ -16,5 +16,6 @@ func mapBeforeReadFile(e sdkcursor.BeforeReadFile, ev *model.Event, name string)
 	if err != nil {
 		return
 	}
-	ev.Tool = &model.ToolCall{Name: model.ToolRead, Native: name, Input: input}
+	toolInput := model.NewToolInput(model.ToolRead, name, input)
+	ev.Tool = &model.ToolCall{Name: model.ToolRead, Native: name, Input: toolInput}
 }

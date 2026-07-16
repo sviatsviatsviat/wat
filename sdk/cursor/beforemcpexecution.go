@@ -2,18 +2,18 @@ package cursor
 
 import (
 	"context"
-	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/sdk/cursor/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // BeforeMCPExecution is the beforeMCPExecution hook event.
 type BeforeMCPExecution struct {
 	Envelope
-	// ToolName is the MCP tool name (MCP: prefix).
+	// ToolName is the native tool name (typically MCP:<tool>).
 	ToolName string `json:"tool_name"`
-	// ToolInput is the native tool input JSON.
-	ToolInput json.RawMessage `json:"tool_input"`
+	// ToolInput is the tool arguments from tool_input, bound to ToolName after decode.
+	ToolInput tools.Input `json:"-"`
 	// URL is the remote MCP server URL when present on the wire.
 	URL string `json:"url"`
 	// Command is the stdio MCP server command when present on the wire.
@@ -24,7 +24,11 @@ type BeforeMCPExecution struct {
 func (BeforeMCPExecution) EventName() string { return EventBeforeMCPExecution }
 
 func init() {
-	registerDecoder(EventBeforeMCPExecution, decodeAs[BeforeMCPExecution])
+	registerDecoder(EventBeforeMCPExecution, func(raw []byte, received, canonical string) (Event, error) {
+		return decodeAsAndThen(raw, received, canonical, func(e *BeforeMCPExecution, raw []byte) {
+			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
+		})
+	})
 }
 
 // BeforeMCPExecution registers a beforeMCPExecution handler.

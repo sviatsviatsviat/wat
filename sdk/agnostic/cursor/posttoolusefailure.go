@@ -7,7 +7,7 @@ import (
 )
 
 func mapPostToolUseFailure(e sdkcursor.PostToolUseFailure, ev *model.Event) {
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput, e.ToolUseID)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 	ev.Result = &model.ToolResult{
 		Error:       e.ErrorMessage,
 		FailureType: e.FailureType,

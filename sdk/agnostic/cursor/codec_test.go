@@ -118,7 +118,7 @@ func TestCursorDecode_AfterFileEdit(t *testing.T) {
 			NewString string `json:"new_string"`
 		} `json:"edits"`
 	}
-	if err := json.Unmarshal(ev.Tool.Input, &input); err != nil {
+	if err := json.Unmarshal(ev.Tool.Input.Raw(), &input); err != nil {
 		t.Fatal(err)
 	}
 	if input.FilePath != "main.go" || len(input.Edits) != 1 || input.Edits[0].OldString != "foo" {
@@ -250,7 +250,7 @@ func TestCursorDecode_Matrix(t *testing.T) {
 					FilePath string `json:"file_path"`
 					Content  string `json:"content"`
 				}
-				if err := json.Unmarshal(ev.Tool.Input, &input); err != nil {
+				if err := json.Unmarshal(ev.Tool.Input.Raw(), &input); err != nil {
 					t.Fatal(err)
 				}
 				if input.FilePath != "a.go" || input.Content != "package main" {

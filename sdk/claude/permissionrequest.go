@@ -2,8 +2,8 @@ package claude
 
 import (
 	"context"
-	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -12,8 +12,8 @@ type PermissionRequest struct {
 	Envelope
 	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
-	// ToolInput is the native tool input JSON.
-	ToolInput json.RawMessage `json:"tool_input"`
+	// ToolInput is the typed tool input for ToolName.
+	ToolInput tools.Input `json:"-"`
 	// ToolUseID is the tool use identifier.
 	ToolUseID string `json:"tool_use_id"`
 }
@@ -22,7 +22,11 @@ type PermissionRequest struct {
 func (PermissionRequest) EventName() string { return EventPermissionRequest }
 
 func init() {
-	registerDecoder(EventPermissionRequest, decodeAs[PermissionRequest])
+	registerDecoder(EventPermissionRequest, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *PermissionRequest, raw []byte) {
+			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
+		})
+	})
 }
 
 // PermissionRequestOutput is the response for PermissionRequest events.

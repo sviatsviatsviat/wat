@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -14,10 +15,10 @@ type PostToolUseFailure struct {
 	ToolName string `json:"tool_name"`
 	// ToolNameCamel is the tool name (camelCase).
 	ToolNameCamel string `json:"toolName"`
-	// ToolInput is the native tool input JSON (VS Code).
-	ToolInput json.RawMessage `json:"tool_input"`
-	// ToolArgs is the native tool input JSON (camelCase).
-	ToolArgs json.RawMessage `json:"toolArgs"`
+	// ToolInput is the typed tool input (VS Code).
+	ToolInput tools.Input `json:"-"`
+	// ToolArgs is the typed tool input (camelCase).
+	ToolArgs tools.Input `json:"-"`
 	// Error is the failure payload (string or object).
 	Error json.RawMessage `json:"error"`
 }
@@ -33,9 +34,9 @@ func (e PostToolUseFailure) NativeToolName() string {
 	return e.ToolNameCamel
 }
 
-// Input returns tool input JSON from either wire format.
-func (e PostToolUseFailure) Input() json.RawMessage {
-	if len(e.ToolInput) > 0 {
+// Input returns tool input from either wire format.
+func (e PostToolUseFailure) Input() tools.Input {
+	if e.ToolInput.HasRaw() {
 		return e.ToolInput
 	}
 	return e.ToolArgs
@@ -91,7 +92,13 @@ func encodePostToolFailure(o PostToolFailureOutput) ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventPostToolUseFailure, decodeAs[PostToolUseFailure])
+	registerDecoder(EventPostToolUseFailure, func(raw []byte, received, canonical string) (Event, error) {
+		return decodeAsAndThen(raw, received, canonical, func(e *PostToolUseFailure, raw []byte) {
+			name := e.NativeToolName()
+			e.ToolInput = tools.NewInputFromPayload(name, raw, "tool_input")
+			e.ToolArgs = tools.NewInputFromPayload(name, raw, "toolArgs")
+		})
+	})
 }
 
 // PostToolUseFailure registers a PostToolUseFailure handler.

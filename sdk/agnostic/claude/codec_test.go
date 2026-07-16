@@ -396,9 +396,13 @@ func TestClaudeDecode_ToolInputNotAliased(t *testing.T) {
 		t.Fatal(err)
 	}
 	rawCopy := bytes.Clone(ev.Raw)
-	ev.Tool.Input[0] = '{'
+	got := ev.Tool.Input.Raw()
+	got[0] = 'X'
 	if !bytes.Equal(ev.Raw, rawCopy) {
-		t.Fatal("mutating Tool.Input affected Event.Raw")
+		t.Fatal("mutating Tool.Input.Raw() copy affected Event.Raw")
+	}
+	if bytes.Equal(ev.Tool.Input.Raw(), got) {
+		t.Fatal("Tool.Input.Raw() did not return a defensive copy")
 	}
 }
 

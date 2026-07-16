@@ -7,7 +7,7 @@ import (
 )
 
 func mapPostToolUse(e sdkclaude.PostToolUse, ev *model.Event) {
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput, e.ToolUseID)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 	ev.Result = &model.ToolResult{Raw: adapter.CloneRaw(e.ToolResponse), Text: adapter.RawToText(e.ToolResponse)}
 }
 

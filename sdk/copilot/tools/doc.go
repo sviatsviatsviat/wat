@@ -1,2 +1,4 @@
-// Package tools provides lazy tool-input schemas for GitHub Copilot hook events.
+// Package tools provides GitHub Copilot built-in tool input schemas bound on hook events.
+//
+// Event fields of type [Input] expose typed access via AsBash, AsCreate, and related methods.
 package tools

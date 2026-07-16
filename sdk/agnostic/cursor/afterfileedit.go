@@ -19,6 +19,7 @@ func mapAfterFileEdit(e sdkcursor.AfterFileEdit, ev *model.Event, name string) {
 	if err != nil {
 		return
 	}
-	ev.Tool = &model.ToolCall{Name: model.ToolEdit, Native: name, Input: input}
+	toolInput := model.NewToolInput(model.ToolEdit, name, input)
+	ev.Tool = &model.ToolCall{Name: model.ToolEdit, Native: name, Input: toolInput}
 	ev.Result = &model.ToolResult{Raw: editsRaw}
 }

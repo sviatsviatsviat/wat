@@ -7,7 +7,7 @@ import (
 )
 
 func mapPreToolUse(e sdkclaude.PreToolUse, ev *model.Event) {
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput, e.ToolUseID)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 }
 
 func mapPreToolOutput(res model.Result) any {

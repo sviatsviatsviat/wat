@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 )
 
 func isShellToolName(name string) bool {
 	switch strings.ToLower(name) {
-	case "bash", "powershell", "shell":
+	case tools.ToolBash, tools.ToolPowerShell, tools.ToolShell:
 		return true
 	default:
 		return false

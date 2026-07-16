@@ -46,51 +46,21 @@ func TestNormalizeToolName(t *testing.T) {
 	}
 }
 
-func TestInputAs(t *testing.T) {
-	t.Run("nil_tool_call", func(t *testing.T) {
-		got, err := InputAs[struct{ Command string }](nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.Command != "" {
-			t.Fatalf("got %+v, want zero value", got)
-		}
-	})
+func TestToolInputAsBash(t *testing.T) {
+	in := NewToolInput(ToolBash, "Bash", json.RawMessage(`{"command":"go test ./..."}`))
+	got, ok := in.AsBash()
+	if !ok || got.Command != "go test ./..." {
+		t.Fatalf("AsBash = %+v, %v", got, ok)
+	}
+	if _, ok := in.AsWrite(); ok {
+		t.Fatal("AsWrite should be false for bash input")
+	}
+}
 
-	t.Run("empty_input", func(t *testing.T) {
-		got, err := InputAs[struct{ Command string }](&ToolCall{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.Command != "" {
-			t.Fatalf("got %+v, want zero value", got)
-		}
-	})
-
-	t.Run("successful_decode", func(t *testing.T) {
-		input, err := json.Marshal(struct {
-			Command string `json:"command"`
-		}{Command: "go test ./..."})
-		if err != nil {
-			t.Fatal(err)
-		}
-		tc := &ToolCall{Input: input}
-		got, err := InputAs[struct {
-			Command string `json:"command"`
-		}](tc)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.Command != "go test ./..." {
-			t.Fatalf("got command %q, want %q", got.Command, "go test ./...")
-		}
-	})
-
-	t.Run("invalid_json", func(t *testing.T) {
-		tc := &ToolCall{Input: json.RawMessage(`{invalid`)}
-		_, err := InputAs[struct{ Command string }](tc)
-		if err == nil {
-			t.Fatal("expected unmarshal error")
-		}
-	})
+func TestToolInputAsWritePathAlias(t *testing.T) {
+	in := NewToolInput(ToolWrite, "Write", json.RawMessage(`{"file_path":"/a","content":"x"}`))
+	got, ok := in.AsWrite()
+	if !ok || got.Path != "/a" || got.Content != "x" {
+		t.Fatalf("AsWrite = %+v, %v", got, ok)
+	}
 }

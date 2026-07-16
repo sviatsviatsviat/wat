@@ -7,5 +7,5 @@ import (
 )
 
 func mapPermissionRequest(e sdkclaude.PermissionRequest, ev *model.Event) {
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput, e.ToolUseID)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 }

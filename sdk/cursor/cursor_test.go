@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
-	"github.com/sviatsviatsviat/wat/sdk/cursor/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -501,12 +500,14 @@ func TestMux_OnDuplicatePanics(t *testing.T) {
 	})
 }
 
-func TestTools_ShellInput(t *testing.T) {
-	input, err := tools.ToolInputAs[tools.ShellInput]([]byte(`{"command":"ls"}`))
+func TestToolInput_AsShell(t *testing.T) {
+	ev, err := cursor.Decode([]byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if input.Command != "ls" {
-		t.Fatalf("Command=%q", input.Command)
+	pre := ev.(cursor.PreToolUse)
+	input, ok := pre.ToolInput.AsShell()
+	if !ok || input.Command != "ls" {
+		t.Fatalf("AsShell = %+v, %v", input, ok)
 	}
 }

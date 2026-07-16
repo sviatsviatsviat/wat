@@ -2,8 +2,8 @@ package cursor
 
 import (
 	"context"
-	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/sdk/cursor/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -12,8 +12,8 @@ type PostToolUseFailure struct {
 	Envelope
 	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
-	// ToolInput is the native tool input JSON.
-	ToolInput json.RawMessage `json:"tool_input"`
+	// ToolInput is the typed tool input for ToolName.
+	ToolInput tools.Input `json:"-"`
 	// ToolUseID is the tool use identifier.
 	ToolUseID string `json:"tool_use_id"`
 	// ErrorMessage is the failure message.
@@ -38,7 +38,11 @@ func (e PostToolUseFailure) DurationMillis() int64 {
 }
 
 func init() {
-	registerDecoder(EventPostToolUseFailure, decodeAs[PostToolUseFailure])
+	registerDecoder(EventPostToolUseFailure, func(raw []byte, received, canonical string) (Event, error) {
+		return decodeAsAndThen(raw, received, canonical, func(e *PostToolUseFailure, raw []byte) {
+			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
+		})
+	})
 }
 
 // PostToolUseFailure registers a postToolUseFailure handler.
