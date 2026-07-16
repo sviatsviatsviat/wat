@@ -34,11 +34,11 @@ func (taskCreatedResults) isTaskCreatedResults() {}
 
 // Context returns a context-injection-only TaskCreated result.
 func (taskCreatedResults) Context(text string) CommonOutput {
-	return CommonOutput{AdditionalContext: text}
+	return commonOutput{additionalContext: text}
 }
 
 // TaskCreated registers a TaskCreated handler.
-func (c *Chain) TaskCreated(fn func(context.Context, TaskCreatedHook, TaskCreatedResults) (CommonOutput, error)) *Chain {
+func (c *Chain) TaskCreated(fn func(context.Context, Hook[TaskCreated], TaskCreatedResults) (CommonOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

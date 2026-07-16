@@ -6,16 +6,23 @@ import (
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
+var preToolDecisions = map[model.Decision]sdkcopilot.PermissionDecision{
+	model.DecisionAllow: sdkcopilot.DecisionAllow,
+	model.DecisionDeny:  sdkcopilot.DecisionDeny,
+	model.DecisionAsk:   sdkcopilot.DecisionAsk,
+}
+
 func mapPreToolUse(e sdkcopilot.PreToolUse, ev *model.Event) {
 	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
 }
 
 func mapPreToolOutput(res model.Result) any {
-	out := sdkcopilot.PreToolOutput{}
-	if d := res.Decision.String(); d != "" {
-		out.Decision = sdkcopilot.PermissionDecision(d)
-		out.Reason = res.Reason
+	decision, ok := preToolDecisions[res.Decision]
+	if !ok {
+		if res.UpdatedInput == nil {
+			return nil
+		}
+		decision = sdkcopilot.DecisionAllow
 	}
-	out.ModifiedArgs = res.UpdatedInput
-	return out
+	return sdkcopilot.BuildPreToolOutput(decision, res.Reason, res.UpdatedInput)
 }

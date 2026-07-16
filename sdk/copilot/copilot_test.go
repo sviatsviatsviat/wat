@@ -46,10 +46,7 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 		t.Fatal("Raw not preserved")
 	}
 
-	out, code, err := copilot.Encode(copilot.EventPreToolUse, copilot.PreToolOutput{
-		Decision: copilot.DecisionDeny,
-		Reason:   "destructive command",
-	})
+	out, code, err := copilot.Encode(copilot.EventPreToolUse, copilot.PreToolResultsForTest().Deny("destructive command"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -369,10 +366,7 @@ func TestDecode_ToolInputNotAliased(t *testing.T) {
 }
 
 func TestEncode_PreToolAllowModifiedArgs(t *testing.T) {
-	out, code, err := copilot.Encode(copilot.EventPreToolUse, copilot.PreToolOutput{
-		Decision:     copilot.DecisionAllow,
-		ModifiedArgs: map[string]any{"command": "echo safe"},
-	})
+	out, code, err := copilot.Encode(copilot.EventPreToolUse, copilot.PreToolResultsForTest().Allow().WithModifiedArgs(map[string]any{"command": "echo safe"}))
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -382,10 +376,7 @@ func TestEncode_PreToolAllowModifiedArgs(t *testing.T) {
 }
 
 func TestEncode_PostToolUpdatedOutput(t *testing.T) {
-	out, code, err := copilot.Encode(copilot.EventPostToolUse, copilot.PostToolOutput{
-		ModifiedResult:    "rewritten",
-		AdditionalContext: "extra guidance",
-	})
+	out, code, err := copilot.Encode(copilot.EventPostToolUse, copilot.PostToolResultsForTest().Context("extra guidance").WithModifiedResult("rewritten"))
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -396,7 +387,7 @@ func TestEncode_PostToolUpdatedOutput(t *testing.T) {
 }
 
 func TestEncode_StopFollowUp(t *testing.T) {
-	out, code, err := copilot.Encode(copilot.EventAgentStop, copilot.StopOutput{Reason: "run the tests"})
+	out, code, err := copilot.Encode(copilot.EventAgentStop, copilot.StopResultsForTest().FollowUp("run the tests"))
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -406,11 +397,7 @@ func TestEncode_StopFollowUp(t *testing.T) {
 }
 
 func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
-	out, code, err := copilot.Encode(copilot.EventPermissionRequest, copilot.PermissionRequestOutput{
-		Behavior:  "deny",
-		Message:   "blocked",
-		Interrupt: true,
-	})
+	out, code, err := copilot.Encode(copilot.EventPermissionRequest, copilot.PermissionRequestResultsForTest().Deny("blocked").WithInterrupt(true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -423,11 +410,7 @@ func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
 }
 
 func TestEncode_PermissionRequestAsk(t *testing.T) {
-	out, code, err := copilot.Encode(copilot.EventPermissionRequest, copilot.PermissionRequestOutput{
-		Behavior:         "deny",
-		Message:          "needs user confirmation",
-		SuppressWarnExit: true,
-	})
+	out, code, err := copilot.Encode(copilot.EventPermissionRequest, copilot.PermissionRequestResultsForTest().Ask("needs user confirmation"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -437,9 +420,7 @@ func TestEncode_PermissionRequestAsk(t *testing.T) {
 }
 
 func TestEncode_PostToolFailureContext(t *testing.T) {
-	out, code, err := copilot.Encode(copilot.EventPostToolUseFailure, copilot.PostToolFailureOutput{
-		Context: "retry with smaller input",
-	})
+	out, code, err := copilot.Encode(copilot.EventPostToolUseFailure, copilot.PostToolFailureResultsForTest().Context("retry with smaller input"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -452,9 +433,7 @@ func TestEncode_PostToolFailureContext(t *testing.T) {
 }
 
 func TestEncode_SessionStartContext(t *testing.T) {
-	out, code, err := copilot.Encode(copilot.EventSessionStart, copilot.SessionStartOutput{
-		AdditionalContext: "project uses go test ./...",
-	})
+	out, code, err := copilot.Encode(copilot.EventSessionStart, copilot.SessionStartResultsForTest().Context("project uses go test ./..."))
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -464,16 +443,14 @@ func TestEncode_SessionStartContext(t *testing.T) {
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, code, err := copilot.Encode(copilot.EventPreToolUse, copilot.PreToolOutput{})
+	out, code, err := copilot.Encode(copilot.EventPreToolUse, nil)
 	if err != nil || code != 0 || out != nil {
 		t.Fatalf("zero output should be silent, got %q code=%d err=%v", out, code, err)
 	}
 }
 
 func TestEncode_EventOutputMismatch(t *testing.T) {
-	_, _, err := copilot.Encode(copilot.EventPostToolUse, copilot.PreToolOutput{
-		Decision: copilot.DecisionAllow,
-	})
+	_, _, err := copilot.Encode(copilot.EventPostToolUse, copilot.PreToolResultsForTest().Allow())
 	if err == nil {
 		t.Fatal("expected incompatible event/output error")
 	}
@@ -521,8 +498,8 @@ func TestTimestamp_UnmarshalJSON(t *testing.T) {
 func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 	run.Reset()
 	copilot.ResetHandlers()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
-		return copilot.PreToolOutput{}, errors.New("boom")
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
+		return nil, errors.New("boom")
 	})
 	var stdout bytes.Buffer
 	code := run.Serve(context.Background(), strings.NewReader(copilotCamelPreToolUse), &stdout, &bytes.Buffer{}, run.WithEvent("preToolUse"))
@@ -534,7 +511,7 @@ func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 func TestMux_Serve_PreToolDeny(t *testing.T) {
 	run.Reset()
 	copilot.ResetHandlers()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return r.Deny("nope"), nil
 	})
 	var stdout bytes.Buffer
@@ -550,16 +527,16 @@ func TestMux_Serve_PreToolDeny(t *testing.T) {
 func TestMux_OnDuplicatePanics(t *testing.T) {
 	run.Reset()
 	copilot.ResetHandlers()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
-		return copilot.PreToolOutput{}, nil
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
+		return nil, nil
 	})
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
-		return copilot.PreToolOutput{}, nil
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
+		return nil, nil
 	})
 }
 

@@ -21,23 +21,89 @@ func init() {
 }
 
 // UserPromptSubmitOutput is the response for UserPromptSubmit events.
-type UserPromptSubmitOutput struct {
-	Common
-	// Block rejects the submitted prompt when true.
-	Block bool
-	// Reason is the block reason.
-	Reason string
-	// AdditionalContext injects model context.
-	AdditionalContext string
-	// SessionTitle sets the session title.
-	SessionTitle string
-	// SuppressOriginalPrompt suppresses the original prompt when true.
-	SuppressOriginalPrompt bool
+// Construct via UserPromptSubmitResults builders and With* methods.
+// A nil value is a no-op.
+type UserPromptSubmitOutput interface {
+	isUserPromptSubmitOutput()
+	// WithAdditionalContext injects model context.
+	WithAdditionalContext(text string) UserPromptSubmitOutput
+	// WithSessionTitle sets the session title.
+	WithSessionTitle(title string) UserPromptSubmitOutput
+	// WithSuppressOriginalPrompt suppresses the original prompt when true.
+	WithSuppressOriginalPrompt(v bool) UserPromptSubmitOutput
+	// WithContinue sets whether Claude should continue the session.
+	WithContinue(v bool) UserPromptSubmitOutput
+	// WithStopReason explains why the session was stopped.
+	WithStopReason(reason string) UserPromptSubmitOutput
+	// WithSuppressOutput suppresses hook stdout when true.
+	WithSuppressOutput(v bool) UserPromptSubmitOutput
+	// WithSystemMessage sets a user-visible system message.
+	WithSystemMessage(msg string) UserPromptSubmitOutput
+	// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+	WithTerminalSequence(seq string) UserPromptSubmitOutput
 }
 
-func (o UserPromptSubmitOutput) isZero() bool {
-	return o.Common.isZero() && !o.Block && o.Reason == "" &&
-		o.AdditionalContext == "" && o.SessionTitle == "" && !o.SuppressOriginalPrompt
+type userPromptSubmitOutput struct {
+	common
+	block                  bool
+	reason                 string
+	additionalContext      string
+	sessionTitle           string
+	suppressOriginalPrompt bool
+}
+
+func (userPromptSubmitOutput) isUserPromptSubmitOutput() {}
+func (o userPromptSubmitOutput) isZero() bool {
+	return o.common.isZero() && !o.block && o.reason == "" &&
+		o.additionalContext == "" && o.sessionTitle == "" && !o.suppressOriginalPrompt
+}
+
+// WithAdditionalContext injects model context.
+func (o userPromptSubmitOutput) WithAdditionalContext(text string) UserPromptSubmitOutput {
+	o.additionalContext = text
+	return o
+}
+
+// WithSessionTitle sets the session title.
+func (o userPromptSubmitOutput) WithSessionTitle(title string) UserPromptSubmitOutput {
+	o.sessionTitle = title
+	return o
+}
+
+// WithSuppressOriginalPrompt suppresses the original prompt when true.
+func (o userPromptSubmitOutput) WithSuppressOriginalPrompt(v bool) UserPromptSubmitOutput {
+	o.suppressOriginalPrompt = v
+	return o
+}
+
+// WithContinue sets whether Claude should continue the session.
+func (o userPromptSubmitOutput) WithContinue(v bool) UserPromptSubmitOutput {
+	o.common = o.common.WithContinue(v)
+	return o
+}
+
+// WithStopReason explains why the session was stopped.
+func (o userPromptSubmitOutput) WithStopReason(reason string) UserPromptSubmitOutput {
+	o.common = o.common.WithStopReason(reason)
+	return o
+}
+
+// WithSuppressOutput suppresses hook stdout when true.
+func (o userPromptSubmitOutput) WithSuppressOutput(v bool) UserPromptSubmitOutput {
+	o.common = o.common.WithSuppressOutput(v)
+	return o
+}
+
+// WithSystemMessage sets a user-visible system message.
+func (o userPromptSubmitOutput) WithSystemMessage(msg string) UserPromptSubmitOutput {
+	o.common = o.common.WithSystemMessage(msg)
+	return o
+}
+
+// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+func (o userPromptSubmitOutput) WithTerminalSequence(seq string) UserPromptSubmitOutput {
+	o.common = o.common.WithTerminalSequence(seq)
+	return o
 }
 
 // UserPromptSubmitResults is the hook-scoped response builder supplied to Chain handlers by registration.
@@ -53,11 +119,31 @@ func (userPromptSubmitResults) isUserPromptSubmitResults() {}
 
 // Block returns a block result with an agent-facing reason.
 func (userPromptSubmitResults) Block(reason string) UserPromptSubmitOutput {
-	return UserPromptSubmitOutput{Block: true, Reason: reason}
+	return userPromptSubmitOutput{block: true, reason: reason}
+}
+
+func (userPromptSubmitOutput) allowedEvents() []string {
+	return []string{EventUserPromptSubmit}
+}
+
+func (o userPromptSubmitOutput) encodeInto(top, hso map[string]any) {
+	applyCommon(top, o.common)
+	if o.block {
+		top["decision"] = "block"
+		if o.reason != "" {
+			top["reason"] = o.reason
+		}
+	}
+	if o.additionalContext != "" {
+		hso["additionalContext"] = o.additionalContext
+	}
+	if o.sessionTitle != "" {
+		hso["sessionTitle"] = o.sessionTitle
+	}
 }
 
 // UserPromptSubmit registers a UserPromptSubmit handler.
-func (c *Chain) UserPromptSubmit(fn func(context.Context, UserPromptSubmitHook, UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *Chain {
+func (c *Chain) UserPromptSubmit(fn func(context.Context, Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

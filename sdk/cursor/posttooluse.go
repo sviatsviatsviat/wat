@@ -44,7 +44,7 @@ func init() {
 }
 
 // PostToolUse registers a postToolUse handler.
-func (c *Chain) PostToolUse(fn func(context.Context, PostToolUseHook, PostToolResults) (PostToolOutput, error)) *Chain {
+func (c *Chain) PostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolResults) (PostToolOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

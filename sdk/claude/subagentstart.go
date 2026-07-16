@@ -31,11 +31,11 @@ func (subagentStartResults) isSubagentStartResults() {}
 
 // Context returns a context-injection-only SubagentStart result.
 func (subagentStartResults) Context(text string) CommonOutput {
-	return CommonOutput{AdditionalContext: text}
+	return commonOutput{additionalContext: text}
 }
 
 // SubagentStart registers a SubagentStart handler.
-func (c *Chain) SubagentStart(fn func(context.Context, SubagentStartHook, SubagentStartResults) (CommonOutput, error)) *Chain {
+func (c *Chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (CommonOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

@@ -32,7 +32,7 @@ func init() {
 }
 
 // BeforeMCPExecution registers a beforeMCPExecution handler.
-func (c *Chain) BeforeMCPExecution(fn func(context.Context, BeforeMCPExecutionHook, PermissionResults) (PermissionOutput, error)) *Chain {
+func (c *Chain) BeforeMCPExecution(fn func(context.Context, Hook[BeforeMCPExecution], PermissionResults) (PermissionOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

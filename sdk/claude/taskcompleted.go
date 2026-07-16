@@ -34,11 +34,11 @@ func (taskCompletedResults) isTaskCompletedResults() {}
 
 // Context returns a context-injection-only TaskCompleted result.
 func (taskCompletedResults) Context(text string) CommonOutput {
-	return CommonOutput{AdditionalContext: text}
+	return commonOutput{additionalContext: text}
 }
 
 // TaskCompleted registers a TaskCompleted handler.
-func (c *Chain) TaskCompleted(fn func(context.Context, TaskCompletedHook, TaskCompletedResults) (CommonOutput, error)) *Chain {
+func (c *Chain) TaskCompleted(fn func(context.Context, Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

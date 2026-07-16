@@ -39,7 +39,7 @@ func TestTypedResults_Result(t *testing.T) {
 		},
 		{
 			name: "post tool updated output",
-			got:  PostToolResult{UpdatedOutput: &out}.Result(),
+			got:  postToolResult{}.WithUpdatedOutput(out).Result(),
 			want: Result{UpdatedOutput: &out},
 		},
 	}
@@ -53,13 +53,13 @@ func TestTypedResults_Result(t *testing.T) {
 }
 
 func TestTypedResults_IsZero(t *testing.T) {
-	if !(PreToolResult{}).IsZero() {
-		t.Fatal("zero PreToolResult should be zero")
+	if !(preToolResult{}).IsZero() {
+		t.Fatal("zero preToolResult should be zero")
 	}
 	if PreToolDeny("x").IsZero() {
 		t.Fatal("deny should not be zero")
 	}
-	if !(PostToolResult{}).IsZero() {
-		t.Fatal("zero PostToolResult should be zero")
+	if !(postToolResult{}).IsZero() {
+		t.Fatal("zero postToolResult should be zero")
 	}
 }

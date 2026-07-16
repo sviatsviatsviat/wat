@@ -18,18 +18,27 @@ type PreCompact struct {
 func (PreCompact) EventName() string { return EventPreCompact }
 
 // PreCompactOutput is the response for preCompact events.
-type PreCompactOutput struct {
-	// UserMessage is shown to the user.
-	UserMessage string
+// Construct via PreCompactResults builders. A nil value is a no-op.
+type PreCompactOutput interface {
+	isPreCompactOutput()
 }
 
-func (o PreCompactOutput) isZero() bool {
-	return o.UserMessage == ""
+type preCompactOutput struct {
+	userMessage string
+}
+
+func (preCompactOutput) isPreCompactOutput() {}
+
+func (o preCompactOutput) isZero() bool {
+	return o.userMessage == ""
 }
 
 // PreCompactResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type PreCompactResults interface {
+	// UserMessage returns a preCompact result with a user-facing message.
 	UserMessage(text string) PreCompactOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining.
+	Noop() PreCompactOutput
 	isPreCompactResults()
 }
 
@@ -39,14 +48,24 @@ func (preCompactResults) isPreCompactResults() {}
 
 // UserMessage returns a preCompact result with a user-facing message.
 func (preCompactResults) UserMessage(text string) PreCompactOutput {
-	return PreCompactOutput{UserMessage: text}
+	return preCompactOutput{userMessage: text}
 }
 
-func encodePreCompact(o PreCompactOutput) ([]byte, int, error) {
-	if o.UserMessage == "" {
+// Noop returns an empty response (silent stdout).
+func (preCompactResults) Noop() PreCompactOutput {
+	return preCompactOutput{}
+}
+
+func (preCompactOutput) allowedEvents() []string {
+	return []string{EventPreCompact}
+}
+
+func (o preCompactOutput) encode(eventName string) ([]byte, int, error) {
+	_ = eventName
+	if o.userMessage == "" {
 		return nil, 0, nil
 	}
-	out := map[string]any{"user_message": o.UserMessage}
+	out := map[string]any{"user_message": o.userMessage}
 	b, err := json.Marshal(out)
 	return b, 0, err
 }
@@ -56,7 +75,7 @@ func init() {
 }
 
 // PreCompact registers a preCompact handler.
-func (c *Chain) PreCompact(fn func(context.Context, PreCompactHook, PreCompactResults) (PreCompactOutput, error)) *Chain {
+func (c *Chain) PreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (PreCompactOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

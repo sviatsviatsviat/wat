@@ -22,8 +22,14 @@ func (SubagentStart) EventName() string { return EventSubagentStart }
 
 // SubagentStartResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type SubagentStartResults interface {
+	// Allow returns an allow verdict.
 	Allow() PermissionOutput
+	// Deny returns a deny verdict with an agent-facing message.
 	Deny(agentMessage string) PermissionOutput
+	// Ask returns an ask verdict with an agent-facing message.
+	Ask(agentMessage string) PermissionOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() PermissionOutput
 	isSubagentStartResults()
 }
 
@@ -39,12 +45,20 @@ func (r subagentStartResults) Deny(agentMessage string) PermissionOutput {
 	return r.deny(agentMessage)
 }
 
+// Ask returns an ask verdict with an agent-facing message.
+func (r subagentStartResults) Ask(agentMessage string) PermissionOutput {
+	return r.ask(agentMessage)
+}
+
+// Noop returns an empty response (silent stdout).
+func (r subagentStartResults) Noop() PermissionOutput { return r.noop() }
+
 func init() {
 	registerDecoder(EventSubagentStart, decodeAs[SubagentStart])
 }
 
 // SubagentStart registers a subagentStart handler.
-func (c *Chain) SubagentStart(fn func(context.Context, SubagentStartHook, SubagentStartResults) (PermissionOutput, error)) *Chain {
+func (c *Chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (PermissionOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

@@ -10,5 +10,8 @@ func mapSessionStart(e sdkclaude.SessionStart, ev *model.Event) {
 }
 
 func mapSessionStartOutput(res model.Result) any {
-	return sdkclaude.SessionStartOutput{AdditionalContext: res.Context}
+	if res.Context == "" {
+		return nil
+	}
+	return sdkclaude.BuildSessionStartOutput(res.Context)
 }

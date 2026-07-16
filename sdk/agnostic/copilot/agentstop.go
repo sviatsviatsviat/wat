@@ -10,5 +10,8 @@ func mapAgentStop(e sdkcopilot.AgentStop, ev *model.Event) {
 }
 
 func mapStopOutput(res model.Result) any {
-	return sdkcopilot.StopOutput{Reason: res.FollowUp}
+	if res.FollowUp == "" {
+		return nil
+	}
+	return sdkcopilot.BuildStopOutput(res.FollowUp)
 }

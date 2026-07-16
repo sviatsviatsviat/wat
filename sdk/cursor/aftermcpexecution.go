@@ -42,7 +42,7 @@ func init() {
 }
 
 // AfterMCPExecution registers an afterMCPExecution handler.
-func (c *Chain) AfterMCPExecution(fn func(context.Context, AfterMCPExecutionHook, PostToolResults) (PostToolOutput, error)) *Chain {
+func (c *Chain) AfterMCPExecution(fn func(context.Context, Hook[AfterMCPExecution], PostToolResults) (PostToolOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

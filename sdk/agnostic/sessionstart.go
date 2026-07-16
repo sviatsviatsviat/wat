@@ -69,7 +69,7 @@ func OnSessionStart(fn SessionStartHandler) *Chain {
 	registerResultHandler(model.KindSessionStart, func(ctx context.Context, ev *model.Event) (model.SessionStartResult, error) {
 		typed, err := SessionStartEventFrom(ev)
 		if err != nil {
-			return model.SessionStartResult{}, err
+			return nil, err
 		}
 		return fn(ctx, sessionStartHook(run.InvocationFrom(ctx), typed), sessionStartResults{})
 	})

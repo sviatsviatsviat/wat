@@ -18,21 +18,44 @@ type SessionStart struct {
 func (SessionStart) EventName() string { return EventSessionStart }
 
 // SessionStartOutput is the response for sessionStart events.
-type SessionStartOutput struct {
-	// Env sets environment variables for the session.
-	Env map[string]string
-	// AdditionalContext injects model context.
-	AdditionalContext string
+// Construct via SessionStartResults builders and With* methods. A nil value is a no-op.
+type SessionStartOutput interface {
+	isSessionStartOutput()
+	// WithEnv sets environment variables for the session.
+	WithEnv(env map[string]string) SessionStartOutput
+	// WithAdditionalContext injects model context.
+	WithAdditionalContext(text string) SessionStartOutput
 }
 
-func (o SessionStartOutput) isZero() bool {
-	return len(o.Env) == 0 && o.AdditionalContext == ""
+type sessionStartOutput struct {
+	env               map[string]string
+	additionalContext string
+}
+
+func (sessionStartOutput) isSessionStartOutput() {}
+
+func (o sessionStartOutput) isZero() bool {
+	return len(o.env) == 0 && o.additionalContext == ""
+}
+
+// WithEnv sets environment variables for the session.
+func (o sessionStartOutput) WithEnv(env map[string]string) SessionStartOutput {
+	o.env = env
+	return o
+}
+
+// WithAdditionalContext injects model context.
+func (o sessionStartOutput) WithAdditionalContext(text string) SessionStartOutput {
+	o.additionalContext = text
+	return o
 }
 
 // SessionStartResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type SessionStartResults interface {
 	// Context returns a context-injection-only SessionStart result.
 	Context(text string) SessionStartOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() SessionStartOutput
 	isSessionStartResults()
 }
 
@@ -42,16 +65,26 @@ func (sessionStartResults) isSessionStartResults() {}
 
 // Context returns a context-injection-only SessionStart result.
 func (sessionStartResults) Context(text string) SessionStartOutput {
-	return SessionStartOutput{AdditionalContext: text}
+	return sessionStartOutput{additionalContext: text}
 }
 
-func encodeSessionStart(o SessionStartOutput) ([]byte, int, error) {
+// Noop returns an empty response (silent stdout).
+func (sessionStartResults) Noop() SessionStartOutput {
+	return sessionStartOutput{}
+}
+
+func (sessionStartOutput) allowedEvents() []string {
+	return []string{EventSessionStart}
+}
+
+func (o sessionStartOutput) encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	out := map[string]any{}
-	if len(o.Env) > 0 {
-		out["env"] = o.Env
+	if len(o.env) > 0 {
+		out["env"] = o.env
 	}
-	if o.AdditionalContext != "" {
-		out["additional_context"] = o.AdditionalContext
+	if o.additionalContext != "" {
+		out["additional_context"] = o.additionalContext
 	}
 	if len(out) == 0 {
 		return nil, 0, nil
@@ -65,7 +98,7 @@ func init() {
 }
 
 // SessionStart registers a sessionStart handler.
-func (c *Chain) SessionStart(fn func(context.Context, SessionStartHook, SessionStartResults) (SessionStartOutput, error)) *Chain {
+func (c *Chain) SessionStart(fn func(context.Context, Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

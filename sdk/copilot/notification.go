@@ -21,19 +21,27 @@ type Notification struct {
 func (Notification) EventName() string { return EventNotification }
 
 // NotificationOutput is the response for notification events.
-type NotificationOutput struct {
-	// AdditionalContext injects model context.
-	AdditionalContext string
+// Construct via NotificationResults builders. A nil value is a no-op.
+type NotificationOutput interface {
+	isNotificationOutput()
 }
 
-func (o NotificationOutput) isZero() bool {
-	return o.AdditionalContext == ""
+type notificationOutput struct {
+	additionalContext string
+}
+
+func (notificationOutput) isNotificationOutput() {}
+
+func (o notificationOutput) isZero() bool {
+	return o.additionalContext == ""
 }
 
 // NotificationResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type NotificationResults interface {
 	// Context returns a context-injection-only Notification result.
 	Context(text string) NotificationOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() NotificationOutput
 	isNotificationResults()
 }
 
@@ -43,7 +51,20 @@ func (notificationResults) isNotificationResults() {}
 
 // Context returns a context-injection-only Notification result.
 func (notificationResults) Context(text string) NotificationOutput {
-	return NotificationOutput{AdditionalContext: text}
+	return notificationOutput{additionalContext: text}
+}
+
+// Noop returns an empty response (silent stdout).
+func (notificationResults) Noop() NotificationOutput {
+	return notificationOutput{}
+}
+
+func (notificationOutput) allowedEvents() []string {
+	return []string{EventNotification}
+}
+
+func (o notificationOutput) encode() ([]byte, int, error) {
+	return encodeAdditionalContext(o.additionalContext)
 }
 
 func init() {
@@ -51,7 +72,7 @@ func init() {
 }
 
 // Notification registers a Notification handler.
-func (c *Chain) Notification(fn func(context.Context, NotificationHook, NotificationResults) (NotificationOutput, error)) *Chain {
+func (c *Chain) Notification(fn func(context.Context, Hook[Notification], NotificationResults) (NotificationOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

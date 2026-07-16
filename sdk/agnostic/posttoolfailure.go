@@ -70,7 +70,7 @@ func OnPostToolFailure(fn PostToolFailureHandler) *Chain {
 	registerResultHandler(model.KindPostToolFailure, func(ctx context.Context, ev *model.Event) (model.PostToolFailureResult, error) {
 		typed, err := PostToolFailureEventFrom(ev)
 		if err != nil {
-			return model.PostToolFailureResult{}, err
+			return nil, err
 		}
 		return fn(ctx, postToolFailureHook(run.InvocationFrom(ctx), typed), postToolFailureResults{})
 	})

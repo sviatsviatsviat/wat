@@ -14,5 +14,8 @@ func mapPostToolUseFailure(e sdkcopilot.PostToolUseFailure, ev *model.Event) {
 }
 
 func mapPostToolFailureOutput(res model.Result) any {
-	return sdkcopilot.PostToolFailureOutput{Context: res.Context}
+	if res.Context == "" {
+		return nil
+	}
+	return sdkcopilot.BuildPostToolFailureOutput(res.Context)
 }

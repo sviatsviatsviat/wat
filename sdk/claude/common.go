@@ -14,32 +14,160 @@ const (
 	DecisionDefer PermissionDecision = "defer"
 )
 
-// Common holds output fields shared across Claude Code hook responses.
-type Common struct {
-	// Continue when false stops Claude entirely.
-	Continue *bool
-	// StopReason explains why the session was stopped.
-	StopReason string
-	// SuppressOutput suppresses hook output when true.
-	SuppressOutput bool
-	// SystemMessage is a user-visible system message.
-	SystemMessage string
-	// TerminalSequence is an OSC terminal sequence (allowlisted).
-	TerminalSequence string
+// common holds output fields shared across Claude Code hook responses.
+type common struct {
+	cont             *bool
+	stopReason       string
+	suppressOutput   bool
+	systemMessage    string
+	terminalSequence string
 }
 
-func (c Common) isZero() bool {
-	return c.Continue == nil && c.StopReason == "" && !c.SuppressOutput &&
-		c.SystemMessage == "" && c.TerminalSequence == ""
+func (c common) isZero() bool {
+	return c.cont == nil && c.stopReason == "" && !c.suppressOutput &&
+		c.systemMessage == "" && c.terminalSequence == ""
 }
 
-// CommonOutput is a Common-only response for observe-only events.
-type CommonOutput struct {
-	Common
-	// AdditionalContext injects model context.
-	AdditionalContext string
+// WithContinue sets whether Claude should continue the session.
+// Pass false to stop Claude entirely.
+func (c common) WithContinue(v bool) common {
+	c.cont = &v
+	return c
 }
 
-func (o CommonOutput) isZero() bool {
-	return o.Common.isZero() && o.AdditionalContext == ""
+// WithStopReason explains why the session was stopped.
+func (c common) WithStopReason(reason string) common {
+	c.stopReason = reason
+	return c
+}
+
+// WithSuppressOutput suppresses hook stdout when true.
+func (c common) WithSuppressOutput(v bool) common {
+	c.suppressOutput = v
+	return c
+}
+
+// WithSystemMessage sets a user-visible system message.
+func (c common) WithSystemMessage(msg string) common {
+	c.systemMessage = msg
+	return c
+}
+
+// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+func (c common) WithTerminalSequence(seq string) common {
+	c.terminalSequence = seq
+	return c
+}
+
+// CommonOutput is a shared-fields-only response for events that only accept those fields.
+// Construct via Results builders and With* methods. A nil value is a no-op.
+type CommonOutput interface {
+	isCommonOutput()
+	// WithAdditionalContext injects model context.
+	WithAdditionalContext(text string) CommonOutput
+	// WithContinue sets whether Claude should continue the session.
+	WithContinue(v bool) CommonOutput
+	// WithStopReason explains why the session was stopped.
+	WithStopReason(reason string) CommonOutput
+	// WithSuppressOutput suppresses hook stdout when true.
+	WithSuppressOutput(v bool) CommonOutput
+	// WithSystemMessage sets a user-visible system message.
+	WithSystemMessage(msg string) CommonOutput
+	// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+	WithTerminalSequence(seq string) CommonOutput
+}
+
+type commonOutput struct {
+	common
+	additionalContext string
+}
+
+func (commonOutput) isCommonOutput() {}
+
+func (o commonOutput) isZero() bool {
+	return o.common.isZero() && o.additionalContext == ""
+}
+
+// WithAdditionalContext injects model context.
+func (o commonOutput) WithAdditionalContext(text string) CommonOutput {
+	o.additionalContext = text
+	return o
+}
+
+// WithContinue sets whether Claude should continue the session.
+func (o commonOutput) WithContinue(v bool) CommonOutput {
+	o.common = o.common.WithContinue(v)
+	return o
+}
+
+// WithStopReason explains why the session was stopped.
+func (o commonOutput) WithStopReason(reason string) CommonOutput {
+	o.common = o.common.WithStopReason(reason)
+	return o
+}
+
+// WithSuppressOutput suppresses hook stdout when true.
+func (o commonOutput) WithSuppressOutput(v bool) CommonOutput {
+	o.common = o.common.WithSuppressOutput(v)
+	return o
+}
+
+// WithSystemMessage sets a user-visible system message.
+func (o commonOutput) WithSystemMessage(msg string) CommonOutput {
+	o.common = o.common.WithSystemMessage(msg)
+	return o
+}
+
+// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+func (o commonOutput) WithTerminalSequence(seq string) CommonOutput {
+	o.common = o.common.WithTerminalSequence(seq)
+	return o
+}
+
+func applyCommon(top map[string]any, c common) {
+	if c.cont != nil && !*c.cont {
+		top["continue"] = false
+		if c.stopReason != "" {
+			top["stopReason"] = c.stopReason
+		}
+	}
+	if c.systemMessage != "" {
+		top["systemMessage"] = c.systemMessage
+	}
+	if c.suppressOutput {
+		top["suppressOutput"] = true
+	}
+	if c.terminalSequence != "" {
+		top["terminalSequence"] = c.terminalSequence
+	}
+}
+
+func (commonOutput) allowedEvents() []string {
+	return []string{
+		EventSetup,
+		EventSessionEnd,
+		EventUserPromptExpansion,
+		EventPostToolBatch,
+		EventSubagentStart,
+		EventTaskCreated,
+		EventTaskCompleted,
+		EventStopFailure,
+		EventTeammateIdle,
+		EventNotification,
+		EventInstructionsLoaded,
+		EventConfigChange,
+		EventCwdChanged,
+		EventFileChanged,
+		EventWorktreeRemove,
+		EventPreCompact,
+		EventPostCompact,
+		EventElicitationResult,
+	}
+}
+
+func (o commonOutput) encodeInto(top, hso map[string]any) {
+	applyCommon(top, o.common)
+	if o.additionalContext != "" {
+		hso["additionalContext"] = o.additionalContext
+	}
 }

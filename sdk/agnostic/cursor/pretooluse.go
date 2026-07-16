@@ -6,6 +6,12 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
+var preToolDecisions = map[model.Decision]sdkcursor.PermissionDecision{
+	model.DecisionAllow: sdkcursor.DecisionAllow,
+	model.DecisionDeny:  sdkcursor.DecisionDeny,
+	model.DecisionAsk:   sdkcursor.DecisionAsk,
+}
+
 func mapPreToolUse(e sdkcursor.PreToolUse, ev *model.Event) {
 	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 	if shell := e.ShellCommand(); shell != "" {
@@ -14,13 +20,16 @@ func mapPreToolUse(e sdkcursor.PreToolUse, ev *model.Event) {
 }
 
 func mapPreToolOutput(ev *model.Event, res model.Result) any {
-	out := sdkcursor.PermissionOutput{}
-	if d := res.Decision.String(); d != "" {
-		out.Decision = sdkcursor.PermissionDecision(d)
+	decision, ok := preToolDecisions[res.Decision]
+	if !ok {
+		if res.UpdatedInput == nil {
+			return nil
+		}
+		decision = sdkcursor.DecisionAllow
 	}
-	out.AgentMessage = res.Reason
+	var updated map[string]any
 	if res.UpdatedInput != nil && ev.Name == sdkcursor.EventPreToolUse {
-		out.UpdatedInput = res.UpdatedInput
+		updated = res.UpdatedInput
 	}
-	return out
+	return sdkcursor.BuildPermissionOutput(decision, res.Reason, updated)
 }

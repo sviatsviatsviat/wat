@@ -5,19 +5,27 @@ import (
 )
 
 // StopOutput is the response for agentStop and subagentStop events.
-type StopOutput struct {
-	// Reason is fed back to the agent as the next instruction.
-	Reason string
+// Construct via StopResults builders. A nil value is a no-op.
+type StopOutput interface {
+	isStopOutput()
 }
 
-func (o StopOutput) isZero() bool {
-	return o.Reason == ""
+type stopOutput struct {
+	reason string
+}
+
+func (stopOutput) isStopOutput() {}
+
+func (o stopOutput) isZero() bool {
+	return o.reason == ""
 }
 
 // StopResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type StopResults interface {
 	// FollowUp blocks completion and feeds reason back to the agent.
 	FollowUp(reason string) StopOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() StopOutput
 	isStopResults()
 }
 
@@ -27,16 +35,25 @@ func (stopResults) isStopResults() {}
 
 // FollowUp blocks completion and feeds reason back to the agent.
 func (stopResults) FollowUp(reason string) StopOutput {
-	return StopOutput{Reason: reason}
+	return stopOutput{reason: reason}
 }
 
-func encodeStop(o StopOutput) ([]byte, int, error) {
-	if o.Reason == "" {
+// Noop returns an empty response (silent stdout).
+func (stopResults) Noop() StopOutput {
+	return stopOutput{}
+}
+
+func (stopOutput) allowedEvents() []string {
+	return []string{EventAgentStop, EventSubagentStop}
+}
+
+func (o stopOutput) encode() ([]byte, int, error) {
+	if o.reason == "" {
 		return nil, 0, nil
 	}
 	out := map[string]any{
 		"decision": "block",
-		"reason":   o.Reason,
+		"reason":   o.reason,
 	}
 	b, err := json.Marshal(out)
 	return b, 0, err

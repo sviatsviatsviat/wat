@@ -62,17 +62,29 @@ func (e PreToolUse) ShellCommand() string {
 }
 
 // PreToolOutput is the response for preToolUse events.
-type PreToolOutput struct {
-	// Decision is the permission verdict (allow, deny, ask).
-	Decision PermissionDecision
-	// Reason is the agent-facing decision reason.
-	Reason string
-	// ModifiedArgs replaces tool arguments when set.
-	ModifiedArgs map[string]any
+// Construct via PreToolResults builders and With* methods. A nil value is a no-op.
+type PreToolOutput interface {
+	isPreToolOutput()
+	// WithModifiedArgs replaces tool arguments when set.
+	WithModifiedArgs(args map[string]any) PreToolOutput
 }
 
-func (o PreToolOutput) isZero() bool {
-	return o.Decision == "" && o.Reason == "" && o.ModifiedArgs == nil
+type preToolOutput struct {
+	decision     PermissionDecision
+	reason       string
+	modifiedArgs map[string]any
+}
+
+func (preToolOutput) isPreToolOutput() {}
+
+func (o preToolOutput) isZero() bool {
+	return o.decision == "" && o.reason == "" && o.modifiedArgs == nil
+}
+
+// WithModifiedArgs replaces tool arguments when set.
+func (o preToolOutput) WithModifiedArgs(args map[string]any) PreToolOutput {
+	o.modifiedArgs = args
+	return o
 }
 
 // PreToolResults is the hook-scoped response builder supplied to Chain.PreToolUse handlers by registration.
@@ -83,6 +95,8 @@ type PreToolResults interface {
 	Deny(reason string) PreToolOutput
 	// Ask returns an ask verdict with an agent-facing reason.
 	Ask(reason string) PreToolOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() PreToolOutput
 	isPreToolResults()
 }
 
@@ -92,29 +106,38 @@ func (preToolResults) isPreToolResults() {}
 
 // Allow returns an allow verdict.
 func (preToolResults) Allow() PreToolOutput {
-	return PreToolOutput{Decision: DecisionAllow}
+	return preToolOutput{decision: DecisionAllow}
 }
 
 // Deny returns a deny verdict with an agent-facing reason.
 func (preToolResults) Deny(reason string) PreToolOutput {
-	return PreToolOutput{Decision: DecisionDeny, Reason: reason}
+	return preToolOutput{decision: DecisionDeny, reason: reason}
 }
 
 // Ask returns an ask verdict with an agent-facing reason.
 func (preToolResults) Ask(reason string) PreToolOutput {
-	return PreToolOutput{Decision: DecisionAsk, Reason: reason}
+	return preToolOutput{decision: DecisionAsk, reason: reason}
 }
 
-func encodePreTool(o PreToolOutput) ([]byte, int, error) {
+// Noop returns an empty response (silent stdout).
+func (preToolResults) Noop() PreToolOutput {
+	return preToolOutput{}
+}
+
+func (preToolOutput) allowedEvents() []string {
+	return []string{EventPreToolUse}
+}
+
+func (o preToolOutput) encode() ([]byte, int, error) {
 	out := map[string]any{}
-	if o.Decision != "" {
-		out["permissionDecision"] = string(o.Decision)
-		if o.Reason != "" {
-			out["permissionDecisionReason"] = o.Reason
+	if o.decision != "" {
+		out["permissionDecision"] = string(o.decision)
+		if o.reason != "" {
+			out["permissionDecisionReason"] = o.reason
 		}
 	}
-	if o.ModifiedArgs != nil {
-		out["modifiedArgs"] = o.ModifiedArgs
+	if o.modifiedArgs != nil {
+		out["modifiedArgs"] = o.modifiedArgs
 	}
 	if len(out) == 0 {
 		return nil, 0, nil
@@ -134,7 +157,7 @@ func init() {
 }
 
 // PreToolUse registers a PreToolUse handler.
-func (c *Chain) PreToolUse(fn func(context.Context, PreToolUseHook, PreToolResults) (PreToolOutput, error)) *Chain {
+func (c *Chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

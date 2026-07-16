@@ -20,21 +20,44 @@ type BeforeSubmitPrompt struct {
 func (BeforeSubmitPrompt) EventName() string { return EventBeforeSubmitPrompt }
 
 // BeforeSubmitPromptOutput is the response for beforeSubmitPrompt events.
-type BeforeSubmitPromptOutput struct {
-	// Continue is false to block prompt submission.
-	Continue *bool
-	// UserMessage is shown to the user when blocking.
-	UserMessage string
+// Construct via BeforeSubmitPromptResults builders and With* methods. A nil value is a no-op.
+type BeforeSubmitPromptOutput interface {
+	isBeforeSubmitPromptOutput()
+	// WithContinue sets whether prompt submission should continue.
+	WithContinue(v bool) BeforeSubmitPromptOutput
+	// WithUserMessage sets a user-facing message when blocking.
+	WithUserMessage(msg string) BeforeSubmitPromptOutput
 }
 
-func (o BeforeSubmitPromptOutput) isZero() bool {
-	return o.Continue == nil && o.UserMessage == ""
+type beforeSubmitPromptOutput struct {
+	cont        *bool
+	userMessage string
+}
+
+func (beforeSubmitPromptOutput) isBeforeSubmitPromptOutput() {}
+
+func (o beforeSubmitPromptOutput) isZero() bool {
+	return o.cont == nil && o.userMessage == ""
+}
+
+// WithContinue sets whether prompt submission should continue.
+func (o beforeSubmitPromptOutput) WithContinue(v bool) BeforeSubmitPromptOutput {
+	o.cont = &v
+	return o
+}
+
+// WithUserMessage sets a user-facing message when blocking.
+func (o beforeSubmitPromptOutput) WithUserMessage(msg string) BeforeSubmitPromptOutput {
+	o.userMessage = msg
+	return o
 }
 
 // BeforeSubmitPromptResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type BeforeSubmitPromptResults interface {
 	// Block blocks prompt submission with a user-facing message.
 	Block(userMessage string) BeforeSubmitPromptOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() BeforeSubmitPromptOutput
 	isBeforeSubmitPromptResults()
 }
 
@@ -45,16 +68,26 @@ func (beforeSubmitPromptResults) isBeforeSubmitPromptResults() {}
 // Block blocks prompt submission with a user-facing message.
 func (beforeSubmitPromptResults) Block(userMessage string) BeforeSubmitPromptOutput {
 	cont := false
-	return BeforeSubmitPromptOutput{Continue: &cont, UserMessage: userMessage}
+	return beforeSubmitPromptOutput{cont: &cont, userMessage: userMessage}
 }
 
-func encodeBeforeSubmitPrompt(o BeforeSubmitPromptOutput) ([]byte, int, error) {
+// Noop returns an empty response (silent stdout).
+func (beforeSubmitPromptResults) Noop() BeforeSubmitPromptOutput {
+	return beforeSubmitPromptOutput{}
+}
+
+func (beforeSubmitPromptOutput) allowedEvents() []string {
+	return []string{EventBeforeSubmitPrompt}
+}
+
+func (o beforeSubmitPromptOutput) encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	out := map[string]any{}
-	if o.Continue != nil {
-		out["continue"] = *o.Continue
+	if o.cont != nil {
+		out["continue"] = *o.cont
 	}
-	if o.UserMessage != "" {
-		out["user_message"] = o.UserMessage
+	if o.userMessage != "" {
+		out["user_message"] = o.userMessage
 	}
 	if len(out) == 0 {
 		return nil, 0, nil
@@ -68,7 +101,7 @@ func init() {
 }
 
 // BeforeSubmitPrompt registers a beforeSubmitPrompt handler.
-func (c *Chain) BeforeSubmitPrompt(fn func(context.Context, BeforeSubmitPromptHook, BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *Chain {
+func (c *Chain) BeforeSubmitPrompt(fn func(context.Context, Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

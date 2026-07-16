@@ -10,5 +10,8 @@ func mapSessionStart(e sdkcursor.SessionStart, ev *model.Event) {
 }
 
 func mapSessionStartOutput(res model.Result) any {
-	return sdkcursor.SessionStartOutput{AdditionalContext: res.Context}
+	if res.Context == "" {
+		return nil
+	}
+	return sdkcursor.BuildSessionStartOutput(res.Context)
 }

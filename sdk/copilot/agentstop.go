@@ -31,7 +31,7 @@ func init() {
 }
 
 // AgentStop registers an AgentStop handler.
-func (c *Chain) AgentStop(fn func(context.Context, AgentStopHook, StopResults) (StopOutput, error)) *Chain {
+func (c *Chain) AgentStop(fn func(context.Context, Hook[AgentStop], StopResults) (StopOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

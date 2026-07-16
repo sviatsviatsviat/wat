@@ -141,7 +141,7 @@ func main() {
 			// → "ask" where supported; Copilot cloud agent downgrades ask to deny.
 			return r.Ask("agent wants to push to the remote"), nil
 		}
-		return agnostic.PreToolResult{}, nil // zero = no opinion, default flow
+		return nil, nil // zero = no opinion, default flow
 	}).
 		OnPostTool(func(ctx context.Context, hook agnostic.PostToolHook, r agnostic.PostToolResults) (agnostic.PostToolResult, error) {
 			// Command: after any file edit, tell the model which test command applies.
@@ -149,19 +149,19 @@ func main() {
 			if hook.Tool.Name == agnostic.ToolEdit || hook.Tool.Name == agnostic.ToolWrite {
 				return r.Context("Run go test ./... to verify this change."), nil
 			}
-			return agnostic.PostToolResult{}, nil
+			return nil, nil
 		}).
 		OnStop(func(ctx context.Context, hook agnostic.StopHook, r agnostic.StopResults) (agnostic.StopResult, error) {
 			// Stop gate: refuse to finish the turn while the build is red.
 			// → Claude/Copilot: decision:"block"+reason; Cursor: followup_message.
 			// Loop guards differ per agent, so check both before re-blocking.
 			if hook.Turn.StopHookActive || hook.Turn.LoopCount > 2 {
-				return agnostic.StopResult{}, nil // already retried; let it stop
+				return nil, nil // already retried; let it stop
 			}
 			if err := exec.CommandContext(ctx, "go", "build", "./...").Run(); err != nil {
 				return r.FollowUp("go build ./... fails; fix the build before finishing"), nil
 			}
-			return agnostic.StopResult{}, nil
+			return nil, nil
 		})
 
 	run.Main() // reads WAT_AGENT/WAT_EVENT, dispatches, merges, exits

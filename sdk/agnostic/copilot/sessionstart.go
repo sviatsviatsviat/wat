@@ -10,5 +10,8 @@ func mapSessionStart(e sdkcopilot.SessionStart, ev *model.Event) {
 }
 
 func mapSessionStartOutput(res model.Result) any {
-	return sdkcopilot.SessionStartOutput{AdditionalContext: res.Context}
+	if res.Context == "" {
+		return nil
+	}
+	return sdkcopilot.BuildSessionStartOutput(res.Context)
 }

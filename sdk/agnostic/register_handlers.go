@@ -24,6 +24,9 @@ func registerResultHandler[R wireResult](kind model.Kind, fn func(context.Contex
 		if err != nil {
 			return model.Result{}, err
 		}
+		if any(res) == nil {
+			return model.Result{}, nil
+		}
 		return res.Result(), nil
 	}
 	for _, agent := range []model.Dialect{model.Claude, model.Copilot, model.Cursor} {

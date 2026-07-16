@@ -6,16 +6,23 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
+var preToolDecisions = map[model.Decision]sdkclaude.PermissionDecision{
+	model.DecisionAllow: sdkclaude.DecisionAllow,
+	model.DecisionDeny:  sdkclaude.DecisionDeny,
+	model.DecisionAsk:   sdkclaude.DecisionAsk,
+}
+
 func mapPreToolUse(e sdkclaude.PreToolUse, ev *model.Event) {
 	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 }
 
 func mapPreToolOutput(res model.Result) any {
-	out := sdkclaude.PreToolUseOutput{}
-	if d := res.Decision.String(); d != "" {
-		out.Decision = sdkclaude.PermissionDecision(d)
-		out.Reason = res.Reason
+	decision, ok := preToolDecisions[res.Decision]
+	if !ok {
+		if res.UpdatedInput == nil {
+			return nil
+		}
+		decision = sdkclaude.DecisionAllow
 	}
-	out.UpdatedInput = res.UpdatedInput
-	return out
+	return sdkclaude.BuildPreToolUseOutput(decision, res.Reason, res.UpdatedInput)
 }

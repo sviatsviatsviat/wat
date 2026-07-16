@@ -65,7 +65,7 @@ func TestServe_DecisionPrecedence(t *testing.T) {
 func TestServe_WithDialectOverride(t *testing.T) {
 	resetTest(t)
 	OnPreTool(func(ctx context.Context, hook PreToolHook, _ PreToolResults) (PreToolResult, error) {
-		return PreToolResult{}, nil
+		return nil, nil
 	})
 
 	var stderr bytes.Buffer
@@ -145,7 +145,7 @@ func TestServe_WithGetenv(t *testing.T) {
 func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
 	resetTest(t)
 	OnPreTool(func(ctx context.Context, hook PreToolHook, _ PreToolResults) (PreToolResult, error) {
-		return PreToolResult{}, errors.New("boom")
+		return nil, errors.New("boom")
 	})
 
 	var stderr bytes.Buffer
@@ -193,7 +193,7 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 		if hook.Tool != nil && hook.Tool.Shell != "" {
 			return r.Deny("destructive command blocked"), nil
 		}
-		return PreToolResult{}, nil
+		return nil, nil
 	}
 
 	tests := []struct {
@@ -275,7 +275,7 @@ func TestResetHandlers_OwnerScoped(t *testing.T) {
 	OnPostTool(func(ctx context.Context, hook PostToolHook, r PostToolResults) (PostToolResult, error) {
 		return r.Context("from-agnostic"), nil
 	})
-	new(claude.Chain).PostToolUse(func(ctx context.Context, hook claude.PostToolUseHook, r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
+	new(claude.Chain).PostToolUse(func(ctx context.Context, hook claude.Hook[claude.PostToolUse], r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
 		return r.Context("from-claude"), nil
 	})
 
@@ -302,7 +302,7 @@ func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 	OnPostTool(func(ctx context.Context, hook PostToolHook, r PostToolResults) (PostToolResult, error) {
 		return r.Context("from-agnostic"), nil
 	})
-	new(claude.Chain).PostToolUse(func(ctx context.Context, hook claude.PostToolUseHook, r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
+	new(claude.Chain).PostToolUse(func(ctx context.Context, hook claude.Hook[claude.PostToolUse], r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
 		return r.Context("from-claude"), nil
 	})
 

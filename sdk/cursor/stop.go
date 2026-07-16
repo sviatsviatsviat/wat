@@ -20,19 +20,27 @@ type Stop struct {
 func (Stop) EventName() string { return EventStop }
 
 // StopOutput is the response for stop and subagentStop events.
-type StopOutput struct {
-	// FollowUpMessage is sent back to the agent as the next instruction.
-	FollowUpMessage string
+// Construct via StopResults builders. A nil value is a no-op.
+type StopOutput interface {
+	isStopOutput()
 }
 
-func (o StopOutput) isZero() bool {
-	return o.FollowUpMessage == ""
+type stopOutput struct {
+	followUpMessage string
+}
+
+func (stopOutput) isStopOutput() {}
+
+func (o stopOutput) isZero() bool {
+	return o.followUpMessage == ""
 }
 
 // StopResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type StopResults interface {
 	// FollowUp blocks completion and feeds a follow-up instruction to the agent.
 	FollowUp(text string) StopOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining.
+	Noop() StopOutput
 	isStopResults()
 }
 
@@ -42,14 +50,24 @@ func (stopResults) isStopResults() {}
 
 // FollowUp blocks completion and feeds a follow-up instruction to the agent.
 func (stopResults) FollowUp(text string) StopOutput {
-	return StopOutput{FollowUpMessage: text}
+	return stopOutput{followUpMessage: text}
 }
 
-func encodeStop(o StopOutput) ([]byte, int, error) {
-	if o.FollowUpMessage == "" {
+// Noop returns an empty response (silent stdout).
+func (stopResults) Noop() StopOutput {
+	return stopOutput{}
+}
+
+func (stopOutput) allowedEvents() []string {
+	return []string{EventStop, EventSubagentStop}
+}
+
+func (o stopOutput) encode(eventName string) ([]byte, int, error) {
+	_ = eventName
+	if o.followUpMessage == "" {
 		return nil, 0, nil
 	}
-	out := map[string]any{"followup_message": o.FollowUpMessage}
+	out := map[string]any{"followup_message": o.followUpMessage}
 	b, err := json.Marshal(out)
 	return b, 0, err
 }
@@ -59,7 +77,7 @@ func init() {
 }
 
 // Stop registers a stop handler.
-func (c *Chain) Stop(fn func(context.Context, StopHook, StopResults) (StopOutput, error)) *Chain {
+func (c *Chain) Stop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

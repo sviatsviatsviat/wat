@@ -12,10 +12,12 @@ func mapPostToolUse(e sdkclaude.PostToolUse, ev *model.Event) {
 }
 
 func mapPostToolOutput(res model.Result) any {
-	out := sdkclaude.PostToolUseOutput{}
+	var updated any
 	if res.UpdatedOutput != nil {
-		out.UpdatedToolOutput = *res.UpdatedOutput
+		updated = *res.UpdatedOutput
 	}
-	out.AdditionalContext = res.Context
-	return out
+	if res.Context == "" && updated == nil {
+		return nil
+	}
+	return sdkclaude.BuildPostToolUseOutput(res.Context, updated)
 }

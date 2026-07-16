@@ -61,10 +61,7 @@ func TestDecodeEncode_BeforeShellDeny(t *testing.T) {
 		t.Fatal("Raw not preserved")
 	}
 
-	out, code, err := cursor.Encode(cursor.EventBeforeShellExecution, cursor.PermissionOutput{
-		Decision:     cursor.DecisionDeny,
-		AgentMessage: "force push blocked",
-	})
+	out, code, err := cursor.Encode(cursor.EventBeforeShellExecution, cursor.PermissionResultsForTest().Deny("force push blocked"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,9 +90,7 @@ func TestDecodeEncode_StopFollowUp(t *testing.T) {
 		t.Fatalf("bad stop: %+v", stop)
 	}
 
-	out, code, err := cursor.Encode(cursor.EventStop, cursor.StopOutput{
-		FollowUpMessage: "retry with fixed creds",
-	})
+	out, code, err := cursor.Encode(cursor.EventStop, cursor.StopResultsForTest().FollowUp("retry with fixed creds"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -395,18 +390,14 @@ func reflectTypeName(v any) string {
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, code, err := cursor.Encode(cursor.EventBeforeShellExecution, cursor.PermissionOutput{})
+	out, code, err := cursor.Encode(cursor.EventBeforeShellExecution, nil)
 	if err != nil || code != 0 || out != nil {
 		t.Fatalf("zero result should be silent, got %q code=%d err=%v", out, code, err)
 	}
 }
 
 func TestEncode_BeforeSubmitPromptBlock(t *testing.T) {
-	cont := false
-	out, code, err := cursor.Encode(cursor.EventBeforeSubmitPrompt, cursor.BeforeSubmitPromptOutput{
-		Continue:    &cont,
-		UserMessage: "blocked",
-	})
+	out, code, err := cursor.Encode(cursor.EventBeforeSubmitPrompt, cursor.BeforeSubmitPromptResultsForTest().Block("blocked"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -420,10 +411,9 @@ func TestEncode_BeforeSubmitPromptBlock(t *testing.T) {
 }
 
 func TestEncode_SessionStartEnv(t *testing.T) {
-	out, code, err := cursor.Encode(cursor.EventSessionStart, cursor.SessionStartOutput{
-		Env:               map[string]string{"K": "V"},
-		AdditionalContext: "ctx",
-	})
+	out, code, err := cursor.Encode(cursor.EventSessionStart, cursor.SessionStartResultsForTest().Noop().
+		WithEnv(map[string]string{"K": "V"}).
+		WithAdditionalContext("ctx"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -440,10 +430,7 @@ func TestEncode_SessionStartEnv(t *testing.T) {
 }
 
 func TestEncode_TabFileReadDeny(t *testing.T) {
-	out, code, err := cursor.Encode(cursor.EventBeforeTabFileRead, cursor.PermissionOutput{
-		Decision:     cursor.DecisionDeny,
-		AgentMessage: "no tab reads",
-	})
+	out, code, err := cursor.Encode(cursor.EventBeforeTabFileRead, cursor.PermissionResultsForTest().Deny("no tab reads"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -456,10 +443,7 @@ func TestEncode_TabFileReadDeny(t *testing.T) {
 }
 
 func TestEncode_PermissionUpdatedInputEmptyEventName(t *testing.T) {
-	out, code, err := cursor.Encode("", cursor.PermissionOutput{
-		Decision:     cursor.DecisionAllow,
-		UpdatedInput: map[string]any{"command": "ls"},
-	})
+	out, code, err := cursor.Encode("", cursor.PermissionResultsForTest().Allow().WithUpdatedInput(map[string]any{"command": "ls"}))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -471,7 +455,7 @@ func TestEncode_PermissionUpdatedInputEmptyEventName(t *testing.T) {
 func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 	run.Reset()
 	cursor.ResetHandlers()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecutionHook, r cursor.PermissionResults) (cursor.PermissionOutput, error) {
+	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		return r.Deny("blocked"), nil
 	})
 	var stdout bytes.Buffer
@@ -487,16 +471,16 @@ func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 func TestMux_OnDuplicatePanics(t *testing.T) {
 	run.Reset()
 	cursor.ResetHandlers()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecutionHook, _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
-		return cursor.PermissionOutput{}, nil
+	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
+		return nil, nil
 	})
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecutionHook, _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
-		return cursor.PermissionOutput{}, nil
+	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
+		return nil, nil
 	})
 }
 

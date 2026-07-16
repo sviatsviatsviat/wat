@@ -46,7 +46,7 @@ func init() {
 }
 
 // PostToolUseFailure registers a postToolUseFailure handler.
-func (c *Chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailureHook, PostToolResults) (PostToolOutput, error)) *Chain {
+func (c *Chain) PostToolUseFailure(fn func(context.Context, Hook[PostToolUseFailure], PostToolResults) (PostToolOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

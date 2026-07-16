@@ -39,7 +39,7 @@ func init() {
 }
 
 // PreToolUse registers a preToolUse handler.
-func (c *Chain) PreToolUse(fn func(context.Context, PreToolUseHook, PermissionResults) (PermissionOutput, error)) *Chain {
+func (c *Chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PermissionResults) (PermissionOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

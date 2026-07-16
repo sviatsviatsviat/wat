@@ -50,20 +50,30 @@ func (e PermissionRequest) ShellCommand() string {
 }
 
 // PermissionRequestOutput is the response for permissionRequest events.
-type PermissionRequestOutput struct {
-	// Behavior is allow or deny.
-	Behavior string
-	// Message is the permission message.
-	Message string
-	// Interrupt stops the session when true.
-	Interrupt bool
-	// SuppressWarnExit skips exit code 2 when Behavior is deny. Use for ask-style
-	// responses that emit deny on the wire without warn-exit semantics.
-	SuppressWarnExit bool
+// Construct via PermissionRequestResults builders and With* methods. A nil value is a no-op.
+type PermissionRequestOutput interface {
+	isPermissionRequestOutput()
+	// WithInterrupt stops the session when true.
+	WithInterrupt(v bool) PermissionRequestOutput
 }
 
-func (o PermissionRequestOutput) isZero() bool {
-	return o.Behavior == "" && o.Message == "" && !o.Interrupt
+type permissionRequestOutput struct {
+	behavior         string
+	message          string
+	interrupt        bool
+	suppressWarnExit bool
+}
+
+func (permissionRequestOutput) isPermissionRequestOutput() {}
+
+func (o permissionRequestOutput) isZero() bool {
+	return o.behavior == "" && o.message == "" && !o.interrupt
+}
+
+// WithInterrupt stops the session when true.
+func (o permissionRequestOutput) WithInterrupt(v bool) PermissionRequestOutput {
+	o.interrupt = v
+	return o
 }
 
 // PermissionRequestResults is the hook-scoped response builder supplied to Chain handlers by registration.
@@ -74,6 +84,8 @@ type PermissionRequestResults interface {
 	Deny(message string) PermissionRequestOutput
 	// Ask returns an ask-style deny that suppresses warn-exit semantics.
 	Ask(message string) PermissionRequestOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() PermissionRequestOutput
 	isPermissionRequestResults()
 }
 
@@ -83,31 +95,40 @@ func (permissionRequestResults) isPermissionRequestResults() {}
 
 // Allow returns an allow verdict.
 func (permissionRequestResults) Allow() PermissionRequestOutput {
-	return PermissionRequestOutput{Behavior: "allow"}
+	return permissionRequestOutput{behavior: "allow"}
 }
 
 // Deny returns a deny verdict with a permission message.
 func (permissionRequestResults) Deny(message string) PermissionRequestOutput {
-	return PermissionRequestOutput{Behavior: "deny", Message: message}
+	return permissionRequestOutput{behavior: "deny", message: message}
 }
 
 // Ask returns an ask-style deny that suppresses warn-exit semantics.
 func (permissionRequestResults) Ask(message string) PermissionRequestOutput {
-	return PermissionRequestOutput{Behavior: "deny", Message: message, SuppressWarnExit: true}
+	return permissionRequestOutput{behavior: "deny", message: message, suppressWarnExit: true}
 }
 
-func encodePermissionRequest(o PermissionRequestOutput) ([]byte, int, error) {
-	if o.Behavior == "" && o.Message == "" && !o.Interrupt {
+// Noop returns an empty response (silent stdout).
+func (permissionRequestResults) Noop() PermissionRequestOutput {
+	return permissionRequestOutput{}
+}
+
+func (permissionRequestOutput) allowedEvents() []string {
+	return []string{EventPermissionRequest}
+}
+
+func (o permissionRequestOutput) encode() ([]byte, int, error) {
+	if o.behavior == "" && o.message == "" && !o.interrupt {
 		return nil, 0, nil
 	}
 	out := map[string]any{}
-	if o.Behavior != "" {
-		out["behavior"] = o.Behavior
+	if o.behavior != "" {
+		out["behavior"] = o.behavior
 	}
-	if o.Message != "" {
-		out["message"] = o.Message
+	if o.message != "" {
+		out["message"] = o.message
 	}
-	if o.Interrupt {
+	if o.interrupt {
 		out["interrupt"] = true
 	}
 	b, err := json.Marshal(out)
@@ -115,7 +136,7 @@ func encodePermissionRequest(o PermissionRequestOutput) ([]byte, int, error) {
 		return nil, 0, err
 	}
 	exitCode := 0
-	if o.Behavior == "deny" && !o.SuppressWarnExit {
+	if o.behavior == "deny" && !o.suppressWarnExit {
 		exitCode = WarnExit
 	}
 	return b, exitCode, err
@@ -132,7 +153,7 @@ func init() {
 }
 
 // PermissionRequest registers a PermissionRequest handler.
-func (c *Chain) PermissionRequest(fn func(context.Context, PermissionRequestHook, PermissionRequestResults) (PermissionRequestOutput, error)) *Chain {
+func (c *Chain) PermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

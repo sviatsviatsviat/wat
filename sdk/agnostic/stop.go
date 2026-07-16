@@ -68,7 +68,7 @@ func OnStop(fn StopHandler) *Chain {
 	registerResultHandler(model.KindStop, func(ctx context.Context, ev *model.Event) (model.StopResult, error) {
 		typed, err := StopEventFrom(ev)
 		if err != nil {
-			return model.StopResult{}, err
+			return nil, err
 		}
 		return fn(ctx, stopHook(run.InvocationFrom(ctx), typed), stopResults{})
 	})
@@ -83,7 +83,7 @@ func OnSubagentStop(fn StopHandler) *Chain {
 	registerResultHandler(model.KindSubagentStop, func(ctx context.Context, ev *model.Event) (model.StopResult, error) {
 		typed, err := StopEventFrom(ev)
 		if err != nil {
-			return model.StopResult{}, err
+			return nil, err
 		}
 		return fn(ctx, stopHook(run.InvocationFrom(ctx), typed), stopResults{})
 	})

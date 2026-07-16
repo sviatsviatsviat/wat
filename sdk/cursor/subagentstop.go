@@ -33,7 +33,7 @@ func init() {
 }
 
 // SubagentStop registers a subagentStop handler.
-func (c *Chain) SubagentStop(fn func(context.Context, SubagentStopHook, StopResults) (StopOutput, error)) *Chain {
+func (c *Chain) SubagentStop(fn func(context.Context, Hook[SubagentStop], StopResults) (StopOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

@@ -10,10 +10,8 @@ func mapStop(e sdkclaude.Stop, ev *model.Event) {
 }
 
 func mapStopOutput(res model.Result) any {
-	out := sdkclaude.StopOutput{}
-	if res.FollowUp != "" {
-		out.Block = true
-		out.Reason = res.FollowUp
+	if res.FollowUp == "" {
+		return nil
 	}
-	return out
+	return sdkclaude.BuildStopOutput(res.FollowUp)
 }

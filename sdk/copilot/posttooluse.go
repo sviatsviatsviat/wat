@@ -67,21 +67,36 @@ func (e PostToolUse) ResultRaw() json.RawMessage {
 }
 
 // PostToolOutput is the response for postToolUse events.
-type PostToolOutput struct {
-	// ModifiedResult replaces the tool result text when set.
-	ModifiedResult string
-	// AdditionalContext injects model context.
-	AdditionalContext string
+// Construct via PostToolResults builders and With* methods. A nil value is a no-op.
+type PostToolOutput interface {
+	isPostToolOutput()
+	// WithModifiedResult replaces the tool result text when set.
+	WithModifiedResult(result string) PostToolOutput
 }
 
-func (o PostToolOutput) isZero() bool {
-	return o.ModifiedResult == "" && o.AdditionalContext == ""
+type postToolOutput struct {
+	modifiedResult    string
+	additionalContext string
+}
+
+func (postToolOutput) isPostToolOutput() {}
+
+func (o postToolOutput) isZero() bool {
+	return o.modifiedResult == "" && o.additionalContext == ""
+}
+
+// WithModifiedResult replaces the tool result text when set.
+func (o postToolOutput) WithModifiedResult(result string) PostToolOutput {
+	o.modifiedResult = result
+	return o
 }
 
 // PostToolResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type PostToolResults interface {
 	// Context returns a context-injection-only PostTool result.
 	Context(text string) PostToolOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() PostToolOutput
 	isPostToolResults()
 }
 
@@ -91,19 +106,28 @@ func (postToolResults) isPostToolResults() {}
 
 // Context returns a context-injection-only PostTool result.
 func (postToolResults) Context(text string) PostToolOutput {
-	return PostToolOutput{AdditionalContext: text}
+	return postToolOutput{additionalContext: text}
 }
 
-func encodePostTool(o PostToolOutput) ([]byte, int, error) {
+// Noop returns an empty response (silent stdout).
+func (postToolResults) Noop() PostToolOutput {
+	return postToolOutput{}
+}
+
+func (postToolOutput) allowedEvents() []string {
+	return []string{EventPostToolUse}
+}
+
+func (o postToolOutput) encode() ([]byte, int, error) {
 	out := map[string]any{}
-	if o.ModifiedResult != "" {
+	if o.modifiedResult != "" {
 		out["modifiedResult"] = map[string]any{
 			"resultType":       "success",
-			"textResultForLlm": o.ModifiedResult,
+			"textResultForLlm": o.modifiedResult,
 		}
 	}
-	if o.AdditionalContext != "" {
-		out["additionalContext"] = o.AdditionalContext
+	if o.additionalContext != "" {
+		out["additionalContext"] = o.additionalContext
 	}
 	if len(out) == 0 {
 		return nil, 0, nil
@@ -123,7 +147,7 @@ func init() {
 }
 
 // PostToolUse registers a PostToolUse handler.
-func (c *Chain) PostToolUse(fn func(context.Context, PostToolUseHook, PostToolResults) (PostToolOutput, error)) *Chain {
+func (c *Chain) PostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolResults) (PostToolOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

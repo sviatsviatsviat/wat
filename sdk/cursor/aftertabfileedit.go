@@ -21,7 +21,7 @@ func init() {
 }
 
 // AfterTabFileEdit registers an observe-only afterTabFileEdit handler.
-func (c *Chain) AfterTabFileEdit(fn func(context.Context, AfterTabFileEditHook) error) *Chain {
+func (c *Chain) AfterTabFileEdit(fn func(context.Context, Hook[AfterTabFileEdit]) error) *Chain {
 	registerObserveHandler(fn)
 	return &Chain{}
 }

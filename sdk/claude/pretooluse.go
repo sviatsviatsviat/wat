@@ -30,21 +30,80 @@ func init() {
 }
 
 // PreToolUseOutput is the response for PreToolUse events.
-type PreToolUseOutput struct {
-	Common
-	// Decision is the permission verdict (allow, deny, ask, defer).
-	Decision PermissionDecision
-	// Reason is the agent-facing decision reason.
-	Reason string
-	// UpdatedInput replaces tool arguments when set.
-	UpdatedInput map[string]any
-	// AdditionalContext injects model context.
-	AdditionalContext string
+// Construct via PreToolUseResults builders and With* methods. A nil value is a no-op.
+type PreToolUseOutput interface {
+	isPreToolUseOutput()
+	// WithUpdatedInput replaces tool arguments when set.
+	WithUpdatedInput(input map[string]any) PreToolUseOutput
+	// WithAdditionalContext injects model context.
+	WithAdditionalContext(text string) PreToolUseOutput
+	// WithContinue sets whether Claude should continue the session.
+	WithContinue(v bool) PreToolUseOutput
+	// WithStopReason explains why the session was stopped.
+	WithStopReason(reason string) PreToolUseOutput
+	// WithSuppressOutput suppresses hook stdout when true.
+	WithSuppressOutput(v bool) PreToolUseOutput
+	// WithSystemMessage sets a user-visible system message.
+	WithSystemMessage(msg string) PreToolUseOutput
+	// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+	WithTerminalSequence(seq string) PreToolUseOutput
 }
 
-func (o PreToolUseOutput) isZero() bool {
-	return o.Common.isZero() && o.Decision == "" && o.Reason == "" &&
-		o.UpdatedInput == nil && o.AdditionalContext == ""
+type preToolUseOutput struct {
+	common
+	decision          PermissionDecision
+	reason            string
+	updatedInput      map[string]any
+	additionalContext string
+}
+
+func (preToolUseOutput) isPreToolUseOutput() {}
+
+func (o preToolUseOutput) isZero() bool {
+	return o.common.isZero() && o.decision == "" && o.reason == "" &&
+		o.updatedInput == nil && o.additionalContext == ""
+}
+
+// WithUpdatedInput replaces tool arguments when set.
+func (o preToolUseOutput) WithUpdatedInput(input map[string]any) PreToolUseOutput {
+	o.updatedInput = input
+	return o
+}
+
+// WithAdditionalContext injects model context.
+func (o preToolUseOutput) WithAdditionalContext(text string) PreToolUseOutput {
+	o.additionalContext = text
+	return o
+}
+
+// WithContinue sets whether Claude should continue the session.
+func (o preToolUseOutput) WithContinue(v bool) PreToolUseOutput {
+	o.common = o.common.WithContinue(v)
+	return o
+}
+
+// WithStopReason explains why the session was stopped.
+func (o preToolUseOutput) WithStopReason(reason string) PreToolUseOutput {
+	o.common = o.common.WithStopReason(reason)
+	return o
+}
+
+// WithSuppressOutput suppresses hook stdout when true.
+func (o preToolUseOutput) WithSuppressOutput(v bool) PreToolUseOutput {
+	o.common = o.common.WithSuppressOutput(v)
+	return o
+}
+
+// WithSystemMessage sets a user-visible system message.
+func (o preToolUseOutput) WithSystemMessage(msg string) PreToolUseOutput {
+	o.common = o.common.WithSystemMessage(msg)
+	return o
+}
+
+// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+func (o preToolUseOutput) WithTerminalSequence(seq string) PreToolUseOutput {
+	o.common = o.common.WithTerminalSequence(seq)
+	return o
 }
 
 // PreToolUseResults is the hook-scoped response builder supplied to Chain.PreToolUse handlers by registration.
@@ -57,6 +116,8 @@ type PreToolUseResults interface {
 	Ask(reason string) PreToolUseOutput
 	// Defer returns a defer verdict.
 	Defer() PreToolUseOutput
+	// Noop returns an empty response (silent stdout). Prefer returning nil from handlers when not chaining With*.
+	Noop() PreToolUseOutput
 	isPreToolUseResults()
 }
 
@@ -66,26 +127,53 @@ func (preToolUseResults) isPreToolUseResults() {}
 
 // Allow returns an allow verdict.
 func (preToolUseResults) Allow() PreToolUseOutput {
-	return PreToolUseOutput{Decision: DecisionAllow}
+	return preToolUseOutput{decision: DecisionAllow}
 }
 
 // Deny returns a deny verdict with an agent-facing reason.
 func (preToolUseResults) Deny(reason string) PreToolUseOutput {
-	return PreToolUseOutput{Decision: DecisionDeny, Reason: reason}
+	return preToolUseOutput{decision: DecisionDeny, reason: reason}
 }
 
 // Ask returns an ask verdict with an agent-facing reason.
 func (preToolUseResults) Ask(reason string) PreToolUseOutput {
-	return PreToolUseOutput{Decision: DecisionAsk, Reason: reason}
+	return preToolUseOutput{decision: DecisionAsk, reason: reason}
 }
 
 // Defer returns a defer verdict.
 func (preToolUseResults) Defer() PreToolUseOutput {
-	return PreToolUseOutput{Decision: DecisionDefer}
+	return preToolUseOutput{decision: DecisionDefer}
+}
+
+// Noop returns an empty response (silent stdout).
+func (preToolUseResults) Noop() PreToolUseOutput {
+	return preToolUseOutput{}
+}
+
+func (preToolUseOutput) allowedEvents() []string {
+	return []string{EventPreToolUse}
+}
+
+func (o preToolUseOutput) encodeInto(top, hso map[string]any) {
+	applyCommon(top, o.common)
+	if o.decision != "" {
+		hso["permissionDecision"] = string(o.decision)
+		if o.reason != "" {
+			hso["permissionDecisionReason"] = o.reason
+		}
+	} else if o.updatedInput != nil {
+		hso["permissionDecision"] = "allow"
+	}
+	if o.updatedInput != nil {
+		hso["updatedInput"] = o.updatedInput
+	}
+	if o.additionalContext != "" {
+		hso["additionalContext"] = o.additionalContext
+	}
 }
 
 // PreToolUse registers a PreToolUse handler.
-func (c *Chain) PreToolUse(fn func(context.Context, PreToolUseHook, PreToolUseResults) (PreToolUseOutput, error)) *Chain {
+func (c *Chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

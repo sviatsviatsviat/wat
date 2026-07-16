@@ -30,19 +30,27 @@ func (e SessionStart) InitialPrompt() string {
 }
 
 // SessionStartOutput is the response for sessionStart events.
-type SessionStartOutput struct {
-	// AdditionalContext injects model context.
-	AdditionalContext string
+// Construct via SessionStartResults builders. A nil value is a no-op.
+type SessionStartOutput interface {
+	isSessionStartOutput()
 }
 
-func (o SessionStartOutput) isZero() bool {
-	return o.AdditionalContext == ""
+type sessionStartOutput struct {
+	additionalContext string
+}
+
+func (sessionStartOutput) isSessionStartOutput() {}
+
+func (o sessionStartOutput) isZero() bool {
+	return o.additionalContext == ""
 }
 
 // SessionStartResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type SessionStartResults interface {
 	// Context returns a context-injection-only SessionStart result.
 	Context(text string) SessionStartOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() SessionStartOutput
 	isSessionStartResults()
 }
 
@@ -52,7 +60,20 @@ func (sessionStartResults) isSessionStartResults() {}
 
 // Context returns a context-injection-only SessionStart result.
 func (sessionStartResults) Context(text string) SessionStartOutput {
-	return SessionStartOutput{AdditionalContext: text}
+	return sessionStartOutput{additionalContext: text}
+}
+
+// Noop returns an empty response (silent stdout).
+func (sessionStartResults) Noop() SessionStartOutput {
+	return sessionStartOutput{}
+}
+
+func (sessionStartOutput) allowedEvents() []string {
+	return []string{EventSessionStart}
+}
+
+func (o sessionStartOutput) encode() ([]byte, int, error) {
+	return encodeAdditionalContext(o.additionalContext)
 }
 
 func encodeAdditionalContext(context string) ([]byte, int, error) {
@@ -69,7 +90,7 @@ func init() {
 }
 
 // SessionStart registers a SessionStart handler.
-func (c *Chain) SessionStart(fn func(context.Context, SessionStartHook, SessionStartResults) (SessionStartOutput, error)) *Chain {
+func (c *Chain) SessionStart(fn func(context.Context, Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

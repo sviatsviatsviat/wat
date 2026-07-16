@@ -35,21 +35,80 @@ func init() {
 }
 
 // PostToolUseOutput is the response for PostToolUse and PostToolUseFailure events.
-type PostToolUseOutput struct {
-	Common
-	// Block prompts Claude with Reason when true.
-	Block bool
-	// Reason is the block reason.
-	Reason string
-	// AdditionalContext injects model context.
-	AdditionalContext string
-	// UpdatedToolOutput replaces the tool result when set.
-	UpdatedToolOutput any
+// Construct via PostToolUseResults / PostToolUseFailureResults builders and With* methods.
+// A nil value is a no-op.
+type PostToolUseOutput interface {
+	isPostToolUseOutput()
+	// WithUpdatedToolOutput replaces the tool result when set.
+	WithUpdatedToolOutput(output any) PostToolUseOutput
+	// WithAdditionalContext injects model context.
+	WithAdditionalContext(text string) PostToolUseOutput
+	// WithContinue sets whether Claude should continue the session.
+	WithContinue(v bool) PostToolUseOutput
+	// WithStopReason explains why the session was stopped.
+	WithStopReason(reason string) PostToolUseOutput
+	// WithSuppressOutput suppresses hook stdout when true.
+	WithSuppressOutput(v bool) PostToolUseOutput
+	// WithSystemMessage sets a user-visible system message.
+	WithSystemMessage(msg string) PostToolUseOutput
+	// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+	WithTerminalSequence(seq string) PostToolUseOutput
 }
 
-func (o PostToolUseOutput) isZero() bool {
-	return o.Common.isZero() && !o.Block && o.Reason == "" &&
-		o.AdditionalContext == "" && o.UpdatedToolOutput == nil
+type postToolUseOutput struct {
+	common
+	block             bool
+	reason            string
+	additionalContext string
+	updatedToolOutput any
+}
+
+func (postToolUseOutput) isPostToolUseOutput() {}
+func (o postToolUseOutput) isZero() bool {
+	return o.common.isZero() && !o.block && o.reason == "" &&
+		o.additionalContext == "" && o.updatedToolOutput == nil
+}
+
+// WithUpdatedToolOutput replaces the tool result when set.
+func (o postToolUseOutput) WithUpdatedToolOutput(output any) PostToolUseOutput {
+	o.updatedToolOutput = output
+	return o
+}
+
+// WithAdditionalContext injects model context.
+func (o postToolUseOutput) WithAdditionalContext(text string) PostToolUseOutput {
+	o.additionalContext = text
+	return o
+}
+
+// WithContinue sets whether Claude should continue the session.
+func (o postToolUseOutput) WithContinue(v bool) PostToolUseOutput {
+	o.common = o.common.WithContinue(v)
+	return o
+}
+
+// WithStopReason explains why the session was stopped.
+func (o postToolUseOutput) WithStopReason(reason string) PostToolUseOutput {
+	o.common = o.common.WithStopReason(reason)
+	return o
+}
+
+// WithSuppressOutput suppresses hook stdout when true.
+func (o postToolUseOutput) WithSuppressOutput(v bool) PostToolUseOutput {
+	o.common = o.common.WithSuppressOutput(v)
+	return o
+}
+
+// WithSystemMessage sets a user-visible system message.
+func (o postToolUseOutput) WithSystemMessage(msg string) PostToolUseOutput {
+	o.common = o.common.WithSystemMessage(msg)
+	return o
+}
+
+// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+func (o postToolUseOutput) WithTerminalSequence(seq string) PostToolUseOutput {
+	o.common = o.common.WithTerminalSequence(seq)
+	return o
 }
 
 // PostToolUseResults is the hook-scoped response builder supplied to Chain handlers by registration.
@@ -67,16 +126,36 @@ func (postToolUseResults) isPostToolUseResults() {}
 
 // Context returns a context-injection-only PostToolUse result.
 func (postToolUseResults) Context(text string) PostToolUseOutput {
-	return PostToolUseOutput{AdditionalContext: text}
+	return postToolUseOutput{additionalContext: text}
 }
 
 // Block returns a block result with an agent-facing reason.
 func (postToolUseResults) Block(reason string) PostToolUseOutput {
-	return PostToolUseOutput{Block: true, Reason: reason}
+	return postToolUseOutput{block: true, reason: reason}
+}
+
+func (postToolUseOutput) allowedEvents() []string {
+	return []string{EventPostToolUse, EventPostToolUseFailure}
+}
+
+func (o postToolUseOutput) encodeInto(top, hso map[string]any) {
+	applyCommon(top, o.common)
+	if o.block {
+		top["decision"] = "block"
+		if o.reason != "" {
+			top["reason"] = o.reason
+		}
+	}
+	if o.updatedToolOutput != nil {
+		hso["updatedToolOutput"] = o.updatedToolOutput
+	}
+	if o.additionalContext != "" {
+		hso["additionalContext"] = o.additionalContext
+	}
 }
 
 // PostToolUse registers a PostToolUse handler.
-func (c *Chain) PostToolUse(fn func(context.Context, PostToolUseHook, PostToolUseResults) (PostToolUseOutput, error)) *Chain {
+func (c *Chain) PostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

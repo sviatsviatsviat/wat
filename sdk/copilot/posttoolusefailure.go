@@ -59,19 +59,27 @@ func (e PostToolUseFailure) ErrorMessage() string {
 }
 
 // PostToolFailureOutput is the response for postToolUseFailure events.
-type PostToolFailureOutput struct {
-	// Context is recovery guidance written as raw stdout text.
-	Context string
+// Construct via PostToolFailureResults builders. A nil value is a no-op.
+type PostToolFailureOutput interface {
+	isPostToolFailureOutput()
 }
 
-func (o PostToolFailureOutput) isZero() bool {
-	return o.Context == ""
+type postToolFailureOutput struct {
+	context string
+}
+
+func (postToolFailureOutput) isPostToolFailureOutput() {}
+
+func (o postToolFailureOutput) isZero() bool {
+	return o.context == ""
 }
 
 // PostToolFailureResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type PostToolFailureResults interface {
 	// Context returns recovery guidance for postToolUseFailure events.
 	Context(text string) PostToolFailureOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() PostToolFailureOutput
 	isPostToolFailureResults()
 }
 
@@ -81,14 +89,23 @@ func (postToolFailureResults) isPostToolFailureResults() {}
 
 // Context returns recovery guidance for postToolUseFailure events.
 func (postToolFailureResults) Context(text string) PostToolFailureOutput {
-	return PostToolFailureOutput{Context: text}
+	return postToolFailureOutput{context: text}
 }
 
-func encodePostToolFailure(o PostToolFailureOutput) ([]byte, int, error) {
-	if o.Context == "" {
+// Noop returns an empty response (silent stdout).
+func (postToolFailureResults) Noop() PostToolFailureOutput {
+	return postToolFailureOutput{}
+}
+
+func (postToolFailureOutput) allowedEvents() []string {
+	return []string{EventPostToolUseFailure}
+}
+
+func (o postToolFailureOutput) encode() ([]byte, int, error) {
+	if o.context == "" {
 		return nil, 0, nil
 	}
-	return []byte(o.Context), WarnExit, nil
+	return []byte(o.context), WarnExit, nil
 }
 
 func init() {
@@ -102,7 +119,7 @@ func init() {
 }
 
 // PostToolUseFailure registers a PostToolUseFailure handler.
-func (c *Chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailureHook, PostToolFailureResults) (PostToolFailureOutput, error)) *Chain {
+func (c *Chain) PostToolUseFailure(fn func(context.Context, Hook[PostToolUseFailure], PostToolFailureResults) (PostToolFailureOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

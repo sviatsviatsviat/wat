@@ -48,11 +48,11 @@ func (postToolUseFailureResults) isPostToolUseFailureResults() {}
 
 // Context returns recovery guidance for PostToolUseFailure events.
 func (postToolUseFailureResults) Context(text string) PostToolUseOutput {
-	return PostToolUseOutput{AdditionalContext: text}
+	return postToolUseOutput{additionalContext: text}
 }
 
 // PostToolUseFailure registers a PostToolUseFailure handler.
-func (c *Chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailureHook, PostToolUseFailureResults) (PostToolUseOutput, error)) *Chain {
+func (c *Chain) PostToolUseFailure(fn func(context.Context, Hook[PostToolUseFailure], PostToolUseFailureResults) (PostToolUseOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

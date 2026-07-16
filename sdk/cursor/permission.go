@@ -17,19 +17,46 @@ const (
 )
 
 // PermissionOutput is the response for permission-gating events.
-type PermissionOutput struct {
-	// Decision is the permission verdict (allow, deny, ask).
-	Decision PermissionDecision
-	// UserMessage is shown to the user.
-	UserMessage string
-	// AgentMessage is shown to the agent.
-	AgentMessage string
-	// UpdatedInput replaces tool arguments on preToolUse when set.
-	UpdatedInput map[string]any
+// Construct via PermissionResults builders and With* methods. A nil value is a no-op.
+type PermissionOutput interface {
+	isPermissionOutput()
+	// WithUserMessage sets a user-facing message.
+	WithUserMessage(msg string) PermissionOutput
+	// WithAgentMessage sets an agent-facing message.
+	WithAgentMessage(msg string) PermissionOutput
+	// WithUpdatedInput replaces tool arguments on preToolUse when set.
+	WithUpdatedInput(input map[string]any) PermissionOutput
 }
 
-func (o PermissionOutput) isZero() bool {
-	return o.Decision == "" && o.UserMessage == "" && o.AgentMessage == "" && o.UpdatedInput == nil
+type permissionOutput struct {
+	decision     PermissionDecision
+	userMessage  string
+	agentMessage string
+	updatedInput map[string]any
+}
+
+func (permissionOutput) isPermissionOutput() {}
+
+func (o permissionOutput) isZero() bool {
+	return o.decision == "" && o.userMessage == "" && o.agentMessage == "" && o.updatedInput == nil
+}
+
+// WithUserMessage sets a user-facing message.
+func (o permissionOutput) WithUserMessage(msg string) PermissionOutput {
+	o.userMessage = msg
+	return o
+}
+
+// WithAgentMessage sets an agent-facing message.
+func (o permissionOutput) WithAgentMessage(msg string) PermissionOutput {
+	o.agentMessage = msg
+	return o
+}
+
+// WithUpdatedInput replaces tool arguments on preToolUse when set.
+func (o permissionOutput) WithUpdatedInput(input map[string]any) PermissionOutput {
+	o.updatedInput = input
+	return o
 }
 
 // PermissionResults is the hook-scoped response builder supplied to permission Chain handlers by registration.
@@ -38,6 +65,10 @@ type PermissionResults interface {
 	Allow() PermissionOutput
 	// Deny returns a deny verdict with an agent-facing message.
 	Deny(agentMessage string) PermissionOutput
+	// Ask returns an ask verdict with an agent-facing message.
+	Ask(agentMessage string) PermissionOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() PermissionOutput
 	isPermissionResults()
 }
 
@@ -47,37 +78,66 @@ func (permissionResults) isPermissionResults() {}
 
 // Allow returns an allow verdict.
 func (permissionResults) Allow() PermissionOutput {
-	return PermissionOutput{Decision: DecisionAllow}
+	return permissionOutput{decision: DecisionAllow}
 }
 
 // Deny returns a deny verdict with an agent-facing message.
 func (permissionResults) Deny(agentMessage string) PermissionOutput {
-	return PermissionOutput{Decision: DecisionDeny, AgentMessage: agentMessage}
+	return permissionOutput{decision: DecisionDeny, agentMessage: agentMessage}
+}
+
+// Ask returns an ask verdict with an agent-facing message.
+func (permissionResults) Ask(agentMessage string) PermissionOutput {
+	return permissionOutput{decision: DecisionAsk, agentMessage: agentMessage}
+}
+
+// Noop returns an empty response (silent stdout).
+func (permissionResults) Noop() PermissionOutput {
+	return permissionOutput{}
 }
 
 type permissionGateResults struct{}
 
 func (permissionGateResults) allow() PermissionOutput {
-	return PermissionOutput{Decision: DecisionAllow}
+	return permissionOutput{decision: DecisionAllow}
 }
 
 func (permissionGateResults) deny(agentMessage string) PermissionOutput {
-	return PermissionOutput{Decision: DecisionDeny, AgentMessage: agentMessage}
+	return permissionOutput{decision: DecisionDeny, agentMessage: agentMessage}
 }
 
-func encodePermission(eventName string, o PermissionOutput) ([]byte, int, error) {
+func (permissionGateResults) ask(agentMessage string) PermissionOutput {
+	return permissionOutput{decision: DecisionAsk, agentMessage: agentMessage}
+}
+
+func (permissionGateResults) noop() PermissionOutput {
+	return permissionOutput{}
+}
+
+func (permissionOutput) allowedEvents() []string {
+	return []string{
+		EventPreToolUse,
+		EventBeforeShellExecution,
+		EventBeforeMCPExecution,
+		EventBeforeReadFile,
+		EventSubagentStart,
+		EventBeforeTabFileRead,
+	}
+}
+
+func (o permissionOutput) encode(eventName string) ([]byte, int, error) {
 	out := map[string]any{}
-	if o.Decision != "" {
-		out["permission"] = string(o.Decision)
+	if o.decision != "" {
+		out["permission"] = string(o.decision)
 	}
-	if o.UserMessage != "" {
-		out["user_message"] = o.UserMessage
+	if o.userMessage != "" {
+		out["user_message"] = o.userMessage
 	}
-	if o.AgentMessage != "" {
-		out["agent_message"] = o.AgentMessage
+	if o.agentMessage != "" {
+		out["agent_message"] = o.agentMessage
 	}
-	if o.UpdatedInput != nil && (eventName == "" || eventName == EventPreToolUse) {
-		out["updated_input"] = o.UpdatedInput
+	if o.updatedInput != nil && (eventName == "" || eventName == EventPreToolUse) {
+		out["updated_input"] = o.updatedInput
 	}
 	if len(out) == 0 {
 		return nil, 0, nil
@@ -87,7 +147,7 @@ func encodePermission(eventName string, o PermissionOutput) ([]byte, int, error)
 		return nil, 0, err
 	}
 	exitCode := 0
-	if o.Decision == DecisionDeny {
+	if o.decision == DecisionDeny {
 		exitCode = PermissionDenyExit
 	}
 	return b, exitCode, nil

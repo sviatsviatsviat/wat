@@ -23,7 +23,7 @@ func init() {
 }
 
 // BeforeShellExecution registers a beforeShellExecution handler.
-func (c *Chain) BeforeShellExecution(fn func(context.Context, BeforeShellExecutionHook, PermissionResults) (PermissionOutput, error)) *Chain {
+func (c *Chain) BeforeShellExecution(fn func(context.Context, Hook[BeforeShellExecution], PermissionResults) (PermissionOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

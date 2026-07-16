@@ -35,11 +35,11 @@ func (preCompactResults) isPreCompactResults() {}
 
 // Context returns a context-injection-only PreCompact result.
 func (preCompactResults) Context(text string) CommonOutput {
-	return CommonOutput{AdditionalContext: text}
+	return commonOutput{additionalContext: text}
 }
 
 // PreCompact registers a PreCompact handler.
-func (c *Chain) PreCompact(fn func(context.Context, PreCompactHook, PreCompactResults) (CommonOutput, error)) *Chain {
+func (c *Chain) PreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (CommonOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

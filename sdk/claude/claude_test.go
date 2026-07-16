@@ -34,10 +34,7 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 		t.Fatalf("bad event: %+v", ev)
 	}
 
-	out, err := claude.Encode("PreToolUse", claude.PreToolUseOutput{
-		Decision: claude.DecisionDeny,
-		Reason:   "destructive command",
-	})
+	out, err := claude.Encode("PreToolUse", claude.PreToolUseResultsForTest().Deny("destructive command"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +46,7 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 func TestMux_Serve_PreToolDeny(t *testing.T) {
 	run.Reset()
 	claude.ResetHandlers()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.PreToolUseHook, r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return r.Deny("destructive command"), nil
 	})
 
@@ -64,10 +61,7 @@ func TestMux_Serve_PreToolDeny(t *testing.T) {
 }
 
 func TestEncode_UserPromptBlock(t *testing.T) {
-	out, err := claude.Encode("UserPromptSubmit", claude.UserPromptSubmitOutput{
-		Block:  true,
-		Reason: "blocked prompt",
-	})
+	out, err := claude.Encode("UserPromptSubmit", claude.UserPromptSubmitResultsForTest().Block("blocked prompt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,10 +71,7 @@ func TestEncode_UserPromptBlock(t *testing.T) {
 }
 
 func TestEncode_StopBlock(t *testing.T) {
-	out, err := claude.Encode("Stop", claude.StopOutput{
-		Block:  true,
-		Reason: "run the tests",
-	})
+	out, err := claude.Encode("Stop", claude.StopResultsForTest().FollowUp("run the tests"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,9 +84,7 @@ func TestEncode_SessionStartEnv(t *testing.T) {
 	dir := t.TempDir()
 	envPath := filepath.Join(dir, "env.sh")
 	var written []byte
-	out, err := claude.Encode("SessionStart", claude.SessionStartOutput{
-		Env: map[string]string{"FOO": "bar", "BAZ": "qux"},
-	},
+	out, err := claude.Encode("SessionStart", claude.SessionStartResultsForTest().Noop().WithEnv(map[string]string{"FOO": "bar", "BAZ": "qux"}),
 		claude.WithGetenv(func(key string) string {
 			if key == "CLAUDE_ENV_FILE" {
 				return envPath
@@ -217,8 +206,8 @@ func TestDecode_InvalidJSON(t *testing.T) {
 func TestMux_FailPolicy(t *testing.T) {
 	run.Reset()
 	claude.ResetHandlers()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.PreToolUseHook, _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
-		return claude.PreToolUseOutput{}, context.Canceled
+	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		return nil, context.Canceled
 	})
 
 	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailOpen))
@@ -227,8 +216,8 @@ func TestMux_FailPolicy(t *testing.T) {
 	}
 	run.Reset()
 	claude.ResetHandlers()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.PreToolUseHook, _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
-		return claude.PreToolUseOutput{}, context.Canceled
+	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		return nil, context.Canceled
 	})
 	code = run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailBlock))
 	if code != claude.FailBlockExit {
@@ -239,41 +228,36 @@ func TestMux_FailPolicy(t *testing.T) {
 func TestMux_OnDuplicatePanics(t *testing.T) {
 	run.Reset()
 	claude.ResetHandlers()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.PreToolUseHook, _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
-		return claude.PreToolUseOutput{}, nil
+	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		return nil, nil
 	})
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatal("expected panic on duplicate handler registration")
 		}
 	}()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.PreToolUseHook, _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
-		return claude.PreToolUseOutput{}, nil
+	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		return nil, nil
 	})
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, err := claude.Encode("PreToolUse", claude.PreToolUseOutput{})
+	out, err := claude.Encode("PreToolUse", nil)
 	if err != nil || out != nil {
 		t.Fatalf("zero output should be silent, got %q err=%v", out, err)
 	}
 }
 
 func TestEncode_EventOutputMismatch(t *testing.T) {
-	_, err := claude.Encode(claude.EventPostToolUse, claude.PreToolUseOutput{
-		Decision: claude.DecisionAllow,
-	})
+	_, err := claude.Encode(claude.EventPostToolUse, claude.PreToolUseResultsForTest().Allow())
 	if err == nil {
 		t.Fatal("expected incompatible event/output error")
 	}
 }
 
 func TestEncode_PointerOutput(t *testing.T) {
-	deny := claude.DecisionDeny
-	out, err := claude.Encode("PreToolUse", &claude.PreToolUseOutput{
-		Decision: deny,
-		Reason:   "blocked",
-	})
+	deny := claude.PreToolUseResultsForTest().Deny("blocked")
+	out, err := claude.Encode("PreToolUse", &deny)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,18 +265,14 @@ func TestEncode_PointerOutput(t *testing.T) {
 		t.Fatalf("bad output: %s", out)
 	}
 
-	out, err = claude.Encode("PreToolUse", (*claude.PreToolUseOutput)(nil))
+	out, err = claude.Encode("PreToolUse", nil)
 	if err != nil || out != nil {
 		t.Fatalf("nil pointer output should be silent, got %q err=%v", out, err)
 	}
 }
 
 func TestEncode_PermissionRequestInterrupt(t *testing.T) {
-	out, err := claude.Encode("PermissionRequest", claude.PermissionRequestOutput{
-		Behavior:  "deny",
-		Message:   "policy",
-		Interrupt: true,
-	})
+	out, err := claude.Encode("PermissionRequest", claude.PermissionRequestResultsForTest().Deny("policy").WithInterrupt(true))
 	if err != nil {
 		t.Fatal(err)
 	}

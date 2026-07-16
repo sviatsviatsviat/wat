@@ -16,5 +16,8 @@ func mapPostToolUseFailure(e sdkcursor.PostToolUseFailure, ev *model.Event) {
 }
 
 func mapPostToolFailureOutput(res model.Result) any {
-	return sdkcursor.PostToolOutput{AdditionalContext: res.Context}
+	if res.Context == "" {
+		return nil
+	}
+	return sdkcursor.BuildPostToolOutput(res.Context, nil)
 }

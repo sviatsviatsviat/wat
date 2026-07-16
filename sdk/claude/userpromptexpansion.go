@@ -41,11 +41,11 @@ func (userPromptExpansionResults) isUserPromptExpansionResults() {}
 
 // Context returns a context-injection-only UserPromptExpansion result.
 func (userPromptExpansionResults) Context(text string) CommonOutput {
-	return CommonOutput{AdditionalContext: text}
+	return commonOutput{additionalContext: text}
 }
 
 // UserPromptExpansion registers a UserPromptExpansion handler.
-func (c *Chain) UserPromptExpansion(fn func(context.Context, UserPromptExpansionHook, UserPromptExpansionResults) (CommonOutput, error)) *Chain {
+func (c *Chain) UserPromptExpansion(fn func(context.Context, Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

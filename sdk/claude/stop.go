@@ -23,18 +23,70 @@ func init() {
 }
 
 // StopOutput is the response for Stop and SubagentStop events.
-type StopOutput struct {
-	Common
-	// Block keeps the agent working when true.
-	Block bool
-	// Reason is fed back to Claude as the next instruction.
-	Reason string
-	// AdditionalContext is non-error feedback that continues the conversation.
-	AdditionalContext string
+// Construct via StopResults builders and With* methods.
+// A nil value is a no-op.
+type StopOutput interface {
+	isStopOutput()
+	// WithAdditionalContext is non-error feedback that continues the conversation.
+	WithAdditionalContext(text string) StopOutput
+	// WithContinue sets whether Claude should continue the session.
+	WithContinue(v bool) StopOutput
+	// WithStopReason explains why the session was stopped.
+	WithStopReason(reason string) StopOutput
+	// WithSuppressOutput suppresses hook stdout when true.
+	WithSuppressOutput(v bool) StopOutput
+	// WithSystemMessage sets a user-visible system message.
+	WithSystemMessage(msg string) StopOutput
+	// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+	WithTerminalSequence(seq string) StopOutput
 }
 
-func (o StopOutput) isZero() bool {
-	return o.Common.isZero() && !o.Block && o.Reason == "" && o.AdditionalContext == ""
+type stopOutput struct {
+	common
+	block             bool
+	reason            string
+	additionalContext string
+}
+
+func (stopOutput) isStopOutput() {}
+func (o stopOutput) isZero() bool {
+	return o.common.isZero() && !o.block && o.reason == "" && o.additionalContext == ""
+}
+
+// WithAdditionalContext is non-error feedback that continues the conversation.
+func (o stopOutput) WithAdditionalContext(text string) StopOutput {
+	o.additionalContext = text
+	return o
+}
+
+// WithContinue sets whether Claude should continue the session.
+func (o stopOutput) WithContinue(v bool) StopOutput {
+	o.common = o.common.WithContinue(v)
+	return o
+}
+
+// WithStopReason explains why the session was stopped.
+func (o stopOutput) WithStopReason(reason string) StopOutput {
+	o.common = o.common.WithStopReason(reason)
+	return o
+}
+
+// WithSuppressOutput suppresses hook stdout when true.
+func (o stopOutput) WithSuppressOutput(v bool) StopOutput {
+	o.common = o.common.WithSuppressOutput(v)
+	return o
+}
+
+// WithSystemMessage sets a user-visible system message.
+func (o stopOutput) WithSystemMessage(msg string) StopOutput {
+	o.common = o.common.WithSystemMessage(msg)
+	return o
+}
+
+// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+func (o stopOutput) WithTerminalSequence(seq string) StopOutput {
+	o.common = o.common.WithTerminalSequence(seq)
+	return o
 }
 
 // StopResults is the hook-scoped response builder supplied to Chain handlers by registration.
@@ -50,11 +102,28 @@ func (stopResults) isStopResults() {}
 
 // FollowUp blocks completion and feeds reason back to Claude.
 func (stopResults) FollowUp(reason string) StopOutput {
-	return StopOutput{Block: true, Reason: reason}
+	return stopOutput{block: true, reason: reason}
+}
+
+func (stopOutput) allowedEvents() []string {
+	return []string{EventStop, EventSubagentStop}
+}
+
+func (o stopOutput) encodeInto(top, hso map[string]any) {
+	applyCommon(top, o.common)
+	if o.block {
+		top["decision"] = "block"
+		if o.reason != "" {
+			top["reason"] = o.reason
+		}
+	}
+	if o.additionalContext != "" {
+		hso["additionalContext"] = o.additionalContext
+	}
 }
 
 // Stop registers a Stop handler.
-func (c *Chain) Stop(fn func(context.Context, StopHook, StopResults) (StopOutput, error)) *Chain {
+func (c *Chain) Stop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

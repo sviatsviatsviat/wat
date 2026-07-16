@@ -121,8 +121,8 @@ All four SDKs use the same handler shapes. Result-producing handlers take `(ctx,
 
 | Category | agnostic | claude / copilot / cursor |
 |---|---|---|
-| Result | `(ctx, hook PreToolHook, r PreToolResults) (PreToolResult, error)` — hook embeds **`PreToolEvent`** (normalized) | `(ctx, hook PreToolUseHook, r PreToolUseResults) (PreToolUseOutput, error)` — hook embeds **native typed event** via `hook.Event` |
-| Observe | `(ctx, hook SessionEndHook) error` — hook embeds **`SessionEndEvent`** | `(ctx, hook SessionEndHook) error` — hook embeds native typed event via `hook.Event` |
+| Result | `(ctx, hook PreToolHook, r PreToolResults) (PreToolResult, error)` — hook embeds **`PreToolEvent`** (normalized) | `(ctx, hook Hook[PreToolUse], r PreToolUseResults) (PreToolUseOutput, error)` — hook carries **native typed event** via `hook.Event` |
+| Observe | `(ctx, hook SessionEndHook) error` — hook embeds **`SessionEndEvent`** | `(ctx, hook Hook[SessionEnd]) error` — hook carries native typed event via `hook.Event` |
 | Catch-all | `OnAny(func(ctx, hook AnyHook) error)` — `AnyEvent` includes `Kind` | `Chain.OnAny(...)` |
 
 **Not in handler signatures:** bare `*Event` (agnostic) or cross-kind event blobs. Exported `agnostic.Event` remains for codecs, `wat test` summaries, and manual re-decode via `hook.Raw()`.
@@ -135,7 +135,7 @@ Each result-producing Chain method or `On*` registration injects a builder inter
 - Claude `SubagentStartResults`, `NotificationResults`, and `PreCompactResults` are separate types (not a shared `CommonResults`).
 - Cursor `BeforeReadFileResults` and `BeforeTabFileReadResults` are separate from shell/MCP `PermissionResults` where encode surfaces differ.
 
-Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …). Return a typed zero literal for no opinion, or set advanced fields directly on the result/output struct returned by the handler.
+Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …). Return `nil` for no opinion (silent stdout). Set advanced fields with fluent `With*` methods on the value returned by the builder (for example `r.Allow().WithUpdatedInput(args)`). Hook output and portable result types are sealed interfaces — only builders (and dialect `Build*` helpers) can construct non-nil values. `*Results` builders are supplied by Chain/`On*` registration only; they are not publicly constructible.
 
 ### Event support matrix
 
@@ -160,10 +160,10 @@ Observe-only handlers accept decoded events but produce no hook stdout JSON.
 
 ### Portable result types
 
-| Kind | Result type | Fields |
+| Kind | Result type | Builder / fields |
 |---|---|---|
-| `PreTool` | `PreToolResult` | `Decision`, `Reason`, `UpdatedInput` |
-| `PostTool` | `PostToolResult` | `UpdatedOutput`, `Context` |
+| `PreTool` | `PreToolResult` | `Allow`/`Deny`/`Ask`; `WithUpdatedInput` |
+| `PostTool` | `PostToolResult` | `Context`; `WithUpdatedOutput` |
 | `PostToolFailure` | `PostToolFailureResult` | `Context` |
 | `Stop`, `SubagentStop` | `StopResult` | `FollowUp` |
 | `SessionStart` | `SessionStartResult` | `Context` |

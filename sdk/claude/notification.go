@@ -35,11 +35,11 @@ func (notificationResults) isNotificationResults() {}
 
 // Context returns a context-injection-only Notification result.
 func (notificationResults) Context(text string) CommonOutput {
-	return CommonOutput{AdditionalContext: text}
+	return commonOutput{additionalContext: text}
 }
 
 // Notification registers a Notification handler.
-func (c *Chain) Notification(fn func(context.Context, NotificationHook, NotificationResults) (CommonOutput, error)) *Chain {
+func (c *Chain) Notification(fn func(context.Context, Hook[Notification], NotificationResults) (CommonOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

@@ -12,9 +12,12 @@ func mapPostToolUse(e sdkcopilot.PostToolUse, ev *model.Event) {
 }
 
 func mapPostToolOutput(res model.Result) any {
-	out := sdkcopilot.PostToolOutput{AdditionalContext: res.Context}
+	var modified string
 	if res.UpdatedOutput != nil {
-		out.ModifiedResult = *res.UpdatedOutput
+		modified = *res.UpdatedOutput
 	}
-	return out
+	if res.Context == "" && modified == "" {
+		return nil
+	}
+	return sdkcopilot.BuildPostToolOutput(res.Context, modified)
 }

@@ -30,23 +30,89 @@ func init() {
 }
 
 // PermissionRequestOutput is the response for PermissionRequest events.
-type PermissionRequestOutput struct {
-	Common
-	// Behavior is allow or deny.
-	Behavior string
-	// UpdatedInput replaces tool arguments when set.
-	UpdatedInput map[string]any
-	// Message is the permission message.
-	Message string
-	// Interrupt stops the session when true.
-	Interrupt bool
-	// AdditionalContext injects model context.
-	AdditionalContext string
+// Construct via PermissionRequestResults builders and With* methods.
+// A nil value is a no-op.
+type PermissionRequestOutput interface {
+	isPermissionRequestOutput()
+	// WithUpdatedInput replaces tool arguments when set.
+	WithUpdatedInput(input map[string]any) PermissionRequestOutput
+	// WithInterrupt stops the session when true.
+	WithInterrupt(v bool) PermissionRequestOutput
+	// WithAdditionalContext injects model context.
+	WithAdditionalContext(text string) PermissionRequestOutput
+	// WithContinue sets whether Claude should continue the session.
+	WithContinue(v bool) PermissionRequestOutput
+	// WithStopReason explains why the session was stopped.
+	WithStopReason(reason string) PermissionRequestOutput
+	// WithSuppressOutput suppresses hook stdout when true.
+	WithSuppressOutput(v bool) PermissionRequestOutput
+	// WithSystemMessage sets a user-visible system message.
+	WithSystemMessage(msg string) PermissionRequestOutput
+	// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+	WithTerminalSequence(seq string) PermissionRequestOutput
 }
 
-func (o PermissionRequestOutput) isZero() bool {
-	return o.Common.isZero() && o.Behavior == "" && o.UpdatedInput == nil &&
-		o.Message == "" && !o.Interrupt && o.AdditionalContext == ""
+type permissionRequestOutput struct {
+	common
+	behavior          string
+	updatedInput      map[string]any
+	message           string
+	interrupt         bool
+	additionalContext string
+}
+
+func (permissionRequestOutput) isPermissionRequestOutput() {}
+func (o permissionRequestOutput) isZero() bool {
+	return o.common.isZero() && o.behavior == "" && o.updatedInput == nil &&
+		o.message == "" && !o.interrupt && o.additionalContext == ""
+}
+
+// WithUpdatedInput replaces tool arguments when set.
+func (o permissionRequestOutput) WithUpdatedInput(input map[string]any) PermissionRequestOutput {
+	o.updatedInput = input
+	return o
+}
+
+// WithInterrupt stops the session when true.
+func (o permissionRequestOutput) WithInterrupt(v bool) PermissionRequestOutput {
+	o.interrupt = v
+	return o
+}
+
+// WithAdditionalContext injects model context.
+func (o permissionRequestOutput) WithAdditionalContext(text string) PermissionRequestOutput {
+	o.additionalContext = text
+	return o
+}
+
+// WithContinue sets whether Claude should continue the session.
+func (o permissionRequestOutput) WithContinue(v bool) PermissionRequestOutput {
+	o.common = o.common.WithContinue(v)
+	return o
+}
+
+// WithStopReason explains why the session was stopped.
+func (o permissionRequestOutput) WithStopReason(reason string) PermissionRequestOutput {
+	o.common = o.common.WithStopReason(reason)
+	return o
+}
+
+// WithSuppressOutput suppresses hook stdout when true.
+func (o permissionRequestOutput) WithSuppressOutput(v bool) PermissionRequestOutput {
+	o.common = o.common.WithSuppressOutput(v)
+	return o
+}
+
+// WithSystemMessage sets a user-visible system message.
+func (o permissionRequestOutput) WithSystemMessage(msg string) PermissionRequestOutput {
+	o.common = o.common.WithSystemMessage(msg)
+	return o
+}
+
+// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+func (o permissionRequestOutput) WithTerminalSequence(seq string) PermissionRequestOutput {
+	o.common = o.common.WithTerminalSequence(seq)
+	return o
 }
 
 // PermissionRequestResults is the hook-scoped response builder supplied to Chain handlers by registration.
@@ -64,16 +130,40 @@ func (permissionRequestResults) isPermissionRequestResults() {}
 
 // Allow returns an allow verdict.
 func (permissionRequestResults) Allow() PermissionRequestOutput {
-	return PermissionRequestOutput{Behavior: "allow"}
+	return permissionRequestOutput{behavior: "allow"}
 }
 
 // Deny returns a deny verdict with a permission message.
 func (permissionRequestResults) Deny(message string) PermissionRequestOutput {
-	return PermissionRequestOutput{Behavior: "deny", Message: message}
+	return permissionRequestOutput{behavior: "deny", message: message}
+}
+
+func (permissionRequestOutput) allowedEvents() []string {
+	return []string{EventPermissionRequest}
+}
+
+func (o permissionRequestOutput) encodeInto(top, hso map[string]any) {
+	applyCommon(top, o.common)
+	if o.behavior != "" {
+		dec := map[string]any{"behavior": o.behavior}
+		if o.updatedInput != nil {
+			dec["updatedInput"] = o.updatedInput
+		}
+		if o.message != "" {
+			dec["message"] = o.message
+		}
+		if o.interrupt {
+			dec["interrupt"] = true
+		}
+		hso["decision"] = dec
+	}
+	if o.additionalContext != "" {
+		hso["additionalContext"] = o.additionalContext
+	}
 }
 
 // PermissionRequest registers a PermissionRequest handler.
-func (c *Chain) PermissionRequest(fn func(context.Context, PermissionRequestHook, PermissionRequestResults) (PermissionRequestOutput, error)) *Chain {
+func (c *Chain) PermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

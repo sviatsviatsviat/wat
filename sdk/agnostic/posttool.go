@@ -68,7 +68,7 @@ func OnPostTool(fn PostToolHandler) *Chain {
 	registerResultHandler(model.KindPostTool, func(ctx context.Context, ev *model.Event) (model.PostToolResult, error) {
 		typed, err := PostToolEventFrom(ev)
 		if err != nil {
-			return model.PostToolResult{}, err
+			return nil, err
 		}
 		return fn(ctx, postToolHook(run.InvocationFrom(ctx), typed), postToolResults{})
 	})

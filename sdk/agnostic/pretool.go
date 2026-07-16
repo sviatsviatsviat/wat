@@ -78,7 +78,7 @@ func OnPreTool(fn PreToolHandler) *Chain {
 	registerResultHandler(model.KindPreTool, func(ctx context.Context, ev *model.Event) (model.PreToolResult, error) {
 		typed, err := PreToolEventFrom(ev)
 		if err != nil {
-			return model.PreToolResult{}, err
+			return nil, err
 		}
 		return fn(ctx, preToolHook(run.InvocationFrom(ctx), typed), preToolResults{})
 	})

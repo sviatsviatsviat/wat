@@ -8,11 +8,11 @@ import (
 )
 
 func ExampleChain() {
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.PreToolUseHook, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		if hook.Event.ToolName == "powershell" {
 			return r.Deny("blocked"), nil
 		}
-		return copilot.PreToolOutput{}, nil
+		return r.Noop(), nil
 	})
 	// Hook entrypoint: run.Main(run.WithEvent("preToolUse"))
 	_ = run.Main

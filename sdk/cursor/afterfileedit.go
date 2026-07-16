@@ -23,7 +23,7 @@ func init() {
 }
 
 // AfterFileEdit registers an afterFileEdit handler.
-func (c *Chain) AfterFileEdit(fn func(context.Context, AfterFileEditHook, PostToolResults) (PostToolOutput, error)) *Chain {
+func (c *Chain) AfterFileEdit(fn func(context.Context, Hook[AfterFileEdit], PostToolResults) (PostToolOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

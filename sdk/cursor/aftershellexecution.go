@@ -35,7 +35,7 @@ func init() {
 }
 
 // AfterShellExecution registers an afterShellExecution handler.
-func (c *Chain) AfterShellExecution(fn func(context.Context, AfterShellExecutionHook, PostToolResults) (PostToolOutput, error)) *Chain {
+func (c *Chain) AfterShellExecution(fn func(context.Context, Hook[AfterShellExecution], PostToolResults) (PostToolOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

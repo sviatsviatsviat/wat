@@ -32,25 +32,60 @@ func init() {
 }
 
 // PermissionDeniedOutput is the response for PermissionDenied events.
-type PermissionDeniedOutput struct {
-	Common
-	// Retry requests a permission retry when true.
-	Retry bool
+// Construct via PermissionDeniedResults builders and With* methods.
+// A nil value is a no-op.
+type PermissionDeniedOutput interface {
+	isPermissionDeniedOutput()
+	// WithContinue sets whether Claude should continue the session.
+	WithContinue(v bool) PermissionDeniedOutput
+	// WithStopReason explains why the session was stopped.
+	WithStopReason(reason string) PermissionDeniedOutput
+	// WithSuppressOutput suppresses hook stdout when true.
+	WithSuppressOutput(v bool) PermissionDeniedOutput
+	// WithSystemMessage sets a user-visible system message.
+	WithSystemMessage(msg string) PermissionDeniedOutput
+	// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+	WithTerminalSequence(seq string) PermissionDeniedOutput
 }
 
-func (o PermissionDeniedOutput) isZero() bool {
-	return o.Common.isZero() && !o.Retry
+type permissionDeniedOutput struct {
+	common
+	retry bool
 }
 
-// PermissionDenied registers a PermissionDenied handler.
-func (c *Chain) PermissionDenied(fn func(context.Context, PermissionDeniedHook, PermissionDeniedResults) (PermissionDeniedOutput, error)) *Chain {
-	if fn == nil {
-		return c
-	}
-	registerHandler(func(ctx context.Context, ev PermissionDenied) (PermissionDeniedOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionDeniedResults{})
-	})
-	return &Chain{}
+func (permissionDeniedOutput) isPermissionDeniedOutput() {}
+func (o permissionDeniedOutput) isZero() bool {
+	return o.common.isZero() && !o.retry
+}
+
+// WithContinue sets whether Claude should continue the session.
+func (o permissionDeniedOutput) WithContinue(v bool) PermissionDeniedOutput {
+	o.common = o.common.WithContinue(v)
+	return o
+}
+
+// WithStopReason explains why the session was stopped.
+func (o permissionDeniedOutput) WithStopReason(reason string) PermissionDeniedOutput {
+	o.common = o.common.WithStopReason(reason)
+	return o
+}
+
+// WithSuppressOutput suppresses hook stdout when true.
+func (o permissionDeniedOutput) WithSuppressOutput(v bool) PermissionDeniedOutput {
+	o.common = o.common.WithSuppressOutput(v)
+	return o
+}
+
+// WithSystemMessage sets a user-visible system message.
+func (o permissionDeniedOutput) WithSystemMessage(msg string) PermissionDeniedOutput {
+	o.common = o.common.WithSystemMessage(msg)
+	return o
+}
+
+// WithTerminalSequence sets an OSC terminal sequence (allowlisted).
+func (o permissionDeniedOutput) WithTerminalSequence(seq string) PermissionDeniedOutput {
+	o.common = o.common.WithTerminalSequence(seq)
+	return o
 }
 
 // PermissionDeniedResults is the hook-scoped response builder supplied to Chain handlers by registration.
@@ -66,5 +101,27 @@ func (permissionDeniedResults) isPermissionDeniedResults() {}
 
 // Retry returns a retry-requested PermissionDenied result.
 func (permissionDeniedResults) Retry() PermissionDeniedOutput {
-	return PermissionDeniedOutput{Retry: true}
+	return permissionDeniedOutput{retry: true}
+}
+
+func (permissionDeniedOutput) allowedEvents() []string {
+	return []string{EventPermissionDenied}
+}
+
+func (o permissionDeniedOutput) encodeInto(top, hso map[string]any) {
+	applyCommon(top, o.common)
+	if o.retry {
+		hso["retry"] = true
+	}
+}
+
+// PermissionDenied registers a PermissionDenied handler.
+func (c *Chain) PermissionDenied(fn func(context.Context, Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev PermissionDenied) (PermissionDeniedOutput, error) {
+		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionDeniedResults{})
+	})
+	return &Chain{}
 }

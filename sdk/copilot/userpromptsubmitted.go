@@ -19,7 +19,7 @@ func init() {
 }
 
 // UserPromptSubmitted registers an observe-only userPromptSubmitted handler.
-func (c *Chain) UserPromptSubmitted(fn func(context.Context, UserPromptSubmittedHook) error) *Chain {
+func (c *Chain) UserPromptSubmitted(fn func(context.Context, Hook[UserPromptSubmitted]) error) *Chain {
 	registerObserveHandler(fn)
 	return &Chain{}
 }

@@ -41,19 +41,27 @@ func (e SubagentStart) DisplayName() string {
 }
 
 // SubagentStartOutput is the response for subagentStart events.
-type SubagentStartOutput struct {
-	// AdditionalContext injects model context.
-	AdditionalContext string
+// Construct via SubagentStartResults builders. A nil value is a no-op.
+type SubagentStartOutput interface {
+	isSubagentStartOutput()
 }
 
-func (o SubagentStartOutput) isZero() bool {
-	return o.AdditionalContext == ""
+type subagentStartOutput struct {
+	additionalContext string
+}
+
+func (subagentStartOutput) isSubagentStartOutput() {}
+
+func (o subagentStartOutput) isZero() bool {
+	return o.additionalContext == ""
 }
 
 // SubagentStartResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type SubagentStartResults interface {
 	// Context returns a context-injection-only SubagentStart result.
 	Context(text string) SubagentStartOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() SubagentStartOutput
 	isSubagentStartResults()
 }
 
@@ -63,7 +71,20 @@ func (subagentStartResults) isSubagentStartResults() {}
 
 // Context returns a context-injection-only SubagentStart result.
 func (subagentStartResults) Context(text string) SubagentStartOutput {
-	return SubagentStartOutput{AdditionalContext: text}
+	return subagentStartOutput{additionalContext: text}
+}
+
+// Noop returns an empty response (silent stdout).
+func (subagentStartResults) Noop() SubagentStartOutput {
+	return subagentStartOutput{}
+}
+
+func (subagentStartOutput) allowedEvents() []string {
+	return []string{EventSubagentStart}
+}
+
+func (o subagentStartOutput) encode() ([]byte, int, error) {
+	return encodeAdditionalContext(o.additionalContext)
 }
 
 func init() {
@@ -71,7 +92,7 @@ func init() {
 }
 
 // SubagentStart registers a SubagentStart handler.
-func (c *Chain) SubagentStart(fn func(context.Context, SubagentStartHook, SubagentStartResults) (SubagentStartOutput, error)) *Chain {
+func (c *Chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (SubagentStartOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

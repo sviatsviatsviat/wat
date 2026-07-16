@@ -20,8 +20,14 @@ func (BeforeTabFileRead) EventName() string { return EventBeforeTabFileRead }
 
 // BeforeTabFileReadResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type BeforeTabFileReadResults interface {
+	// Allow returns an allow verdict.
 	Allow() PermissionOutput
+	// Deny returns a deny verdict with an agent-facing message.
 	Deny(agentMessage string) PermissionOutput
+	// Ask returns an ask verdict with an agent-facing message.
+	Ask(agentMessage string) PermissionOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() PermissionOutput
 	isBeforeTabFileReadResults()
 }
 
@@ -37,12 +43,20 @@ func (r beforeTabFileReadResults) Deny(agentMessage string) PermissionOutput {
 	return r.deny(agentMessage)
 }
 
+// Ask returns an ask verdict with an agent-facing message.
+func (r beforeTabFileReadResults) Ask(agentMessage string) PermissionOutput {
+	return r.ask(agentMessage)
+}
+
+// Noop returns an empty response (silent stdout).
+func (r beforeTabFileReadResults) Noop() PermissionOutput { return r.noop() }
+
 func init() {
 	registerDecoder(EventBeforeTabFileRead, decodeAs[BeforeTabFileRead])
 }
 
 // BeforeTabFileRead registers a beforeTabFileRead handler.
-func (c *Chain) BeforeTabFileRead(fn func(context.Context, BeforeTabFileReadHook, BeforeTabFileReadResults) (PermissionOutput, error)) *Chain {
+func (c *Chain) BeforeTabFileRead(fn func(context.Context, Hook[BeforeTabFileRead], BeforeTabFileReadResults) (PermissionOutput, error)) *Chain {
 	if fn == nil {
 		return c
 	}

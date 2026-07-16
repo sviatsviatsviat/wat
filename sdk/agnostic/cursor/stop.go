@@ -10,5 +10,8 @@ func mapStop(e sdkcursor.Stop, ev *model.Event) {
 }
 
 func mapStopOutput(res model.Result) any {
-	return sdkcursor.StopOutput{FollowUpMessage: res.FollowUp}
+	if res.FollowUp == "" {
+		return nil
+	}
+	return sdkcursor.BuildStopOutput(res.FollowUp)
 }

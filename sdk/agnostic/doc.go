@@ -11,10 +11,11 @@
 // Hook handlers receive a hook context wrapper (PreToolHook, PostToolHook, and
 // others) embedding a normalized typed event (PreToolEvent, PostToolEvent, …)
 // plus hook-scoped result builders (PreToolResults, PostToolResults, and others).
-// Observe-only kinds use OnSessionEnd, OnUserPrompt, OnPreCompact,
-// OnSubagentStart, or OnAny with per-kind handler types. Register handlers with
-// OnPreTool, OnPostTool, and the other typed On methods, then call run.Main from
-// github.com/sviatsviatsviat/wat/sdk/run.
+// Advanced fields use fluent With* methods on the returned result (for example
+// WithUpdatedInput). Observe-only kinds use OnSessionEnd, OnUserPrompt,
+// OnPreCompact, OnSubagentStart, or OnAny with per-kind handler types. Register
+// handlers with OnPreTool, OnPostTool, and the other typed On methods, then call
+// run.Main from github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Agent-only capabilities (BlockPrompt, Env, HaltSession, and others) belong in
 // sdk/claude, sdk/copilot, and sdk/cursor.
