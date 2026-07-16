@@ -233,7 +233,7 @@ func TestCursorDecode_Matrix(t *testing.T) {
 			raw:  `{"hook_event_name":"afterMCPExecution","conversation_id":"c1","tool_name":"MCP:browser_navigate","result_json":"{}","duration_ms":5}`,
 			kind: model.KindPostTool,
 			check: func(t *testing.T, ev *model.Event) {
-				if ev.Tool == nil || !ev.Tool.MCP || ev.Result.Text != "{}" {
+				if ev.Tool == nil || !ev.Tool.MCP || ev.Result == nil || string(ev.Result.Raw) != "{}" {
 					t.Fatalf("tool=%+v result=%+v", ev.Tool, ev.Result)
 				}
 			},

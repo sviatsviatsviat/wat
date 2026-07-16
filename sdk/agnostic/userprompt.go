@@ -47,6 +47,9 @@ type UserPromptHandler func(ctx context.Context, hook UserPromptHook) error
 
 // OnUserPrompt registers an observe-only handler for UserPrompt events.
 func OnUserPrompt(fn UserPromptHandler) *Chain {
+	if fn == nil {
+		return &Chain{}
+	}
 	registerObserveHandler(model.KindUserPrompt, func(ctx context.Context, ev *model.Event) error {
 		typed, err := UserPromptEventFrom(ev)
 		if err != nil {

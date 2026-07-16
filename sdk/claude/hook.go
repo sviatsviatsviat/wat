@@ -33,8 +33,12 @@ type (
 	PostToolUseFailureHook = Hook[PostToolUseFailure]
 	// PermissionRequestHook is the handler context for PermissionRequest events.
 	PermissionRequestHook = Hook[PermissionRequest]
+	// PermissionDeniedHook is the handler context for PermissionDenied events.
+	PermissionDeniedHook = Hook[PermissionDenied]
 	// UserPromptSubmitHook is the handler context for UserPromptSubmit events.
 	UserPromptSubmitHook = Hook[UserPromptSubmit]
+	// UserPromptExpansionHook is the handler context for UserPromptExpansion events.
+	UserPromptExpansionHook = Hook[UserPromptExpansion]
 	// StopHook is the handler context for Stop events.
 	StopHook = Hook[Stop]
 	// SubagentStopHook is the handler context for SubagentStop events.
@@ -49,6 +53,14 @@ type (
 	PreCompactHook = Hook[PreCompact]
 	// SessionEndHook is the handler context for SessionEnd events.
 	SessionEndHook = Hook[SessionEnd]
+	// MessageDisplayHook is the handler context for MessageDisplay events.
+	MessageDisplayHook = Hook[MessageDisplay]
+	// TaskCreatedHook is the handler context for TaskCreated events.
+	TaskCreatedHook = Hook[TaskCreated]
+	// TaskCompletedHook is the handler context for TaskCompleted events.
+	TaskCompletedHook = Hook[TaskCompleted]
+	// WorktreeCreateHook is the handler context for WorktreeCreate events.
+	WorktreeCreateHook = Hook[WorktreeCreate]
 )
 
 // AnyHook is the handler context for catch-all OnAny handlers.

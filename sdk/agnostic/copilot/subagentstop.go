@@ -7,8 +7,8 @@ import (
 
 func mapSubagentStop(e sdkcopilot.SubagentStop, ev *model.Event) {
 	ev.Subagent = &model.Subagent{
-		Type: e.Name(),
-		Task: e.DisplayName(),
+		Type:   e.Name(),
+		Status: e.Reason(),
 	}
 	ev.Turn = &model.TurnEnd{Status: e.Reason()}
 }

@@ -12,13 +12,13 @@ import (
 func Encode(eventName string, out any, opts ...Option) ([]byte, error) {
 	cfg := defaultRuntimeConfig()
 	applyOptions(&cfg, opts...)
-	if err := applyEnvSideEffect(eventName, out, cfg); err != nil {
-		return nil, err
-	}
 	if eventName == "" {
 		return nil, fmt.Errorf("claude: encode: empty event name")
 	}
 	out = hookkit.NormalizeOutput(out)
+	if err := applyEnvSideEffect(eventName, out, cfg); err != nil {
+		return nil, err
+	}
 	if out == nil || isZeroOutput(out) {
 		return nil, nil
 	}

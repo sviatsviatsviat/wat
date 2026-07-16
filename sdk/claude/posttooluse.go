@@ -18,6 +18,8 @@ type PostToolUse struct {
 	ToolUseID string `json:"tool_use_id"`
 	// ToolResponse is the tool response JSON.
 	ToolResponse json.RawMessage `json:"tool_response"`
+	// DurationMs is the tool execution duration in milliseconds.
+	DurationMs int64 `json:"duration_ms"`
 }
 
 // EventName returns the hook event name.

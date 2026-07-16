@@ -1,5 +1,11 @@
 package claude
 
+import (
+	"context"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
 // UserPromptExpansion is the UserPromptExpansion hook event.
 type UserPromptExpansion struct {
 	Envelope
@@ -20,4 +26,31 @@ func (UserPromptExpansion) EventName() string { return EventUserPromptExpansion 
 
 func init() {
 	registerDecoder(EventUserPromptExpansion, decodeAs[UserPromptExpansion])
+}
+
+// UserPromptExpansionResults is the hook-scoped response builder supplied to Chain handlers by registration.
+type UserPromptExpansionResults interface {
+	// Context returns a context-injection-only UserPromptExpansion result.
+	Context(text string) CommonOutput
+	isUserPromptExpansionResults()
+}
+
+type userPromptExpansionResults struct{}
+
+func (userPromptExpansionResults) isUserPromptExpansionResults() {}
+
+// Context returns a context-injection-only UserPromptExpansion result.
+func (userPromptExpansionResults) Context(text string) CommonOutput {
+	return CommonOutput{AdditionalContext: text}
+}
+
+// UserPromptExpansion registers a UserPromptExpansion handler.
+func (c *Chain) UserPromptExpansion(fn func(context.Context, UserPromptExpansionHook, UserPromptExpansionResults) (CommonOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev UserPromptExpansion) (CommonOutput, error) {
+		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), userPromptExpansionResults{})
+	})
+	return &Chain{}
 }

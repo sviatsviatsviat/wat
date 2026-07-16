@@ -18,6 +18,10 @@ type PostToolUseFailure struct {
 	ToolUseID string `json:"tool_use_id"`
 	// Error is the failure message.
 	Error string `json:"error"`
+	// IsInterrupt is true when the failure was caused by an interrupt.
+	IsInterrupt bool `json:"is_interrupt"`
+	// DurationMs is the tool execution duration in milliseconds.
+	DurationMs int64 `json:"duration_ms"`
 }
 
 // EventName returns the hook event name.

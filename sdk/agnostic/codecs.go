@@ -28,10 +28,12 @@ const CursorWarnExit = agcursor.WarnExit
 const CursorHandlerErrorExit = agcursor.HandlerErrorExit
 
 // ClaudeEventForKind maps unified kinds to Claude hook event names.
-var ClaudeEventForKind = agclaude.EventForKind
+// The map is a snapshot; mutating it does not affect the canonical registry.
+var ClaudeEventForKind = cloneEventForKind(agclaude.EventForKind)
 
 // ClaudeKindForEventMap maps Claude hook event names to unified kinds.
-var ClaudeKindForEventMap = agclaude.KindForEventMap
+// The map is a snapshot; mutating it does not affect the canonical registry.
+var ClaudeKindForEventMap = cloneKindForEvent(agclaude.KindForEventMap)
 
 // ClaudeKindForEvent returns the unified kind for a Claude hook event name.
 func ClaudeKindForEvent(name string) (Kind, bool) {
@@ -39,10 +41,12 @@ func ClaudeKindForEvent(name string) (Kind, bool) {
 }
 
 // CopilotEventForKind maps unified kinds to Copilot hook event names.
-var CopilotEventForKind = agcopilot.EventForKind
+// The map is a snapshot; mutating it does not affect the canonical registry.
+var CopilotEventForKind = cloneEventForKind(agcopilot.EventForKind)
 
 // CopilotKindForEventMap maps Copilot hook event names to unified kinds.
-var CopilotKindForEventMap = agcopilot.KindForEventMap
+// The map is a snapshot; mutating it does not affect the canonical registry.
+var CopilotKindForEventMap = cloneKindForEvent(agcopilot.KindForEventMap)
 
 // CopilotKindForEvent returns the unified kind for a Copilot hook event name.
 func CopilotKindForEvent(name string) (Kind, bool) {
@@ -50,13 +54,16 @@ func CopilotKindForEvent(name string) (Kind, bool) {
 }
 
 // CursorEventForKind maps unified kinds to Cursor hook event names.
-var CursorEventForKind = agcursor.EventForKind
+// The map is a snapshot; mutating it does not affect the canonical registry.
+var CursorEventForKind = cloneEventForKind(agcursor.EventForKind)
 
 // CursorKindForEventMap maps Cursor hook event names to unified kinds.
-var CursorKindForEventMap = agcursor.KindForEventMap
+// The map is a snapshot; mutating it does not affect the canonical registry.
+var CursorKindForEventMap = cloneKindForEvent(agcursor.KindForEventMap)
 
 // CursorDedicatedEvents lists Cursor-only surface events.
-var CursorDedicatedEvents = agcursor.DedicatedEvents
+// The map is a snapshot; mutating it does not affect the canonical registry.
+var CursorDedicatedEvents = cloneDedicatedEvents(agcursor.DedicatedEvents)
 
 // CursorKindForEvent returns the unified kind for a Cursor hook event name.
 func CursorKindForEvent(name string) (Kind, bool) {
@@ -66,4 +73,28 @@ func CursorKindForEvent(name string) (Kind, bool) {
 // IsCursorDedicatedEvent reports whether name is a Cursor dedicated surface event.
 func IsCursorDedicatedEvent(name string) bool {
 	return agcursor.IsDedicatedEvent(name)
+}
+
+func cloneEventForKind(src map[Kind]string) map[Kind]string {
+	out := make(map[Kind]string, len(src))
+	for k, v := range src {
+		out[k] = v
+	}
+	return out
+}
+
+func cloneKindForEvent(src map[string]Kind) map[string]Kind {
+	out := make(map[string]Kind, len(src))
+	for k, v := range src {
+		out[k] = v
+	}
+	return out
+}
+
+func cloneDedicatedEvents(src map[string]bool) map[string]bool {
+	out := make(map[string]bool, len(src))
+	for k, v := range src {
+		out[k] = v
+	}
+	return out
 }

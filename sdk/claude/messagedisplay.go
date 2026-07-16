@@ -1,5 +1,11 @@
 package claude
 
+import (
+	"context"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
 // MessageDisplay is the MessageDisplay hook event.
 type MessageDisplay struct {
 	Envelope
@@ -31,4 +37,15 @@ type MessageDisplayOutput struct {
 
 func (o MessageDisplayOutput) isZero() bool {
 	return o.Common.isZero() && o.DisplayContent == nil
+}
+
+// MessageDisplay registers a MessageDisplay handler.
+func (c *Chain) MessageDisplay(fn func(context.Context, MessageDisplayHook) (MessageDisplayOutput, error)) *Chain {
+	if fn == nil {
+		return c
+	}
+	registerHandler(func(ctx context.Context, ev MessageDisplay) (MessageDisplayOutput, error) {
+		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev))
+	})
+	return &Chain{}
 }

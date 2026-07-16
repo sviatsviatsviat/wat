@@ -47,6 +47,9 @@ type SubagentStartHandler func(ctx context.Context, hook SubagentStartHook) erro
 
 // OnSubagentStart registers an observe-only handler for SubagentStart events.
 func OnSubagentStart(fn SubagentStartHandler) *Chain {
+	if fn == nil {
+		return &Chain{}
+	}
 	registerObserveHandler(model.KindSubagentStart, func(ctx context.Context, ev *model.Event) error {
 		typed, err := SubagentStartEventFrom(ev)
 		if err != nil {

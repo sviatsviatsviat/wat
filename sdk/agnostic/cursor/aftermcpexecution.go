@@ -1,6 +1,8 @@
 package cursor
 
 import (
+	"encoding/json"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -14,5 +16,5 @@ func mapAfterMCPExecution(e sdkcursor.AfterMCPExecution, ev *model.Event, name s
 		Input:  adapter.CloneRaw(e.ToolInput),
 		MCP:    true,
 	}
-	ev.Result = &model.ToolResult{Text: e.ResultJSON, DurationMs: e.DurationMillis()}
+	ev.Result = &model.ToolResult{Raw: json.RawMessage(e.ResultJSON), DurationMs: e.DurationMillis()}
 }

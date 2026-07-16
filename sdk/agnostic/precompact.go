@@ -47,6 +47,9 @@ type PreCompactHandler func(ctx context.Context, hook PreCompactHook) error
 
 // OnPreCompact registers an observe-only handler for PreCompact events.
 func OnPreCompact(fn PreCompactHandler) *Chain {
+	if fn == nil {
+		return &Chain{}
+	}
 	registerObserveHandler(model.KindPreCompact, func(ctx context.Context, ev *model.Event) error {
 		typed, err := PreCompactEventFrom(ev)
 		if err != nil {

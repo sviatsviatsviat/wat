@@ -239,7 +239,7 @@ func TestCopilotDecode_Matrix(t *testing.T) {
 			eventHint: "subagentStart",
 			kind:      model.KindSubagentStart,
 			check: func(t *testing.T, ev *model.Event) {
-				if ev.Subagent == nil || ev.Subagent.Type != "explore" || ev.Subagent.Task != "Explore" {
+				if ev.Subagent == nil || ev.Subagent.Type != "explore" || ev.Subagent.Task != "Explore" || ev.Subagent.Summary != "search codebase" {
 					t.Fatalf("Subagent=%+v", ev.Subagent)
 				}
 			},
@@ -249,7 +249,7 @@ func TestCopilotDecode_Matrix(t *testing.T) {
 			raw:  `{"hook_event_name":"SubagentStop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"task","stop_reason":"end_turn"}`,
 			kind: model.KindSubagentStop,
 			check: func(t *testing.T, ev *model.Event) {
-				if ev.Subagent == nil || ev.Subagent.Type != "task" {
+				if ev.Subagent == nil || ev.Subagent.Type != "task" || ev.Subagent.Status != "end_turn" {
 					t.Fatalf("Subagent=%+v", ev.Subagent)
 				}
 				if ev.Turn == nil || ev.Turn.Status != "end_turn" {
