@@ -36,7 +36,6 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
 | `register.go` | `Serve`, run options, `ResetHandlers` |
 | `types.go` | Public type aliases for `internal/model` |
-| `claude/`, `copilot/`, `cursor/` | Kind/event registries (`EventForKind`, Cursor `DedicatedEvents`) |
 
 Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
 
@@ -363,9 +362,7 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
 - Normalization: [`sdk/agnostic/internal/model/event.go`](../sdk/agnostic/internal/model/event.go) — `NormalizeToolName`; [`toolinput.go`](../sdk/agnostic/internal/model/toolinput.go) — `ToolInput` with `AsBash`, `AsWrite`, and related accessors
 - Tests: [`sdk/agnostic/internal/model/event_test.go`](../sdk/agnostic/internal/model/event_test.go)
-- Claude kind/event registry: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/)
-- Copilot kind/event registry: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/)
-- Cursor kind/event registry: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/)
+- Port kind/event registries: [`cmd/wat/internal/portconfig/`](../cmd/wat/internal/portconfig/) (`claude/`, `copilot/`, `cursor/`)
 - Serve / fan-out: [`sdk/agnostic/runner_test.go`](../sdk/agnostic/runner_test.go)
 - Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

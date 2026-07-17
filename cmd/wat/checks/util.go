@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	portclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/claude"
+	portcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/copilot"
+	portcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
@@ -138,15 +138,15 @@ func validateAgent(agent string) error {
 func isValidInstallEvent(agent, event string) bool {
 	switch agnostic.ParseDialect(agent) {
 	case agnostic.Claude:
-		return eventInMapValues(agclaude.EventForKind, event)
+		return eventInMapValues(portclaude.EventForKind, event)
 	case agnostic.Copilot:
 		canonical, ok := sdkcopilot.CanonicalEventName(event)
 		if !ok {
 			return false
 		}
-		return eventInMapValues(agcopilot.EventForKind, canonical)
+		return eventInMapValues(portcopilot.EventForKind, canonical)
 	case agnostic.Cursor:
-		return eventInMapValues(agcursor.EventForKind, event) || agcursor.IsDedicatedEvent(event)
+		return eventInMapValues(portcursor.EventForKind, event) || portcursor.IsDedicatedEvent(event)
 	default:
 		return false
 	}
@@ -165,15 +165,15 @@ func eventInMapValues(m map[agnostic.Kind]string, event string) bool {
 func ExpectedInstallEvents(agent string) ([]string, error) {
 	switch agnostic.ParseDialect(agent) {
 	case agnostic.Claude:
-		return sortedValues(agclaude.EventForKind), nil
+		return sortedValues(portclaude.EventForKind), nil
 	case agnostic.Copilot:
-		return sortedValues(agcopilot.EventForKind), nil
+		return sortedValues(portcopilot.EventForKind), nil
 	case agnostic.Cursor:
 		eventSet := map[string]bool{}
-		for _, ev := range sortedValues(agcursor.EventForKind) {
+		for _, ev := range sortedValues(portcursor.EventForKind) {
 			eventSet[ev] = true
 		}
-		for ev := range agcursor.DedicatedEvents {
+		for ev := range portcursor.DedicatedEvents {
 			eventSet[ev] = true
 		}
 		return sortedKeys(eventSet), nil

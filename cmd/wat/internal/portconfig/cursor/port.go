@@ -7,7 +7,6 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
@@ -53,7 +52,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	return flat.Emit(cfg, flat.EmitOptions{
 		Agent:           "Cursor",
 		KindForEventMap: kindForEventMap,
-		EventForKind:    agcursor.EventForKind,
+		EventForKind:    EventForKind,
 		AllowEntry:      cursorAllowEntry,
 		EncodeHandler:   cursorHandlerRaw,
 	})

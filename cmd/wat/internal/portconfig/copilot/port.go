@@ -7,7 +7,6 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
@@ -62,7 +61,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	return flat.Emit(cfg, flat.EmitOptions{
 		Agent:           "Copilot",
 		KindForEventMap: kindForEventMap,
-		EventForKind:    agcopilot.EventForKind,
+		EventForKind:    EventForKind,
 		AllowEntry:      copilotAllowEntry,
 		EncodeHandler:   copilotHandlerRaw,
 	})

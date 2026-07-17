@@ -3,8 +3,8 @@ package checks
 import (
 	"testing"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
+	portclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/claude"
+	portcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/copilot"
 )
 
 func TestParseGoModDirective(t *testing.T) {
@@ -73,12 +73,12 @@ func TestExpectedInstallEvents_matchesInstallCounts(t *testing.T) {
 		}
 	}
 	claude, _ := ExpectedInstallEvents("claude")
-	if len(claude) != len(agclaude.EventForKind) {
-		t.Fatalf("claude events = %d, want %d", len(claude), len(agclaude.EventForKind))
+	if len(claude) != len(portclaude.EventForKind) {
+		t.Fatalf("claude events = %d, want %d", len(claude), len(portclaude.EventForKind))
 	}
 	copilot, _ := ExpectedInstallEvents("copilot")
-	if len(copilot) != len(agcopilot.EventForKind) {
-		t.Fatalf("copilot events = %d, want %d", len(copilot), len(agcopilot.EventForKind))
+	if len(copilot) != len(portcopilot.EventForKind) {
+		t.Fatalf("copilot events = %d, want %d", len(copilot), len(portcopilot.EventForKind))
 	}
 	claudeAlias, err := ExpectedInstallEvents("claude-code")
 	if err != nil {
