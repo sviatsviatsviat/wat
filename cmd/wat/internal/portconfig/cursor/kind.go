@@ -2,22 +2,21 @@ package cursor
 
 import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // EventForKind maps unified kinds to Cursor hook event names.
-var EventForKind = map[agnostic.Kind]string{
-	agnostic.KindSessionStart:    sdkcursor.EventSessionStart,
-	agnostic.KindSessionEnd:      sdkcursor.EventSessionEnd,
-	agnostic.KindUserPrompt:      sdkcursor.EventBeforeSubmitPrompt,
-	agnostic.KindPreTool:         sdkcursor.EventPreToolUse,
-	agnostic.KindPostTool:        sdkcursor.EventPostToolUse,
-	agnostic.KindPostToolFailure: sdkcursor.EventPostToolUseFailure,
-	agnostic.KindSubagentStart:   sdkcursor.EventSubagentStart,
-	agnostic.KindSubagentStop:    sdkcursor.EventSubagentStop,
-	agnostic.KindStop:            sdkcursor.EventStop,
-	agnostic.KindPreCompact:      sdkcursor.EventPreCompact,
+var EventForKind = map[model.Kind]string{
+	model.KindSessionStart:    sdkcursor.EventSessionStart,
+	model.KindSessionEnd:      sdkcursor.EventSessionEnd,
+	model.KindUserPrompt:      sdkcursor.EventBeforeSubmitPrompt,
+	model.KindPreTool:         sdkcursor.EventPreToolUse,
+	model.KindPostTool:        sdkcursor.EventPostToolUse,
+	model.KindPostToolFailure: sdkcursor.EventPostToolUseFailure,
+	model.KindSubagentStart:   sdkcursor.EventSubagentStart,
+	model.KindSubagentStop:    sdkcursor.EventSubagentStop,
+	model.KindStop:            sdkcursor.EventStop,
+	model.KindPreCompact:      sdkcursor.EventPreCompact,
 }
 
 // DedicatedEvents lists Cursor hook events folded into unified kinds but not
@@ -38,25 +37,25 @@ func IsDedicatedEvent(name string) bool {
 
 var kindForEventMap = buildKindForEvent()
 
-func kindForEvent(name string) (agnostic.Kind, bool) {
+func kindForEvent(name string) (model.Kind, bool) {
 	kind, ok := kindForEventMap[name]
 	return kind, ok
 }
 
-func buildKindForEvent() map[string]agnostic.Kind {
+func buildKindForEvent() map[string]model.Kind {
 	out := model.InvertEventForKind(EventForKind)
-	for event, kind := range map[string]agnostic.Kind{
-		sdkcursor.EventBeforeShellExecution: agnostic.KindPreTool,
-		sdkcursor.EventAfterShellExecution:  agnostic.KindPostTool,
-		sdkcursor.EventBeforeMCPExecution:   agnostic.KindPreTool,
-		sdkcursor.EventAfterMCPExecution:    agnostic.KindPostTool,
-		sdkcursor.EventBeforeReadFile:       agnostic.KindPreTool,
-		sdkcursor.EventAfterFileEdit:        agnostic.KindPostTool,
-		sdkcursor.EventAfterAgentResponse:   agnostic.KindOther,
-		sdkcursor.EventAfterAgentThought:    agnostic.KindOther,
-		sdkcursor.EventBeforeTabFileRead:    agnostic.KindOther,
-		sdkcursor.EventAfterTabFileEdit:     agnostic.KindOther,
-		sdkcursor.EventWorkspaceOpen:        agnostic.KindOther,
+	for event, kind := range map[string]model.Kind{
+		sdkcursor.EventBeforeShellExecution: model.KindPreTool,
+		sdkcursor.EventAfterShellExecution:  model.KindPostTool,
+		sdkcursor.EventBeforeMCPExecution:   model.KindPreTool,
+		sdkcursor.EventAfterMCPExecution:    model.KindPostTool,
+		sdkcursor.EventBeforeReadFile:       model.KindPreTool,
+		sdkcursor.EventAfterFileEdit:        model.KindPostTool,
+		sdkcursor.EventAfterAgentResponse:   model.KindOther,
+		sdkcursor.EventAfterAgentThought:    model.KindOther,
+		sdkcursor.EventBeforeTabFileRead:    model.KindOther,
+		sdkcursor.EventAfterTabFileEdit:     model.KindOther,
+		sdkcursor.EventWorkspaceOpen:        model.KindOther,
 	} {
 		out[event] = kind
 	}

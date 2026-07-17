@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 const claudeSettings = `{
@@ -42,15 +41,15 @@ func TestParse_mappableAndExtras(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pre := cfg.Hooks[agnostic.KindPreTool]
+	pre := cfg.Hooks[model.KindPreTool]
 	if len(pre) != 2 {
 		t.Fatalf("want 2 PreToolUse entries, got %d", len(pre))
 	}
 	if pre[0].Command != ".claude/hooks/block-rm.sh" || pre[0].Matcher != "Bash" || pre[0].TimeoutSec != 15 {
 		t.Fatalf("first PreToolUse entry: %+v", pre[0])
 	}
-	if len(cfg.Hooks[agnostic.KindStop]) != 1 {
-		t.Fatalf("want 1 Stop entry, got %d", len(cfg.Hooks[agnostic.KindStop]))
+	if len(cfg.Hooks[model.KindStop]) != 1 {
+		t.Fatalf("want 1 Stop entry, got %d", len(cfg.Hooks[model.KindStop]))
 	}
 	if len(cfg.Extras) != 1 || cfg.Extras[0].Event != "MessageDisplay" {
 		t.Fatalf("MessageDisplay should be in Extras: %+v", cfg.Extras)
@@ -63,7 +62,7 @@ func TestEmit_roundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pre := cfg1.Hooks[agnostic.KindPreTool]
+	pre := cfg1.Hooks[model.KindPreTool]
 	if len(pre) == 0 {
 		t.Fatal("expected PreTool entries")
 	}
@@ -77,19 +76,19 @@ func TestEmit_roundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg2.Hooks[agnostic.KindPreTool][0].TimeoutSec != 99 {
-		t.Fatalf("mutated timeout not emitted: %+v", cfg2.Hooks[agnostic.KindPreTool][0])
+	if cfg2.Hooks[model.KindPreTool][0].TimeoutSec != 99 {
+		t.Fatalf("mutated timeout not emitted: %+v", cfg2.Hooks[model.KindPreTool][0])
 	}
-	emittedRaw := cfg2.Hooks[agnostic.KindPreTool][0].Raw
+	emittedRaw := cfg2.Hooks[model.KindPreTool][0].Raw
 	if !jsonFieldEqual(t, emittedRaw, "timeout", float64(99)) {
 		t.Fatalf("timeout not overlaid in raw JSON: %s", emittedRaw)
 	}
 	if !jsonFieldEqual(t, emittedRaw, "command", wantCommand) {
 		t.Fatalf("command not preserved in raw JSON: %s", emittedRaw)
 	}
-	cfg1.Hooks[agnostic.KindPreTool][0].TimeoutSec = cfg2.Hooks[agnostic.KindPreTool][0].TimeoutSec
-	cfg1.Hooks[agnostic.KindPreTool][0].Raw = nil
-	cfg2.Hooks[agnostic.KindPreTool][0].Raw = nil
+	cfg1.Hooks[model.KindPreTool][0].TimeoutSec = cfg2.Hooks[model.KindPreTool][0].TimeoutSec
+	cfg1.Hooks[model.KindPreTool][0].Raw = nil
+	cfg2.Hooks[model.KindPreTool][0].Raw = nil
 	assertConfigEqual(t, cfg1, cfg2)
 }
 
@@ -128,8 +127,8 @@ func TestHandlerExtraFieldsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !jsonFieldEqual(t, cfg1.Hooks[agnostic.KindPreTool][0].Raw, "async", true) {
-		t.Fatalf("async not preserved in Raw: %s", cfg1.Hooks[agnostic.KindPreTool][0].Raw)
+	if !jsonFieldEqual(t, cfg1.Hooks[model.KindPreTool][0].Raw, "async", true) {
+		t.Fatalf("async not preserved in Raw: %s", cfg1.Hooks[model.KindPreTool][0].Raw)
 	}
 	out, _, err := Emit(cfg1)
 	if err != nil {
@@ -202,7 +201,7 @@ func assertConfigEqual(t *testing.T, a, b model.Config) {
 	assertEntriesByKind(t, a.Hooks, b.Hooks)
 }
 
-func assertEntriesByKind(t *testing.T, a, b map[agnostic.Kind][]model.Entry) {
+func assertEntriesByKind(t *testing.T, a, b map[model.Kind][]model.Entry) {
 	t.Helper()
 	if len(a) != len(b) {
 		t.Fatalf("kind count %d != %d", len(a), len(b))

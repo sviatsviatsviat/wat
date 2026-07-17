@@ -6,7 +6,6 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/flat"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
@@ -19,7 +18,7 @@ func Parse(data []byte) (model.Config, []model.Warning, error) {
 	})
 }
 
-func copilotHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
+func copilotHandlerToEntry(event string, kind model.Kind, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
 	h, warns, ok := model.ParseHandlerJSON[copilot.Handler](event, handlerRaw)
 	if !ok {
 		return model.Entry{}, model.CloneRaw(handlerRaw), warns, false
@@ -67,7 +66,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	})
 }
 
-func copilotAllowEntry(e model.Entry, kind agnostic.Kind, event string) ([]model.Warning, bool) {
+func copilotAllowEntry(e model.Entry, kind model.Kind, event string) ([]model.Warning, bool) {
 	if copilotHandlerAllowed(e.Type, event) {
 		return nil, true
 	}

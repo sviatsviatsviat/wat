@@ -11,7 +11,6 @@ import (
 	portcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -94,7 +93,7 @@ func prepareForTarget(cfg *Config, from, to string) []Warning {
 	}
 	var warns []Warning
 	timeoutWarned := false
-	filtered := make(map[agnostic.Kind][]Entry, len(cfg.Hooks))
+	filtered := make(map[model.Kind][]Entry, len(cfg.Hooks))
 	for kind, entries := range cfg.Hooks {
 		for _, e := range entries {
 			entryWarns, keep := adaptEntry(&e, kind, from, to, &timeoutWarned)
@@ -113,7 +112,7 @@ func prepareForTarget(cfg *Config, from, to string) []Warning {
 	return warns
 }
 
-func adaptEntry(e *Entry, kind agnostic.Kind, from, to string, timeoutWarned *bool) ([]Warning, bool) {
+func adaptEntry(e *Entry, kind model.Kind, from, to string, timeoutWarned *bool) ([]Warning, bool) {
 	if eventForKind(to, kind) == "" {
 		event := e.NativeEvent
 		if event == "" {
@@ -161,7 +160,7 @@ func applyExplicitTimeout(e *Entry, from, to string, timeoutWarned *bool) []Warn
 	return warns
 }
 
-func eventForKind(d string, kind agnostic.Kind) string {
+func eventForKind(d string, kind model.Kind) string {
 	switch d {
 	case sdkclaude.Dialect:
 		return portclaude.EventForKind[kind]
@@ -174,7 +173,7 @@ func eventForKind(d string, kind agnostic.Kind) string {
 	}
 }
 
-func handlerSupportedOnTarget(e Entry, kind agnostic.Kind, to string) ([]Warning, bool) {
+func handlerSupportedOnTarget(e Entry, kind model.Kind, to string) ([]Warning, bool) {
 	switch to {
 	case sdkcursor.Dialect:
 		if e.Type == "http" {
@@ -187,7 +186,7 @@ func handlerSupportedOnTarget(e Entry, kind agnostic.Kind, to string) ([]Warning
 	case sdkcopilot.Dialect:
 		switch e.Type {
 		case "http", "command", "", "prompt":
-			if e.Type == "prompt" && kind != agnostic.KindSessionStart {
+			if e.Type == "prompt" && kind != model.KindSessionStart {
 				event := e.NativeEvent
 				if event == "" {
 					event = eventForKind(to, kind)
@@ -259,16 +258,16 @@ func defaultTimeoutFor(d string) int {
 	}
 }
 
-func kindHasToolMatcher(k agnostic.Kind) bool {
+func kindHasToolMatcher(k model.Kind) bool {
 	switch k {
-	case agnostic.KindPreTool, agnostic.KindPostTool, agnostic.KindPostToolFailure, agnostic.Kind("PermissionRequest"):
+	case model.KindPreTool, model.KindPostTool, model.KindPostToolFailure, model.Kind("PermissionRequest"):
 		return true
 	default:
 		return false
 	}
 }
 
-func translateMatcher(matcher string, kind agnostic.Kind, from, to string) (string, []Warning) {
+func translateMatcher(matcher string, kind model.Kind, from, to string) (string, []Warning) {
 	if matcher == "" || matcher == "*" || !kindHasToolMatcher(kind) {
 		return matcher, nil
 	}

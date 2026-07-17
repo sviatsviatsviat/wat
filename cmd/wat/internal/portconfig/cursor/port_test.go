@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 const cursorSettings = `{
@@ -31,7 +30,7 @@ func TestParse_dedicatedEvent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pre := cfg.Hooks[agnostic.KindPreTool]
+	pre := cfg.Hooks[model.KindPreTool]
 	if len(pre) != 1 {
 		t.Fatalf("want 1 entry, got %d", len(pre))
 	}
@@ -76,10 +75,10 @@ func TestEmit_dedicatedEventRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cfg2.Hooks[agnostic.KindPreTool]) != 1 {
-		t.Fatalf("want 1 pre-tool entry after round-trip, got %d", len(cfg2.Hooks[agnostic.KindPreTool]))
+	if len(cfg2.Hooks[model.KindPreTool]) != 1 {
+		t.Fatalf("want 1 pre-tool entry after round-trip, got %d", len(cfg2.Hooks[model.KindPreTool]))
 	}
-	e := cfg2.Hooks[agnostic.KindPreTool][0]
+	e := cfg2.Hooks[model.KindPreTool][0]
 	if e.NativeEvent != "beforeShellExecution" || e.Command != ".cursor/hooks/block-force-push.sh" || e.TimeoutSec != 20 {
 		t.Fatalf("entry after round-trip: %+v", e)
 	}
@@ -91,8 +90,8 @@ func TestHandlerExtraFieldsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !jsonFieldEqual(t, cfg1.Hooks[agnostic.KindPreTool][0].Raw, "loop_limit", float64(3)) {
-		t.Fatalf("loop_limit not preserved: %s", cfg1.Hooks[agnostic.KindPreTool][0].Raw)
+	if !jsonFieldEqual(t, cfg1.Hooks[model.KindPreTool][0].Raw, "loop_limit", float64(3)) {
+		t.Fatalf("loop_limit not preserved: %s", cfg1.Hooks[model.KindPreTool][0].Raw)
 	}
 	out, _, err := Emit(cfg1)
 	if err != nil {
@@ -114,7 +113,7 @@ func TestEmit_mutateRawOverlay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	entry := &cfg1.Hooks[agnostic.KindPreTool][0]
+	entry := &cfg1.Hooks[model.KindPreTool][0]
 	entry.TimeoutSec = 42
 	entry.Matcher = "Read"
 	out, _, err := Emit(cfg1)
@@ -134,19 +133,19 @@ func TestEmit_mutateRawOverlay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg2.Hooks[agnostic.KindPreTool][0].TimeoutSec != 42 {
-		t.Fatalf("timeout not round-tripped: %+v", cfg2.Hooks[agnostic.KindPreTool][0])
+	if cfg2.Hooks[model.KindPreTool][0].TimeoutSec != 42 {
+		t.Fatalf("timeout not round-tripped: %+v", cfg2.Hooks[model.KindPreTool][0])
 	}
-	if !jsonFieldEqual(t, cfg2.Hooks[agnostic.KindPreTool][0].Raw, "loop_limit", float64(3)) {
-		t.Fatalf("loop_limit lost from raw: %s", cfg2.Hooks[agnostic.KindPreTool][0].Raw)
+	if !jsonFieldEqual(t, cfg2.Hooks[model.KindPreTool][0].Raw, "loop_limit", float64(3)) {
+		t.Fatalf("loop_limit lost from raw: %s", cfg2.Hooks[model.KindPreTool][0].Raw)
 	}
 }
 
 func TestEmit_rejectsUnsupportedHandlerType(t *testing.T) {
 	cfg := model.Config{
-		Hooks: map[agnostic.Kind][]model.Entry{
-			agnostic.KindPreTool: {{
-				Kind:        agnostic.KindPreTool,
+		Hooks: map[model.Kind][]model.Entry{
+			model.KindPreTool: {{
+				Kind:        model.KindPreTool,
 				NativeEvent: "preToolUse",
 				Type:        "http",
 				URL:         "https://example.com/hook",
@@ -176,7 +175,7 @@ func assertHooksEqual(t *testing.T, a, b model.Config) {
 	assertEntriesByKind(t, a.Hooks, b.Hooks)
 }
 
-func assertEntriesByKind(t *testing.T, a, b map[agnostic.Kind][]model.Entry) {
+func assertEntriesByKind(t *testing.T, a, b map[model.Kind][]model.Entry) {
 	t.Helper()
 	if len(a) != len(b) {
 		t.Fatalf("kind count %d != %d", len(a), len(b))

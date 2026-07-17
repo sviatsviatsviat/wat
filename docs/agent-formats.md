@@ -80,18 +80,19 @@ Unknown names pass through unchanged with `mcp=false` unless an `mcp__` or `MCP:
 
 ## Unified event envelope
 
-All codecs produce `agnostic.Event`:
+Typed handlers receive kind-specific events that embed a shared envelope:
 
 - `Agent` — string dialect name (`claude.Dialect`, `copilot.Dialect`, or `cursor.Dialect`)
-- `Kind` — normalized category (`KindPreTool`, `KindStop`, …)
 - `Name` — native hook event name as received
 - `Raw` — untouched native JSON payload
 
-See `go doc github.com/sviatsviatsviat/wat/sdk/agnostic Event` for sub-structs (`Tool`, `Result`, `Life`, …).
+Config porting uses an internal `Kind` taxonomy (`KindPreTool`, `KindStop`, …) in `cmd/wat/internal/portconfig/model` — not part of the hook-author SDK.
+
+See `go doc github.com/sviatsviatsviat/wat/sdk/agnostic` for typed events (`PreToolEvent`, `StopEvent`, …) and leaf structs (`ToolCall`, `Lifecycle`, …).
 
 ## Dialect identification
 
-Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"claude"`, and likewise for copilot/cursor) used for `sdk/run` registration and `Event.Agent`. CLI and config parse agent names via `cmd/wat/internal/dialect.Parse` (aliases like `claude-code`, `gh`). Hook serve resolves dialect via `run.WithDialect` / `WAT_AGENT`, or by walking each per-agent SDK’s registered `DialectOps.Detect` in `sdk/run` (payload shape and agent env hints such as `CURSOR_VERSION`).
+Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"claude"`, and likewise for copilot/cursor) used for `sdk/run` registration and `Envelope.Agent`. CLI and config parse agent names via `cmd/wat/internal/dialect.Parse` (aliases like `claude-code`, `gh`). Hook serve resolves dialect via `run.WithDialect` / `WAT_AGENT`, or by walking each per-agent SDK’s registered `DialectOps.Detect` in `sdk/run` (payload shape and agent env hints such as `CURSOR_VERSION`).
 
 ## Portable agnostic API
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 // hooksFile is the shared version-1 hooks.json envelope used by Copilot and Cursor.
@@ -15,16 +14,16 @@ type hooksFile struct {
 
 // HandlerToEntry converts one native handler JSON blob into a normalized entry.
 // When ok is false, extraRaw holds unmappable JSON to preserve in Extras when non-nil.
-type HandlerToEntry func(event string, kind agnostic.Kind, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool)
+type HandlerToEntry func(event string, kind model.Kind, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool)
 
 // ParseOptions configures flat hooks file parsing.
 type ParseOptions struct {
 	// Dialect names the config source in parse errors (e.g. "copilot hooks").
 	Dialect string
 	// KindForEvent maps a native event name to a unified kind.
-	KindForEvent func(event string) (agnostic.Kind, bool)
+	KindForEvent func(event string) (model.Kind, bool)
 	// SkipKind when true stores handlers for that kind in Extras instead of normalizing.
-	SkipKind func(kind agnostic.Kind) bool
+	SkipKind func(kind model.Kind) bool
 	// HandlerToEntry normalizes one handler object.
 	HandlerToEntry HandlerToEntry
 }
@@ -68,7 +67,7 @@ func Parse(data []byte, opts ParseOptions) (model.Config, []model.Warning, error
 
 // AllowEntry reports whether a normalized entry may be emitted for event.
 // When false, warns describe why the entry is dropped.
-type AllowEntry func(e model.Entry, kind agnostic.Kind, event string) ([]model.Warning, bool)
+type AllowEntry func(e model.Entry, kind model.Kind, event string) ([]model.Warning, bool)
 
 // EncodeHandler renders one normalized entry as native handler JSON.
 type EncodeHandler func(e model.Entry) (json.RawMessage, error)
@@ -78,9 +77,9 @@ type EmitOptions struct {
 	// Agent names the target agent in warning messages (e.g. "Copilot", "Cursor").
 	Agent string
 	// KindForEventMap maps native event names to unified kinds.
-	KindForEventMap map[string]agnostic.Kind
+	KindForEventMap map[string]model.Kind
 	// EventForKind maps unified kinds to native event names.
-	EventForKind map[agnostic.Kind]string
+	EventForKind map[model.Kind]string
 	// AllowEntry gates handler types unsupported on the target agent.
 	AllowEntry AllowEntry
 	// EncodeHandler renders a normalized entry as native handler JSON.

@@ -6,48 +6,12 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 )
 
-// Kind is a normalized hook event category shared by all supported agents.
-type Kind string
-
-const (
-	// KindSessionStart is the normalized category for session start events.
-	KindSessionStart Kind = "SessionStart"
-	// KindSessionEnd is the normalized category for session end events.
-	KindSessionEnd Kind = "SessionEnd"
-	// KindUserPrompt is the normalized category for user prompt submission events.
-	KindUserPrompt Kind = "UserPrompt"
-	// KindPreTool is the normalized category for pre-tool hook events.
-	KindPreTool Kind = "PreTool"
-	// KindPostTool is the normalized category for successful post-tool events.
-	KindPostTool Kind = "PostTool"
-	// KindPostToolFailure is the normalized category for failed post-tool events.
-	KindPostToolFailure Kind = "PostToolFailure"
-	// KindPermissionRequest is the normalized category for permission request events.
-	KindPermissionRequest Kind = "PermissionRequest"
-	// KindSubagentStart is the normalized category for subagent start events.
-	KindSubagentStart Kind = "SubagentStart"
-	// KindSubagentStop is the normalized category for subagent stop events.
-	KindSubagentStop Kind = "SubagentStop"
-	// KindStop is the normalized category for agent stop events.
-	KindStop Kind = "Stop"
-	// KindPreCompact is the normalized category for pre-compaction events.
-	KindPreCompact Kind = "PreCompact"
-	// KindNotification is the normalized category for notification events.
-	KindNotification Kind = "Notification"
-	// KindAgentError is the normalized category for agent runtime error events.
-	KindAgentError Kind = "AgentError"
-	// KindOther is the normalized category for events with no dedicated mapping.
-	KindOther Kind = "Other"
-)
-
 // Event is the unified, agent-independent view of a hook invocation.
 // Raw always carries the untouched native payload, so nothing is lost by
 // normalization; agent-specific handlers can re-decode it with native types.
 type Event struct {
 	// Agent is the dialect that emitted this hook event (e.g. "claude").
 	Agent string
-	// Kind is the normalized event category.
-	Kind Kind
 	// Name is the native event name as received (e.g. "beforeShellExecution").
 	Name string
 	// Session holds session_id, sessionId, or conversation_id from the native payload.
@@ -59,7 +23,7 @@ type Event struct {
 	// Raw is the untouched native JSON payload.
 	Raw json.RawMessage
 
-	// Prompt holds the user prompt text for KindUserPrompt events.
+	// Prompt holds the user prompt text for user-prompt events.
 	Prompt string
 	// Tool holds tool invocation details for pre/post tool and permission events.
 	Tool *ToolCall
@@ -67,13 +31,13 @@ type Event struct {
 	Result *ToolResult
 	// Subagent holds subagent lifecycle details for subagent start/stop events.
 	Subagent *Subagent
-	// Turn holds turn-end details for KindStop events.
+	// Turn holds turn-end details for stop events.
 	Turn *TurnEnd
-	// Compact holds compaction details for KindPreCompact events.
+	// Compact holds compaction details for pre-compaction events.
 	Compact *CompactInfo
-	// Note holds notification or error details for KindNotification and KindAgentError events.
+	// Note holds notification or error details for notification and agent-error events.
 	Note *Note
-	// Life holds session lifecycle details for KindSessionStart and KindSessionEnd events.
+	// Life holds session lifecycle details for session start and end events.
 	Life *Lifecycle
 }
 
@@ -99,7 +63,7 @@ type ToolResult struct {
 	Text string
 	// Raw is the native result payload JSON.
 	Raw json.RawMessage
-	// Error is the failure message for KindPostToolFailure events.
+	// Error is the failure message for post-tool failure events.
 	Error string
 	// FailureType is the failure category (error, timeout, permission_denied).
 	FailureType string

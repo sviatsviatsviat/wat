@@ -11,7 +11,7 @@ import (
 	portclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/claude"
 	portcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/copilot"
 	portcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/cursor"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -155,7 +155,7 @@ func isValidInstallEvent(agent, event string) bool {
 	}
 }
 
-func eventInMapValues(m map[agnostic.Kind]string, event string) bool {
+func eventInMapValues(m map[model.Kind]string, event string) bool {
 	for _, name := range m {
 		if name == event {
 			return true

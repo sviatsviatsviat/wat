@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 const copilotSettings = `{
@@ -35,8 +34,8 @@ func TestParse_invalidHandlerPreservedInExtras(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cfg.Hooks[agnostic.KindPreTool]) != 0 {
-		t.Fatalf("invalid handler should not map: %+v", cfg.Hooks[agnostic.KindPreTool])
+	if len(cfg.Hooks[model.KindPreTool]) != 0 {
+		t.Fatalf("invalid handler should not map: %+v", cfg.Hooks[model.KindPreTool])
 	}
 	if len(cfg.Extras) != 1 {
 		t.Fatalf("want 1 extra, got %d", len(cfg.Extras))
@@ -73,7 +72,7 @@ func TestParse_timeoutAndCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pre := cfg.Hooks[agnostic.KindPreTool]
+	pre := cfg.Hooks[model.KindPreTool]
 	if len(pre) != 2 {
 		t.Fatalf("want 2 preToolUse entries, got %d", len(pre))
 	}
@@ -97,8 +96,8 @@ func TestParse_timeoutAlias(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Hooks[agnostic.KindPreTool][0].TimeoutSec != 42 {
-		t.Fatalf("timeout alias not resolved: %+v", cfg.Hooks[agnostic.KindPreTool][0])
+	if cfg.Hooks[model.KindPreTool][0].TimeoutSec != 42 {
+		t.Fatalf("timeout alias not resolved: %+v", cfg.Hooks[model.KindPreTool][0])
 	}
 }
 
@@ -121,7 +120,7 @@ func TestParse_powershellOnlyNotCommand(t *testing.T) {
 	if !powershellWarn {
 		t.Fatalf("expected warning mentioning powershell, got %v", warns)
 	}
-	entry := cfg.Hooks[agnostic.KindPreTool][0]
+	entry := cfg.Hooks[model.KindPreTool][0]
 	if entry.Command != "" {
 		t.Fatalf("Command = %q, want empty", entry.Command)
 	}
@@ -139,7 +138,7 @@ func TestEmit_roundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pre := cfg1.Hooks[agnostic.KindPreTool]
+	pre := cfg1.Hooks[model.KindPreTool]
 	if len(pre) == 0 {
 		t.Fatal("expected PreTool entries")
 	}
@@ -157,15 +156,15 @@ func TestEmit_roundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, e := range cfg2.Hooks[agnostic.KindPreTool] {
+	for _, e := range cfg2.Hooks[model.KindPreTool] {
 		if e.Matcher == "bash" && e.TimeoutSec != 99 {
 			t.Fatalf("mutated timeout not emitted: %+v", e)
 		}
 	}
-	for i := range cfg1.Hooks[agnostic.KindPreTool] {
-		for j := range cfg2.Hooks[agnostic.KindPreTool] {
-			if cfg1.Hooks[agnostic.KindPreTool][i].Matcher == cfg2.Hooks[agnostic.KindPreTool][j].Matcher {
-				cfg1.Hooks[agnostic.KindPreTool][i].Raw = cfg2.Hooks[agnostic.KindPreTool][j].Raw
+	for i := range cfg1.Hooks[model.KindPreTool] {
+		for j := range cfg2.Hooks[model.KindPreTool] {
+			if cfg1.Hooks[model.KindPreTool][i].Matcher == cfg2.Hooks[model.KindPreTool][j].Matcher {
+				cfg1.Hooks[model.KindPreTool][i].Raw = cfg2.Hooks[model.KindPreTool][j].Raw
 			}
 		}
 	}
@@ -178,8 +177,8 @@ func TestHandlerExtraFieldsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !jsonFieldEqual(t, cfg1.Hooks[agnostic.KindPreTool][0].Raw, "cwd", "/tmp") {
-		t.Fatalf("cwd not preserved: %s", cfg1.Hooks[agnostic.KindPreTool][0].Raw)
+	if !jsonFieldEqual(t, cfg1.Hooks[model.KindPreTool][0].Raw, "cwd", "/tmp") {
+		t.Fatalf("cwd not preserved: %s", cfg1.Hooks[model.KindPreTool][0].Raw)
 	}
 	out, _, err := Emit(cfg1)
 	if err != nil {
@@ -201,7 +200,7 @@ func TestEmit_clearsStaleFieldsOnOverlay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	entry := &cfg1.Hooks[agnostic.KindPreTool][0]
+	entry := &cfg1.Hooks[model.KindPreTool][0]
 	entry.Type = "command"
 	entry.Command = "new.sh"
 	entry.URL = ""
@@ -234,7 +233,7 @@ func assertHooksEqual(t *testing.T, a, b model.Config) {
 	assertEntriesByKind(t, a.Hooks, b.Hooks)
 }
 
-func assertEntriesByKind(t *testing.T, a, b map[agnostic.Kind][]model.Entry) {
+func assertEntriesByKind(t *testing.T, a, b map[model.Kind][]model.Entry) {
 	t.Helper()
 	if len(a) != len(b) {
 		t.Fatalf("kind count %d != %d", len(a), len(b))

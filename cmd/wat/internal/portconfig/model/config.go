@@ -5,14 +5,13 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 )
 
 // Config is a normalized hook configuration independent of any single agent's
 // config file shape.
 type Config struct {
 	// Hooks holds mappable hook registrations keyed by unified event kind.
-	Hooks map[agnostic.Kind][]Entry
+	Hooks map[Kind][]Entry
 	// Extras preserves unmappable native entries for round-trip safety.
 	Extras []NativeEntry
 }
@@ -20,7 +19,7 @@ type Config struct {
 // Entry is one normalized hook registration.
 type Entry struct {
 	// Kind is the unified event category.
-	Kind agnostic.Kind
+	Kind Kind
 	// NativeEvent is the original config event key (e.g. "beforeShellExecution").
 	NativeEvent string
 	// Matcher is the native matcher string when the dialect supports one.
@@ -58,9 +57,9 @@ func Warnf(format string, args ...any) Warning {
 }
 
 // AppendEntry adds a hook entry to cfg.
-func AppendEntry(cfg *Config, kind agnostic.Kind, e Entry) {
+func AppendEntry(cfg *Config, kind Kind, e Entry) {
 	if cfg.Hooks == nil {
-		cfg.Hooks = make(map[agnostic.Kind][]Entry)
+		cfg.Hooks = make(map[Kind][]Entry)
 	}
 	cfg.Hooks[kind] = append(cfg.Hooks[kind], e)
 }

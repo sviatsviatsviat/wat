@@ -35,7 +35,7 @@ KindPreTool Kind = "PreTool"
 
 ```bash
 go doc github.com/sviatsviatsviat/wat/sdk/agnostic
-go doc github.com/sviatsviatsviat/wat/sdk/agnostic Kind
+go doc github.com/sviatsviatsviat/wat/sdk/agnostic PreToolEvent
 ```
 
 No doc server is required; use standard `go doc`.

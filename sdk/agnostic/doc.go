@@ -1,9 +1,9 @@
 // Package agnostic provides a unified hook event model for Claude Code,
-// GitHub Copilot, and Cursor. It defines normalized Event and Kind types,
-// kind-specific hook-response result types, and On* registration that fans out
-// adapter handlers onto each agent SDK Chain. Canonical tool names and typed
-// tool-input helpers live in sdk/agnostic/tools. Event.Agent is a plain string
-// matching each per-agent SDK Dialect constant (claude.Dialect, …).
+// GitHub Copilot, and Cursor. It defines typed events and hook-response result
+// types, and On* registration that fans out adapter handlers onto each agent
+// SDK Chain. Canonical tool names and typed tool-input helpers live in
+// sdk/agnostic/tools. Envelope.Agent is a plain string matching each per-agent
+// SDK Dialect constant (claude.Dialect, …).
 //
 // Inbound native→unified mapping and host result wrappers live in
 // sdk/agnostic/internal/{claude,cursor,copilot} with shared types and result

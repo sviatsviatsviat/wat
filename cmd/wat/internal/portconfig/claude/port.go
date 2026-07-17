@@ -7,7 +7,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
@@ -48,7 +47,7 @@ func Parse(data []byte) (model.Config, []model.Warning, error) {
 	return cfg, warns, nil
 }
 
-func claudeHandlerToEntry(event string, kind agnostic.Kind, matcher string, groupIf json.RawMessage, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
+func claudeHandlerToEntry(event string, kind model.Kind, matcher string, groupIf json.RawMessage, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
 	h, warns, ok := model.ParseHandlerJSON[claude.Handler](event, handlerRaw)
 	if !ok {
 		return model.Entry{}, model.CloneRaw(handlerRaw), warns, false

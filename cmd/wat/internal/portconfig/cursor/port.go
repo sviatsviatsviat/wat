@@ -6,7 +6,6 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/flat"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
@@ -15,12 +14,12 @@ func Parse(data []byte) (model.Config, []model.Warning, error) {
 	return flat.Parse(data, flat.ParseOptions{
 		Dialect:        "cursor hooks",
 		KindForEvent:   kindForEvent,
-		SkipKind:       func(kind agnostic.Kind) bool { return kind == agnostic.KindOther },
+		SkipKind:       func(kind model.Kind) bool { return kind == model.KindOther },
 		HandlerToEntry: cursorHandlerToEntry,
 	})
 }
 
-func cursorHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
+func cursorHandlerToEntry(event string, kind model.Kind, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
 	h, warns, ok := model.ParseHandlerJSON[cursor.Handler](event, handlerRaw)
 	if !ok {
 		return model.Entry{}, model.CloneRaw(handlerRaw), warns, false
@@ -58,7 +57,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	})
 }
 
-func cursorAllowEntry(e model.Entry, _ agnostic.Kind, event string) ([]model.Warning, bool) {
+func cursorAllowEntry(e model.Entry, _ model.Kind, event string) ([]model.Warning, bool) {
 	switch e.Type {
 	case cursor.HandlerTypeCommand, "", cursor.HandlerTypePrompt:
 		return nil, true
