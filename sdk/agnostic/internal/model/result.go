@@ -29,11 +29,11 @@ func (d Decision) String() string {
 	}
 }
 
-// Result is the wire hook response used by codecs. Hook handlers return
-// kind-specific result types such as PreToolResult and PostToolResult.
+// Result is a portable decision/context projection used by Merge helpers and tests.
 //
-// Result is distinct from Event.Result, which carries incoming post-tool
-// payload data on decoded events.
+// Runtime hook handlers return sealed kind-specific types from package agnostic
+// (PreToolResult, PostToolResult, …), not this struct. Result is distinct from
+// Event.Result, which carries incoming post-tool payload data on decoded events.
 type Result struct {
 	// Decision is the gate verdict for PreTool events.
 	Decision Decision

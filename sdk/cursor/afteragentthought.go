@@ -20,6 +20,6 @@ func init() {
 
 // AfterAgentThought registers an observe-only afterAgentThought handler.
 func (c *Chain) AfterAgentThought(fn func(context.Context, Hook[AfterAgentThought]) error) *Chain {
-	registerObserveHandler(fn)
-	return &Chain{}
+	registerObserveHandler(c.registerOwner(), fn)
+	return c
 }

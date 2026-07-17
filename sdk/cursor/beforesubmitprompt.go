@@ -105,8 +105,8 @@ func (c *Chain) BeforeSubmitPrompt(fn func(context.Context, Hook[BeforeSubmitPro
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev BeforeSubmitPrompt) (BeforeSubmitPromptOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev BeforeSubmitPrompt) (BeforeSubmitPromptOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), beforeSubmitPromptResults{})
 	})
-	return &Chain{}
+	return c
 }

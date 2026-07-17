@@ -8,6 +8,9 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
+	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
+	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 )
 
 // ParseWatRunFlags extracts --agent and --event from a wat run shell command.
@@ -134,13 +137,13 @@ func validateAgent(agent string) error {
 func isValidInstallEvent(agent, event string) bool {
 	switch agnostic.ParseDialect(agent) {
 	case agnostic.Claude:
-		_, ok := agnostic.ClaudeKindForEvent(event)
+		_, ok := agclaude.KindForEvent(event)
 		return ok
 	case agnostic.Copilot:
-		_, ok := agnostic.CopilotKindForEvent(event)
+		_, ok := agcopilot.KindForEvent(event)
 		return ok
 	case agnostic.Cursor:
-		_, ok := agnostic.CursorKindForEvent(event)
+		_, ok := agcursor.KindForEvent(event)
 		return ok
 	default:
 		return false
@@ -151,15 +154,15 @@ func isValidInstallEvent(agent, event string) bool {
 func ExpectedInstallEvents(agent string) ([]string, error) {
 	switch agnostic.ParseDialect(agent) {
 	case agnostic.Claude:
-		return sortedValues(agnostic.ClaudeEventForKind), nil
+		return sortedValues(agclaude.EventForKind), nil
 	case agnostic.Copilot:
-		return sortedValues(agnostic.CopilotEventForKind), nil
+		return sortedValues(agcopilot.EventForKind), nil
 	case agnostic.Cursor:
 		eventSet := map[string]bool{}
-		for _, ev := range sortedValues(agnostic.CursorEventForKind) {
+		for _, ev := range sortedValues(agcursor.EventForKind) {
 			eventSet[ev] = true
 		}
-		for ev := range agnostic.CursorDedicatedEvents {
+		for ev := range agcursor.DedicatedEvents {
 			eventSet[ev] = true
 		}
 		return sortedKeys(eventSet), nil

@@ -5,7 +5,7 @@
 **Packages:**
 
 - **`cmd/wat`** — CLI entrypoint (`init`, `install`, `run`, `port`, `test`, `doctor` in later tasks).
-- **`sdk/agnostic`** — Aggregated library: unified `Event`/`Result`, dialect codecs, and registration helpers. Stdlib only.
+- **`sdk/agnostic`** — Aggregated library: unified `Event`/`Result`, inbound `MapEvent` adapters, and `On*` registration that fans out onto per-agent SDK Chains. Depends on `sdk/claude`, `sdk/copilot`, and `sdk/cursor`.
 - **`cmd/wat/internal/portconfig`** — CLI-only hook config porting for `wat port` (not a public library API).
 - **`sdk/claude`**, **`sdk/copilot`**, **`sdk/cursor`** — Per-agent SDKs; independent packages usable without `sdk/agnostic`.
 - **`internal/cmdast`** — Shell AST helpers (task 22; not present yet).
@@ -37,7 +37,7 @@ Browse API docs: `go doc github.com/sviatsviatsviat/wat/sdk/agnostic`
 
 ## Rules
 
-- **Layering:** Keep `sdk/agnostic` stdlib-only. Per-agent SDKs stay independent. Put CLI wiring in `cmd/wat`; do not reintroduce the old `internal/core` + host packages layout unless a later task specifies it.
+- **Layering:** Per-agent SDKs stay independent of `sdk/agnostic` (stdlib only). `sdk/agnostic` may depend on the agent SDKs and registers portable handlers onto their Chains. Put CLI wiring in `cmd/wat`; do not reintroduce the old `internal/core` + host packages layout unless a later task specifies it.
 - **Godoc:** Every exported identifier needs a godoc comment. Package overviews belong in `doc.go`. See `.cursor/rules/godoc.mdc` and the godoc skill.
 - **Tests:** Assert real behavior; no placeholder tests. See `.cursor/skills/go-tests/SKILL.md` and `.cursor/rules/go-tests.mdc`.
 - **Changelog:** User-facing functionality only (CLI, public API, hook behavior) — not scaffolding, CI, lint, or agent harness. Keep a Changelog format; **Added** for new capability; **Changed** / **Removed** only vs a published release. See the changelog skill.

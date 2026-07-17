@@ -1,4 +1,3 @@
-// Package claude adapts Claude Code hook payloads to the unified agnostic model.
 package claude
 
 import (
@@ -10,15 +9,8 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-// Codec implements model.Codec for Claude Code hooks by adapting claude types.
-// Reference: https://code.claude.com/docs/en/hooks
-type Codec struct{}
-
-// Dialect returns Claude.
-func (c *Codec) Dialect() model.Dialect { return model.Claude }
-
 // Decode parses a Claude Code hook stdin payload into a unified Event.
-func (c *Codec) Decode(raw []byte, eventHint string) (*model.Event, error) {
+func Decode(raw []byte, eventHint string) (*model.Event, error) {
 	native, err := sdkclaude.Decode(raw)
 	if err != nil {
 		return nil, mapDecodeError(err)
@@ -31,27 +23,6 @@ func (c *Codec) Decode(raw []byte, eventHint string) (*model.Event, error) {
 		}
 	}
 	return ev, nil
-}
-
-// Encode renders a portable Result as Claude Code stdout JSON. Claude ignores
-// exit 2 with JSON, so blocking is expressed via fields and exit code is always 0.
-// ev must be non-nil.
-func (c *Codec) Encode(ev *model.Event, res model.Result) ([]byte, int, error) {
-	if ev == nil {
-		return nil, 0, fmt.Errorf("claude: encode: nil event")
-	}
-	if res.IsZero() {
-		return nil, 0, nil
-	}
-	out := MapOutput(ev, res)
-	if out == nil {
-		return nil, 0, fmt.Errorf("claude: encode: %s has no portable encode surface", ev.Kind)
-	}
-	b, err := sdkclaude.Encode(ev.Name, out)
-	if err != nil {
-		return nil, 0, fmt.Errorf("claude: %w", err)
-	}
-	return b, 0, err
 }
 
 func mapDecodeError(err error) error {

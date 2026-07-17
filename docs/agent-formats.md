@@ -6,7 +6,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 ## Per-agent SDK skeleton
 
-`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`; `agnostic` adapts them through `ClaudeCodec`, `CopilotCodec`, and `CursorCodec`.
+`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `On*` registration fans adapter handlers onto each agent `Chain`, wrapping native events and Results builders.
 
 Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed `Chain` registration method for that event. Shared wire and registration infrastructure lives under `internal/`.
 
@@ -33,11 +33,10 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 
 | Location | Role |
 |----------|------|
-| `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, …) |
-| `register_handlers.go` | Shared registration infra (`registerResultHandler`, …) |
+| `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
 | `register.go` | `Serve`, run options, `ResetHandlers` |
-| `types.go`, `codecs.go` | Public type aliases and codec re-exports |
-| `claude/`, `copilot/`, `cursor/` | Per-event codec adapter slices (`pretooluse.go`, `map.go`, `registry.go`, …) |
+| `types.go` | Public type aliases for `internal/model` |
+| `claude/`, `copilot/`, `cursor/` | Inbound `MapEvent` + kind/event registries |
 
 Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
 
@@ -135,7 +134,7 @@ Each result-producing Chain method or `On*` registration injects a builder inter
 - Claude `SubagentStartResults`, `NotificationResults`, and `PreCompactResults` are separate types (not a shared `CommonResults`).
 - Cursor `BeforeReadFileResults` and `BeforeTabFileReadResults` are separate from shell/MCP `PermissionResults` where encode surfaces differ.
 
-Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …). Return `nil` for no opinion (silent stdout). Set advanced fields with fluent `With*` methods on the value returned by the builder (for example `r.Allow().WithUpdatedInput(args)`). Hook output and portable result types are sealed interfaces — only builders (and dialect `Build*` helpers) can construct non-nil values. `*Results` builders are supplied by Chain/`On*` registration only; they are not publicly constructible.
+Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …). Return `nil` for no opinion (silent stdout). Set advanced fields with fluent `With*` methods on the value returned by the builder (for example `r.Allow().WithUpdatedInput(args)`). Hook output and portable result types are sealed interfaces — only the injected `*Results` builders (and `With*`) can construct non-nil values. Cursor notes: `WithUpdatedInput` emits `updated_input` only for `preToolUse`; `WithUpdatedOutput` maps to `updated_mcp_tool_output` (MCP post-tool only).
 
 ### Event support matrix
 
@@ -195,9 +194,9 @@ Each per-agent SDK exposes a fluent `Chain` with one method per native hook surf
 | **copilot** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `AgentStop`, `SubagentStop`, `PermissionRequest`, `SessionStart`, `SubagentStart`, `Notification`, `SessionEnd`, `UserPromptSubmitted`, `PreCompact`, `ErrorOccurred`, `OnAny` | Full 13-event surface covered |
 | **cursor** | All 21 native events including `PreToolUse`, dedicated shell/MCP/file/tab hooks, lifecycle/telemetry observe methods, `OnAny` | Full 21-event surface covered |
 
-## Claude codec
+## Claude inbound mapping
 
-`agnostic.ClaudeCodec` decodes Claude Code hook stdin into `agnostic.Event` and encodes portable hook responses into Claude stdout JSON. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
+`sdk/agnostic/claude.MapEvent` (and `Decode`) maps Claude Code hook stdin into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/claude` Chains; native encode and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
 
 ### Event name mapping
 
@@ -210,7 +209,7 @@ Each per-agent SDK exposes a fluent `Chain` with one method per native hook surf
 
 ### Encode surfaces
 
-`ClaudeCodec` encodes only the portable result subset. Full Claude response shapes (including `BlockPrompt`, `Env`, `HaltSession`, `SetTitle`, `UserMessage`, and `PermissionRequest`) are available through `sdk/claude`.
+Portable Results wrappers delegate to `sdk/claude` `*Results` builders. Full Claude response shapes (including `BlockPrompt`, `Env`, `HaltSession`, `SetTitle`, `UserMessage`, and `PermissionRequest`) are available through `sdk/claude` directly.
 
 | Event kind | Portable fields → Claude JSON |
 |---|---|
@@ -236,9 +235,9 @@ Agent-native encode surfaces (use `sdk/claude` directly):
 | `claude.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
 | `claude.FailBlockExit` | `2` | Runner should use when `WithFailPolicy(FailBlock)` is active |
 
-## Copilot codec
+## Copilot inbound mapping
 
-`agnostic.CopilotCodec` decodes GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format and encodes portable hook responses into flat camelCase stdout JSON.
+`sdk/agnostic/copilot.MapEvent` (and `Decode`) maps GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format. Portable `On*` handlers fan out onto `sdk/copilot` Chains.
 
 ### Wire formats
 
@@ -271,7 +270,7 @@ Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
 
 ### Encode surfaces
 
-`CopilotCodec` encodes only the portable result subset. Full Copilot response shapes are available through `sdk/copilot`.
+Portable Results wrappers delegate to `sdk/copilot` `*Results` builders. Full Copilot response shapes are available through `sdk/copilot` directly.
 
 | Event kind | Portable fields → Copilot JSON | Exit code |
 |---|---|---|
@@ -293,12 +292,12 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 | Constant | Value | When |
 |---|---|---|
 | `copilot.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `copilot.PreToolErrorExit` / `CopilotPreToolErrorExit` | `1` | Same value; use when a `preToolUse` handler returns an error (fail-closed deny) |
-| `copilot.WarnExit` / `CopilotWarnExit` | `2` | `Encode` returns this for documented `postToolUseFailure` context paths |
+| `copilot.PreToolErrorExit` | `1` | Same value; use when a `preToolUse` handler returns an error (fail-closed deny) |
+| `copilot.WarnExit` | `2` | `Encode` returns this for documented `postToolUseFailure` context paths |
 
-## Cursor codec
+## Cursor inbound mapping
 
-`agnostic.CursorCodec` decodes Cursor hook stdin into `agnostic.Event` and encodes portable hook responses into Cursor stdout JSON.
+`sdk/agnostic/cursor.MapEvent` (and `Decode`) maps Cursor hook stdin into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/cursor` Chains.
 
 Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`; the full payload stays in `Event.Raw`.
 
@@ -332,7 +331,7 @@ Dedicated shell, MCP, and file events are **folded** into unified pre/post tool 
 
 ### Encode surfaces
 
-`CursorCodec` encodes only the portable result subset. Full Cursor response shapes are available through `sdk/cursor`.
+Portable Results wrappers delegate to `sdk/cursor` `*Results` builders. Full Cursor response shapes are available through `sdk/cursor` directly.
 
 | Event kind | Portable fields → Cursor JSON | Exit code |
 |---|---|---|
@@ -355,8 +354,8 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 
 | Constant | Value | When |
 |---|---|---|
-| `cursor.HandlerErrorExit` / `CursorHandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `cursor.PermissionDenyExit` / `CursorWarnExit` | `2` | `Encode` returns this for permission-gating deny |
+| `cursor.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
+| `cursor.PermissionDenyExit` | `2` | `Encode` returns this for permission-gating deny |
 
 ## Related code
 
@@ -365,11 +364,12 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
 - Normalization: [`sdk/agnostic/internal/model/event.go`](../sdk/agnostic/internal/model/event.go) — `NormalizeToolName`; [`toolinput.go`](../sdk/agnostic/internal/model/toolinput.go) — `ToolInput` with `AsBash`, `AsWrite`, and related accessors
 - Tests: [`sdk/agnostic/internal/model/event_test.go`](../sdk/agnostic/internal/model/event_test.go)
-- Claude codec: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `ClaudeCodec`
+- Claude inbound map: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `MapEvent`, `Decode`
 - Tests: [`sdk/agnostic/claude/codec_test.go`](../sdk/agnostic/claude/codec_test.go)
-- Copilot codec: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/) — `CopilotCodec`, `CopilotPreToolErrorExit`, `CopilotWarnExit`
+- Copilot inbound map: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/) — `MapEvent`, `Decode`, `PreToolErrorExit`, `WarnExit`
 - Tests: [`sdk/agnostic/copilot/codec_test.go`](../sdk/agnostic/copilot/codec_test.go)
-- Cursor codec: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — `CursorCodec`, `CursorWarnExit`, `CursorHandlerErrorExit`
+- Cursor inbound map: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — `MapEvent`, `Decode`, `WarnExit`, `HandlerErrorExit`
 - Tests: [`sdk/agnostic/cursor/codec_test.go`](../sdk/agnostic/cursor/codec_test.go)
+- Serve / fan-out: [`sdk/agnostic/runner_test.go`](../sdk/agnostic/runner_test.go)
 - Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

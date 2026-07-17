@@ -18,6 +18,6 @@ func init() {
 
 // WorkspaceOpen registers an observe-only workspaceOpen handler.
 func (c *Chain) WorkspaceOpen(fn func(context.Context, Hook[WorkspaceOpen]) error) *Chain {
-	registerObserveHandler(fn)
-	return &Chain{}
+	registerObserveHandler(c.registerOwner(), fn)
+	return c
 }

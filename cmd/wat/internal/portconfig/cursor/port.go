@@ -7,6 +7,7 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
@@ -14,7 +15,7 @@ import (
 func Parse(data []byte) (model.Config, []model.Warning, error) {
 	return flat.Parse(data, flat.ParseOptions{
 		Dialect:        "cursor hooks",
-		KindForEvent:   agnostic.CursorKindForEvent,
+		KindForEvent:   agcursor.KindForEvent,
 		SkipKind:       func(kind agnostic.Kind) bool { return kind == agnostic.KindOther },
 		HandlerToEntry: cursorHandlerToEntry,
 	})
@@ -51,8 +52,8 @@ func cursorHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.RawM
 func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	return flat.Emit(cfg, flat.EmitOptions{
 		Agent:           "Cursor",
-		KindForEventMap: agnostic.CursorKindForEventMap,
-		EventForKind:    agnostic.CursorEventForKind,
+		KindForEventMap: agcursor.KindForEventMap,
+		EventForKind:    agcursor.EventForKind,
 		AllowEntry:      cursorAllowEntry,
 		EncodeHandler:   cursorHandlerRaw,
 	})

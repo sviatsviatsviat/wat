@@ -118,8 +118,8 @@ func (c *Chain) MessageDisplay(fn func(context.Context, Hook[MessageDisplay], Me
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev MessageDisplay) (MessageDisplayOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev MessageDisplay) (MessageDisplayOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), messageDisplayResults{})
 	})
-	return &Chain{}
+	return c
 }

@@ -14,10 +14,3 @@ func mapPostToolUseFailure(e sdkcursor.PostToolUseFailure, ev *model.Event) {
 		DurationMs:  e.DurationMillis(),
 	}
 }
-
-func mapPostToolFailureOutput(res model.Result) any {
-	if res.Context == "" {
-		return nil
-	}
-	return sdkcursor.BuildPostToolOutput(res.Context, nil)
-}

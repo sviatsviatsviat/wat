@@ -131,6 +131,9 @@ func main() {
 		// Guard: block force pushes, escalate other git pushes to the user.
 		// Fires on PreToolUse (Claude/Copilot) and on preToolUse /
 		// beforeShellExecution (Cursor); hook.Tool.Shell is the extracted command.
+		if hook.Tool == nil {
+			return nil, nil
+		}
 		cmd := hook.Tool.Shell
 		switch {
 		case strings.Contains(cmd, "push --force"), strings.Contains(cmd, "push -f"):
@@ -146,6 +149,9 @@ func main() {
 		OnPostTool(func(ctx context.Context, hook agnostic.PostToolHook, r agnostic.PostToolResults) (agnostic.PostToolResult, error) {
 			// Command: after any file edit, tell the model which test command applies.
 			// → additionalContext / additional_context on each dialect.
+			if hook.Tool == nil {
+				return nil, nil
+			}
 			if hook.Tool.Name == agnostic.ToolEdit || hook.Tool.Name == agnostic.ToolWrite {
 				return r.Context("Run go test ./... to verify this change."), nil
 			}
@@ -155,7 +161,7 @@ func main() {
 			// Stop gate: refuse to finish the turn while the build is red.
 			// → Claude/Copilot: decision:"block"+reason; Cursor: followup_message.
 			// Loop guards differ per agent, so check both before re-blocking.
-			if hook.Turn.StopHookActive || hook.Turn.LoopCount > 2 {
+			if hook.Turn == nil || hook.Turn.StopHookActive || hook.Turn.LoopCount > 2 {
 				return nil, nil // already retried; let it stop
 			}
 			if err := exec.CommandContext(ctx, "go", "build", "./...").Run(); err != nil {

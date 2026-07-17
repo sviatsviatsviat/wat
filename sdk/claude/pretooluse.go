@@ -177,8 +177,8 @@ func (c *Chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolUse
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PreToolUse) (PreToolUseOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev PreToolUse) (PreToolUseOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), preToolUseResults{})
 	})
-	return &Chain{}
+	return c
 }

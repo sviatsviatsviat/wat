@@ -164,8 +164,8 @@ func (c *Chain) UserPromptSubmit(fn func(context.Context, Hook[UserPromptSubmit]
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev UserPromptSubmit) (UserPromptSubmitOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev UserPromptSubmit) (UserPromptSubmitOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), userPromptSubmitResults{})
 	})
-	return &Chain{}
+	return c
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
@@ -20,7 +21,7 @@ func Parse(data []byte) (model.Config, []model.Warning, error) {
 	cfg := model.Config{}
 	var warns []model.Warning
 	for event, groups := range f.Hooks {
-		kind, known := agnostic.ClaudeKindForEvent(event)
+		kind, known := agclaude.KindForEvent(event)
 		if !known {
 			for _, g := range groups {
 				raw, err := json.Marshal(g)
@@ -99,7 +100,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	var warns []model.Warning
 	for kind, entries := range cfg.Hooks {
 		for _, e := range entries {
-			event := model.EventNameForEmit(e, agnostic.ClaudeKindForEventMap, agnostic.ClaudeEventForKind)
+			event := model.EventNameForEmit(e, agclaude.KindForEventMap, agclaude.EventForKind)
 			if event == "" {
 				warns = append(warns, model.Warnf("kind %q has no Claude Code event name; dropped", kind))
 				continue

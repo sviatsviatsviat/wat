@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/copilot"
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -156,8 +158,8 @@ func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
 		&stderr,
 		WithEvent("preToolUse"),
 	)
-	if code != CopilotPreToolErrorExit {
-		t.Fatalf("exit = %d, want %d", code, CopilotPreToolErrorExit)
+	if code != copilot.PreToolErrorExit {
+		t.Fatalf("exit = %d, want %d", code, copilot.PreToolErrorExit)
 	}
 	if !strings.Contains(stderr.String(), "boom") {
 		t.Fatalf("stderr = %q", stderr.String())
@@ -224,7 +226,7 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 		{
 			name:     "cursor",
 			payload:  cursorShell,
-			wantExit: CursorWarnExit,
+			wantExit: cursor.PermissionDenyExit,
 			wantStdout: func(s string) bool {
 				return strings.Contains(s, `"permission":"deny"`) &&
 					strings.Contains(s, "destructive command blocked")
@@ -312,6 +314,121 @@ func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 		t.Fatalf("exit = %d", code)
 	}
 	if !strings.Contains(stdout.String(), "from-agnostic") || !strings.Contains(stdout.String(), "from-claude") {
+		t.Fatalf("stdout = %s", stdout.Bytes())
+	}
+}
+
+type fakePreToolResult struct{}
+
+func (fakePreToolResult) isPreToolResult() {}
+func (fakePreToolResult) IsZero() bool     { return false }
+func (fakePreToolResult) WithUpdatedInput(map[string]any) PreToolResult {
+	return fakePreToolResult{}
+}
+
+func TestServe_WrongPreToolResultType_FailOpen(t *testing.T) {
+	resetTest(t)
+	OnPreTool(func(ctx context.Context, hook PreToolHook, r PreToolResults) (PreToolResult, error) {
+		return fakePreToolResult{}, nil
+	})
+
+	var stdout, stderr bytes.Buffer
+	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1 (fail-open handler error)", code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout should be empty on assert failure; got %s", stdout.Bytes())
+	}
+	if !strings.Contains(stderr.String(), "injected Results builder") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestServe_CursorPreToolFanOut(t *testing.T) {
+	denyAll := func(ctx context.Context, hook PreToolHook, r PreToolResults) (PreToolResult, error) {
+		return r.Deny("blocked"), nil
+	}
+	tests := []struct {
+		name    string
+		payload string
+	}{
+		{name: "beforeShell", payload: cursorShell},
+		{name: "preToolUse", payload: cursorPreToolUse},
+		{name: "beforeRead", payload: cursorBeforeRead},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetTest(t)
+			OnPreTool(denyAll)
+			var stdout, stderr bytes.Buffer
+			code := Serve(context.Background(), strings.NewReader(tt.payload), &stdout, &stderr)
+			if code != cursor.PermissionDenyExit {
+				t.Fatalf("exit = %d, want %d; stderr = %q", code, cursor.PermissionDenyExit, stderr.String())
+			}
+			if !strings.Contains(stdout.String(), `"permission":"deny"`) {
+				t.Fatalf("stdout = %s", stdout.Bytes())
+			}
+		})
+	}
+}
+
+func TestServe_CursorAfterShellContext(t *testing.T) {
+	resetTest(t)
+	OnPostTool(func(ctx context.Context, hook PostToolHook, r PostToolResults) (PostToolResult, error) {
+		return r.Context("after-shell note"), nil
+	})
+	var stdout, stderr bytes.Buffer
+	code := Serve(context.Background(), strings.NewReader(cursorAfterShell), &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "after-shell note") {
+		t.Fatalf("stdout = %s", stdout.Bytes())
+	}
+}
+
+func TestServe_CursorWithUpdatedInput_BeforeShellOmitsField(t *testing.T) {
+	resetTest(t)
+	OnPreTool(func(ctx context.Context, hook PreToolHook, r PreToolResults) (PreToolResult, error) {
+		return r.Allow().WithUpdatedInput(map[string]any{"command": "echo safe"}), nil
+	})
+	var stdout, stderr bytes.Buffer
+	code := Serve(context.Background(), strings.NewReader(cursorShell), &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
+	}
+	if strings.Contains(stdout.String(), "updated_input") {
+		t.Fatalf("beforeShell should omit updated_input; stdout = %s", stdout.Bytes())
+	}
+}
+
+func TestServe_StopFollowUp(t *testing.T) {
+	resetTest(t)
+	OnStop(func(ctx context.Context, hook StopHook, r StopResults) (StopResult, error) {
+		return r.FollowUp("keep going"), nil
+	})
+	var stdout, stderr bytes.Buffer
+	code := Serve(context.Background(), strings.NewReader(claudeStop), &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "keep going") {
+		t.Fatalf("stdout = %s", stdout.Bytes())
+	}
+}
+
+func TestServe_SessionStartContext(t *testing.T) {
+	resetTest(t)
+	OnSessionStart(func(ctx context.Context, hook SessionStartHook, r SessionStartResults) (SessionStartResult, error) {
+		return r.Context("boot note"), nil
+	})
+	var stdout, stderr bytes.Buffer
+	code := Serve(context.Background(), strings.NewReader(claudeSessionStart), &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "boot note") {
 		t.Fatalf("stdout = %s", stdout.Bytes())
 	}
 }

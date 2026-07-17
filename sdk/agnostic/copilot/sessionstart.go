@@ -8,10 +8,3 @@ import (
 func mapSessionStart(e sdkcopilot.SessionStart, ev *model.Event) {
 	ev.Life = &model.Lifecycle{Source: e.Source, InitialPrompt: e.InitialPrompt()}
 }
-
-func mapSessionStartOutput(res model.Result) any {
-	if res.Context == "" {
-		return nil
-	}
-	return sdkcopilot.BuildSessionStartOutput(res.Context)
-}

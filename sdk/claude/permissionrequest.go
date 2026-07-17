@@ -167,8 +167,8 @@ func (c *Chain) PermissionRequest(fn func(context.Context, Hook[PermissionReques
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionRequestResults{})
 	})
-	return &Chain{}
+	return c
 }

@@ -8,6 +8,7 @@ import (
 )
 
 func mapBeforeReadFile(e sdkcursor.BeforeReadFile, ev *model.Event, name string) {
+	ev.Tool = &model.ToolCall{Name: model.ToolRead, Native: name}
 	input, err := json.Marshal(map[string]any{
 		"file_path":   e.FilePath,
 		"content":     e.Content,
@@ -16,6 +17,5 @@ func mapBeforeReadFile(e sdkcursor.BeforeReadFile, ev *model.Event, name string)
 	if err != nil {
 		return
 	}
-	toolInput := model.NewToolInput(model.ToolRead, name, input)
-	ev.Tool = &model.ToolCall{Name: model.ToolRead, Native: name, Input: toolInput}
+	ev.Tool.Input = model.NewToolInput(model.ToolRead, name, input)
 }

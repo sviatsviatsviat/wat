@@ -8,6 +8,9 @@ import (
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
+	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
+	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 )
 
 const (
@@ -117,7 +120,7 @@ func adaptEntry(e *Entry, kind agnostic.Kind, from, to agnostic.Dialect, timeout
 		return w, false
 	}
 	var warns []Warning
-	if from == agnostic.Cursor && to != agnostic.Cursor && agnostic.IsCursorDedicatedEvent(e.NativeEvent) {
+	if from == agnostic.Cursor && to != agnostic.Cursor && agcursor.IsDedicatedEvent(e.NativeEvent) {
 		warns = append(warns, model.Warnf("%s: Cursor dedicated event maps to generic %s on %s; review matcher and payload semantics",
 			e.NativeEvent, eventForKind(to, kind), to))
 	}
@@ -156,11 +159,11 @@ func applyExplicitTimeout(e *Entry, from, to agnostic.Dialect, timeoutWarned *bo
 func eventForKind(d agnostic.Dialect, kind agnostic.Kind) string {
 	switch d {
 	case agnostic.Claude:
-		return agnostic.ClaudeEventForKind[kind]
+		return agclaude.EventForKind[kind]
 	case agnostic.Copilot:
-		return agnostic.CopilotEventForKind[kind]
+		return agcopilot.EventForKind[kind]
 	case agnostic.Cursor:
-		return agnostic.CursorEventForKind[kind]
+		return agcursor.EventForKind[kind]
 	default:
 		return ""
 	}

@@ -20,6 +20,6 @@ func init() {
 
 // AfterAgentResponse registers an observe-only afterAgentResponse handler.
 func (c *Chain) AfterAgentResponse(fn func(context.Context, Hook[AfterAgentResponse]) error) *Chain {
-	registerObserveHandler(fn)
-	return &Chain{}
+	registerObserveHandler(c.registerOwner(), fn)
+	return c
 }

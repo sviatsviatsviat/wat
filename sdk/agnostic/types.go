@@ -48,23 +48,8 @@ const (
 	DecisionDeny  = model.DecisionDeny
 )
 
-// Result is the wire hook response used by codecs.
+// Result is a portable decision/context projection used by Merge helpers and tests.
 type Result = model.Result
-
-// PreToolResult is the portable hook response for PreTool events.
-type PreToolResult = model.PreToolResult
-
-// PostToolResult is the portable hook response for PostTool events.
-type PostToolResult = model.PostToolResult
-
-// PostToolFailureResult is the portable hook response for PostToolFailure events.
-type PostToolFailureResult = model.PostToolFailureResult
-
-// StopResult is the portable hook response for Stop and SubagentStop events.
-type StopResult = model.StopResult
-
-// SessionStartResult is the portable hook response for SessionStart events.
-type SessionStartResult = model.SessionStartResult
 
 // ParseDialect parses a dialect name from a CLI flag or config value.
 func ParseDialect(s string) Dialect { return model.ParseDialect(s) }

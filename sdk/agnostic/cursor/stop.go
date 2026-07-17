@@ -8,10 +8,3 @@ import (
 func mapStop(e sdkcursor.Stop, ev *model.Event) {
 	ev.Turn = &model.TurnEnd{Status: e.Status, LoopCount: e.LoopCount}
 }
-
-func mapStopOutput(res model.Result) any {
-	if res.FollowUp == "" {
-		return nil
-	}
-	return sdkcursor.BuildStopOutput(res.FollowUp)
-}

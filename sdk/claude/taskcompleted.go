@@ -42,8 +42,8 @@ func (c *Chain) TaskCompleted(fn func(context.Context, Hook[TaskCompleted], Task
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev TaskCompleted) (CommonOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev TaskCompleted) (CommonOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), taskCompletedResults{})
 	})
-	return &Chain{}
+	return c
 }

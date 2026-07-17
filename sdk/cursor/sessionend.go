@@ -22,6 +22,6 @@ func init() {
 
 // SessionEnd registers an observe-only sessionEnd handler.
 func (c *Chain) SessionEnd(fn func(context.Context, Hook[SessionEnd]) error) *Chain {
-	registerObserveHandler(fn)
-	return &Chain{}
+	registerObserveHandler(c.registerOwner(), fn)
+	return c
 }

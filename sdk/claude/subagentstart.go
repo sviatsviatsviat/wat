@@ -39,8 +39,8 @@ func (c *Chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], Suba
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev SubagentStart) (CommonOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev SubagentStart) (CommonOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), subagentStartResults{})
 	})
-	return &Chain{}
+	return c
 }

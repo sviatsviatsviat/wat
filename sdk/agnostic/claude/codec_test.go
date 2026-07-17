@@ -2,7 +2,6 @@ package claude
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -34,20 +33,8 @@ import (
 //   - PostToolUseOutput.updatedToolOutput → Result.UpdatedOutput
 //   - PermissionRequestOutput.message → Result.Reason; Interrupt deferred
 
-const claudePreToolUse = `{
-  "session_id": "abc123",
-  "transcript_path": "/tmp/t.jsonl",
-  "cwd": "/home/user/proj",
-  "permission_mode": "default",
-  "hook_event_name": "PreToolUse",
-  "tool_name": "Bash",
-  "tool_use_id": "tu_1",
-  "tool_input": {"command": "rm -rf /tmp/build", "description": "clean"}
-}`
-
 func TestClaudeDecode_InvalidJSONPreservesSentinel(t *testing.T) {
-	c := &Codec{}
-	_, err := c.Decode([]byte("not json"), "")
+	_, err := Decode([]byte("not json"), "")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -59,118 +46,9 @@ func TestClaudeDecode_InvalidJSONPreservesSentinel(t *testing.T) {
 	}
 }
 
-func TestClaudeDecodeEncode_PreToolDeny(t *testing.T) {
-	c := &Codec{}
-	ev, err := c.Decode([]byte(claudePreToolUse), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ev.Kind != model.KindPreTool || ev.Session != "abc123" || ev.Cwd != "/home/user/proj" {
-		t.Fatalf("bad event: %+v", ev)
-	}
-	if ev.Tool == nil || ev.Tool.Name != model.ToolBash || ev.Tool.Native != "Bash" || ev.Tool.Shell != "rm -rf /tmp/build" {
-		t.Fatalf("bad tool: %+v", ev.Tool)
-	}
-	if !bytes.Equal(ev.Raw, []byte(claudePreToolUse)) {
-		t.Fatal("Raw not preserved")
-	}
-
-	out, code, err := c.Encode(ev, model.Deny("destructive command"))
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	var got struct {
-		HSO struct {
-			Event    string `json:"hookEventName"`
-			Decision string `json:"permissionDecision"`
-			Reason   string `json:"permissionDecisionReason"`
-		} `json:"hookSpecificOutput"`
-	}
-	if err := json.Unmarshal(out, &got); err != nil {
-		t.Fatal(err)
-	}
-	if got.HSO.Event != "PreToolUse" || got.HSO.Decision != "deny" || got.HSO.Reason != "destructive command" {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestClaudeDecodeEncode_PreToolUpdatedInput(t *testing.T) {
-	c := &Codec{}
-	ev, err := c.Decode([]byte(claudePreToolUse), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	out, code, err := c.Encode(ev, model.Result{UpdatedInput: map[string]any{"command": "ls -la"}})
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	var got struct {
-		HSO struct {
-			Decision string         `json:"permissionDecision"`
-			Input    map[string]any `json:"updatedInput"`
-		} `json:"hookSpecificOutput"`
-	}
-	if err := json.Unmarshal(out, &got); err != nil {
-		t.Fatal(err)
-	}
-	if got.HSO.Decision != "allow" {
-		t.Fatalf("permissionDecision = %q, want allow", got.HSO.Decision)
-	}
-	if got.HSO.Input["command"] != "ls -la" {
-		t.Fatalf("updatedInput = %+v", got.HSO.Input)
-	}
-}
-
-func TestClaudeEncode_StopFollowUp(t *testing.T) {
-	c := &Codec{}
-	stopEv := &model.Event{Agent: model.Claude, Kind: model.KindStop, Name: "Stop"}
-	out, code, err := c.Encode(stopEv, model.Result{FollowUp: "run the tests"})
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "run the tests") {
-		t.Fatalf("bad stop output: %s", out)
-	}
-}
-
-func TestClaudeEncode_SubagentStopFollowUp(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindSubagentStop, Name: "SubagentStop"}
-	out, code, err := c.Encode(ev, model.Result{FollowUp: "finish the review"})
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "finish the review") {
-		t.Fatalf("bad subagent stop output: %s", out)
-	}
-}
-
-func TestClaudeEncode_SessionStartContext(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindSessionStart, Name: "SessionStart"}
-	out, code, err := c.Encode(ev, model.Context("boot notes"))
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	if !strings.Contains(string(out), `"additionalContext":"boot notes"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestClaudeEncode_ZeroResult(t *testing.T) {
-	c := &Codec{}
-	ev, _ := c.Decode([]byte(claudePreToolUse), "")
-	out, code, err := c.Encode(ev, model.Result{})
-	if err != nil || code != 0 || out != nil {
-		t.Fatalf("zero result should be silent, got %q code=%d err=%v", out, code, err)
-	}
-}
-
 func TestClaudeDecode_UnknownEvent(t *testing.T) {
 	raw := []byte(`{"session_id":"s1","hook_event_name":"Setup","cwd":"/w"}`)
-	c := &Codec{}
-	ev, err := c.Decode(raw, "")
+	ev, err := Decode(raw, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,10 +201,9 @@ func TestClaudeDecode_Matrix(t *testing.T) {
 			},
 		},
 	}
-	c := &Codec{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := c.Decode([]byte(tt.raw), "")
+			ev, err := Decode([]byte(tt.raw), "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -338,17 +215,6 @@ func TestClaudeDecode_Matrix(t *testing.T) {
 			}
 			tt.check(t, ev)
 		})
-	}
-}
-
-func TestClaudeEncode_NilEvent(t *testing.T) {
-	c := &Codec{}
-	_, _, err := c.Encode(nil, model.Deny("nope"))
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !strings.Contains(err.Error(), "nil event") {
-		t.Fatalf("error = %v", err)
 	}
 }
 
@@ -370,11 +236,10 @@ func TestClaudeDecode_LongTailKindOther(t *testing.T) {
 			raw:  `{"session_id":"s","hook_event_name":"Elicitation","server_name":"srv","message":"confirm?"}`,
 		},
 	}
-	c := &Codec{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			raw := []byte(tt.raw)
-			ev, err := c.Decode(raw, "")
+			ev, err := Decode(raw, "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -390,8 +255,7 @@ func TestClaudeDecode_LongTailKindOther(t *testing.T) {
 
 func TestClaudeDecode_ToolInputNotAliased(t *testing.T) {
 	raw := []byte(`{"session_id":"s","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}`)
-	c := &Codec{}
-	ev, err := c.Decode(raw, "")
+	ev, err := Decode(raw, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -406,22 +270,8 @@ func TestClaudeDecode_ToolInputNotAliased(t *testing.T) {
 	}
 }
 
-func TestClaudeEncode_PostToolUpdatedOutput(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Claude, Kind: model.KindPostTool, Name: "PostToolUse"}
-	text := "rewritten"
-	out, code, err := c.Encode(ev, model.Result{UpdatedOutput: &text})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"updatedToolOutput":"rewritten"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
 func TestClaudeDecode_InvalidJSON(t *testing.T) {
-	c := &Codec{}
-	_, err := c.Decode([]byte("not json"), "")
+	_, err := Decode([]byte("not json"), "")
 	if err == nil {
 		t.Fatal("expected error")
 	}

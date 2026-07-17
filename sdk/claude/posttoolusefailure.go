@@ -56,8 +56,8 @@ func (c *Chain) PostToolUseFailure(fn func(context.Context, Hook[PostToolUseFail
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PostToolUseFailure) (PostToolUseOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev PostToolUseFailure) (PostToolUseOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolUseFailureResults{})
 	})
-	return &Chain{}
+	return c
 }

@@ -12,10 +12,3 @@ func mapPostToolUseFailure(e sdkcopilot.PostToolUseFailure, ev *model.Event) {
 		ev.Result = &model.ToolResult{Error: msg}
 	}
 }
-
-func mapPostToolFailureOutput(res model.Result) any {
-	if res.Context == "" {
-		return nil
-	}
-	return sdkcopilot.BuildPostToolFailureOutput(res.Context)
-}

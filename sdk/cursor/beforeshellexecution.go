@@ -27,8 +27,8 @@ func (c *Chain) BeforeShellExecution(fn func(context.Context, Hook[BeforeShellEx
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev BeforeShellExecution) (PermissionOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev BeforeShellExecution) (PermissionOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionResults{})
 	})
-	return &Chain{}
+	return c
 }

@@ -10,7 +10,7 @@ Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rul
 ## Layout
 
 - `cmd/wat` — CLI; depends on `sdk/agnostic`
-- `sdk/agnostic` — unified hook library (stdlib only)
+- `sdk/agnostic` — unified hook library (depends on per-agent SDKs)
 - `sdk/claude`, `sdk/copilot`, `sdk/cursor` — independent per-agent SDKs
 - `plan/` — local-only design docs (gitignored); do not commit
 - `docs/` — committed user-facing reference (agent formats, doc index)

@@ -8,6 +8,7 @@ import (
 )
 
 func mapAfterFileEdit(e sdkcursor.AfterFileEdit, ev *model.Event, name string) {
+	ev.Tool = &model.ToolCall{Name: model.ToolEdit, Native: name}
 	input, err := json.Marshal(map[string]any{
 		"file_path": e.FilePath,
 		"edits":     e.Edits,
@@ -19,7 +20,6 @@ func mapAfterFileEdit(e sdkcursor.AfterFileEdit, ev *model.Event, name string) {
 	if err != nil {
 		return
 	}
-	toolInput := model.NewToolInput(model.ToolEdit, name, input)
-	ev.Tool = &model.ToolCall{Name: model.ToolEdit, Native: name, Input: toolInput}
+	ev.Tool.Input = model.NewToolInput(model.ToolEdit, name, input)
 	ev.Result = &model.ToolResult{Raw: editsRaw}
 }

@@ -10,10 +10,3 @@ func mapPostToolUseFailure(e sdkclaude.PostToolUseFailure, ev *model.Event) {
 	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 	ev.Result = &model.ToolResult{Error: e.Error}
 }
-
-func mapPostToolFailureOutput(res model.Result) any {
-	if res.Context == "" {
-		return nil
-	}
-	return sdkclaude.BuildPostToolUseFailureOutput(res.Context)
-}

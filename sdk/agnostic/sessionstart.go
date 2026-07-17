@@ -5,7 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
+	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
+	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -42,37 +48,33 @@ func sessionStartHook(ctx run.Invocation, ev SessionStartEvent) SessionStartHook
 	return SessionStartHook{SessionStartEvent: ev, inv: ctx}
 }
 
+// SessionStartResult is the portable hook response for SessionStart events.
+// Construct only via SessionStartResults (Context).
+// A nil value is a no-op.
+type SessionStartResult interface {
+	isSessionStartResult()
+	// IsZero reports whether the result carries no instruction.
+	IsZero() bool
+}
+
 // SessionStartResults is the hook-scoped response builder supplied to OnSessionStart handlers by registration.
 type SessionStartResults interface {
 	// Context returns a context-injection-only SessionStart result.
-	Context(text string) model.SessionStartResult
+	Context(text string) SessionStartResult
 	isSessionStartResults()
 }
 
-type sessionStartResults struct{}
-
-func (sessionStartResults) isSessionStartResults() {}
-
-// Context returns a context-injection-only SessionStart result.
-func (sessionStartResults) Context(text string) model.SessionStartResult {
-	return model.SessionStartContext(text)
-}
-
 // SessionStartHandler handles portable SessionStart events.
-type SessionStartHandler func(ctx context.Context, hook SessionStartHook, results SessionStartResults) (model.SessionStartResult, error)
+type SessionStartHandler func(ctx context.Context, hook SessionStartHook, results SessionStartResults) (SessionStartResult, error)
 
 // OnSessionStart registers a handler for SessionStart events across all agents.
 func OnSessionStart(fn SessionStartHandler) *Chain {
 	if fn == nil {
 		return &Chain{}
 	}
-	registerResultHandler(model.KindSessionStart, func(ctx context.Context, ev *model.Event) (model.SessionStartResult, error) {
-		typed, err := SessionStartEventFrom(ev)
-		if err != nil {
-			return nil, err
-		}
-		return fn(ctx, sessionStartHook(run.InvocationFrom(ctx), typed), sessionStartResults{})
-	})
+	sdkclaude.Adapter().SessionStart(adaptClaudeSessionStart(fn))
+	sdkcopilot.Adapter().SessionStart(adaptCopilotSessionStart(fn))
+	sdkcursor.Adapter().SessionStart(adaptCursorSessionStart(fn))
 	return &Chain{}
 }
 
@@ -80,3 +82,117 @@ func OnSessionStart(fn SessionStartHandler) *Chain {
 func (c *Chain) OnSessionStart(fn SessionStartHandler) *Chain {
 	return OnSessionStart(fn)
 }
+
+func adaptClaudeSessionStart(fn SessionStartHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SessionStart], sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
+	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionStart], native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
+		typed, err := SessionStartEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		if err != nil {
+			return nil, err
+		}
+		out, err := fn(ctx, sessionStartHook(hook.Invocation(), typed), claudeSessionStartResults{native: native})
+		if err != nil || out == nil {
+			return nil, err
+		}
+		r, ok := out.(claudeSessionStartResult)
+		if !ok {
+			return nil, fmt.Errorf("agnostic: SessionStart result must come from the injected Results builder")
+		}
+		return r.native, nil
+	}
+}
+
+type claudeSessionStartResults struct {
+	native sdkclaude.SessionStartResults
+}
+
+func (claudeSessionStartResults) isSessionStartResults() {}
+
+// Context returns a context-injection result.
+func (w claudeSessionStartResults) Context(text string) SessionStartResult {
+	return claudeSessionStartResult{native: w.native.Context(text)}
+}
+
+type claudeSessionStartResult struct {
+	native sdkclaude.SessionStartOutput
+}
+
+func (claudeSessionStartResult) isSessionStartResult() {}
+
+// IsZero reports whether the result carries no instruction.
+func (r claudeSessionStartResult) IsZero() bool { return sdkclaude.IsZeroOutput(r.native) }
+
+func adaptCopilotSessionStart(fn SessionStartHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SessionStart], sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
+	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SessionStart], native sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
+		typed, err := SessionStartEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		if err != nil {
+			return nil, err
+		}
+		out, err := fn(ctx, sessionStartHook(hook.Invocation(), typed), copilotSessionStartResults{native: native})
+		if err != nil || out == nil {
+			return nil, err
+		}
+		r, ok := out.(copilotSessionStartResult)
+		if !ok {
+			return nil, fmt.Errorf("agnostic: SessionStart result must come from the injected Results builder")
+		}
+		return r.native, nil
+	}
+}
+
+type copilotSessionStartResults struct {
+	native sdkcopilot.SessionStartResults
+}
+
+func (copilotSessionStartResults) isSessionStartResults() {}
+
+// Context returns a context-injection result.
+func (w copilotSessionStartResults) Context(text string) SessionStartResult {
+	return copilotSessionStartResult{native: w.native.Context(text)}
+}
+
+type copilotSessionStartResult struct {
+	native sdkcopilot.SessionStartOutput
+}
+
+func (copilotSessionStartResult) isSessionStartResult() {}
+
+// IsZero reports whether the result carries no instruction.
+func (r copilotSessionStartResult) IsZero() bool { return sdkcopilot.IsZeroOutput(r.native) }
+
+func adaptCursorSessionStart(fn SessionStartHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SessionStart], sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
+	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SessionStart], native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
+		typed, err := SessionStartEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		if err != nil {
+			return nil, err
+		}
+		out, err := fn(ctx, sessionStartHook(hook.Invocation(), typed), cursorSessionStartResults{native: native})
+		if err != nil || out == nil {
+			return nil, err
+		}
+		r, ok := out.(cursorSessionStartResult)
+		if !ok {
+			return nil, fmt.Errorf("agnostic: SessionStart result must come from the injected Results builder")
+		}
+		return r.native, nil
+	}
+}
+
+type cursorSessionStartResults struct {
+	native sdkcursor.SessionStartResults
+}
+
+func (cursorSessionStartResults) isSessionStartResults() {}
+
+// Context returns a context-injection result.
+func (w cursorSessionStartResults) Context(text string) SessionStartResult {
+	return cursorSessionStartResult{native: w.native.Context(text)}
+}
+
+type cursorSessionStartResult struct {
+	native sdkcursor.SessionStartOutput
+}
+
+func (cursorSessionStartResult) isSessionStartResult() {}
+
+// IsZero reports whether the result carries no instruction.
+func (r cursorSessionStartResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }

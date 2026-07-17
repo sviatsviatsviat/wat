@@ -41,16 +41,16 @@ func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
 	return name, nil
 }
 
-func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
+func registerHandler[E Event, O any](owner string, fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
 
-	internal.MarkRegistered("copilot", name)
+	internal.MarkRegistered(owner, name)
 
-	run.RegisterHandler("copilot", "copilot", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
+	run.RegisterHandler(owner, "copilot", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		ev, err := decodeWithHint(raw, cfg.EventHint)
 		if err != nil {
@@ -71,16 +71,16 @@ func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
 	})
 }
 
-func registerObserveHandler[E Event](fn func(context.Context, Hook[E]) error) {
+func registerObserveHandler[E Event](owner string, fn func(context.Context, Hook[E]) error) {
 	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
 
-	internal.MarkRegistered("copilot", name)
+	internal.MarkRegistered(owner, name)
 
-	run.RegisterHandler("copilot", "copilot", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
+	run.RegisterHandler(owner, "copilot", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		ev, err := decodeWithHint(raw, cfg.EventHint)
 		if err != nil {
@@ -97,11 +97,11 @@ func registerObserveHandler[E Event](fn func(context.Context, Hook[E]) error) {
 	})
 }
 
-func registerAny(fn func(context.Context, AnyHook) error) {
+func registerAny(owner string, fn func(context.Context, AnyHook) error) {
 	if fn == nil {
 		return
 	}
-	run.RegisterAnyHandler("copilot", "copilot", func(ctx context.Context, raw []byte) ([]byte, int, error) {
+	run.RegisterAnyHandler(owner, "copilot", func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		ev, err := decodeWithHint(raw, cfg.EventHint)
 		if err != nil {
@@ -124,6 +124,12 @@ func handlerErrorExit(eventName string) int {
 // ResetHandlers clears registration tracking and copilot-owned handlers
 // in the shared run registry. It is intended for tests.
 func ResetHandlers() {
-	internal.ResetRegistered()
+	internal.ResetRegisteredOwner("copilot")
 	run.ResetOwner("copilot")
+}
+
+// ResetAdapter clears agnostic-owned registration tracking for this SDK.
+// Pair with run.ResetOwner("agnostic") from sdk/agnostic.ResetHandlers.
+func ResetAdapter() {
+	internal.ResetRegisteredOwner(adapterOwner)
 }

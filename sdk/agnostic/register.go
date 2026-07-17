@@ -4,6 +4,9 @@ import (
 	"context"
 	"io"
 
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -31,5 +34,8 @@ func WithGetenv(getenv func(string) string) run.Option {
 
 // ResetHandlers clears only agnostic-registered handlers from the shared run registry.
 func ResetHandlers() {
+	sdkclaude.ResetAdapter()
+	sdkcopilot.ResetAdapter()
+	sdkcursor.ResetAdapter()
 	run.ResetOwner("agnostic")
 }

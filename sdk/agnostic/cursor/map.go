@@ -64,21 +64,3 @@ func MapEvent(native sdkcursor.Event, raw []byte) *model.Event {
 	}
 	return ev
 }
-
-// MapOutput renders a unified Result as a Cursor stdout payload.
-func MapOutput(ev *model.Event, res model.Result) any {
-	switch ev.Kind {
-	case model.KindPreTool:
-		return mapPreToolOutput(ev, res)
-	case model.KindPostTool:
-		return mapPostToolOutput(res)
-	case model.KindPostToolFailure:
-		return mapPostToolFailureOutput(res)
-	case model.KindStop, model.KindSubagentStop:
-		return mapStopOutput(res)
-	case model.KindSessionStart:
-		return mapSessionStartOutput(res)
-	default:
-		return nil
-	}
-}

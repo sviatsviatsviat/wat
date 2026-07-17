@@ -4,7 +4,13 @@ import (
 	"context"
 	"encoding/json"
 
+	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
+	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
+	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -62,11 +68,37 @@ type AnyHandler func(ctx context.Context, hook AnyHook) error
 
 // OnAny registers an observe-only handler invoked for every event before kind-specific handlers.
 func OnAny(fn AnyHandler) *Chain {
-	registerAny(fn)
+	if fn == nil {
+		return &Chain{}
+	}
+	sdkclaude.Adapter().OnAny(adaptClaudeAny(fn))
+	sdkcopilot.Adapter().OnAny(adaptCopilotAny(fn))
+	sdkcursor.Adapter().OnAny(adaptCursorAny(fn))
 	return &Chain{}
 }
 
 // OnAny registers another observe-only catch-all handler on the chain.
 func (c *Chain) OnAny(fn AnyHandler) *Chain {
 	return OnAny(fn)
+}
+
+func adaptClaudeAny(fn AnyHandler) func(context.Context, sdkclaude.AnyHook) error {
+	return func(ctx context.Context, hook sdkclaude.AnyHook) error {
+		ev := agclaude.MapEvent(hook.Event, hook.Raw())
+		return fn(ctx, anyHook(hook.Invocation(), AnyEventFrom(ev)))
+	}
+}
+
+func adaptCopilotAny(fn AnyHandler) func(context.Context, sdkcopilot.AnyHook) error {
+	return func(ctx context.Context, hook sdkcopilot.AnyHook) error {
+		ev := agcopilot.MapEvent(hook.Event, hook.Raw())
+		return fn(ctx, anyHook(hook.Invocation(), AnyEventFrom(ev)))
+	}
+}
+
+func adaptCursorAny(fn AnyHandler) func(context.Context, sdkcursor.AnyHook) error {
+	return func(ctx context.Context, hook sdkcursor.AnyHook) error {
+		ev := agcursor.MapEvent(hook.Event, hook.Raw())
+		return fn(ctx, anyHook(hook.Invocation(), AnyEventFrom(ev)))
+	}
 }

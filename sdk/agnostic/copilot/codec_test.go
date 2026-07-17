@@ -28,41 +28,8 @@ const copilotVSCodeStop = `{
   "stop_reason": "end_turn"
 }`
 
-func TestCopilotDecodeEncode_PreToolDeny(t *testing.T) {
-	c := &Codec{}
-	ev, err := c.Decode([]byte(copilotCamelPreToolUse), "preToolUse")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ev.Kind != model.KindPreTool || ev.Session != "s1" || ev.Cwd != "/w" {
-		t.Fatalf("bad event: %+v", ev)
-	}
-	if ev.Tool == nil || ev.Tool.Name != model.ToolBash || ev.Tool.Native != "bash" || ev.Tool.Shell != "rm -rf /" {
-		t.Fatalf("bad tool: %+v", ev.Tool)
-	}
-	if !bytes.Equal(ev.Raw, []byte(copilotCamelPreToolUse)) {
-		t.Fatal("Raw not preserved")
-	}
-
-	out, code, err := c.Encode(ev, model.Deny("destructive command"))
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	var got struct {
-		Decision string `json:"permissionDecision"`
-		Reason   string `json:"permissionDecisionReason"`
-	}
-	if err := json.Unmarshal(out, &got); err != nil {
-		t.Fatal(err)
-	}
-	if got.Decision != "deny" || got.Reason != "destructive command" {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
 func TestCopilotDecode_CamelCaseRequiresEventHint(t *testing.T) {
-	c := &Codec{}
-	_, err := c.Decode([]byte(copilotCamelPreToolUse), "")
+	_, err := Decode([]byte(copilotCamelPreToolUse), "")
 	if err == nil {
 		t.Fatal("expected error without eventHint")
 	}
@@ -75,8 +42,7 @@ func TestCopilotDecode_CamelCaseRequiresEventHint(t *testing.T) {
 }
 
 func TestCopilotDecode_VSCodeStop(t *testing.T) {
-	c := &Codec{}
-	ev, err := c.Decode([]byte(copilotVSCodeStop), "")
+	ev, err := Decode([]byte(copilotVSCodeStop), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,8 +66,7 @@ func TestCopilotDecode_VSCodePreToolBash(t *testing.T) {
   "tool_name": "Bash",
   "tool_input": {"command": "ls -la"}
 }`
-	c := &Codec{}
-	ev, err := c.Decode([]byte(raw), "")
+	ev, err := Decode([]byte(raw), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,8 +85,7 @@ func TestCopilotDecode_NotificationWithoutEventHint(t *testing.T) {
   "title": "Shell completed",
   "notification_type": "shell_completed"
 }`
-	c := &Codec{}
-	ev, err := c.Decode([]byte(raw), "")
+	ev, err := Decode([]byte(raw), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,10 +257,9 @@ func TestCopilotDecode_Matrix(t *testing.T) {
 			},
 		},
 	}
-	c := &Codec{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := c.Decode([]byte(tt.raw), tt.eventHint)
+			ev, err := Decode([]byte(tt.raw), tt.eventHint)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -309,8 +272,7 @@ func TestCopilotDecode_Matrix(t *testing.T) {
 }
 
 func TestCopilotDecode_InvalidJSON(t *testing.T) {
-	c := &Codec{}
-	_, err := c.Decode([]byte("not json"), "preToolUse")
+	_, err := Decode([]byte("not json"), "preToolUse")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -323,9 +285,8 @@ func TestCopilotDecode_InvalidJSON(t *testing.T) {
 }
 
 func TestCopilotDecode_InvalidPayloadPreservesSentinel(t *testing.T) {
-	c := &Codec{}
 	raw := []byte(`{"sessionId":"s1","timestamp":1,"cwd":[]}`)
-	_, err := c.Decode(raw, "preToolUse")
+	_, err := Decode(raw, "preToolUse")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -339,8 +300,7 @@ func TestCopilotDecode_InvalidPayloadPreservesSentinel(t *testing.T) {
 
 func TestCopilotDecode_ToolInputNotAliased(t *testing.T) {
 	raw := []byte(`{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"bash","toolArgs":{"command":"ls"}}`)
-	c := &Codec{}
-	ev, err := c.Decode(raw, "preToolUse")
+	ev, err := Decode(raw, "preToolUse")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -352,121 +312,6 @@ func TestCopilotDecode_ToolInputNotAliased(t *testing.T) {
 	}
 	if bytes.Equal(ev.Tool.Input.Raw(), got) {
 		t.Fatal("Tool.Input.Raw() did not return a defensive copy")
-	}
-}
-
-func TestCopilotEncode_PreToolAllowModifiedArgs(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindPreTool, Name: "preToolUse"}
-	out, code, err := c.Encode(ev, model.Result{
-		Decision:     model.DecisionAllow,
-		UpdatedInput: map[string]any{"command": "echo safe"},
-	})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"permissionDecision":"allow"`) || !strings.Contains(string(out), `"modifiedArgs"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCopilotEncode_EmptyNameUsesKind(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindPreTool, Name: ""}
-	out, code, err := c.Encode(ev, model.Result{Decision: model.DecisionAllow})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"permissionDecision":"allow"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCopilotEncode_PostToolUpdatedOutput(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindPostTool, Name: "postToolUse"}
-	text := "rewritten"
-	out, code, err := c.Encode(ev, model.Result{
-		UpdatedOutput: &text,
-		Context:       "extra guidance",
-	})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	s := string(out)
-	if !strings.Contains(s, `"textResultForLlm":"rewritten"`) || !strings.Contains(s, `"additionalContext":"extra guidance"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCopilotEncode_StopFollowUp(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindStop, Name: "agentStop"}
-	out, code, err := c.Encode(ev, model.Result{FollowUp: "run the tests"})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "run the tests") {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCopilotEncode_SubagentStopFollowUp(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindSubagentStop, Name: "subagentStop"}
-	out, code, err := c.Encode(ev, model.Result{FollowUp: "finish review"})
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"decision":"block"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCopilotEncode_PostToolFailureContext(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindPostToolFailure, Name: "postToolUseFailure"}
-	out, code, err := c.Encode(ev, model.Context("retry with smaller input"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code != WarnExit {
-		t.Fatalf("code=%d, want %d", code, WarnExit)
-	}
-	if string(out) != "retry with smaller input" {
-		t.Fatalf("stdout=%q", out)
-	}
-}
-
-func TestCopilotEncode_SessionStartContext(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindSessionStart, Name: "sessionStart"}
-	out, code, err := c.Encode(ev, model.Context("project uses go test ./..."))
-	if err != nil || code != 0 {
-		t.Fatal(err, code)
-	}
-	if !strings.Contains(string(out), `"additionalContext"`) {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCopilotEncode_ZeroResult(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Copilot, Kind: model.KindPreTool, Name: "preToolUse"}
-	out, code, err := c.Encode(ev, model.Result{})
-	if err != nil || code != 0 || out != nil {
-		t.Fatalf("zero result should be silent, got %q code=%d err=%v", out, code, err)
-	}
-}
-
-func TestCopilotEncode_NilEvent(t *testing.T) {
-	c := &Codec{}
-	_, _, err := c.Encode(nil, model.Deny("nope"))
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !strings.Contains(err.Error(), "nil event") {
-		t.Fatalf("error = %v", err)
 	}
 }
 

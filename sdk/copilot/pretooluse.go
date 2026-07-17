@@ -161,8 +161,8 @@ func (c *Chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolRes
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PreToolUse) (PreToolOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev PreToolUse) (PreToolOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), preToolResults{})
 	})
-	return &Chain{}
+	return c
 }

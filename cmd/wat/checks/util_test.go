@@ -3,7 +3,8 @@ package checks
 import (
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
+	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
 )
 
 func TestParseGoModDirective(t *testing.T) {
@@ -72,12 +73,12 @@ func TestExpectedInstallEvents_matchesInstallCounts(t *testing.T) {
 		}
 	}
 	claude, _ := ExpectedInstallEvents("claude")
-	if len(claude) != len(agnostic.ClaudeEventForKind) {
-		t.Fatalf("claude events = %d, want %d", len(claude), len(agnostic.ClaudeEventForKind))
+	if len(claude) != len(agclaude.EventForKind) {
+		t.Fatalf("claude events = %d, want %d", len(claude), len(agclaude.EventForKind))
 	}
 	copilot, _ := ExpectedInstallEvents("copilot")
-	if len(copilot) != len(agnostic.CopilotEventForKind) {
-		t.Fatalf("copilot events = %d, want %d", len(copilot), len(agnostic.CopilotEventForKind))
+	if len(copilot) != len(agcopilot.EventForKind) {
+		t.Fatalf("copilot events = %d, want %d", len(copilot), len(agcopilot.EventForKind))
 	}
 	claudeAlias, err := ExpectedInstallEvents("claude-code")
 	if err != nil {

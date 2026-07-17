@@ -7,6 +7,7 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
@@ -14,7 +15,7 @@ import (
 func Parse(data []byte) (model.Config, []model.Warning, error) {
 	return flat.Parse(data, flat.ParseOptions{
 		Dialect:        "copilot hooks",
-		KindForEvent:   agnostic.CopilotKindForEvent,
+		KindForEvent:   agcopilot.KindForEvent,
 		HandlerToEntry: copilotHandlerToEntry,
 	})
 }
@@ -60,8 +61,8 @@ func copilotHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.Raw
 func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	return flat.Emit(cfg, flat.EmitOptions{
 		Agent:           "Copilot",
-		KindForEventMap: agnostic.CopilotKindForEventMap,
-		EventForKind:    agnostic.CopilotEventForKind,
+		KindForEventMap: agcopilot.KindForEventMap,
+		EventForKind:    agcopilot.EventForKind,
 		AllowEntry:      copilotAllowEntry,
 		EncodeHandler:   copilotHandlerRaw,
 	})

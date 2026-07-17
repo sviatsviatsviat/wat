@@ -79,8 +79,8 @@ func (c *Chain) PreCompact(fn func(context.Context, Hook[PreCompact], PreCompact
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PreCompact) (PreCompactOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev PreCompact) (PreCompactOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), preCompactResults{})
 	})
-	return &Chain{}
+	return c
 }

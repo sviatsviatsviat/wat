@@ -49,8 +49,8 @@ func (c *Chain) UserPromptExpansion(fn func(context.Context, Hook[UserPromptExpa
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev UserPromptExpansion) (CommonOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev UserPromptExpansion) (CommonOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), userPromptExpansionResults{})
 	})
-	return &Chain{}
+	return c
 }

@@ -193,8 +193,8 @@ func (c *Chain) SessionStart(fn func(context.Context, Hook[SessionStart], Sessio
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
+	registerHandler(c.registerOwner(), func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), sessionStartResults{})
 	})
-	return &Chain{}
+	return c
 }

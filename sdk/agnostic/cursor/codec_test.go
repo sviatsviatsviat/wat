@@ -44,60 +44,8 @@ const cursorAfterFileEdit = `{
   ]
 }`
 
-func TestCursorDecodeEncode_ShellGuard(t *testing.T) {
-	c := &Codec{}
-	ev, err := c.Decode([]byte(cursorShell), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ev.Kind != model.KindPreTool || ev.Name != "beforeShellExecution" || ev.Session != "c1" {
-		t.Fatalf("bad event: %+v", ev)
-	}
-	if ev.Tool == nil || ev.Tool.Name != model.ToolBash || ev.Tool.Shell != "git push --force" {
-		t.Fatalf("bad tool: %+v", ev.Tool)
-	}
-	if !bytes.Equal(ev.Raw, []byte(cursorShell)) {
-		t.Fatal("Raw not preserved")
-	}
-
-	out, code, err := c.Encode(ev, model.Deny("force push blocked"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code != WarnExit {
-		t.Fatalf("exit code = %d, want %d", code, WarnExit)
-	}
-	var got map[string]any
-	if err := json.Unmarshal(out, &got); err != nil {
-		t.Fatal(err)
-	}
-	if got["permission"] != "deny" || got["agent_message"] != "force push blocked" {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCursorDecodeEncode_StopFollowUp(t *testing.T) {
-	c := &Codec{}
-	ev, err := c.Decode([]byte(cursorStop), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ev.Kind != model.KindStop || ev.Turn == nil || ev.Turn.Status != "error" || ev.Turn.LoopCount != 1 {
-		t.Fatalf("bad stop: %+v turn=%+v", ev, ev.Turn)
-	}
-
-	out, code, err := c.Encode(ev, model.Result{FollowUp: "retry with fixed creds"})
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	if !strings.Contains(string(out), `"followup_message":"retry with fixed creds"`) {
-		t.Fatalf("bad stop output: %s", out)
-	}
-}
-
 func TestCursorDecode_AfterFileEdit(t *testing.T) {
-	c := &Codec{}
-	ev, err := c.Decode([]byte(cursorAfterFileEdit), "")
+	ev, err := Decode([]byte(cursorAfterFileEdit), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +78,6 @@ func TestCursorDecode_AfterFileEdit(t *testing.T) {
 }
 
 func TestCursorDecode_Matrix(t *testing.T) {
-	c := &Codec{}
 	tests := []struct {
 		name      string
 		raw       string
@@ -351,7 +298,7 @@ func TestCursorDecode_Matrix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := c.Decode([]byte(tt.raw), tt.eventHint)
+			ev, err := Decode([]byte(tt.raw), tt.eventHint)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -373,8 +320,7 @@ func TestCursorDecode_Matrix(t *testing.T) {
 
 func TestCursorDecode_RequiresEventHint(t *testing.T) {
 	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
-	c := &Codec{}
-	_, err := c.Decode([]byte(raw), "")
+	_, err := Decode([]byte(raw), "")
 	if err == nil {
 		t.Fatal("expected error without eventHint")
 	}
@@ -383,40 +329,5 @@ func TestCursorDecode_RequiresEventHint(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "eventHint") {
 		t.Fatalf("error = %v", err)
-	}
-}
-
-func TestCursorEncode_ZeroResult(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Cursor, Kind: model.KindPreTool, Name: "beforeShellExecution"}
-	out, code, err := c.Encode(ev, model.Result{})
-	if err != nil || code != 0 || out != nil {
-		t.Fatalf("zero result should be silent, got %q code=%d err=%v", out, code, err)
-	}
-}
-
-func TestCursorEncode_SessionStartContext(t *testing.T) {
-	c := &Codec{}
-	ev := &model.Event{Agent: model.Cursor, Kind: model.KindSessionStart, Name: "sessionStart"}
-	out, code, err := c.Encode(ev, model.Context("ctx"))
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
-	}
-	var got struct {
-		Ctx string `json:"additional_context"`
-	}
-	if err := json.Unmarshal(out, &got); err != nil {
-		t.Fatal(err)
-	}
-	if got.Ctx != "ctx" {
-		t.Fatalf("bad output: %s", out)
-	}
-}
-
-func TestCursorEncode_NilEvent(t *testing.T) {
-	c := &Codec{}
-	_, _, err := c.Encode(nil, model.Deny("nope"))
-	if err == nil {
-		t.Fatal("expected error for nil event")
 	}
 }

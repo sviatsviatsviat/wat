@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 func TestRunTest_missingFixtureUsage(t *testing.T) {
@@ -135,7 +136,7 @@ func TestRunTest_preToolDenyIntegration(t *testing.T) {
 			name:     "cursor",
 			agent:    "cursor",
 			fixture:  filepath.Join(fixtures, "testdata", "fixtures", "cursor", "before_shell_force_push.json"),
-			wantExit: agnostic.CursorWarnExit,
+			wantExit: cursor.PermissionDenyExit,
 			wantOutput: []string{
 				`"permission":"deny"`,
 				"force pushes are not allowed",

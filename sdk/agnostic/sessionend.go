@@ -5,7 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
+	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
+	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -47,17 +53,46 @@ type SessionEndHandler func(ctx context.Context, hook SessionEndHook) error
 
 // OnSessionEnd registers an observe-only handler for SessionEnd events.
 func OnSessionEnd(fn SessionEndHandler) *Chain {
-	registerObserveHandler(model.KindSessionEnd, func(ctx context.Context, ev *model.Event) error {
-		typed, err := SessionEndEventFrom(ev)
-		if err != nil {
-			return err
-		}
-		return fn(ctx, sessionEndHook(run.InvocationFrom(ctx), typed))
-	})
+	if fn == nil {
+		return &Chain{}
+	}
+	sdkclaude.Adapter().SessionEnd(adaptClaudeSessionEnd(fn))
+	sdkcopilot.Adapter().SessionEnd(adaptCopilotSessionEnd(fn))
+	sdkcursor.Adapter().SessionEnd(adaptCursorSessionEnd(fn))
 	return &Chain{}
 }
 
 // OnSessionEnd registers another observe-only SessionEnd handler on the chain.
 func (c *Chain) OnSessionEnd(fn SessionEndHandler) *Chain {
 	return OnSessionEnd(fn)
+}
+
+func adaptClaudeSessionEnd(fn SessionEndHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SessionEnd]) error {
+	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionEnd]) error {
+		typed, err := SessionEndEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		if err != nil {
+			return err
+		}
+		return fn(ctx, sessionEndHook(hook.Invocation(), typed))
+	}
+}
+
+func adaptCopilotSessionEnd(fn SessionEndHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SessionEnd]) error {
+	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SessionEnd]) error {
+		typed, err := SessionEndEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		if err != nil {
+			return err
+		}
+		return fn(ctx, sessionEndHook(hook.Invocation(), typed))
+	}
+}
+
+func adaptCursorSessionEnd(fn SessionEndHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SessionEnd]) error {
+	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SessionEnd]) error {
+		typed, err := SessionEndEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		if err != nil {
+			return err
+		}
+		return fn(ctx, sessionEndHook(hook.Invocation(), typed))
+	}
 }

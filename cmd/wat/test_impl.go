@@ -1,5 +1,5 @@
 // wat test executes the user's compiled .wat/hooks binary (same cache path as
-// wat run). agnostic codecs decode the fixture locally for the event summary
+// wat run). Agent SDK decode plus inbound MapEvent build the fixture summary
 // only; they do not replace hook execution.
 package main
 
@@ -14,6 +14,12 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
+	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
+	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 type testConfig struct {
@@ -94,11 +100,26 @@ func decodeFixtureSummary(agentFlag, eventHint string, payload []byte, getenv fu
 	var err error
 	switch dialect {
 	case agnostic.Claude:
-		ev, err = (&agnostic.ClaudeCodec{}).Decode(payload, eventHint)
+		native, decErr := sdkclaude.Decode(payload)
+		if decErr != nil {
+			err = decErr
+			break
+		}
+		ev = agclaude.MapEvent(native, payload)
 	case agnostic.Copilot:
-		ev, err = (&agnostic.CopilotCodec{}).Decode(payload, eventHint)
+		native, decErr := sdkcopilot.Decode(payload, sdkcopilot.WithEvent(eventHint))
+		if decErr != nil {
+			err = decErr
+			break
+		}
+		ev = agcopilot.MapEvent(native, payload)
 	case agnostic.Cursor:
-		ev, err = (&agnostic.CursorCodec{}).Decode(payload, eventHint)
+		native, decErr := sdkcursor.Decode(payload, sdkcursor.WithEvent(eventHint))
+		if decErr != nil {
+			err = decErr
+			break
+		}
+		ev = agcursor.MapEvent(native, payload)
 	default:
 		return nil, dialect, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
 	}
