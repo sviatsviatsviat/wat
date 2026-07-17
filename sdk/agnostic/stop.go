@@ -14,7 +14,9 @@ import (
 // StopEvent is the normalized view of Stop and SubagentStop hook invocations.
 type StopEvent struct {
 	Envelope
-	Turn     *turnEnd
+	// Turn holds turn-end details for this stop event.
+	Turn *turnEnd
+	// Subagent holds subagent details when this is a subagent stop.
 	Subagent *subagent
 }
 

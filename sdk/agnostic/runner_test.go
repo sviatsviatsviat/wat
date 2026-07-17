@@ -379,8 +379,12 @@ func TestServe_CursorWithUpdatedInput_BeforeShellOmitsField(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
 	}
-	if strings.Contains(stdout.String(), "updated_input") {
+	out := stdout.String()
+	if strings.Contains(out, "updated_input") {
 		t.Fatalf("beforeShell should omit updated_input; stdout = %s", stdout.Bytes())
+	}
+	if !strings.Contains(out, `"permission":"allow"`) {
+		t.Fatalf("beforeShell should retain allow; stdout = %s", stdout.Bytes())
 	}
 }
 

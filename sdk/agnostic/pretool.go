@@ -341,12 +341,11 @@ func mapCursorBeforeShellExecution(e sdkcursor.BeforeShellExecution, raw []byte)
 
 func mapCursorBeforeMCPExecution(e sdkcursor.BeforeMCPExecution, raw []byte) *Event {
 	ev := cursorEvent(e, raw, KindPreTool)
-	name := cursorReceivedName(e)
 	nameNorm, _ := hookkit.NormalizeToolName(e.ToolName)
 	toolInput := tools.NewInput(nameNorm, e.ToolName, e.ToolInput.Raw())
 	ev.Tool = &ToolCall{
 		Name:   nameNorm,
-		Native: name,
+		Native: e.ToolName,
 		Input:  toolInput,
 		MCP:    true,
 	}

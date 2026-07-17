@@ -66,7 +66,9 @@ func TestRunTest_emptyFixture(t *testing.T) {
 	}
 }
 
-func TestDecodeFixture_copilotRequiresEvent(t *testing.T) {
+// TestResolveFixture_copilotRequiresEvent checks that resolveFixture rejects
+// Copilot fixtures when --event is missing.
+func TestResolveFixture_copilotRequiresEvent(t *testing.T) {
 	payload, err := os.ReadFile(fixturePath(t, "copilot", "pre_tool_force_push.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -81,6 +83,8 @@ func TestDecodeFixture_copilotRequiresEvent(t *testing.T) {
 	}
 }
 
+// TestWriteTestReport_fixtureSummary checks that writeTestReport includes agent,
+// event, decision, and exit fields in the summary.
 func TestWriteTestReport_fixtureSummary(t *testing.T) {
 	var buf bytes.Buffer
 	writeTestReport(&buf, fixtureInfo{dialect: agnostic.Claude, event: "PreToolUse"}, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)

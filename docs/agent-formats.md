@@ -51,7 +51,7 @@ Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission
 
 ## Tool name normalization
 
-Codecs map native names onto a canonical vocabulary via `hookkit.NormalizeToolName` (internal). `ToolCall.Name` carries the result; `ToolCall.Native` always keeps the original string.
+Inbound mappers map native names onto a canonical vocabulary via `hookkit.NormalizeToolName` (internal). `ToolCall.Name` carries the result; `ToolCall.Native` always keeps the original string.
 
 | Agent | Surface | Builtin example | Normalized | MCP example | MCP detection |
 |-------|---------|-----------------|------------|-------------|---------------|

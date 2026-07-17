@@ -14,6 +14,7 @@ import (
 // PreCompactEvent is the normalized view of a PreCompact hook invocation.
 type PreCompactEvent struct {
 	Envelope
+	// Compact holds compaction details for this pre-compact event.
 	Compact *compactInfo
 }
 

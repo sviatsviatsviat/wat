@@ -42,14 +42,34 @@ var toolAliases = map[string]string{
 //   - Claude / Copilot PascalCase: "mcp__<server>__<tool>"
 //   - Cursor matcher form: "MCP:<tool>"
 //
+// Incomplete prefixes such as "mcp__" or "MCP:" are not classified as MCP.
 // Copilot camelCase MCP names (serverKey-toolName) are not inferred here; codecs
 // set ToolCall.MCP from dialect-specific structured metadata.
 func NormalizeToolName(native string) (name string, mcp bool) {
-	if strings.HasPrefix(native, "mcp__") || strings.HasPrefix(native, "MCP:") {
+	if server, tool, ok := splitMCPUnderscore(native); ok && server != "" && tool != "" {
 		return native, true
+	}
+	if strings.HasPrefix(native, "MCP:") {
+		if tool := strings.TrimPrefix(native, "MCP:"); tool != "" {
+			return native, true
+		}
 	}
 	if n, ok := toolAliases[strings.ToLower(native)]; ok {
 		return n, false
 	}
 	return native, false
+}
+
+// splitMCPUnderscore parses "mcp__<server>__<tool>" into server and tool parts.
+func splitMCPUnderscore(native string) (server, tool string, ok bool) {
+	const prefix = "mcp__"
+	if !strings.HasPrefix(native, prefix) {
+		return "", "", false
+	}
+	rest := native[len(prefix):]
+	server, tool, found := strings.Cut(rest, "__")
+	if !found {
+		return "", "", false
+	}
+	return server, tool, true
 }

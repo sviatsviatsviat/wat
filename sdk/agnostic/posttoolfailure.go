@@ -14,7 +14,9 @@ import (
 // PostToolFailureEvent is the normalized view of a PostToolFailure hook invocation.
 type PostToolFailureEvent struct {
 	Envelope
-	Tool   *ToolCall
+	// Tool holds the tool call associated with this post-tool failure event.
+	Tool *ToolCall
+	// Result holds the tool result associated with this post-tool failure event.
 	Result *ToolResult
 }
 

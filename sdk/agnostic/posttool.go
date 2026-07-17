@@ -16,7 +16,9 @@ import (
 // PostToolEvent is the normalized view of a PostTool hook invocation.
 type PostToolEvent struct {
 	Envelope
-	Tool   *ToolCall
+	// Tool holds the tool call associated with this post-tool event.
+	Tool *ToolCall
+	// Result holds the tool result associated with this post-tool event.
 	Result *ToolResult
 }
 
@@ -274,12 +276,11 @@ func mapCursorAfterShellExecution(e sdkcursor.AfterShellExecution, raw []byte) *
 
 func mapCursorAfterMCPExecution(e sdkcursor.AfterMCPExecution, raw []byte) *Event {
 	ev := cursorEvent(e, raw, KindPostTool)
-	name := cursorReceivedName(e)
 	nameNorm, _ := hookkit.NormalizeToolName(e.ToolName)
 	toolInput := tools.NewInput(nameNorm, e.ToolName, e.ToolInput.Raw())
 	ev.Tool = &ToolCall{
 		Name:   nameNorm,
-		Native: name,
+		Native: e.ToolName,
 		Input:  toolInput,
 		MCP:    true,
 	}

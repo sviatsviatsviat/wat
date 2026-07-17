@@ -14,6 +14,7 @@ import (
 // SessionEndEvent is the normalized view of a SessionEnd hook invocation.
 type SessionEndEvent struct {
 	Envelope
+	// Life holds session lifecycle details for this session end event.
 	Life *lifecycle
 }
 

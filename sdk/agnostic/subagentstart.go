@@ -14,6 +14,7 @@ import (
 // SubagentStartEvent is the normalized view of a SubagentStart hook invocation.
 type SubagentStartEvent struct {
 	Envelope
+	// Subagent holds the subagent associated with this start event.
 	Subagent *subagent
 }
 

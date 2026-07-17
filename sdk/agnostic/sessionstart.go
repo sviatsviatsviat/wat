@@ -14,6 +14,7 @@ import (
 // SessionStartEvent is the normalized view of a SessionStart hook invocation.
 type SessionStartEvent struct {
 	Envelope
+	// Life holds the lifecycle information associated with this session start event.
 	Life *lifecycle
 }
 
