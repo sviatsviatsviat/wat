@@ -1,9 +1,11 @@
 package agnostic
 
-import "github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
-
-// ToolBash is the normalized name for shell execution tools.
-const ToolBash = model.ToolBash
-
 // BashInput is the canonical shell tool input.
-type BashInput = model.BashInput
+type BashInput struct {
+	Command string `json:"command"`
+}
+
+// AsBash returns the bash tool input when this payload is for a shell tool.
+func (in ToolInput) AsBash() (BashInput, bool) {
+	return as[BashInput](in, ToolBash)
+}

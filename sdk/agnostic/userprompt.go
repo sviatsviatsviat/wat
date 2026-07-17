@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -19,11 +18,11 @@ type UserPromptEvent struct {
 }
 
 // UserPromptEventFrom maps a decoded Event to UserPromptEvent.
-func UserPromptEventFrom(ev *model.Event) (UserPromptEvent, error) {
+func UserPromptEventFrom(ev *Event) (UserPromptEvent, error) {
 	if ev == nil {
 		return UserPromptEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindUserPrompt {
+	if ev.Kind != KindUserPrompt {
 		return UserPromptEvent{}, fmt.Errorf("agnostic: expected UserPrompt kind, got %s", ev.Kind)
 	}
 	return UserPromptEvent{Envelope: envelopeFrom(ev), Prompt: ev.Prompt}, nil
@@ -94,20 +93,20 @@ func adaptCursorUserPrompt(fn UserPromptHandler) func(context.Context, sdkcursor
 	}
 }
 
-func mapClaudeUserPromptSubmit(e sdkclaude.UserPromptSubmit, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindUserPrompt)
+func mapClaudeUserPromptSubmit(e sdkclaude.UserPromptSubmit, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindUserPrompt)
 	ev.Prompt = e.Prompt
 	return ev
 }
 
-func mapCopilotUserPromptSubmitted(e sdkcopilot.UserPromptSubmitted, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindUserPrompt)
+func mapCopilotUserPromptSubmitted(e sdkcopilot.UserPromptSubmitted, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindUserPrompt)
 	ev.Prompt = e.Prompt
 	return ev
 }
 
-func mapCursorBeforeSubmitPrompt(e sdkcursor.BeforeSubmitPrompt, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindUserPrompt)
+func mapCursorBeforeSubmitPrompt(e sdkcursor.BeforeSubmitPrompt, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindUserPrompt)
 	ev.Prompt = e.Prompt
 	return ev
 }

@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -16,16 +14,16 @@ import (
 // PostToolFailureEvent is the normalized view of a PostToolFailure hook invocation.
 type PostToolFailureEvent struct {
 	Envelope
-	Tool   *model.ToolCall
-	Result *model.ToolResult
+	Tool   *ToolCall
+	Result *ToolResult
 }
 
 // PostToolFailureEventFrom maps a decoded Event to PostToolFailureEvent.
-func PostToolFailureEventFrom(ev *model.Event) (PostToolFailureEvent, error) {
+func PostToolFailureEventFrom(ev *Event) (PostToolFailureEvent, error) {
 	if ev == nil {
 		return PostToolFailureEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindPostToolFailure {
+	if ev.Kind != KindPostToolFailure {
 		return PostToolFailureEvent{}, fmt.Errorf("agnostic: expected PostToolFailure kind, got %s", ev.Kind)
 	}
 	return PostToolFailureEvent{Envelope: envelopeFrom(ev), Tool: ev.Tool, Result: ev.Result}, nil
@@ -196,26 +194,26 @@ func (cursorPostToolFailureResult) isPostToolFailureResult() {}
 // IsZero reports whether the result carries no instruction.
 func (r cursorPostToolFailureResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
 
-func mapClaudePostToolUseFailure(e sdkclaude.PostToolUseFailure, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindPostToolFailure)
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
-	ev.Result = &model.ToolResult{Error: e.Error}
+func mapClaudePostToolUseFailure(e sdkclaude.PostToolUseFailure, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindPostToolFailure)
+	ev.Tool = newToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	ev.Result = &ToolResult{Error: e.Error}
 	return ev
 }
 
-func mapCopilotPostToolUseFailure(e sdkcopilot.PostToolUseFailure, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindPostToolFailure)
-	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
+func mapCopilotPostToolUseFailure(e sdkcopilot.PostToolUseFailure, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindPostToolFailure)
+	ev.Tool = newToolCall(e.NativeToolName(), e.Input().Raw(), "")
 	if msg := e.ErrorMessage(); msg != "" {
-		ev.Result = &model.ToolResult{Error: msg}
+		ev.Result = &ToolResult{Error: msg}
 	}
 	return ev
 }
 
-func mapCursorPostToolUseFailure(e sdkcursor.PostToolUseFailure, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPostToolFailure)
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
-	ev.Result = &model.ToolResult{
+func mapCursorPostToolUseFailure(e sdkcursor.PostToolUseFailure, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPostToolFailure)
+	ev.Tool = newToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	ev.Result = &ToolResult{
 		Error:       e.ErrorMessage,
 		FailureType: e.FailureType,
 		DurationMs:  e.DurationMillis(),

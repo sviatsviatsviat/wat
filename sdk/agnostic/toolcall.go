@@ -1,9 +1,26 @@
 package agnostic
 
-import "github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
+import (
+	"encoding/json"
 
-// ToolCall describes the tool invocation a pre/post tool event refers to.
-type ToolCall = model.ToolCall
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+)
 
-// ToolResult holds post-tool outcome details on decoded events.
-type ToolResult = model.ToolResult
+// newToolCall builds a ToolCall from native tool metadata and extracts a shell
+// command when the tool is a shell execution.
+func newToolCall(native string, input json.RawMessage, id string) *ToolCall {
+	name, mcp := NormalizeToolName(native)
+	tc := &ToolCall{
+		Name:   name,
+		Native: native,
+		ID:     id,
+		MCP:    mcp,
+	}
+	if name != "" || native != "" || len(input) > 0 {
+		tc.Input = newToolInput(name, native, input)
+	}
+	if name == ToolBash {
+		tc.Shell = hookkit.ExtractShellCommand(input)
+	}
+	return tc
+}

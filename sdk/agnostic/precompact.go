@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -15,15 +14,15 @@ import (
 // PreCompactEvent is the normalized view of a PreCompact hook invocation.
 type PreCompactEvent struct {
 	Envelope
-	Compact *model.CompactInfo
+	Compact *compactInfo
 }
 
 // PreCompactEventFrom maps a decoded Event to PreCompactEvent.
-func PreCompactEventFrom(ev *model.Event) (PreCompactEvent, error) {
+func PreCompactEventFrom(ev *Event) (PreCompactEvent, error) {
 	if ev == nil {
 		return PreCompactEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindPreCompact {
+	if ev.Kind != KindPreCompact {
 		return PreCompactEvent{}, fmt.Errorf("agnostic: expected PreCompact kind, got %s", ev.Kind)
 	}
 	return PreCompactEvent{Envelope: envelopeFrom(ev), Compact: ev.Compact}, nil
@@ -94,23 +93,23 @@ func adaptCursorPreCompact(fn PreCompactHandler) func(context.Context, sdkcursor
 	}
 }
 
-func mapClaudePreCompact(e sdkclaude.PreCompact, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindPreCompact)
-	ev.Compact = &model.CompactInfo{Trigger: e.Trigger, CustomInstructions: e.CustomInstructions}
+func mapClaudePreCompact(e sdkclaude.PreCompact, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindPreCompact)
+	ev.Compact = &compactInfo{Trigger: e.Trigger, CustomInstructions: e.CustomInstructions}
 	return ev
 }
 
-func mapCopilotPreCompact(e sdkcopilot.PreCompact, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindPreCompact)
-	ev.Compact = &model.CompactInfo{
+func mapCopilotPreCompact(e sdkcopilot.PreCompact, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindPreCompact)
+	ev.Compact = &compactInfo{
 		Trigger:            e.Trigger,
 		CustomInstructions: e.Instructions(),
 	}
 	return ev
 }
 
-func mapCursorPreCompact(e sdkcursor.PreCompact, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPreCompact)
-	ev.Compact = &model.CompactInfo{Trigger: e.Trigger}
+func mapCursorPreCompact(e sdkcursor.PreCompact, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPreCompact)
+	ev.Compact = &compactInfo{Trigger: e.Trigger}
 	return ev
 }

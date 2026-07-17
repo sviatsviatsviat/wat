@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -15,15 +14,15 @@ import (
 // SessionStartEvent is the normalized view of a SessionStart hook invocation.
 type SessionStartEvent struct {
 	Envelope
-	Life *model.Lifecycle
+	Life *lifecycle
 }
 
 // SessionStartEventFrom maps a decoded Event to SessionStartEvent.
-func SessionStartEventFrom(ev *model.Event) (SessionStartEvent, error) {
+func SessionStartEventFrom(ev *Event) (SessionStartEvent, error) {
 	if ev == nil {
 		return SessionStartEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindSessionStart {
+	if ev.Kind != KindSessionStart {
 		return SessionStartEvent{}, fmt.Errorf("agnostic: expected SessionStart kind, got %s", ev.Kind)
 	}
 	return SessionStartEvent{Envelope: envelopeFrom(ev), Life: ev.Life}, nil
@@ -194,20 +193,20 @@ func (cursorSessionStartResult) isSessionStartResult() {}
 // IsZero reports whether the result carries no instruction.
 func (r cursorSessionStartResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
 
-func mapClaudeSessionStart(e sdkclaude.SessionStart, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindSessionStart)
-	ev.Life = &model.Lifecycle{Source: e.Source, Model: e.Model}
+func mapClaudeSessionStart(e sdkclaude.SessionStart, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindSessionStart)
+	ev.Life = &lifecycle{Source: e.Source, Model: e.Model}
 	return ev
 }
 
-func mapCopilotSessionStart(e sdkcopilot.SessionStart, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindSessionStart)
-	ev.Life = &model.Lifecycle{Source: e.Source, InitialPrompt: e.InitialPrompt()}
+func mapCopilotSessionStart(e sdkcopilot.SessionStart, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindSessionStart)
+	ev.Life = &lifecycle{Source: e.Source, InitialPrompt: e.InitialPrompt()}
 	return ev
 }
 
-func mapCursorSessionStart(e sdkcursor.SessionStart, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindSessionStart)
-	ev.Life = &model.Lifecycle{Model: e.Model, Background: e.IsBackgroundAgent}
+func mapCursorSessionStart(e sdkcursor.SessionStart, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindSessionStart)
+	ev.Life = &lifecycle{Model: e.Model, Background: e.IsBackgroundAgent}
 	return ev
 }

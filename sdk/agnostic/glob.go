@@ -1,9 +1,12 @@
 package agnostic
 
-import "github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
-
-// ToolGlob is the normalized name for glob search tools.
-const ToolGlob = model.ToolGlob
-
 // GlobInput is the canonical glob tool input.
-type GlobInput = model.GlobInput
+type GlobInput struct {
+	Pattern string `json:"pattern"`
+	Path    string `json:"path,omitempty"`
+}
+
+// AsGlob returns the glob tool input when this payload is for a glob tool.
+func (in ToolInput) AsGlob() (GlobInput, bool) {
+	return as[GlobInput](in, ToolGlob)
+}

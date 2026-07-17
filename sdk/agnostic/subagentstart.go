@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -15,15 +14,15 @@ import (
 // SubagentStartEvent is the normalized view of a SubagentStart hook invocation.
 type SubagentStartEvent struct {
 	Envelope
-	Subagent *model.Subagent
+	Subagent *subagent
 }
 
 // SubagentStartEventFrom maps a decoded Event to SubagentStartEvent.
-func SubagentStartEventFrom(ev *model.Event) (SubagentStartEvent, error) {
+func SubagentStartEventFrom(ev *Event) (SubagentStartEvent, error) {
 	if ev == nil {
 		return SubagentStartEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindSubagentStart {
+	if ev.Kind != KindSubagentStart {
 		return SubagentStartEvent{}, fmt.Errorf("agnostic: expected SubagentStart kind, got %s", ev.Kind)
 	}
 	return SubagentStartEvent{Envelope: envelopeFrom(ev), Subagent: ev.Subagent}, nil
@@ -94,15 +93,15 @@ func adaptCursorSubagentStart(fn SubagentStartHandler) func(context.Context, sdk
 	}
 }
 
-func mapClaudeSubagentStart(e sdkclaude.SubagentStart, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindSubagentStart)
-	ev.Subagent = &model.Subagent{ID: e.AgentID, Type: e.AgentType}
+func mapClaudeSubagentStart(e sdkclaude.SubagentStart, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindSubagentStart)
+	ev.Subagent = &subagent{ID: e.AgentID, Type: e.AgentType}
 	return ev
 }
 
-func mapCopilotSubagentStart(e sdkcopilot.SubagentStart, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindSubagentStart)
-	ev.Subagent = &model.Subagent{
+func mapCopilotSubagentStart(e sdkcopilot.SubagentStart, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindSubagentStart)
+	ev.Subagent = &subagent{
 		Type:    e.Name(),
 		Task:    e.DisplayName(),
 		Summary: e.AgentDescription,
@@ -110,8 +109,8 @@ func mapCopilotSubagentStart(e sdkcopilot.SubagentStart, raw []byte) *model.Even
 	return ev
 }
 
-func mapCursorSubagentStart(e sdkcursor.SubagentStart, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindSubagentStart)
-	ev.Subagent = &model.Subagent{ID: e.SubagentID, Type: e.SubagentType, Task: e.Task}
+func mapCursorSubagentStart(e sdkcursor.SubagentStart, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindSubagentStart)
+	ev.Subagent = &subagent{ID: e.SubagentID, Type: e.SubagentType, Task: e.Task}
 	return ev
 }

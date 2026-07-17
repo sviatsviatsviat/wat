@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -15,15 +14,15 @@ import (
 // SessionEndEvent is the normalized view of a SessionEnd hook invocation.
 type SessionEndEvent struct {
 	Envelope
-	Life *model.Lifecycle
+	Life *lifecycle
 }
 
 // SessionEndEventFrom maps a decoded Event to SessionEndEvent.
-func SessionEndEventFrom(ev *model.Event) (SessionEndEvent, error) {
+func SessionEndEventFrom(ev *Event) (SessionEndEvent, error) {
 	if ev == nil {
 		return SessionEndEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindSessionEnd {
+	if ev.Kind != KindSessionEnd {
 		return SessionEndEvent{}, fmt.Errorf("agnostic: expected SessionEnd kind, got %s", ev.Kind)
 	}
 	return SessionEndEvent{Envelope: envelopeFrom(ev), Life: ev.Life}, nil
@@ -94,20 +93,20 @@ func adaptCursorSessionEnd(fn SessionEndHandler) func(context.Context, sdkcursor
 	}
 }
 
-func mapClaudeSessionEnd(e sdkclaude.SessionEnd, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindSessionEnd)
-	ev.Life = &model.Lifecycle{Reason: e.Reason}
+func mapClaudeSessionEnd(e sdkclaude.SessionEnd, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindSessionEnd)
+	ev.Life = &lifecycle{Reason: e.Reason}
 	return ev
 }
 
-func mapCopilotSessionEnd(e sdkcopilot.SessionEnd, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindSessionEnd)
-	ev.Life = &model.Lifecycle{Reason: e.Reason}
+func mapCopilotSessionEnd(e sdkcopilot.SessionEnd, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindSessionEnd)
+	ev.Life = &lifecycle{Reason: e.Reason}
 	return ev
 }
 
-func mapCursorSessionEnd(e sdkcursor.SessionEnd, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindSessionEnd)
-	ev.Life = &model.Lifecycle{Reason: e.Reason, Background: e.IsBackgroundAgent}
+func mapCursorSessionEnd(e sdkcursor.SessionEnd, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindSessionEnd)
+	ev.Life = &lifecycle{Reason: e.Reason, Background: e.IsBackgroundAgent}
 	return ev
 }

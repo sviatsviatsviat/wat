@@ -1,4 +1,4 @@
-package model
+package agnostic
 
 import (
 	"encoding/json"
@@ -47,7 +47,7 @@ func TestNormalizeToolName(t *testing.T) {
 }
 
 func TestToolInputAsBash(t *testing.T) {
-	in := NewToolInput(ToolBash, "Bash", json.RawMessage(`{"command":"go test ./..."}`))
+	in := newToolInput(ToolBash, "Bash", json.RawMessage(`{"command":"go test ./..."}`))
 	got, ok := in.AsBash()
 	if !ok || got.Command != "go test ./..." {
 		t.Fatalf("AsBash = %+v, %v", got, ok)
@@ -58,7 +58,7 @@ func TestToolInputAsBash(t *testing.T) {
 }
 
 func TestToolInputAsWritePathAlias(t *testing.T) {
-	in := NewToolInput(ToolWrite, "Write", json.RawMessage(`{"file_path":"/a","content":"x"}`))
+	in := newToolInput(ToolWrite, "Write", json.RawMessage(`{"file_path":"/a","content":"x"}`))
 	got, ok := in.AsWrite()
 	if !ok || got.Path != "/a" || got.Content != "x" {
 		t.Fatalf("AsWrite = %+v, %v", got, ok)

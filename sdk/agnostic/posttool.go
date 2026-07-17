@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -17,16 +15,16 @@ import (
 // PostToolEvent is the normalized view of a PostTool hook invocation.
 type PostToolEvent struct {
 	Envelope
-	Tool   *model.ToolCall
-	Result *model.ToolResult
+	Tool   *ToolCall
+	Result *ToolResult
 }
 
 // PostToolEventFrom maps a decoded Event to PostToolEvent.
-func PostToolEventFrom(ev *model.Event) (PostToolEvent, error) {
+func PostToolEventFrom(ev *Event) (PostToolEvent, error) {
 	if ev == nil {
 		return PostToolEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindPostTool {
+	if ev.Kind != KindPostTool {
 		return PostToolEvent{}, fmt.Errorf("agnostic: expected PostTool kind, got %s", ev.Kind)
 	}
 	return PostToolEvent{Envelope: envelopeFrom(ev), Tool: ev.Tool, Result: ev.Result}, nil
@@ -202,7 +200,7 @@ func adaptCursorAfterFileEdit(fn PostToolHandler) func(context.Context, sdkcurso
 	}
 }
 
-func callCursorPostTool(ctx context.Context, inv run.Invocation, ev *model.Event, native sdkcursor.PostToolResults, fn PostToolHandler) (sdkcursor.PostToolOutput, error) {
+func callCursorPostTool(ctx context.Context, inv run.Invocation, ev *Event, native sdkcursor.PostToolResults, fn PostToolHandler) (sdkcursor.PostToolOutput, error) {
 	typed, err := PostToolEventFrom(ev)
 	if err != nil {
 		return nil, err
@@ -245,53 +243,53 @@ func (r cursorPostToolResult) WithUpdatedOutput(output string) PostToolResult {
 	return r
 }
 
-func mapClaudePostToolUse(e sdkclaude.PostToolUse, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindPostTool)
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
-	ev.Result = &model.ToolResult{Raw: hookkit.CloneRaw(e.ToolResponse), Text: hookkit.RawToText(e.ToolResponse)}
+func mapClaudePostToolUse(e sdkclaude.PostToolUse, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindPostTool)
+	ev.Tool = newToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	ev.Result = &ToolResult{Raw: hookkit.CloneRaw(e.ToolResponse), Text: hookkit.RawToText(e.ToolResponse)}
 	return ev
 }
 
-func mapCopilotPostToolUse(e sdkcopilot.PostToolUse, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindPostTool)
-	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
-	ev.Result = &model.ToolResult{Raw: hookkit.CloneRaw(e.ResultRaw()), Text: e.ResultText()}
+func mapCopilotPostToolUse(e sdkcopilot.PostToolUse, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindPostTool)
+	ev.Tool = newToolCall(e.NativeToolName(), e.Input().Raw(), "")
+	ev.Result = &ToolResult{Raw: hookkit.CloneRaw(e.ResultRaw()), Text: e.ResultText()}
 	return ev
 }
 
-func mapCursorPostToolUse(e sdkcursor.PostToolUse, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPostTool)
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
-	ev.Result = &model.ToolResult{Text: e.ToolOutput, DurationMs: e.DurationMillis()}
+func mapCursorPostToolUse(e sdkcursor.PostToolUse, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPostTool)
+	ev.Tool = newToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	ev.Result = &ToolResult{Text: e.ToolOutput, DurationMs: e.DurationMillis()}
 	return ev
 }
 
-func mapCursorAfterShellExecution(e sdkcursor.AfterShellExecution, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPostTool)
-	ev.Tool = &model.ToolCall{Name: model.ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
-	ev.Result = &model.ToolResult{Text: e.Output, DurationMs: e.DurationMillis()}
+func mapCursorAfterShellExecution(e sdkcursor.AfterShellExecution, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPostTool)
+	ev.Tool = &ToolCall{Name: ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
+	ev.Result = &ToolResult{Text: e.Output, DurationMs: e.DurationMillis()}
 	return ev
 }
 
-func mapCursorAfterMCPExecution(e sdkcursor.AfterMCPExecution, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPostTool)
+func mapCursorAfterMCPExecution(e sdkcursor.AfterMCPExecution, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPostTool)
 	name := cursorReceivedName(e)
-	nameNorm, _ := model.NormalizeToolName(e.ToolName)
-	toolInput := model.NewToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
-	ev.Tool = &model.ToolCall{
+	nameNorm, _ := NormalizeToolName(e.ToolName)
+	toolInput := newToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
+	ev.Tool = &ToolCall{
 		Name:   nameNorm,
 		Native: name,
 		Input:  toolInput,
 		MCP:    true,
 	}
-	ev.Result = &model.ToolResult{Raw: json.RawMessage(e.ResultJSON), DurationMs: e.DurationMillis()}
+	ev.Result = &ToolResult{Raw: json.RawMessage(e.ResultJSON), DurationMs: e.DurationMillis()}
 	return ev
 }
 
-func mapCursorAfterFileEdit(e sdkcursor.AfterFileEdit, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPostTool)
+func mapCursorAfterFileEdit(e sdkcursor.AfterFileEdit, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPostTool)
 	name := cursorReceivedName(e)
-	ev.Tool = &model.ToolCall{Name: model.ToolEdit, Native: name}
+	ev.Tool = &ToolCall{Name: ToolEdit, Native: name}
 	input, err := json.Marshal(map[string]any{
 		"file_path": e.FilePath,
 		"edits":     e.Edits,
@@ -303,7 +301,7 @@ func mapCursorAfterFileEdit(e sdkcursor.AfterFileEdit, raw []byte) *model.Event 
 	if err != nil {
 		return ev
 	}
-	ev.Tool.Input = model.NewToolInput(model.ToolEdit, name, input)
-	ev.Result = &model.ToolResult{Raw: editsRaw}
+	ev.Tool.Input = newToolInput(ToolEdit, name, input)
+	ev.Result = &ToolResult{Raw: editsRaw}
 	return ev
 }

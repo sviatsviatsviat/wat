@@ -1,4 +1,4 @@
-package model
+package agnostic
 
 import (
 	"encoding/json"
@@ -65,15 +65,15 @@ type Event struct {
 	// Result holds tool outcome details for post-tool events.
 	Result *ToolResult
 	// Subagent holds subagent lifecycle details for subagent start/stop events.
-	Subagent *Subagent
+	Subagent *subagent
 	// Turn holds turn-end details for KindStop events.
-	Turn *TurnEnd
+	Turn *turnEnd
 	// Compact holds compaction details for KindPreCompact events.
-	Compact *CompactInfo
+	Compact *compactInfo
 	// Note holds notification or error details for KindNotification and KindAgentError events.
-	Note *Note
+	Note *note
 	// Life holds session lifecycle details for KindSessionStart and KindSessionEnd events.
-	Life *Lifecycle
+	Life *lifecycle
 }
 
 // ToolCall describes the tool invocation a pre/post tool event refers to.
@@ -106,68 +106,46 @@ type ToolResult struct {
 	DurationMs int64
 }
 
-// Subagent describes subagent lifecycle events.
-type Subagent struct {
-	// ID is the subagent identifier.
-	ID string
-	// Type is the agent type or name.
-	Type string
-	// Task is the subagent task description.
-	Task string
-	// Summary is the final output summary when provided.
-	Summary string
-	// Status is the subagent status (completed, error, aborted, end_turn, ...).
-	Status string
-	// TranscriptPath is the subagent transcript path when provided.
+// subagent describes subagent lifecycle events.
+type subagent struct {
+	ID             string
+	Type           string
+	Task           string
+	Summary        string
+	Status         string
 	TranscriptPath string
-	// LoopCount is the number of prior auto follow-ups when reported.
-	LoopCount int
+	LoopCount      int
 }
 
-// TurnEnd describes agent stop events.
-type TurnEnd struct {
-	// Status is the stop status (completed, aborted, error, end_turn).
-	Status string
-	// LoopCount is the number of prior auto follow-ups (Cursor).
-	LoopCount int
-	// StopHookActive is true when a stop hook already forced continuation (Claude).
-	StopHookActive bool
-	// LastAssistantMessage is the final assistant text of the turn (Claude).
+// turnEnd describes agent stop events.
+type turnEnd struct {
+	Status               string
+	LoopCount            int
+	StopHookActive       bool
 	LastAssistantMessage string
 }
 
-// CompactInfo describes context compaction events.
-type CompactInfo struct {
-	// Trigger is the compaction trigger (manual or auto).
-	Trigger string
-	// CustomInstructions are user-provided compaction instructions.
+// compactInfo describes context compaction events.
+type compactInfo struct {
+	Trigger            string
 	CustomInstructions string
 }
 
-// Note describes notifications and runtime errors.
-type Note struct {
-	// Type is the notification or error type.
-	Type string
-	// Title is the notification title when provided.
-	Title string
-	// Message is the notification or error message.
-	Message string
-	// Recoverable is set when the error is recoverable.
+// note describes notifications and runtime errors.
+type note struct {
+	Type        string
+	Title       string
+	Message     string
 	Recoverable *bool
 }
 
-// Lifecycle describes session start and end events.
-type Lifecycle struct {
-	// Source is the session start source (startup, resume, clear, compact, new).
-	Source string
-	// Reason is the session end reason.
-	Reason string
-	// Model is the model name when provided at session start.
-	Model string
-	// InitialPrompt is the initial prompt text when provided at session start.
+// lifecycle describes session start and end events.
+type lifecycle struct {
+	Source        string
+	Reason        string
+	Model         string
 	InitialPrompt string
-	// Background is true for background agent sessions.
-	Background bool
+	Background    bool
 }
 
 // Canonical tool names used by ToolCall.Name.

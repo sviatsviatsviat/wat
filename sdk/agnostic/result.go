@@ -1,4 +1,4 @@
-package model
+package agnostic
 
 // Decision is the unified gate verdict for pre-events.
 type Decision int
@@ -31,9 +31,9 @@ func (d Decision) String() string {
 
 // Result is a portable decision/context projection used by Merge helpers and tests.
 //
-// Runtime hook handlers return sealed kind-specific types from package agnostic
-// (PreToolResult, PostToolResult, …), not this struct. Result is distinct from
-// Event.Result, which carries incoming post-tool payload data on decoded events.
+// Runtime hook handlers return sealed kind-specific types (PreToolResult,
+// PostToolResult, …), not this struct. Result is distinct from Event.Result,
+// which carries incoming post-tool payload data on decoded events.
 type Result struct {
 	// Decision is the gate verdict for PreTool events.
 	Decision Decision
@@ -43,7 +43,7 @@ type Result struct {
 	UpdatedInput map[string]any
 	// UpdatedOutput replaces tool result text on PostTool events.
 	UpdatedOutput *string
-	// Context is additional context injected for the model.
+	// Context is additional context injected for the
 	Context string
 	// FollowUp instructs the agent to keep working on Stop and SubagentStop events.
 	FollowUp string

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -15,16 +14,16 @@ import (
 // StopEvent is the normalized view of Stop and SubagentStop hook invocations.
 type StopEvent struct {
 	Envelope
-	Turn     *model.TurnEnd
-	Subagent *model.Subagent
+	Turn     *turnEnd
+	Subagent *subagent
 }
 
 // StopEventFrom maps a decoded Event to StopEvent.
-func StopEventFrom(ev *model.Event) (StopEvent, error) {
+func StopEventFrom(ev *Event) (StopEvent, error) {
 	if ev == nil {
 		return StopEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindStop && ev.Kind != model.KindSubagentStop {
+	if ev.Kind != KindStop && ev.Kind != KindSubagentStop {
 		return StopEvent{}, fmt.Errorf("agnostic: expected Stop or SubagentStop kind, got %s", ev.Kind)
 	}
 	return StopEvent{Envelope: envelopeFrom(ev), Turn: ev.Turn, Subagent: ev.Subagent}, nil
@@ -221,7 +220,7 @@ func adaptCursorSubagentStop(fn StopHandler) func(context.Context, sdkcursor.Hoo
 	}
 }
 
-func callCursorStop(ctx context.Context, inv run.Invocation, ev *model.Event, native sdkcursor.StopResults, fn StopHandler) (sdkcursor.StopOutput, error) {
+func callCursorStop(ctx context.Context, inv run.Invocation, ev *Event, native sdkcursor.StopResults, fn StopHandler) (sdkcursor.StopOutput, error) {
 	typed, err := StopEventFrom(ev)
 	if err != nil {
 		return nil, err
@@ -257,48 +256,48 @@ func (cursorStopResult) isStopResult() {}
 // IsZero reports whether the result carries no instruction.
 func (r cursorStopResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
 
-func mapClaudeStop(e sdkclaude.Stop, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindStop)
-	ev.Turn = &model.TurnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage}
+func mapClaudeStop(e sdkclaude.Stop, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindStop)
+	ev.Turn = &turnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage}
 	return ev
 }
 
-func mapClaudeSubagentStop(e sdkclaude.SubagentStop, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindSubagentStop)
-	ev.Subagent = &model.Subagent{ID: e.AgentID, Type: e.AgentType, Summary: e.LastAssistantMessage}
-	ev.Turn = &model.TurnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage}
+func mapClaudeSubagentStop(e sdkclaude.SubagentStop, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindSubagentStop)
+	ev.Subagent = &subagent{ID: e.AgentID, Type: e.AgentType, Summary: e.LastAssistantMessage}
+	ev.Turn = &turnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage}
 	return ev
 }
 
-func mapCopilotAgentStop(e sdkcopilot.AgentStop, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindStop)
-	ev.Turn = &model.TurnEnd{Status: e.Reason()}
+func mapCopilotAgentStop(e sdkcopilot.AgentStop, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindStop)
+	ev.Turn = &turnEnd{Status: e.Reason()}
 	return ev
 }
 
-func mapCopilotSubagentStop(e sdkcopilot.SubagentStop, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindSubagentStop)
-	ev.Subagent = &model.Subagent{
+func mapCopilotSubagentStop(e sdkcopilot.SubagentStop, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindSubagentStop)
+	ev.Subagent = &subagent{
 		Type:   e.Name(),
 		Status: e.Reason(),
 	}
-	ev.Turn = &model.TurnEnd{Status: e.Reason()}
+	ev.Turn = &turnEnd{Status: e.Reason()}
 	return ev
 }
 
-func mapCursorStop(e sdkcursor.Stop, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindStop)
-	ev.Turn = &model.TurnEnd{Status: e.Status, LoopCount: e.LoopCount}
+func mapCursorStop(e sdkcursor.Stop, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindStop)
+	ev.Turn = &turnEnd{Status: e.Status, LoopCount: e.LoopCount}
 	return ev
 }
 
-func mapCursorSubagentStop(e sdkcursor.SubagentStop, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindSubagentStop)
+func mapCursorSubagentStop(e sdkcursor.SubagentStop, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindSubagentStop)
 	tp := ""
 	if e.AgentTranscriptPath != nil {
 		tp = *e.AgentTranscriptPath
 	}
-	ev.Subagent = &model.Subagent{
+	ev.Subagent = &subagent{
 		ID:             e.SubagentID,
 		Type:           e.SubagentType,
 		Task:           e.Task,

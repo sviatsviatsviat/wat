@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -17,15 +15,15 @@ import (
 type PreToolEvent struct {
 	Envelope
 	// Tool holds tool invocation details.
-	Tool *model.ToolCall
+	Tool *ToolCall
 }
 
 // PreToolEventFrom maps a decoded Event to PreToolEvent.
-func PreToolEventFrom(ev *model.Event) (PreToolEvent, error) {
+func PreToolEventFrom(ev *Event) (PreToolEvent, error) {
 	if ev == nil {
 		return PreToolEvent{}, fmt.Errorf("agnostic: nil event")
 	}
-	if ev.Kind != model.KindPreTool {
+	if ev.Kind != KindPreTool {
 		return PreToolEvent{}, fmt.Errorf("agnostic: expected PreTool kind, got %s", ev.Kind)
 	}
 	return PreToolEvent{Envelope: envelopeFrom(ev), Tool: ev.Tool}, nil
@@ -238,7 +236,7 @@ func adaptCursorBeforeRead(fn PreToolHandler) func(context.Context, sdkcursor.Ho
 	}
 }
 
-func callCursorPreTool(ctx context.Context, inv run.Invocation, ev *model.Event, native sdkcursor.PermissionResults, fn PreToolHandler) (sdkcursor.PermissionOutput, error) {
+func callCursorPreTool(ctx context.Context, inv run.Invocation, ev *Event, native sdkcursor.PermissionResults, fn PreToolHandler) (sdkcursor.PermissionOutput, error) {
 	typed, err := PreToolEventFrom(ev)
 	if err != nil {
 		return nil, err
@@ -312,39 +310,39 @@ func (r cursorPermissionResult) WithUpdatedInput(input map[string]any) PreToolRe
 	return r
 }
 
-func mapClaudePreToolUse(e sdkclaude.PreToolUse, raw []byte) *model.Event {
-	ev := claudeEvent(e, raw, model.KindPreTool)
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+func mapClaudePreToolUse(e sdkclaude.PreToolUse, raw []byte) *Event {
+	ev := claudeEvent(e, raw, KindPreTool)
+	ev.Tool = newToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 	return ev
 }
 
-func mapCopilotPreToolUse(e sdkcopilot.PreToolUse, raw []byte) *model.Event {
-	ev := copilotEvent(e, raw, model.KindPreTool)
-	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
+func mapCopilotPreToolUse(e sdkcopilot.PreToolUse, raw []byte) *Event {
+	ev := copilotEvent(e, raw, KindPreTool)
+	ev.Tool = newToolCall(e.NativeToolName(), e.Input().Raw(), "")
 	return ev
 }
 
-func mapCursorPreToolUse(e sdkcursor.PreToolUse, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPreTool)
-	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+func mapCursorPreToolUse(e sdkcursor.PreToolUse, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPreTool)
+	ev.Tool = newToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 	if shell := e.ShellCommand(); shell != "" {
 		ev.Tool.Shell = shell
 	}
 	return ev
 }
 
-func mapCursorBeforeShellExecution(e sdkcursor.BeforeShellExecution, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPreTool)
-	ev.Tool = &model.ToolCall{Name: model.ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
+func mapCursorBeforeShellExecution(e sdkcursor.BeforeShellExecution, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPreTool)
+	ev.Tool = &ToolCall{Name: ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
 	return ev
 }
 
-func mapCursorBeforeMCPExecution(e sdkcursor.BeforeMCPExecution, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPreTool)
+func mapCursorBeforeMCPExecution(e sdkcursor.BeforeMCPExecution, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPreTool)
 	name := cursorReceivedName(e)
-	nameNorm, _ := model.NormalizeToolName(e.ToolName)
-	toolInput := model.NewToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
-	ev.Tool = &model.ToolCall{
+	nameNorm, _ := NormalizeToolName(e.ToolName)
+	toolInput := newToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
+	ev.Tool = &ToolCall{
 		Name:   nameNorm,
 		Native: name,
 		Input:  toolInput,
@@ -353,10 +351,10 @@ func mapCursorBeforeMCPExecution(e sdkcursor.BeforeMCPExecution, raw []byte) *mo
 	return ev
 }
 
-func mapCursorBeforeReadFile(e sdkcursor.BeforeReadFile, raw []byte) *model.Event {
-	ev := cursorEvent(e, raw, model.KindPreTool)
+func mapCursorBeforeReadFile(e sdkcursor.BeforeReadFile, raw []byte) *Event {
+	ev := cursorEvent(e, raw, KindPreTool)
 	name := cursorReceivedName(e)
-	ev.Tool = &model.ToolCall{Name: model.ToolRead, Native: name}
+	ev.Tool = &ToolCall{Name: ToolRead, Native: name}
 	input, err := json.Marshal(map[string]any{
 		"file_path":   e.FilePath,
 		"content":     e.Content,
@@ -365,6 +363,6 @@ func mapCursorBeforeReadFile(e sdkcursor.BeforeReadFile, raw []byte) *model.Even
 	if err != nil {
 		return ev
 	}
-	ev.Tool.Input = model.NewToolInput(model.ToolRead, name, input)
+	ev.Tool.Input = newToolInput(ToolRead, name, input)
 	return ev
 }

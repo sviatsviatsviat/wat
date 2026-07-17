@@ -2,16 +2,15 @@ package agnostic
 
 import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func claudeEvent(native sdkclaude.Event, raw []byte, kind model.Kind) *model.Event {
+func claudeEvent(native sdkclaude.Event, raw []byte, kind Kind) *Event {
 	env := sdkclaude.EnvelopeOf(native)
-	return &model.Event{
-		Agent:          model.Claude,
+	return &Event{
+		Agent:          Claude,
 		Kind:           kind,
 		Name:           native.EventName(),
 		Session:        env.SessionID,
@@ -21,14 +20,14 @@ func claudeEvent(native sdkclaude.Event, raw []byte, kind model.Kind) *model.Eve
 	}
 }
 
-func copilotEvent(native sdkcopilot.Event, raw []byte, kind model.Kind) *model.Event {
+func copilotEvent(native sdkcopilot.Event, raw []byte, kind Kind) *Event {
 	env := sdkcopilot.EnvelopeOf(native)
 	name := native.EventName()
 	if received := env.ReceivedName(); received != "" {
 		name = received
 	}
-	return &model.Event{
-		Agent:          model.Copilot,
+	return &Event{
+		Agent:          Copilot,
 		Kind:           kind,
 		Name:           name,
 		Session:        env.Session(),
@@ -38,14 +37,14 @@ func copilotEvent(native sdkcopilot.Event, raw []byte, kind model.Kind) *model.E
 	}
 }
 
-func cursorEvent(native sdkcursor.Event, raw []byte, kind model.Kind) *model.Event {
+func cursorEvent(native sdkcursor.Event, raw []byte, kind Kind) *Event {
 	env := sdkcursor.EnvelopeOf(native)
 	name := native.EventName()
 	if received := env.ReceivedName(); received != "" {
 		name = received
 	}
-	return &model.Event{
-		Agent:          model.Cursor,
+	return &Event{
+		Agent:          Cursor,
 		Kind:           kind,
 		Name:           name,
 		Session:        env.Session(),
