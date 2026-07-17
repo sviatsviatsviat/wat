@@ -39,7 +39,7 @@ func (c *Chain) AfterShellExecution(fn func(context.Context, Hook[AfterShellExec
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev AfterShellExecution) (PostToolOutput, error) {
+	registerHandler(func(ctx context.Context, ev AfterShellExecution) (PostToolOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
 	})
 	return c

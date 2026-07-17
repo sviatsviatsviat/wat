@@ -140,7 +140,7 @@ func (c *Chain) Elicitation(fn func(context.Context, Hook[Elicitation], Elicitat
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev Elicitation) (ElicitationOutput, error) {
+	registerHandler(func(ctx context.Context, ev Elicitation) (ElicitationOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), elicitationResults{})
 	})
 	return c

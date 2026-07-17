@@ -51,6 +51,6 @@ func init() {
 
 // ErrorOccurred registers an observe-only errorOccurred handler.
 func (c *Chain) ErrorOccurred(fn func(context.Context, Hook[ErrorOccurred]) error) *Chain {
-	registerObserveHandler(c.registerOwner(), fn)
+	registerObserveHandler(fn)
 	return c
 }

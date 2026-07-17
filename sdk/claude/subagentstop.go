@@ -29,7 +29,7 @@ func (c *Chain) SubagentStop(fn func(context.Context, Hook[SubagentStop], StopRe
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev SubagentStop) (StopOutput, error) {
+	registerHandler(func(ctx context.Context, ev SubagentStop) (StopOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), stopResults{})
 	})
 	return c

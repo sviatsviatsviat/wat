@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/cursor/internal"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -44,16 +43,14 @@ func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
 	return name, nil
 }
 
-func registerHandler[E Event, O any](owner string, fn func(context.Context, E) (O, error)) {
+func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
 
-	internal.MarkRegistered(owner, name)
-
-	run.RegisterHandler(owner, "cursor", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
+	run.RegisterHandler("cursor", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		ev, err := decodeWithHint(raw, cfg.EventHint)
 		if err != nil {
@@ -74,16 +71,14 @@ func registerHandler[E Event, O any](owner string, fn func(context.Context, E) (
 	})
 }
 
-func registerObserveHandler[E Event](owner string, fn func(context.Context, Hook[E]) error) {
+func registerObserveHandler[E Event](fn func(context.Context, Hook[E]) error) {
 	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
 
-	internal.MarkRegistered(owner, name)
-
-	run.RegisterHandler(owner, "cursor", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
+	run.RegisterHandler("cursor", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		ev, err := decodeWithHint(raw, cfg.EventHint)
 		if err != nil {
@@ -98,17 +93,4 @@ func registerObserveHandler[E Event](owner string, fn func(context.Context, Hook
 		}
 		return nil, 0, nil
 	})
-}
-
-// ResetHandlers clears registration tracking and cursor-owned handlers
-// in the shared run registry. It is intended for tests.
-func ResetHandlers() {
-	internal.ResetRegisteredOwner("cursor")
-	run.ResetOwner("cursor")
-}
-
-// ResetAdapter clears agnostic-owned registration tracking for this SDK.
-// Pair with run.ResetOwner("agnostic") from sdk/agnostic.ResetHandlers.
-func ResetAdapter() {
-	internal.ResetRegisteredOwner(adapterOwner)
 }

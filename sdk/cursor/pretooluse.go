@@ -43,7 +43,7 @@ func (c *Chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], Permission
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev PreToolUse) (PermissionOutput, error) {
+	registerHandler(func(ctx context.Context, ev PreToolUse) (PermissionOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionResults{})
 	})
 	return c

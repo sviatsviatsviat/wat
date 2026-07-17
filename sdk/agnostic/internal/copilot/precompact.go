@@ -12,7 +12,7 @@ func RegisterPreCompact(fn model.PreCompactHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.Adapter().PreCompact(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PreCompact]) error {
+	new(sdkcopilot.Chain).PreCompact(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PreCompact]) error {
 		return fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event, hook.Raw())))
 	})
 }

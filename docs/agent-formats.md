@@ -20,13 +20,12 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf` |
 | `encode.go` | `Encode` router (wire mapping) |
 | `register.go` | Handler registration (`registerHandler`, dialect init) |
-| `chain.go` | `Chain` type and `Adapter()` |
+| `chain.go` | `Chain` type |
 | `hook.go` | Hook wrappers embedding typed event + `run.Invocation` + `Raw()` |
 | `options.go` | Decode configuration (`WithEvent`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
 | `internal/decode.go` | Decoder registry |
-| `internal/register.go` | Duplicate-registration tracking |
 | `tools/` | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
 
 **Agnostic** uses the same root vertical-slice layout for portable hook kinds (`pretool.go`, `stop.go`, …):
@@ -34,7 +33,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | Location | Role |
 |----------|------|
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
-| `register.go` | `Serve`, run options, `ResetHandlers` |
+| `register.go` | `Serve`, run options |
 | `event.go` / `dialect.go` / `result.go` | Shared `Event`, `Kind`, `Dialect`, `Result` |
 | `tools/` | Canonical tool names and typed `Input` with `AsBash`, `AsWrite`, … |
 

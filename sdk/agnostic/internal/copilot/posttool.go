@@ -14,7 +14,7 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.Adapter().PostToolUse(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUse], native sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
+	new(sdkcopilot.Chain).PostToolUse(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUse], native sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
 		out, err := fn(ctx, model.NewPostToolHook(hook.Invocation(), mapPostToolUse(hook.Event, hook.Raw())), newPostToolResults(native))
 		if err != nil || out == nil {
 			return nil, err

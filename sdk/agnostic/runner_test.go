@@ -16,7 +16,7 @@ import (
 
 func resetTest(t *testing.T) {
 	t.Helper()
-	ResetHandlers()
+	run.Reset()
 }
 
 func TestServe_MergeDispatch(t *testing.T) {
@@ -250,36 +250,8 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 	}
 }
 
-func TestResetHandlers_OwnerScoped(t *testing.T) {
-	run.Reset()
-	claude.ResetHandlers()
-
-	payload := `{"session_id":"s","hook_event_name":"PostToolUse","tool_name":"Read","tool_response":"file contents"}`
-	OnPostTool(func(ctx context.Context, hook PostToolHook, r PostToolResults) (PostToolResult, error) {
-		return r.Context("from-agnostic"), nil
-	})
-	new(claude.Chain).PostToolUse(func(ctx context.Context, hook claude.Hook[claude.PostToolUse], r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
-		return r.Context("from-claude"), nil
-	})
-
-	ResetHandlers()
-
-	var stdout bytes.Buffer
-	code := run.Serve(context.Background(), strings.NewReader(payload), &stdout, &bytes.Buffer{})
-	if code != 0 {
-		t.Fatalf("exit = %d", code)
-	}
-	if strings.Contains(stdout.String(), "from-agnostic") {
-		t.Fatalf("agnostic handler should be cleared; stdout = %s", stdout.Bytes())
-	}
-	if !strings.Contains(stdout.String(), "from-claude") {
-		t.Fatalf("claude handler should remain; stdout = %s", stdout.Bytes())
-	}
-}
-
 func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 	resetTest(t)
-	claude.ResetHandlers()
 
 	payload := `{"session_id":"s","hook_event_name":"PostToolUse","tool_name":"Read","tool_response":"file contents"}`
 	OnPostTool(func(ctx context.Context, hook PostToolHook, r PostToolResults) (PostToolResult, error) {

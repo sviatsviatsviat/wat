@@ -13,7 +13,7 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.Adapter().SessionStart(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionStart], native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
+	new(sdkclaude.Chain).SessionStart(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionStart], native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
 		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event, hook.Raw())), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err

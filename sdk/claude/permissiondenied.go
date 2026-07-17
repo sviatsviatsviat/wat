@@ -120,7 +120,7 @@ func (c *Chain) PermissionDenied(fn func(context.Context, Hook[PermissionDenied]
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev PermissionDenied) (PermissionDeniedOutput, error) {
+	registerHandler(func(ctx context.Context, ev PermissionDenied) (PermissionDeniedOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionDeniedResults{})
 	})
 	return c

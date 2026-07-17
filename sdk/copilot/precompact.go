@@ -32,6 +32,6 @@ func init() {
 
 // PreCompact registers an observe-only preCompact handler.
 func (c *Chain) PreCompact(fn func(context.Context, Hook[PreCompact]) error) *Chain {
-	registerObserveHandler(c.registerOwner(), fn)
+	registerObserveHandler(fn)
 	return c
 }

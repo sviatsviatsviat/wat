@@ -454,7 +454,6 @@ func TestEncode_PermissionUpdatedInputEmptyEventName(t *testing.T) {
 
 func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 	run.Reset()
-	cursor.ResetHandlers()
 	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		return r.Deny("blocked"), nil
 	})
@@ -466,22 +465,6 @@ func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 	if !strings.Contains(stdout.String(), `"permission":"deny"`) {
 		t.Fatalf("bad stdout: %s", stdout.String())
 	}
-}
-
-func TestMux_OnDuplicatePanics(t *testing.T) {
-	run.Reset()
-	cursor.ResetHandlers()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
-		return nil, nil
-	})
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fatal("expected panic on duplicate handler registration")
-		}
-	}()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], _ cursor.PermissionResults) (cursor.PermissionOutput, error) {
-		return nil, nil
-	})
 }
 
 func TestToolInput_AsShell(t *testing.T) {

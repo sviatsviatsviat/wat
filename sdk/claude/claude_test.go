@@ -45,7 +45,6 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 
 func TestMux_Serve_PreToolDeny(t *testing.T) {
 	run.Reset()
-	claude.ResetHandlers()
 	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return r.Deny("destructive command"), nil
 	})
@@ -205,7 +204,6 @@ func TestDecode_InvalidJSON(t *testing.T) {
 
 func TestMux_FailPolicy(t *testing.T) {
 	run.Reset()
-	claude.ResetHandlers()
 	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return nil, context.Canceled
 	})
@@ -215,7 +213,6 @@ func TestMux_FailPolicy(t *testing.T) {
 		t.Fatalf("FailOpen exit = %d, want %d", code, claude.HandlerErrorExit)
 	}
 	run.Reset()
-	claude.ResetHandlers()
 	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return nil, context.Canceled
 	})
@@ -223,22 +220,6 @@ func TestMux_FailPolicy(t *testing.T) {
 	if code != claude.FailBlockExit {
 		t.Fatalf("FailBlock exit = %d, want %d", code, claude.FailBlockExit)
 	}
-}
-
-func TestMux_OnDuplicatePanics(t *testing.T) {
-	run.Reset()
-	claude.ResetHandlers()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
-		return nil, nil
-	})
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fatal("expected panic on duplicate handler registration")
-		}
-	}()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
-		return nil, nil
-	})
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {

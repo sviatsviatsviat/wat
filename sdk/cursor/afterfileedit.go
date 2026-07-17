@@ -27,7 +27,7 @@ func (c *Chain) AfterFileEdit(fn func(context.Context, Hook[AfterFileEdit], Post
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev AfterFileEdit) (PostToolOutput, error) {
+	registerHandler(func(ctx context.Context, ev AfterFileEdit) (PostToolOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
 	})
 	return c

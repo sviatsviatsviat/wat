@@ -159,7 +159,7 @@ func (c *Chain) PostToolUse(fn func(context.Context, Hook[PostToolUse], PostTool
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev PostToolUse) (PostToolUseOutput, error) {
+	registerHandler(func(ctx context.Context, ev PostToolUse) (PostToolUseOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolUseResults{})
 	})
 	return c

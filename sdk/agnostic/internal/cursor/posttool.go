@@ -18,7 +18,7 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.Adapter().
+	new(sdkcursor.Chain).
 		PostToolUse(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUse], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 			return callPostTool(ctx, hook.Invocation(), mapPostToolUse(hook.Event, hook.Raw()), native, fn)
 		}).

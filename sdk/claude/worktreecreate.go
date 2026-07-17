@@ -107,7 +107,7 @@ func (c *Chain) WorktreeCreate(fn func(context.Context, Hook[WorktreeCreate], Wo
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev WorktreeCreate) (WorktreeCreateOutput, error) {
+	registerHandler(func(ctx context.Context, ev WorktreeCreate) (WorktreeCreateOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), worktreeCreateResults{})
 	})
 	return c

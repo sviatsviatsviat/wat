@@ -17,7 +17,7 @@ func RegisterPreTool(fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.Adapter().
+	new(sdkcursor.Chain).
 		PreToolUse(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreToolUse], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 			return callPreTool(ctx, hook.Invocation(), mapPreToolUse(hook.Event, hook.Raw()), newPermissionResults(native), fn)
 		}).
@@ -34,7 +34,7 @@ func RegisterBeforeReadFile(fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.Adapter().BeforeReadFile(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeReadFile], native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
+	new(sdkcursor.Chain).BeforeReadFile(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeReadFile], native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
 		return callPreTool(ctx, hook.Invocation(), mapBeforeReadFile(hook.Event, hook.Raw()), newBeforeReadResults(native), fn)
 	})
 }

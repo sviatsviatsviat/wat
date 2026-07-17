@@ -76,7 +76,7 @@ func (c *Chain) Notification(fn func(context.Context, Hook[Notification], Notifi
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.registerOwner(), func(ctx context.Context, ev Notification) (NotificationOutput, error) {
+	registerHandler(func(ctx context.Context, ev Notification) (NotificationOutput, error) {
 		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), notificationResults{})
 	})
 	return c

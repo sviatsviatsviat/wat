@@ -497,7 +497,6 @@ func TestTimestamp_UnmarshalJSON(t *testing.T) {
 
 func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 	run.Reset()
-	copilot.ResetHandlers()
 	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return nil, errors.New("boom")
 	})
@@ -510,7 +509,6 @@ func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 
 func TestMux_Serve_PreToolDeny(t *testing.T) {
 	run.Reset()
-	copilot.ResetHandlers()
 	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return r.Deny("nope"), nil
 	})
@@ -522,22 +520,6 @@ func TestMux_Serve_PreToolDeny(t *testing.T) {
 	if !strings.Contains(stdout.String(), `"permissionDecision":"deny"`) {
 		t.Fatalf("stdout=%s", stdout.String())
 	}
-}
-
-func TestMux_OnDuplicatePanics(t *testing.T) {
-	run.Reset()
-	copilot.ResetHandlers()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
-		return nil, nil
-	})
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fatal("expected panic on duplicate handler registration")
-		}
-	}()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
-		return nil, nil
-	})
 }
 
 func TestToolInput_AsBash(t *testing.T) {
