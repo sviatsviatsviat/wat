@@ -43,12 +43,3 @@ func RawToText(raw json.RawMessage) string {
 	}
 	return string(raw)
 }
-
-// InvertKindEvent builds an event-name to kind map from a kind to event map.
-func InvertKindEvent(m map[model.Kind]string) map[string]model.Kind {
-	out := make(map[string]model.Kind, len(m))
-	for kind, event := range m {
-		out[event] = kind
-	}
-	return out
-}

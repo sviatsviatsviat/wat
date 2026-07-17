@@ -15,7 +15,7 @@ import (
 func Parse(data []byte) (model.Config, []model.Warning, error) {
 	return flat.Parse(data, flat.ParseOptions{
 		Dialect:        "cursor hooks",
-		KindForEvent:   agcursor.KindForEvent,
+		KindForEvent:   kindForEvent,
 		SkipKind:       func(kind agnostic.Kind) bool { return kind == agnostic.KindOther },
 		HandlerToEntry: cursorHandlerToEntry,
 	})
@@ -52,7 +52,7 @@ func cursorHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.RawM
 func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	return flat.Emit(cfg, flat.EmitOptions{
 		Agent:           "Cursor",
-		KindForEventMap: agcursor.KindForEventMap,
+		KindForEventMap: kindForEventMap,
 		EventForKind:    agcursor.EventForKind,
 		AllowEntry:      cursorAllowEntry,
 		EncodeHandler:   cursorHandlerRaw,

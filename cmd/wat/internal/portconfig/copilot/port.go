@@ -15,7 +15,7 @@ import (
 func Parse(data []byte) (model.Config, []model.Warning, error) {
 	return flat.Parse(data, flat.ParseOptions{
 		Dialect:        "copilot hooks",
-		KindForEvent:   agcopilot.KindForEvent,
+		KindForEvent:   kindForEvent,
 		HandlerToEntry: copilotHandlerToEntry,
 	})
 }
@@ -61,7 +61,7 @@ func copilotHandlerToEntry(event string, kind agnostic.Kind, handlerRaw json.Raw
 func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	return flat.Emit(cfg, flat.EmitOptions{
 		Agent:           "Copilot",
-		KindForEventMap: agcopilot.KindForEventMap,
+		KindForEventMap: kindForEventMap,
 		EventForKind:    agcopilot.EventForKind,
 		AllowEntry:      copilotAllowEntry,
 		EncodeHandler:   copilotHandlerRaw,

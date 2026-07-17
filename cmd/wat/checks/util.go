@@ -11,6 +11,7 @@ import (
 	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
 	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
 	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
 // ParseWatRunFlags extracts --agent and --event from a wat run shell command.
@@ -137,17 +138,27 @@ func validateAgent(agent string) error {
 func isValidInstallEvent(agent, event string) bool {
 	switch agnostic.ParseDialect(agent) {
 	case agnostic.Claude:
-		_, ok := agclaude.KindForEvent(event)
-		return ok
+		return eventInMapValues(agclaude.EventForKind, event)
 	case agnostic.Copilot:
-		_, ok := agcopilot.KindForEvent(event)
-		return ok
+		canonical, ok := sdkcopilot.CanonicalEventName(event)
+		if !ok {
+			return false
+		}
+		return eventInMapValues(agcopilot.EventForKind, canonical)
 	case agnostic.Cursor:
-		_, ok := agcursor.KindForEvent(event)
-		return ok
+		return eventInMapValues(agcursor.EventForKind, event) || agcursor.IsDedicatedEvent(event)
 	default:
 		return false
 	}
+}
+
+func eventInMapValues(m map[agnostic.Kind]string, event string) bool {
+	for _, name := range m {
+		if name == event {
+			return true
+		}
+	}
+	return false
 }
 
 // ExpectedInstallEvents returns hook event names wat install writes for agent.

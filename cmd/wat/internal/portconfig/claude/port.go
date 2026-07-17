@@ -12,6 +12,13 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
+var kindForEventMap = model.InvertEventForKind(agclaude.EventForKind)
+
+func kindForEvent(name string) (agnostic.Kind, bool) {
+	kind, ok := kindForEventMap[name]
+	return kind, ok
+}
+
 // Parse reads Claude Code settings JSON into a normalized configuration.
 func Parse(data []byte) (model.Config, []model.Warning, error) {
 	var f claude.Settings
@@ -21,7 +28,7 @@ func Parse(data []byte) (model.Config, []model.Warning, error) {
 	cfg := model.Config{}
 	var warns []model.Warning
 	for event, groups := range f.Hooks {
-		kind, known := agclaude.KindForEvent(event)
+		kind, known := kindForEvent(event)
 		if !known {
 			for _, g := range groups {
 				raw, err := json.Marshal(g)
@@ -100,7 +107,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 	var warns []model.Warning
 	for kind, entries := range cfg.Hooks {
 		for _, e := range entries {
-			event := model.EventNameForEmit(e, agclaude.KindForEventMap, agclaude.EventForKind)
+			event := model.EventNameForEmit(e, kindForEventMap, agclaude.EventForKind)
 			if event == "" {
 				warns = append(warns, model.Warnf("kind %q has no Claude Code event name; dropped", kind))
 				continue
