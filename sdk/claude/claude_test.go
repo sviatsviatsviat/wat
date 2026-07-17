@@ -265,7 +265,8 @@ func TestEncode_PointerOutput(t *testing.T) {
 		t.Fatalf("bad output: %s", out)
 	}
 
-	out, err = claude.Encode("PreToolUse", nil)
+	var typedNil *claude.PreToolUseOutput
+	out, err = claude.Encode("PreToolUse", typedNil)
 	if err != nil || out != nil {
 		t.Fatalf("nil pointer output should be silent, got %q err=%v", out, err)
 	}

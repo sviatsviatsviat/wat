@@ -108,8 +108,12 @@ func (o userPromptSubmitOutput) WithTerminalSequence(seq string) UserPromptSubmi
 
 // UserPromptSubmitResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type UserPromptSubmitResults interface {
+	// Context returns a non-blocking context-injection result.
+	Context(text string) UserPromptSubmitOutput
 	// Block returns a block result with an agent-facing reason.
 	Block(reason string) UserPromptSubmitOutput
+	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
+	Noop() UserPromptSubmitOutput
 	isUserPromptSubmitResults()
 }
 
@@ -117,9 +121,19 @@ type userPromptSubmitResults struct{}
 
 func (userPromptSubmitResults) isUserPromptSubmitResults() {}
 
+// Context returns a non-blocking context-injection result.
+func (userPromptSubmitResults) Context(text string) UserPromptSubmitOutput {
+	return userPromptSubmitOutput{additionalContext: text}
+}
+
 // Block returns a block result with an agent-facing reason.
 func (userPromptSubmitResults) Block(reason string) UserPromptSubmitOutput {
 	return userPromptSubmitOutput{block: true, reason: reason}
+}
+
+// Noop returns an empty response (silent stdout).
+func (userPromptSubmitResults) Noop() UserPromptSubmitOutput {
+	return userPromptSubmitOutput{}
 }
 
 func (userPromptSubmitOutput) allowedEvents() []string {
@@ -139,6 +153,9 @@ func (o userPromptSubmitOutput) encodeInto(top, hso map[string]any) {
 	}
 	if o.sessionTitle != "" {
 		hso["sessionTitle"] = o.sessionTitle
+	}
+	if o.suppressOriginalPrompt {
+		hso["suppressOriginalPrompt"] = true
 	}
 }
 

@@ -91,6 +91,8 @@ func (o stopOutput) WithTerminalSequence(seq string) StopOutput {
 
 // StopResults is the hook-scoped response builder supplied to Chain handlers by registration.
 type StopResults interface {
+	// Context returns non-blocking feedback that continues the conversation.
+	Context(text string) StopOutput
 	// FollowUp blocks completion and feeds reason back to Claude.
 	FollowUp(reason string) StopOutput
 	isStopResults()
@@ -99,6 +101,11 @@ type StopResults interface {
 type stopResults struct{}
 
 func (stopResults) isStopResults() {}
+
+// Context returns non-blocking feedback that continues the conversation.
+func (stopResults) Context(text string) StopOutput {
+	return stopOutput{additionalContext: text}
+}
 
 // FollowUp blocks completion and feeds reason back to Claude.
 func (stopResults) FollowUp(reason string) StopOutput {

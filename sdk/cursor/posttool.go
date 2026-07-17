@@ -63,6 +63,7 @@ func (postToolResults) Noop() PostToolOutput {
 func (postToolOutput) allowedEvents() []string {
 	return []string{
 		EventPostToolUse,
+		EventPostToolUseFailure,
 		EventAfterMCPExecution,
 		EventAfterShellExecution,
 		EventAfterFileEdit,

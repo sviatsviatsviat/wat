@@ -125,9 +125,9 @@ func (o commonOutput) WithTerminalSequence(seq string) CommonOutput {
 }
 
 func applyCommon(top map[string]any, c common) {
-	if c.cont != nil && !*c.cont {
-		top["continue"] = false
-		if c.stopReason != "" {
+	if c.cont != nil {
+		top["continue"] = *c.cont
+		if !*c.cont && c.stopReason != "" {
 			top["stopReason"] = c.stopReason
 		}
 	}
