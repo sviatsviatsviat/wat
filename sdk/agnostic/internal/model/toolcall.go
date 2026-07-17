@@ -1,4 +1,4 @@
-package agnostic
+package model
 
 import (
 	"encoding/json"
@@ -7,9 +7,9 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 )
 
-// newToolCall builds a ToolCall from native tool metadata and extracts a shell
+// NewToolCall builds a ToolCall from native tool metadata and extracts a shell
 // command when the tool is a shell execution.
-func newToolCall(native string, input json.RawMessage, id string) *ToolCall {
+func NewToolCall(native string, input json.RawMessage, id string) *ToolCall {
 	name, mcp := hookkit.NormalizeToolName(native)
 	tc := &ToolCall{
 		Name:   name,

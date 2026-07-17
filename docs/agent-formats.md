@@ -133,7 +133,7 @@ Each result-producing Chain method or `On*` registration injects a builder inter
 - Claude `SubagentStartResults`, `NotificationResults`, and `PreCompactResults` are separate types (not a shared `CommonResults`).
 - Cursor `BeforeReadFileResults` and `BeforeTabFileReadResults` are separate from shell/MCP `PermissionResults` where encode surfaces differ.
 
-Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …). Return `nil` for no opinion (silent stdout). Set advanced fields with fluent `With*` methods on the value returned by the builder (for example `r.Allow().WithUpdatedInput(args)`). Hook output and portable result types are sealed interfaces — only the injected `*Results` builders (and `With*`) can construct non-nil values. Cursor notes: `WithUpdatedInput` emits `updated_input` only for `preToolUse`; `WithUpdatedOutput` maps to `updated_mcp_tool_output` (MCP post-tool only).
+Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …). Return `nil` for no opinion (silent stdout). Set advanced fields with fluent `With*` methods on the value returned by the builder (for example `r.Allow().WithUpdatedInput(args)`). Construct results only via the injected `*Results` builders (and `With*`); host-specific wrappers live in `sdk/agnostic/internal/{claude,cursor,copilot}`. Cursor notes: `WithUpdatedInput` emits `updated_input` only for `preToolUse`; `WithUpdatedOutput` maps to `updated_mcp_tool_output` (MCP post-tool only).
 
 ### Event support matrix
 

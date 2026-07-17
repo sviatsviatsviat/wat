@@ -1,0 +1,25 @@
+package claude
+
+import (
+	"context"
+
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+)
+
+// RegisterSubagentStart registers fn on the Claude SubagentStart chain.
+func RegisterSubagentStart(fn model.SubagentStartHandler) {
+	if fn == nil {
+		return
+	}
+	sdkclaude.Adapter().SubagentStart(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SubagentStart], _ sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
+		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event, hook.Raw())))
+	})
+}
+
+func mapSubagentStart(e sdkclaude.SubagentStart, raw []byte) *model.SubagentStartEvent {
+	return &model.SubagentStartEvent{
+		Envelope: envelope(e, raw),
+		Subagent: &model.Subagent{ID: e.AgentID, Type: e.AgentType},
+	}
+}

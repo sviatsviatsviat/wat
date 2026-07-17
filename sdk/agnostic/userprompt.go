@@ -1,112 +1,33 @@
 package agnostic
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-
-	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
-	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
-	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
-	"github.com/sviatsviatsviat/wat/sdk/run"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/claude"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/copilot"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 )
 
 // UserPromptEvent is the normalized view of a UserPrompt hook invocation.
-type UserPromptEvent struct {
-	Envelope
-	Prompt string
-}
-
-// UserPromptEventFrom maps a decoded Event to UserPromptEvent.
-func UserPromptEventFrom(ev *Event) (UserPromptEvent, error) {
-	if ev == nil {
-		return UserPromptEvent{}, fmt.Errorf("agnostic: nil event")
-	}
-	if ev.Kind != KindUserPrompt {
-		return UserPromptEvent{}, fmt.Errorf("agnostic: expected UserPrompt kind, got %s", ev.Kind)
-	}
-	return UserPromptEvent{Envelope: envelopeFrom(ev), Prompt: ev.Prompt}, nil
-}
+type UserPromptEvent = model.UserPromptEvent
 
 // UserPromptHook is the handler context for portable UserPrompt events.
-type UserPromptHook struct {
-	UserPromptEvent
-	inv run.Invocation
-}
-
-// Invocation returns serve-time settings for this hook invocation.
-func (h UserPromptHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h UserPromptHook) Raw() json.RawMessage { return h.UserPromptEvent.Raw }
-
-func userPromptHook(ctx run.Invocation, ev UserPromptEvent) UserPromptHook {
-	return UserPromptHook{UserPromptEvent: ev, inv: ctx}
-}
+type UserPromptHook = model.UserPromptHook
 
 // UserPromptHandler handles observe-only UserPrompt events.
-type UserPromptHandler func(ctx context.Context, hook UserPromptHook) error
+type UserPromptHandler = model.UserPromptHandler
 
 // OnUserPrompt registers an observe-only handler for UserPrompt events.
 func OnUserPrompt(fn UserPromptHandler) *Chain {
 	if fn == nil {
 		return &Chain{}
 	}
-	sdkclaude.Adapter().UserPromptSubmit(adaptClaudeUserPrompt(fn))
-	sdkcopilot.Adapter().UserPromptSubmitted(adaptCopilotUserPrompt(fn))
-	sdkcursor.Adapter().BeforeSubmitPrompt(adaptCursorUserPrompt(fn))
+	claude.RegisterUserPrompt(fn)
+	copilot.RegisterUserPrompt(fn)
+	cursor.RegisterUserPrompt(fn)
 	return &Chain{}
 }
 
 // OnUserPrompt registers another observe-only UserPrompt handler on the chain.
 func (c *Chain) OnUserPrompt(fn UserPromptHandler) *Chain {
 	return OnUserPrompt(fn)
-}
-
-func adaptClaudeUserPrompt(fn UserPromptHandler) func(context.Context, sdkclaude.Hook[sdkclaude.UserPromptSubmit], sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
-	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
-		typed, err := UserPromptEventFrom(mapClaudeUserPromptSubmit(hook.Event, hook.Raw()))
-		if err != nil {
-			return nil, err
-		}
-		return nil, fn(ctx, userPromptHook(hook.Invocation(), typed))
-	}
-}
-
-func adaptCopilotUserPrompt(fn UserPromptHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
-	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
-		typed, err := UserPromptEventFrom(mapCopilotUserPromptSubmitted(hook.Event, hook.Raw()))
-		if err != nil {
-			return err
-		}
-		return fn(ctx, userPromptHook(hook.Invocation(), typed))
-	}
-}
-
-func adaptCursorUserPrompt(fn UserPromptHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeSubmitPrompt], sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
-	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeSubmitPrompt], _ sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
-		typed, err := UserPromptEventFrom(mapCursorBeforeSubmitPrompt(hook.Event, hook.Raw()))
-		if err != nil {
-			return nil, err
-		}
-		return nil, fn(ctx, userPromptHook(hook.Invocation(), typed))
-	}
-}
-
-func mapClaudeUserPromptSubmit(e sdkclaude.UserPromptSubmit, raw []byte) *Event {
-	ev := claudeEvent(e, raw, KindUserPrompt)
-	ev.Prompt = e.Prompt
-	return ev
-}
-
-func mapCopilotUserPromptSubmitted(e sdkcopilot.UserPromptSubmitted, raw []byte) *Event {
-	ev := copilotEvent(e, raw, KindUserPrompt)
-	ev.Prompt = e.Prompt
-	return ev
-}
-
-func mapCursorBeforeSubmitPrompt(e sdkcursor.BeforeSubmitPrompt, raw []byte) *Event {
-	ev := cursorEvent(e, raw, KindUserPrompt)
-	ev.Prompt = e.Prompt
-	return ev
 }

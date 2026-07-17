@@ -301,8 +301,7 @@ func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 
 type fakePreToolResult struct{}
 
-func (fakePreToolResult) isPreToolResult() {}
-func (fakePreToolResult) IsZero() bool     { return false }
+func (fakePreToolResult) IsZero() bool { return false }
 func (fakePreToolResult) WithUpdatedInput(map[string]any) PreToolResult {
 	return fakePreToolResult{}
 }

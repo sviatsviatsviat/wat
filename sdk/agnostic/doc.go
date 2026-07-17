@@ -5,8 +5,10 @@
 // onto each agent SDK Chain. Canonical tool names and typed tool-input helpers
 // live in sdk/agnostic/tools.
 //
-// Inbound native→unified mapping is unexported next to each On* hook. Agnostic
-// depends on the per-agent SDKs; those SDKs remain usable without agnostic.
+// Inbound native→unified mapping and host result wrappers live in
+// sdk/agnostic/internal/{claude,cursor,copilot} with shared types and result
+// interfaces in sdk/agnostic/internal/model. Agnostic depends on the
+// per-agent SDKs; those SDKs remain usable without agnostic.
 //
 // Hook handlers receive a hook context wrapper (PreToolHook, PostToolHook, and
 // others) embedding a normalized typed event (PreToolEvent, PostToolEvent, …)
