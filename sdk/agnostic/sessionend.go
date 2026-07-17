@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -69,7 +66,7 @@ func (c *Chain) OnSessionEnd(fn SessionEndHandler) *Chain {
 
 func adaptClaudeSessionEnd(fn SessionEndHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SessionEnd]) error {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionEnd]) error {
-		typed, err := SessionEndEventFrom(agclaude.MapSessionEnd(hook.Event, hook.Raw()))
+		typed, err := SessionEndEventFrom(mapClaudeSessionEnd(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
@@ -79,7 +76,7 @@ func adaptClaudeSessionEnd(fn SessionEndHandler) func(context.Context, sdkclaude
 
 func adaptCopilotSessionEnd(fn SessionEndHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SessionEnd]) error {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SessionEnd]) error {
-		typed, err := SessionEndEventFrom(agcopilot.MapSessionEnd(hook.Event, hook.Raw()))
+		typed, err := SessionEndEventFrom(mapCopilotSessionEnd(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
@@ -89,10 +86,28 @@ func adaptCopilotSessionEnd(fn SessionEndHandler) func(context.Context, sdkcopil
 
 func adaptCursorSessionEnd(fn SessionEndHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SessionEnd]) error {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SessionEnd]) error {
-		typed, err := SessionEndEventFrom(agcursor.MapSessionEnd(hook.Event, hook.Raw()))
+		typed, err := SessionEndEventFrom(mapCursorSessionEnd(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
 		return fn(ctx, sessionEndHook(hook.Invocation(), typed))
 	}
+}
+
+func mapClaudeSessionEnd(e sdkclaude.SessionEnd, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindSessionEnd)
+	ev.Life = &model.Lifecycle{Reason: e.Reason}
+	return ev
+}
+
+func mapCopilotSessionEnd(e sdkcopilot.SessionEnd, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindSessionEnd)
+	ev.Life = &model.Lifecycle{Reason: e.Reason}
+	return ev
+}
+
+func mapCursorSessionEnd(e sdkcursor.SessionEnd, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindSessionEnd)
+	ev.Life = &model.Lifecycle{Reason: e.Reason, Background: e.IsBackgroundAgent}
+	return ev
 }

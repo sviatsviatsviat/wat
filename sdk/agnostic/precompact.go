@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -69,7 +66,7 @@ func (c *Chain) OnPreCompact(fn PreCompactHandler) *Chain {
 
 func adaptClaudePreCompact(fn PreCompactHandler) func(context.Context, sdkclaude.Hook[sdkclaude.PreCompact], sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PreCompact], _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
-		typed, err := PreCompactEventFrom(agclaude.MapPreCompact(hook.Event, hook.Raw()))
+		typed, err := PreCompactEventFrom(mapClaudePreCompact(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +76,7 @@ func adaptClaudePreCompact(fn PreCompactHandler) func(context.Context, sdkclaude
 
 func adaptCopilotPreCompact(fn PreCompactHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.PreCompact]) error {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PreCompact]) error {
-		typed, err := PreCompactEventFrom(agcopilot.MapPreCompact(hook.Event, hook.Raw()))
+		typed, err := PreCompactEventFrom(mapCopilotPreCompact(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
@@ -89,10 +86,31 @@ func adaptCopilotPreCompact(fn PreCompactHandler) func(context.Context, sdkcopil
 
 func adaptCursorPreCompact(fn PreCompactHandler) func(context.Context, sdkcursor.Hook[sdkcursor.PreCompact], sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreCompact], _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
-		typed, err := PreCompactEventFrom(agcursor.MapPreCompact(hook.Event, hook.Raw()))
+		typed, err := PreCompactEventFrom(mapCursorPreCompact(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
 		return nil, fn(ctx, preCompactHook(hook.Invocation(), typed))
 	}
+}
+
+func mapClaudePreCompact(e sdkclaude.PreCompact, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindPreCompact)
+	ev.Compact = &model.CompactInfo{Trigger: e.Trigger, CustomInstructions: e.CustomInstructions}
+	return ev
+}
+
+func mapCopilotPreCompact(e sdkcopilot.PreCompact, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindPreCompact)
+	ev.Compact = &model.CompactInfo{
+		Trigger:            e.Trigger,
+		CustomInstructions: e.Instructions(),
+	}
+	return ev
+}
+
+func mapCursorPreCompact(e sdkcursor.PreCompact, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPreCompact)
+	ev.Compact = &model.CompactInfo{Trigger: e.Trigger}
+	return ev
 }

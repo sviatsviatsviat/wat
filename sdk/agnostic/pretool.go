@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -98,7 +96,7 @@ func (c *Chain) OnPreTool(fn PreToolHandler) *Chain {
 
 func adaptClaudePreTool(fn PreToolHandler) func(context.Context, sdkclaude.Hook[sdkclaude.PreToolUse], sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PreToolUse], native sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
-		typed, err := PreToolEventFrom(agclaude.MapPreToolUse(hook.Event, hook.Raw()))
+		typed, err := PreToolEventFrom(mapClaudePreToolUse(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +150,7 @@ func (r claudePreToolResult) WithUpdatedInput(input map[string]any) PreToolResul
 
 func adaptCopilotPreTool(fn PreToolHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.PreToolUse], sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PreToolUse], native sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
-		typed, err := PreToolEventFrom(agcopilot.MapPreToolUse(hook.Event, hook.Raw()))
+		typed, err := PreToolEventFrom(mapCopilotPreToolUse(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -206,25 +204,25 @@ func (r copilotPreToolResult) WithUpdatedInput(input map[string]any) PreToolResu
 
 func adaptCursorPreTool(fn PreToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.PreToolUse], sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreToolUse], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
-		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapPreToolUse(hook.Event, hook.Raw()), native, fn)
+		return callCursorPreTool(ctx, hook.Invocation(), mapCursorPreToolUse(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorBeforeShell(fn PreToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeShellExecution], sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeShellExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
-		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapBeforeShellExecution(hook.Event, hook.Raw()), native, fn)
+		return callCursorPreTool(ctx, hook.Invocation(), mapCursorBeforeShellExecution(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorBeforeMCP(fn PreToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeMCPExecution], sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeMCPExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
-		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapBeforeMCPExecution(hook.Event, hook.Raw()), native, fn)
+		return callCursorPreTool(ctx, hook.Invocation(), mapCursorBeforeMCPExecution(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorBeforeRead(fn PreToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeReadFile], sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeReadFile], native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
-		typed, err := PreToolEventFrom(agcursor.MapBeforeReadFile(hook.Event, hook.Raw()))
+		typed, err := PreToolEventFrom(mapCursorBeforeReadFile(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -312,4 +310,61 @@ func (r cursorPermissionResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.
 func (r cursorPermissionResult) WithUpdatedInput(input map[string]any) PreToolResult {
 	r.native = r.native.WithUpdatedInput(input)
 	return r
+}
+
+func mapClaudePreToolUse(e sdkclaude.PreToolUse, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindPreTool)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	return ev
+}
+
+func mapCopilotPreToolUse(e sdkcopilot.PreToolUse, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindPreTool)
+	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
+	return ev
+}
+
+func mapCursorPreToolUse(e sdkcursor.PreToolUse, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPreTool)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	if shell := e.ShellCommand(); shell != "" {
+		ev.Tool.Shell = shell
+	}
+	return ev
+}
+
+func mapCursorBeforeShellExecution(e sdkcursor.BeforeShellExecution, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPreTool)
+	ev.Tool = &model.ToolCall{Name: model.ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
+	return ev
+}
+
+func mapCursorBeforeMCPExecution(e sdkcursor.BeforeMCPExecution, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPreTool)
+	name := cursorReceivedName(e)
+	nameNorm, _ := model.NormalizeToolName(e.ToolName)
+	toolInput := model.NewToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
+	ev.Tool = &model.ToolCall{
+		Name:   nameNorm,
+		Native: name,
+		Input:  toolInput,
+		MCP:    true,
+	}
+	return ev
+}
+
+func mapCursorBeforeReadFile(e sdkcursor.BeforeReadFile, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPreTool)
+	name := cursorReceivedName(e)
+	ev.Tool = &model.ToolCall{Name: model.ToolRead, Native: name}
+	input, err := json.Marshal(map[string]any{
+		"file_path":   e.FilePath,
+		"content":     e.Content,
+		"attachments": e.Attachments,
+	})
+	if err != nil {
+		return ev
+	}
+	ev.Tool.Input = model.NewToolInput(model.ToolRead, name, input)
+	return ev
 }

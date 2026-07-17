@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -93,7 +91,7 @@ func (c *Chain) OnPostTool(fn PostToolHandler) *Chain {
 
 func adaptClaudePostTool(fn PostToolHandler) func(context.Context, sdkclaude.Hook[sdkclaude.PostToolUse], sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
-		typed, err := PostToolEventFrom(agclaude.MapPostToolUse(hook.Event, hook.Raw()))
+		typed, err := PostToolEventFrom(mapClaudePostToolUse(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +135,7 @@ func (r claudePostToolResult) WithUpdatedOutput(output string) PostToolResult {
 
 func adaptCopilotPostTool(fn PostToolHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.PostToolUse], sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUse], native sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
-		typed, err := PostToolEventFrom(agcopilot.MapPostToolUse(hook.Event, hook.Raw()))
+		typed, err := PostToolEventFrom(mapCopilotPostToolUse(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -181,25 +179,25 @@ func (r copilotPostToolResult) WithUpdatedOutput(output string) PostToolResult {
 
 func adaptCursorPostTool(fn PostToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.PostToolUse], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUse], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapPostToolUse(hook.Event, hook.Raw()), native, fn)
+		return callCursorPostTool(ctx, hook.Invocation(), mapCursorPostToolUse(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorAfterShell(fn PostToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.AfterShellExecution], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterShellExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapAfterShellExecution(hook.Event, hook.Raw()), native, fn)
+		return callCursorPostTool(ctx, hook.Invocation(), mapCursorAfterShellExecution(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorAfterMCP(fn PostToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.AfterMCPExecution], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterMCPExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapAfterMCPExecution(hook.Event, hook.Raw()), native, fn)
+		return callCursorPostTool(ctx, hook.Invocation(), mapCursorAfterMCPExecution(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorAfterFileEdit(fn PostToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.AfterFileEdit], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterFileEdit], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapAfterFileEdit(hook.Event, hook.Raw()), native, fn)
+		return callCursorPostTool(ctx, hook.Invocation(), mapCursorAfterFileEdit(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
@@ -244,4 +242,67 @@ func (r cursorPostToolResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.na
 func (r cursorPostToolResult) WithUpdatedOutput(output string) PostToolResult {
 	r.native = r.native.WithUpdatedMCPOutput(output)
 	return r
+}
+
+func mapClaudePostToolUse(e sdkclaude.PostToolUse, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindPostTool)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	ev.Result = &model.ToolResult{Raw: adapter.CloneRaw(e.ToolResponse), Text: adapter.RawToText(e.ToolResponse)}
+	return ev
+}
+
+func mapCopilotPostToolUse(e sdkcopilot.PostToolUse, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindPostTool)
+	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
+	ev.Result = &model.ToolResult{Raw: adapter.CloneRaw(e.ResultRaw()), Text: e.ResultText()}
+	return ev
+}
+
+func mapCursorPostToolUse(e sdkcursor.PostToolUse, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPostTool)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	ev.Result = &model.ToolResult{Text: e.ToolOutput, DurationMs: e.DurationMillis()}
+	return ev
+}
+
+func mapCursorAfterShellExecution(e sdkcursor.AfterShellExecution, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPostTool)
+	ev.Tool = &model.ToolCall{Name: model.ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
+	ev.Result = &model.ToolResult{Text: e.Output, DurationMs: e.DurationMillis()}
+	return ev
+}
+
+func mapCursorAfterMCPExecution(e sdkcursor.AfterMCPExecution, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPostTool)
+	name := cursorReceivedName(e)
+	nameNorm, _ := model.NormalizeToolName(e.ToolName)
+	toolInput := model.NewToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
+	ev.Tool = &model.ToolCall{
+		Name:   nameNorm,
+		Native: name,
+		Input:  toolInput,
+		MCP:    true,
+	}
+	ev.Result = &model.ToolResult{Raw: json.RawMessage(e.ResultJSON), DurationMs: e.DurationMillis()}
+	return ev
+}
+
+func mapCursorAfterFileEdit(e sdkcursor.AfterFileEdit, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPostTool)
+	name := cursorReceivedName(e)
+	ev.Tool = &model.ToolCall{Name: model.ToolEdit, Native: name}
+	input, err := json.Marshal(map[string]any{
+		"file_path": e.FilePath,
+		"edits":     e.Edits,
+	})
+	if err != nil {
+		return ev
+	}
+	editsRaw, err := json.Marshal(e.Edits)
+	if err != nil {
+		return ev
+	}
+	ev.Tool.Input = model.NewToolInput(model.ToolEdit, name, input)
+	ev.Result = &model.ToolResult{Raw: editsRaw}
+	return ev
 }

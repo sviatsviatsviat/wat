@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -102,7 +99,7 @@ func (c *Chain) OnSubagentStop(fn StopHandler) *Chain {
 
 func adaptClaudeStop(fn StopHandler) func(context.Context, sdkclaude.Hook[sdkclaude.Stop], sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.Stop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
-		typed, err := StopEventFrom(agclaude.MapStop(hook.Event, hook.Raw()))
+		typed, err := StopEventFrom(mapClaudeStop(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +117,7 @@ func adaptClaudeStop(fn StopHandler) func(context.Context, sdkclaude.Hook[sdkcla
 
 func adaptClaudeSubagentStop(fn StopHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SubagentStop], sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SubagentStop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
-		typed, err := StopEventFrom(agclaude.MapSubagentStop(hook.Event, hook.Raw()))
+		typed, err := StopEventFrom(mapClaudeSubagentStop(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +155,7 @@ func (r claudeStopResult) IsZero() bool { return sdkclaude.IsZeroOutput(r.native
 
 func adaptCopilotStop(fn StopHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.AgentStop], sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
-		typed, err := StopEventFrom(agcopilot.MapAgentStop(hook.Event, hook.Raw()))
+		typed, err := StopEventFrom(mapCopilotAgentStop(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +173,7 @@ func adaptCopilotStop(fn StopHandler) func(context.Context, sdkcopilot.Hook[sdkc
 
 func adaptCopilotSubagentStop(fn StopHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SubagentStop], sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
-		typed, err := StopEventFrom(agcopilot.MapSubagentStop(hook.Event, hook.Raw()))
+		typed, err := StopEventFrom(mapCopilotSubagentStop(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -214,13 +211,13 @@ func (r copilotStopResult) IsZero() bool { return sdkcopilot.IsZeroOutput(r.nati
 
 func adaptCursorStop(fn StopHandler) func(context.Context, sdkcursor.Hook[sdkcursor.Stop], sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.Stop], native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
-		return callCursorStop(ctx, hook.Invocation(), agcursor.MapStop(hook.Event, hook.Raw()), native, fn)
+		return callCursorStop(ctx, hook.Invocation(), mapCursorStop(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorSubagentStop(fn StopHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SubagentStop], sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SubagentStop], native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
-		return callCursorStop(ctx, hook.Invocation(), agcursor.MapSubagentStop(hook.Event, hook.Raw()), native, fn)
+		return callCursorStop(ctx, hook.Invocation(), mapCursorSubagentStop(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
@@ -259,3 +256,56 @@ func (cursorStopResult) isStopResult() {}
 
 // IsZero reports whether the result carries no instruction.
 func (r cursorStopResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
+
+func mapClaudeStop(e sdkclaude.Stop, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindStop)
+	ev.Turn = &model.TurnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage}
+	return ev
+}
+
+func mapClaudeSubagentStop(e sdkclaude.SubagentStop, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindSubagentStop)
+	ev.Subagent = &model.Subagent{ID: e.AgentID, Type: e.AgentType, Summary: e.LastAssistantMessage}
+	ev.Turn = &model.TurnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage}
+	return ev
+}
+
+func mapCopilotAgentStop(e sdkcopilot.AgentStop, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindStop)
+	ev.Turn = &model.TurnEnd{Status: e.Reason()}
+	return ev
+}
+
+func mapCopilotSubagentStop(e sdkcopilot.SubagentStop, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindSubagentStop)
+	ev.Subagent = &model.Subagent{
+		Type:   e.Name(),
+		Status: e.Reason(),
+	}
+	ev.Turn = &model.TurnEnd{Status: e.Reason()}
+	return ev
+}
+
+func mapCursorStop(e sdkcursor.Stop, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindStop)
+	ev.Turn = &model.TurnEnd{Status: e.Status, LoopCount: e.LoopCount}
+	return ev
+}
+
+func mapCursorSubagentStop(e sdkcursor.SubagentStop, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindSubagentStop)
+	tp := ""
+	if e.AgentTranscriptPath != nil {
+		tp = *e.AgentTranscriptPath
+	}
+	ev.Subagent = &model.Subagent{
+		ID:             e.SubagentID,
+		Type:           e.SubagentType,
+		Task:           e.Task,
+		Summary:        e.Summary,
+		Status:         e.Status,
+		TranscriptPath: tp,
+		LoopCount:      e.LoopCount,
+	}
+	return ev
+}

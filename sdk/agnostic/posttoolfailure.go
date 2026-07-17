@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -86,7 +84,7 @@ func (c *Chain) OnPostToolFailure(fn PostToolFailureHandler) *Chain {
 
 func adaptClaudePostToolFailure(fn PostToolFailureHandler) func(context.Context, sdkclaude.Hook[sdkclaude.PostToolUseFailure], sdkclaude.PostToolUseFailureResults) (sdkclaude.PostToolUseOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PostToolUseFailure], native sdkclaude.PostToolUseFailureResults) (sdkclaude.PostToolUseOutput, error) {
-		typed, err := PostToolFailureEventFrom(agclaude.MapPostToolUseFailure(hook.Event, hook.Raw()))
+		typed, err := PostToolFailureEventFrom(mapClaudePostToolUseFailure(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +122,7 @@ func (r claudePostToolFailureResult) IsZero() bool { return sdkclaude.IsZeroOutp
 
 func adaptCopilotPostToolFailure(fn PostToolFailureHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.PostToolUseFailure], sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUseFailure], native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
-		typed, err := PostToolFailureEventFrom(agcopilot.MapPostToolUseFailure(hook.Event, hook.Raw()))
+		typed, err := PostToolFailureEventFrom(mapCopilotPostToolUseFailure(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -162,7 +160,7 @@ func (r copilotPostToolFailureResult) IsZero() bool { return sdkcopilot.IsZeroOu
 
 func adaptCursorPostToolFailure(fn PostToolFailureHandler) func(context.Context, sdkcursor.Hook[sdkcursor.PostToolUseFailure], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUseFailure], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		typed, err := PostToolFailureEventFrom(agcursor.MapPostToolUseFailure(hook.Event, hook.Raw()))
+		typed, err := PostToolFailureEventFrom(mapCursorPostToolUseFailure(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -197,3 +195,30 @@ func (cursorPostToolFailureResult) isPostToolFailureResult() {}
 
 // IsZero reports whether the result carries no instruction.
 func (r cursorPostToolFailureResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
+
+func mapClaudePostToolUseFailure(e sdkclaude.PostToolUseFailure, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindPostToolFailure)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	ev.Result = &model.ToolResult{Error: e.Error}
+	return ev
+}
+
+func mapCopilotPostToolUseFailure(e sdkcopilot.PostToolUseFailure, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindPostToolFailure)
+	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
+	if msg := e.ErrorMessage(); msg != "" {
+		ev.Result = &model.ToolResult{Error: msg}
+	}
+	return ev
+}
+
+func mapCursorPostToolUseFailure(e sdkcursor.PostToolUseFailure, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindPostToolFailure)
+	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	ev.Result = &model.ToolResult{
+		Error:       e.ErrorMessage,
+		FailureType: e.FailureType,
+		DurationMs:  e.DurationMillis(),
+	}
+	return ev
+}

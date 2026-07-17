@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -69,7 +66,7 @@ func (c *Chain) OnUserPrompt(fn UserPromptHandler) *Chain {
 
 func adaptClaudeUserPrompt(fn UserPromptHandler) func(context.Context, sdkclaude.Hook[sdkclaude.UserPromptSubmit], sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
-		typed, err := UserPromptEventFrom(agclaude.MapUserPromptSubmit(hook.Event, hook.Raw()))
+		typed, err := UserPromptEventFrom(mapClaudeUserPromptSubmit(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +76,7 @@ func adaptClaudeUserPrompt(fn UserPromptHandler) func(context.Context, sdkclaude
 
 func adaptCopilotUserPrompt(fn UserPromptHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
-		typed, err := UserPromptEventFrom(agcopilot.MapUserPromptSubmitted(hook.Event, hook.Raw()))
+		typed, err := UserPromptEventFrom(mapCopilotUserPromptSubmitted(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
@@ -89,10 +86,28 @@ func adaptCopilotUserPrompt(fn UserPromptHandler) func(context.Context, sdkcopil
 
 func adaptCursorUserPrompt(fn UserPromptHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeSubmitPrompt], sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeSubmitPrompt], _ sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
-		typed, err := UserPromptEventFrom(agcursor.MapBeforeSubmitPrompt(hook.Event, hook.Raw()))
+		typed, err := UserPromptEventFrom(mapCursorBeforeSubmitPrompt(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
 		return nil, fn(ctx, userPromptHook(hook.Invocation(), typed))
 	}
+}
+
+func mapClaudeUserPromptSubmit(e sdkclaude.UserPromptSubmit, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindUserPrompt)
+	ev.Prompt = e.Prompt
+	return ev
+}
+
+func mapCopilotUserPromptSubmitted(e sdkcopilot.UserPromptSubmitted, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindUserPrompt)
+	ev.Prompt = e.Prompt
+	return ev
+}
+
+func mapCursorBeforeSubmitPrompt(e sdkcursor.BeforeSubmitPrompt, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindUserPrompt)
+	ev.Prompt = e.Prompt
+	return ev
 }

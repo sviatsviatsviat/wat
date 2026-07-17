@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -85,7 +82,7 @@ func (c *Chain) OnSessionStart(fn SessionStartHandler) *Chain {
 
 func adaptClaudeSessionStart(fn SessionStartHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SessionStart], sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionStart], native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
-		typed, err := SessionStartEventFrom(agclaude.MapSessionStart(hook.Event, hook.Raw()))
+		typed, err := SessionStartEventFrom(mapClaudeSessionStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +120,7 @@ func (r claudeSessionStartResult) IsZero() bool { return sdkclaude.IsZeroOutput(
 
 func adaptCopilotSessionStart(fn SessionStartHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SessionStart], sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SessionStart], native sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
-		typed, err := SessionStartEventFrom(agcopilot.MapSessionStart(hook.Event, hook.Raw()))
+		typed, err := SessionStartEventFrom(mapCopilotSessionStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +158,7 @@ func (r copilotSessionStartResult) IsZero() bool { return sdkcopilot.IsZeroOutpu
 
 func adaptCursorSessionStart(fn SessionStartHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SessionStart], sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SessionStart], native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
-		typed, err := SessionStartEventFrom(agcursor.MapSessionStart(hook.Event, hook.Raw()))
+		typed, err := SessionStartEventFrom(mapCursorSessionStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -196,3 +193,21 @@ func (cursorSessionStartResult) isSessionStartResult() {}
 
 // IsZero reports whether the result carries no instruction.
 func (r cursorSessionStartResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
+
+func mapClaudeSessionStart(e sdkclaude.SessionStart, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindSessionStart)
+	ev.Life = &model.Lifecycle{Source: e.Source, Model: e.Model}
+	return ev
+}
+
+func mapCopilotSessionStart(e sdkcopilot.SessionStart, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindSessionStart)
+	ev.Life = &model.Lifecycle{Source: e.Source, InitialPrompt: e.InitialPrompt()}
+	return ev
+}
+
+func mapCursorSessionStart(e sdkcursor.SessionStart, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindSessionStart)
+	ev.Life = &model.Lifecycle{Model: e.Model, Background: e.IsBackgroundAgent}
+	return ev
+}

@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -69,7 +66,7 @@ func (c *Chain) OnSubagentStart(fn SubagentStartHandler) *Chain {
 
 func adaptClaudeSubagentStart(fn SubagentStartHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SubagentStart], sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SubagentStart], _ sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
-		typed, err := SubagentStartEventFrom(agclaude.MapSubagentStart(hook.Event, hook.Raw()))
+		typed, err := SubagentStartEventFrom(mapClaudeSubagentStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +76,7 @@ func adaptClaudeSubagentStart(fn SubagentStartHandler) func(context.Context, sdk
 
 func adaptCopilotSubagentStart(fn SubagentStartHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SubagentStart], sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStart], _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
-		typed, err := SubagentStartEventFrom(agcopilot.MapSubagentStart(hook.Event, hook.Raw()))
+		typed, err := SubagentStartEventFrom(mapCopilotSubagentStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -89,10 +86,32 @@ func adaptCopilotSubagentStart(fn SubagentStartHandler) func(context.Context, sd
 
 func adaptCursorSubagentStart(fn SubagentStartHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SubagentStart], sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SubagentStart], _ sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
-		typed, err := SubagentStartEventFrom(agcursor.MapSubagentStart(hook.Event, hook.Raw()))
+		typed, err := SubagentStartEventFrom(mapCursorSubagentStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
 		return nil, fn(ctx, subagentStartHook(hook.Invocation(), typed))
 	}
+}
+
+func mapClaudeSubagentStart(e sdkclaude.SubagentStart, raw []byte) *model.Event {
+	ev := claudeEvent(e, raw, model.KindSubagentStart)
+	ev.Subagent = &model.Subagent{ID: e.AgentID, Type: e.AgentType}
+	return ev
+}
+
+func mapCopilotSubagentStart(e sdkcopilot.SubagentStart, raw []byte) *model.Event {
+	ev := copilotEvent(e, raw, model.KindSubagentStart)
+	ev.Subagent = &model.Subagent{
+		Type:    e.Name(),
+		Task:    e.DisplayName(),
+		Summary: e.AgentDescription,
+	}
+	return ev
+}
+
+func mapCursorSubagentStart(e sdkcursor.SubagentStart, raw []byte) *model.Event {
+	ev := cursorEvent(e, raw, model.KindSubagentStart)
+	ev.Subagent = &model.Subagent{ID: e.SubagentID, Type: e.SubagentType, Task: e.Task}
+	return ev
 }

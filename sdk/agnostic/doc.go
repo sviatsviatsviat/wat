@@ -4,10 +4,11 @@
 // ParseDialect and Detect, tool-name normalization, typed tool-input helpers,
 // and On* registration that fans out adapter handlers onto each agent SDK Chain.
 //
-// Agent-specific inbound mappers live under sdk/agnostic/claude,
-// sdk/agnostic/copilot, and sdk/agnostic/cursor. Shared event and result types
-// live in sdk/agnostic/internal/model. Agnostic depends on the per-agent SDKs;
-// those SDKs remain usable without agnostic.
+// Agent-specific kind/event registries live under sdk/agnostic/claude,
+// sdk/agnostic/copilot, and sdk/agnostic/cursor. Inbound native→unified mapping
+// is unexported next to each On* hook. Shared event and result types live in
+// sdk/agnostic/internal/model. Agnostic depends on the per-agent SDKs; those
+// SDKs remain usable without agnostic.
 //
 // Hook handlers receive a hook context wrapper (PreToolHook, PostToolHook, and
 // others) embedding a normalized typed event (PreToolEvent, PostToolEvent, …)
