@@ -12,12 +12,3 @@ func TestNewToolCall_BashShell(t *testing.T) {
 		t.Fatalf("ToolCall=%+v", tc)
 	}
 }
-
-func TestRawToText(t *testing.T) {
-	if got := RawToText([]byte(`"hello"`)); got != "hello" {
-		t.Fatalf("string = %q", got)
-	}
-	if got := RawToText([]byte(`{"k":"v"}`)); got != `{"k":"v"}` {
-		t.Fatalf("object = %q", got)
-	}
-}

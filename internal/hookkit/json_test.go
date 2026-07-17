@@ -35,3 +35,16 @@ func TestRawObjectField(t *testing.T) {
 		t.Fatal("null field should be nil")
 	}
 }
+
+func TestRawToText(t *testing.T) {
+	t.Parallel()
+	if got := RawToText([]byte(`"hello"`)); got != "hello" {
+		t.Fatalf("string = %q", got)
+	}
+	if got := RawToText([]byte(`{"k":"v"}`)); got != `{"k":"v"}` {
+		t.Fatalf("object = %q", got)
+	}
+	if got := RawToText(nil); got != "" {
+		t.Fatalf("empty = %q", got)
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
@@ -247,14 +248,14 @@ func (r cursorPostToolResult) WithUpdatedOutput(output string) PostToolResult {
 func mapClaudePostToolUse(e sdkclaude.PostToolUse, raw []byte) *model.Event {
 	ev := claudeEvent(e, raw, model.KindPostTool)
 	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
-	ev.Result = &model.ToolResult{Raw: adapter.CloneRaw(e.ToolResponse), Text: adapter.RawToText(e.ToolResponse)}
+	ev.Result = &model.ToolResult{Raw: hookkit.CloneRaw(e.ToolResponse), Text: hookkit.RawToText(e.ToolResponse)}
 	return ev
 }
 
 func mapCopilotPostToolUse(e sdkcopilot.PostToolUse, raw []byte) *model.Event {
 	ev := copilotEvent(e, raw, model.KindPostTool)
 	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
-	ev.Result = &model.ToolResult{Raw: adapter.CloneRaw(e.ResultRaw()), Text: e.ResultText()}
+	ev.Result = &model.ToolResult{Raw: hookkit.CloneRaw(e.ResultRaw()), Text: e.ResultText()}
 	return ev
 }
 

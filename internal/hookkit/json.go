@@ -31,3 +31,15 @@ func RawObjectField(raw json.RawMessage, key string) json.RawMessage {
 	}
 	return CloneBytes(b)
 }
+
+// RawToText extracts a best-effort textual form of a tool_response value.
+func RawToText(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return s
+	}
+	return string(raw)
+}

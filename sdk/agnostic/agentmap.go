@@ -1,7 +1,7 @@
 package agnostic
 
 import (
-	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/adapter"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -17,7 +17,7 @@ func claudeEvent(native sdkclaude.Event, raw []byte, kind model.Kind) *model.Eve
 		Session:        env.SessionID,
 		Cwd:            env.Cwd,
 		TranscriptPath: env.TranscriptPath,
-		Raw:            adapter.CloneRaw(raw),
+		Raw:            hookkit.CloneRaw(raw),
 	}
 }
 
@@ -34,7 +34,7 @@ func copilotEvent(native sdkcopilot.Event, raw []byte, kind model.Kind) *model.E
 		Session:        env.Session(),
 		Cwd:            env.Cwd,
 		TranscriptPath: env.Transcript(),
-		Raw:            adapter.CloneRaw(raw),
+		Raw:            hookkit.CloneRaw(raw),
 	}
 }
 
@@ -51,7 +51,7 @@ func cursorEvent(native sdkcursor.Event, raw []byte, kind model.Kind) *model.Eve
 		Session:        env.Session(),
 		Cwd:            env.Cwd,
 		TranscriptPath: env.Transcript(),
-		Raw:            adapter.CloneRaw(raw),
+		Raw:            hookkit.CloneRaw(raw),
 	}
 }
 
