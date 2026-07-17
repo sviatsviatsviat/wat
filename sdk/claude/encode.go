@@ -37,7 +37,7 @@ func Encode(eventName string, out any, opts ...Option) ([]byte, error) {
 	if enc.isZero() {
 		return nil, nil
 	}
-	if err := hookkit.ValidateEncodePair("claude", eventName, out, enc.allowedEvents(), nil); err != nil {
+	if err := hookkit.ValidateEncodePair(Dialect, eventName, out, enc.allowedEvents(), nil); err != nil {
 		return nil, err
 	}
 

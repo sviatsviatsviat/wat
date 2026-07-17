@@ -13,6 +13,9 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 const (
@@ -22,8 +25,8 @@ const (
 
 var copilotAnchoredPattern = regexp.MustCompile(`^\^\(\?:(.+)\)\$$`)
 
-var toolNamesFor = map[agnostic.Dialect]map[string]string{
-	agnostic.Claude: {
+var toolNamesFor = map[string]map[string]string{
+	sdkclaude.Dialect: {
 		tools.ToolBash:      "Bash",
 		tools.ToolEdit:      "Edit",
 		tools.ToolWrite:     "Write",
@@ -34,7 +37,7 @@ var toolNamesFor = map[agnostic.Dialect]map[string]string{
 		tools.ToolWebFetch:  "WebFetch",
 		tools.ToolWebSearch: "WebSearch",
 	},
-	agnostic.Copilot: {
+	sdkcopilot.Dialect: {
 		tools.ToolBash:     "bash",
 		tools.ToolEdit:     "edit",
 		tools.ToolWrite:    "create",
@@ -44,7 +47,7 @@ var toolNamesFor = map[agnostic.Dialect]map[string]string{
 		tools.ToolTask:     "task",
 		tools.ToolWebFetch: "web_fetch",
 	},
-	agnostic.Cursor: {
+	sdkcursor.Dialect: {
 		tools.ToolBash:   "Shell",
 		tools.ToolEdit:   "Write",
 		tools.ToolWrite:  "Write",
@@ -55,15 +58,15 @@ var toolNamesFor = map[agnostic.Dialect]map[string]string{
 	},
 }
 
-var knownHandlerKeys = map[agnostic.Dialect]map[string]bool{
-	agnostic.Claude: {
+var knownHandlerKeys = map[string]map[string]bool{
+	sdkclaude.Dialect: {
 		"type": true, "command": true, "args": true, "prompt": true, "url": true, "timeout": true, "if": true,
 	},
-	agnostic.Copilot: {
+	sdkcopilot.Dialect: {
 		"type": true, "bash": true, "powershell": true, "command": true, "url": true, "prompt": true,
 		"matcher": true, "timeoutSec": true, "timeout": true, "cwd": true, "env": true,
 	},
-	agnostic.Cursor: {
+	sdkcursor.Dialect: {
 		"command": true, "type": true, "prompt": true, "matcher": true, "timeout": true,
 		"loop_limit": true, "failClosed": true,
 	},
@@ -72,7 +75,7 @@ var knownHandlerKeys = map[agnostic.Dialect]map[string]bool{
 // Translate converts a native hook config from one agent dialect to another.
 // Warnings describe lossy or unsupported mappings; unmappable hooks are omitted
 // from output with an explicit warning rather than silently dropped.
-func Translate(data []byte, from, to agnostic.Dialect) ([]byte, []Warning, error) {
+func Translate(data []byte, from, to string) ([]byte, []Warning, error) {
 	if from == to {
 		return data, nil, nil
 	}
@@ -85,7 +88,7 @@ func Translate(data []byte, from, to agnostic.Dialect) ([]byte, []Warning, error
 	return out, append(append(warns, adaptWarns...), emitWarns...), err
 }
 
-func prepareForTarget(cfg *Config, from, to agnostic.Dialect) []Warning {
+func prepareForTarget(cfg *Config, from, to string) []Warning {
 	if from == to {
 		return nil
 	}
@@ -110,7 +113,7 @@ func prepareForTarget(cfg *Config, from, to agnostic.Dialect) []Warning {
 	return warns
 }
 
-func adaptEntry(e *Entry, kind agnostic.Kind, from, to agnostic.Dialect, timeoutWarned *bool) ([]Warning, bool) {
+func adaptEntry(e *Entry, kind agnostic.Kind, from, to string, timeoutWarned *bool) ([]Warning, bool) {
 	if eventForKind(to, kind) == "" {
 		event := e.NativeEvent
 		if event == "" {
@@ -122,11 +125,11 @@ func adaptEntry(e *Entry, kind agnostic.Kind, from, to agnostic.Dialect, timeout
 		return w, false
 	}
 	var warns []Warning
-	if from == agnostic.Cursor && to != agnostic.Cursor && portcursor.IsDedicatedEvent(e.NativeEvent) {
+	if from == sdkcursor.Dialect && to != sdkcursor.Dialect && portcursor.IsDedicatedEvent(e.NativeEvent) {
 		warns = append(warns, model.Warnf("%s: Cursor dedicated event maps to generic %s on %s; review matcher and payload semantics",
 			e.NativeEvent, eventForKind(to, kind), to))
 	}
-	if from == agnostic.Claude {
+	if from == sdkclaude.Dialect {
 		warns = append(warns, claudeIfWarnings(e.ClaudeGroupIf, e.Raw)...)
 	}
 	warns = append(warns, droppedRawFieldWarnings(from, e.Raw)...)
@@ -142,7 +145,7 @@ func adaptEntry(e *Entry, kind agnostic.Kind, from, to agnostic.Dialect, timeout
 	return warns, true
 }
 
-func applyExplicitTimeout(e *Entry, from, to agnostic.Dialect, timeoutWarned *bool) []Warning {
+func applyExplicitTimeout(e *Entry, from, to string, timeoutWarned *bool) []Warning {
 	fromDefault := defaultTimeoutFor(from)
 	toDefault := defaultTimeoutFor(to)
 	if fromDefault == 0 || toDefault == 0 || fromDefault == toDefault {
@@ -158,22 +161,22 @@ func applyExplicitTimeout(e *Entry, from, to agnostic.Dialect, timeoutWarned *bo
 	return warns
 }
 
-func eventForKind(d agnostic.Dialect, kind agnostic.Kind) string {
+func eventForKind(d string, kind agnostic.Kind) string {
 	switch d {
-	case agnostic.Claude:
+	case sdkclaude.Dialect:
 		return portclaude.EventForKind[kind]
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		return portcopilot.EventForKind[kind]
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		return portcursor.EventForKind[kind]
 	default:
 		return ""
 	}
 }
 
-func handlerSupportedOnTarget(e Entry, kind agnostic.Kind, to agnostic.Dialect) ([]Warning, bool) {
+func handlerSupportedOnTarget(e Entry, kind agnostic.Kind, to string) ([]Warning, bool) {
 	switch to {
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		if e.Type == "http" {
 			event := e.NativeEvent
 			if event == "" {
@@ -181,7 +184,7 @@ func handlerSupportedOnTarget(e Entry, kind agnostic.Kind, to agnostic.Dialect) 
 			}
 			return []Warning{model.Warnf("%s: Cursor has no http hooks; not ported", event)}, false
 		}
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		switch e.Type {
 		case "http", "command", "", "prompt":
 			if e.Type == "prompt" && kind != agnostic.KindSessionStart {
@@ -221,7 +224,7 @@ func hasJSONField(raw json.RawMessage, key string) bool {
 	return ok
 }
 
-func droppedRawFieldWarnings(from agnostic.Dialect, raw json.RawMessage) []Warning {
+func droppedRawFieldWarnings(from string, raw json.RawMessage) []Warning {
 	if len(raw) == 0 {
 		return nil
 	}
@@ -245,11 +248,11 @@ func droppedRawFieldWarnings(from agnostic.Dialect, raw json.RawMessage) []Warni
 	return []Warning{model.Warnf("handler fields not portable to other agents: %s", strings.Join(dropped, ", "))}
 }
 
-func defaultTimeoutFor(d agnostic.Dialect) int {
+func defaultTimeoutFor(d string) int {
 	switch d {
-	case agnostic.Claude:
+	case sdkclaude.Dialect:
 		return claudeDefaultTimeoutSec
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		return copilotDefaultTimeoutSec
 	default:
 		return 0
@@ -265,12 +268,12 @@ func kindHasToolMatcher(k agnostic.Kind) bool {
 	}
 }
 
-func translateMatcher(matcher string, kind agnostic.Kind, from, to agnostic.Dialect) (string, []Warning) {
+func translateMatcher(matcher string, kind agnostic.Kind, from, to string) (string, []Warning) {
 	if matcher == "" || matcher == "*" || !kindHasToolMatcher(kind) {
 		return matcher, nil
 	}
 	var warns []Warning
-	if from == agnostic.Copilot {
+	if from == sdkcopilot.Dialect {
 		if m := copilotAnchoredPattern.FindStringSubmatch(matcher); len(m) == 2 {
 			original := matcher
 			matcher = m[1]
@@ -283,7 +286,7 @@ func translateMatcher(matcher string, kind agnostic.Kind, from, to agnostic.Dial
 	}
 	matcher, tokenWarns := translateToolTokens(matcher, to)
 	warns = append(warns, tokenWarns...)
-	if to == agnostic.Copilot {
+	if to == sdkcopilot.Dialect {
 		if isSimpleAlternation(matcher) {
 			matcher = "^(?:" + matcher + ")$"
 		} else if !copilotAnchoredPattern.MatchString(matcher) {
@@ -293,7 +296,7 @@ func translateMatcher(matcher string, kind agnostic.Kind, from, to agnostic.Dial
 	return matcher, warns
 }
 
-func translateToolTokens(matcher string, to agnostic.Dialect) (string, []Warning) {
+func translateToolTokens(matcher string, to string) (string, []Warning) {
 	target := toolNamesFor[to]
 	var warns []Warning
 	sep := "|"

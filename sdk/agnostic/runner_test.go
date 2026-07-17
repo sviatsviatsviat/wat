@@ -29,7 +29,7 @@ func TestServe_MergeDispatch(t *testing.T) {
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(payload), &stdout, &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(payload), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
@@ -55,7 +55,7 @@ func TestServe_DecisionPrecedence(t *testing.T) {
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
@@ -71,12 +71,12 @@ func TestServe_WithDialectOverride(t *testing.T) {
 	})
 
 	var stderr bytes.Buffer
-	code := Serve(
+	code := run.Serve(
 		context.Background(),
 		strings.NewReader(copilotCamelPreToolUse),
 		new(bytes.Buffer),
 		&stderr,
-		WithDialect(Copilot),
+		run.WithDialect(copilot.Dialect),
 	)
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
@@ -93,12 +93,12 @@ func TestServe_WithEvent(t *testing.T) {
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Serve(
+	code := run.Serve(
 		context.Background(),
 		strings.NewReader(copilotCamelPreToolUse),
 		&stdout,
 		&stderr,
-		WithEvent("preToolUse"),
+		run.WithEvent("preToolUse"),
 	)
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
@@ -112,12 +112,12 @@ func TestServe_WithGetenv(t *testing.T) {
 	resetTest(t)
 
 	var stderr bytes.Buffer
-	code := Serve(
+	code := run.Serve(
 		context.Background(),
 		strings.NewReader(`{}`),
 		new(bytes.Buffer),
 		&stderr,
-		WithGetenv(func(string) string { return "" }),
+		run.WithGetenv(func(string) string { return "" }),
 	)
 	if code != 1 {
 		t.Fatalf("exit = %d, want unknown dialect without env", code)
@@ -127,12 +127,12 @@ func TestServe_WithGetenv(t *testing.T) {
 	}
 
 	stderr.Reset()
-	code = Serve(
+	code = run.Serve(
 		context.Background(),
 		strings.NewReader(`{"conversation_id":"c1","hook_event_name":"workspaceOpen","cursor_version":"1.7.2","workspace_roots":["/w"]}`),
 		new(bytes.Buffer),
 		&stderr,
-		WithGetenv(func(key string) string {
+		run.WithGetenv(func(key string) string {
 			if key == "CURSOR_VERSION" {
 				return "9.9.9"
 			}
@@ -151,12 +151,12 @@ func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
 	})
 
 	var stderr bytes.Buffer
-	code := Serve(
+	code := run.Serve(
 		context.Background(),
 		strings.NewReader(copilotCamelPreToolUse),
 		new(bytes.Buffer),
 		&stderr,
-		WithEvent("preToolUse"),
+		run.WithEvent("preToolUse"),
 	)
 	if code != copilot.PreToolErrorExit {
 		t.Fatalf("exit = %d, want %d", code, copilot.PreToolErrorExit)
@@ -169,7 +169,7 @@ func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
 func TestServe_ZeroHandlers(t *testing.T) {
 	resetTest(t)
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -181,7 +181,7 @@ func TestServe_ZeroHandlers(t *testing.T) {
 func TestServe_EmptyStdin(t *testing.T) {
 	resetTest(t)
 	var stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(""), new(bytes.Buffer), &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(""), new(bytes.Buffer), &stderr)
 	if code != 1 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -216,7 +216,7 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 		{
 			name:     "copilot",
 			payload:  copilotCamelPreToolUse,
-			opts:     []run.Option{WithEvent("preToolUse")},
+			opts:     []run.Option{run.WithEvent("preToolUse")},
 			wantExit: 0,
 			wantStdout: func(s string) bool {
 				return strings.Contains(s, `"permissionDecision":"deny"`) &&
@@ -239,7 +239,7 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 			OnPreTool(denyShell)
 
 			var stdout, stderr bytes.Buffer
-			code := Serve(context.Background(), strings.NewReader(tt.payload), &stdout, &stderr, tt.opts...)
+			code := run.Serve(context.Background(), strings.NewReader(tt.payload), &stdout, &stderr, tt.opts...)
 			if code != tt.wantExit {
 				t.Fatalf("exit = %d, want %d; stderr = %q", code, tt.wantExit, stderr.String())
 			}
@@ -285,7 +285,7 @@ func TestServe_WrongPreToolResultType_FailOpen(t *testing.T) {
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1 (fail-open handler error)", code)
 	}
@@ -314,7 +314,7 @@ func TestServe_CursorPreToolFanOut(t *testing.T) {
 			resetTest(t)
 			OnPreTool(denyAll)
 			var stdout, stderr bytes.Buffer
-			code := Serve(context.Background(), strings.NewReader(tt.payload), &stdout, &stderr)
+			code := run.Serve(context.Background(), strings.NewReader(tt.payload), &stdout, &stderr)
 			if code != cursor.PermissionDenyExit {
 				t.Fatalf("exit = %d, want %d; stderr = %q", code, cursor.PermissionDenyExit, stderr.String())
 			}
@@ -331,7 +331,7 @@ func TestServe_CursorAfterShellContext(t *testing.T) {
 		return r.Context("after-shell note"), nil
 	})
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(cursorAfterShell), &stdout, &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(cursorAfterShell), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
 	}
@@ -346,7 +346,7 @@ func TestServe_CursorWithUpdatedInput_BeforeShellOmitsField(t *testing.T) {
 		return r.Allow().WithUpdatedInput(map[string]any{"command": "echo safe"}), nil
 	})
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(cursorShell), &stdout, &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(cursorShell), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
 	}
@@ -365,7 +365,7 @@ func TestServe_StopFollowUp(t *testing.T) {
 		return r.FollowUp("keep going"), nil
 	})
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudeStop), &stdout, &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(claudeStop), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
 	}
@@ -380,7 +380,7 @@ func TestServe_SessionStartContext(t *testing.T) {
 		return r.Context("boot note"), nil
 	})
 	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudeSessionStart), &stdout, &stderr)
+	code := run.Serve(context.Background(), strings.NewReader(claudeSessionStart), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
 	}

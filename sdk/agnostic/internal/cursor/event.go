@@ -13,7 +13,7 @@ func envelope(native sdkcursor.Event, raw []byte) model.Envelope {
 		name = received
 	}
 	return model.Envelope{
-		Agent:          model.Cursor,
+		Agent:          sdkcursor.Dialect,
 		Name:           name,
 		Session:        env.Session(),
 		Cwd:            env.Cwd,

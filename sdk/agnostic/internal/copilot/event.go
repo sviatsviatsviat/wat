@@ -13,7 +13,7 @@ func envelope(native sdkcopilot.Event, raw []byte) model.Envelope {
 		name = received
 	}
 	return model.Envelope{
-		Agent:          model.Copilot,
+		Agent:          sdkcopilot.Dialect,
 		Name:           name,
 		Session:        env.Session(),
 		Cwd:            env.Cwd,

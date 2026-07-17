@@ -50,13 +50,13 @@ func (c runtimeConfig) encodeOpts() []Option {
 }
 
 func claudeRunConfig(cfg *run.Config) *runtimeConfig {
-	if v := cfg.DialectConfig("claude"); v != nil {
+	if v := cfg.DialectConfig(Dialect); v != nil {
 		if rc, ok := v.(*runtimeConfig); ok && rc != nil {
 			return rc
 		}
 	}
 	rc := defaultRuntimeConfig()
-	cfg.SetDialectConfig("claude", &rc)
+	cfg.SetDialectConfig(Dialect, &rc)
 	return &rc
 }
 

@@ -9,7 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 const claudePortFixture = `{
@@ -50,8 +52,8 @@ func TestPortProject_claudeToCursor(t *testing.T) {
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
 	code := portProject(portConfig{
-		from:      agnostic.Claude,
-		to:        agnostic.Cursor,
+		from:      sdkclaude.Dialect,
+		to:        sdkcursor.Dialect,
 		inputPath: inputPath,
 	}, defaultPortDeps())
 	if code != exitOK {
@@ -106,8 +108,8 @@ func TestPortProject_writesOutputFile(t *testing.T) {
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
 	code := portProject(portConfig{
-		from:       agnostic.Claude,
-		to:         agnostic.Cursor,
+		from:       sdkclaude.Dialect,
+		to:         sdkcursor.Dialect,
 		inputPath:  inputPath,
 		outputPath: outputPath,
 	}, defaultPortDeps())
@@ -144,8 +146,8 @@ func TestPortProject_missingInput(t *testing.T) {
 	}
 
 	code := portProject(portConfig{
-		from:      agnostic.Claude,
-		to:        agnostic.Cursor,
+		from:      sdkclaude.Dialect,
+		to:        sdkcursor.Dialect,
 		inputPath: "/nonexistent/settings.json",
 	}, deps)
 	if code != exitRuntimeFailure {
@@ -166,8 +168,8 @@ func TestPortProject_sameDialect(t *testing.T) {
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
 	code := portProject(portConfig{
-		from:      agnostic.Claude,
-		to:        agnostic.Claude,
+		from:      sdkclaude.Dialect,
+		to:        sdkclaude.Dialect,
 		inputPath: inputPath,
 	}, defaultPortDeps())
 	if code != exitOK {
@@ -209,7 +211,7 @@ func TestParsePortDialect(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if got == agnostic.Unknown {
+			if got == "" {
 				t.Fatal("got Unknown dialect")
 			}
 		})
@@ -219,15 +221,15 @@ func TestParsePortDialect(t *testing.T) {
 func TestDefaultInputPath(t *testing.T) {
 	wd := "/project"
 	tests := []struct {
-		from agnostic.Dialect
+		from string
 		want string
 	}{
-		{from: agnostic.Claude, want: "/project/.claude/settings.json"},
-		{from: agnostic.Copilot, want: "/project/.github/hooks/wat.json"},
-		{from: agnostic.Cursor, want: "/project/.cursor/hooks.json"},
+		{from: sdkclaude.Dialect, want: "/project/.claude/settings.json"},
+		{from: sdkcopilot.Dialect, want: "/project/.github/hooks/wat.json"},
+		{from: sdkcursor.Dialect, want: "/project/.cursor/hooks.json"},
 	}
 	for _, tt := range tests {
-		t.Run(tt.from.String(), func(t *testing.T) {
+		t.Run(tt.from, func(t *testing.T) {
 			if got := defaultInputPath(tt.from, wd); got != tt.want {
 				t.Fatalf("defaultInputPath = %q, want %q", got, tt.want)
 			}

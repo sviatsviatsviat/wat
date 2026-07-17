@@ -7,7 +7,9 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // Config is a normalized hook configuration independent of any single agent's
@@ -25,13 +27,13 @@ type Warning = model.Warning
 
 // Parse reads a native hook configuration file for dialect and returns a
 // normalized Config.
-func Parse(data []byte, dialect agnostic.Dialect) (Config, []Warning, error) {
+func Parse(data []byte, dialect string) (Config, []Warning, error) {
 	switch dialect {
-	case agnostic.Claude:
+	case sdkclaude.Dialect:
 		return claude.Parse(data)
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		return copilot.Parse(data)
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		return cursor.Parse(data)
 	default:
 		return Config{}, nil, fmt.Errorf("portconfig: unsupported dialect %q", dialect)
@@ -39,13 +41,13 @@ func Parse(data []byte, dialect agnostic.Dialect) (Config, []Warning, error) {
 }
 
 // Emit renders cfg as a native hook configuration file for dialect.
-func Emit(cfg Config, dialect agnostic.Dialect) ([]byte, []Warning, error) {
+func Emit(cfg Config, dialect string) ([]byte, []Warning, error) {
 	switch dialect {
-	case agnostic.Claude:
+	case sdkclaude.Dialect:
 		return claude.Emit(cfg)
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		return copilot.Emit(cfg)
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		return cursor.Emit(cfg)
 	default:
 		return nil, nil, fmt.Errorf("portconfig: unsupported dialect %q", dialect)

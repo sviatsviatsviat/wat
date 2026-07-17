@@ -33,8 +33,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | Location | Role |
 |----------|------|
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
-| `register.go` | `Serve`, run options |
-| `event.go` / `dialect.go` / `result.go` | Shared `Event`, `Kind`, `Dialect`, `Result` |
+| `event.go` / `result.go` | Shared `Event`, `Kind`, result types; `Event.Agent` is a string |
 | `tools/` | Canonical tool names and typed `Input` with `AsBash`, `AsWrite`, … |
 
 Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
@@ -81,31 +80,16 @@ Unknown names pass through unchanged with `mcp=false` unless an `mcp__` or `MCP:
 
 All codecs produce `agnostic.Event`:
 
-- `Agent` — `Dialect` (Claude, Copilot, Cursor)
+- `Agent` — string dialect name (`claude.Dialect`, `copilot.Dialect`, or `cursor.Dialect`)
 - `Kind` — normalized category (`KindPreTool`, `KindStop`, …)
 - `Name` — native hook event name as received
 - `Raw` — untouched native JSON payload
 
 See `go doc github.com/sviatsviatsviat/wat/sdk/agnostic Event` for sub-structs (`Tool`, `Result`, `Life`, …).
 
-## Dialect detection
+## Dialect identification
 
-`agnostic.Detect` infers the originating agent from a hook stdin payload and environment hints. `agnostic.ParseDialect` parses explicit names from CLI flags (`claude`, `copilot`, `cursor` and aliases). When the dialect is already known, skip `Detect` and use the explicit value.
-
-Payload shape is checked before environment variables because Cursor exports `CLAUDE_PROJECT_DIR` for Claude Code compatibility.
-
-| Step | Signal | Result |
-|------|--------|--------|
-| 1 | `cursor_version` or `conversation_id` in JSON | Cursor |
-| 2 | `sessionId` (camelCase) | Copilot camelCase |
-| 3 | `hook_event_name` + `timestamp` | Copilot VS Code (Claude payloads carry no `timestamp`) |
-| 4 | `session_id` | Claude Code |
-| 5a | `CURSOR_VERSION` env | Cursor |
-| 5b | `CLAUDE_PROJECT_DIR` env | Claude Code |
-| 5c | `COPILOT_HOME` env | Copilot |
-| else | — | Unknown |
-
-**Ambiguous cases:** Copilot payloads always win over `CLAUDE_PROJECT_DIR` in the environment. Env-only detection with only `CLAUDE_PROJECT_DIR` may misidentify Copilot in repos that also have `.claude/settings.json`; prefer payload evidence or an explicit `--agent` override.
+Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"claude"`, and likewise for copilot/cursor) used for `sdk/run` registration and `Event.Agent`. CLI and config parse agent names via `cmd/wat/internal/dialect.Parse` (aliases like `claude-code`, `gh`). Hook serve resolves dialect via `run.WithDialect` / `WAT_AGENT`, or by walking each per-agent SDK’s registered `DialectOps.Detect` in `sdk/run` (payload shape and agent env hints such as `CURSOR_VERSION`).
 
 ## Portable agnostic API
 
@@ -358,8 +342,8 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 ## Related code
 
 - Config porting: `wat port --from` / `--to` (see [`cmd/wat/port.go`](../cmd/wat/port.go))
-- Detection: [`sdk/agnostic/dialect.go`](../sdk/agnostic/dialect.go) — `ParseDialect`, `Detect`
-- Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
+- Dialect: per-agent `Dialect` constants in [`sdk/claude`](../sdk/claude/), [`sdk/copilot`](../sdk/copilot/), [`sdk/cursor`](../sdk/cursor/); CLI name parsing in [`cmd/wat/internal/dialect`](../cmd/wat/internal/dialect/)
+- Tests: [`cmd/wat/internal/dialect`](../cmd/wat/internal/dialect/)
 - Normalization: [`internal/hookkit/toolname.go`](../internal/hookkit/toolname.go) — `NormalizeToolName`; [`sdk/agnostic/tools`](../sdk/agnostic/tools/) — `Input` with `AsBash`, `AsWrite`, and related accessors
 - Tests: [`internal/hookkit/toolname_test.go`](../internal/hookkit/toolname_test.go); [`sdk/agnostic/tools`](../sdk/agnostic/tools/) (`input_test.go`)
 - Port kind/event registries: [`cmd/wat/internal/portconfig/`](../cmd/wat/internal/portconfig/) (`claude/`, `copilot/`, `cursor/`)

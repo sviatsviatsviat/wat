@@ -5,11 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 func TestTranslate_claudeToCursor(t *testing.T) {
-	out, warns, err := Translate([]byte(claudeSettings), agnostic.Claude, agnostic.Cursor)
+	out, warns, err := Translate([]byte(claudeSettings), sdkclaude.Dialect, sdkcursor.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +59,7 @@ func TestTranslate_claudeToCursor(t *testing.T) {
 }
 
 func TestTranslate_claudeToCopilot(t *testing.T) {
-	out, _, err := Translate([]byte(claudeSettings), agnostic.Claude, agnostic.Copilot)
+	out, _, err := Translate([]byte(claudeSettings), sdkclaude.Dialect, sdkcopilot.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +97,7 @@ func TestTranslate_claudeToCopilot(t *testing.T) {
 }
 
 func TestTranslate_cursorToClaude(t *testing.T) {
-	out, _, err := Translate([]byte(cursorSettings), agnostic.Cursor, agnostic.Claude)
+	out, _, err := Translate([]byte(cursorSettings), sdkcursor.Dialect, sdkclaude.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +113,7 @@ func TestTranslate_cursorToClaude(t *testing.T) {
 func TestTranslate_copilotAnchoredRegex(t *testing.T) {
 	t.Run("copilot_to_claude", func(t *testing.T) {
 		raw := `{"version":1,"hooks":{"preToolUse":[{"type":"command","command":"x.sh","matcher":"^(?:bash)$"}]}}`
-		out, warns, err := Translate([]byte(raw), agnostic.Copilot, agnostic.Claude)
+		out, warns, err := Translate([]byte(raw), sdkcopilot.Dialect, sdkclaude.Dialect)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,7 +132,7 @@ func TestTranslate_copilotAnchoredRegex(t *testing.T) {
 	})
 	t.Run("claude_to_copilot", func(t *testing.T) {
 		raw := `{"hooks":{"PreToolUse":[{"matcher":"bash|edit","hooks":[{"type":"command","command":"x.sh"}]}]}}`
-		out, _, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+		out, _, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcopilot.Dialect)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -149,7 +151,7 @@ func TestTranslate_claudeIfRule(t *testing.T) {
 	    }]
 	  }
 	}`
-	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Cursor)
+	out, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcursor.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +177,7 @@ func TestTranslate_unsupportedEvent(t *testing.T) {
 	    ]
 	  }
 	}`
-	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Cursor)
+	out, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcursor.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +196,7 @@ func TestTranslate_unsupportedEvent(t *testing.T) {
 }
 
 func TestTranslate_sameDialect(t *testing.T) {
-	out, warns, err := Translate([]byte(claudeSettings), agnostic.Claude, agnostic.Claude)
+	out, warns, err := Translate([]byte(claudeSettings), sdkclaude.Dialect, sdkclaude.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +210,7 @@ func TestTranslate_sameDialect(t *testing.T) {
 
 func TestTranslate_httpToCursor(t *testing.T) {
 	raw := `{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"http","url":"https://example.com/hook"}]}]}}`
-	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Cursor)
+	out, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcursor.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +230,7 @@ func TestTranslate_httpToCursor(t *testing.T) {
 
 func TestTranslate_timeoutDefaultWarning(t *testing.T) {
 	raw := `{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"done.sh"}]}]}}`
-	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	out, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcopilot.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +257,7 @@ func TestTranslate_mcpToolExtraNotEmitted(t *testing.T) {
 	    }]
 	  }
 	}`
-	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	out, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcopilot.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +276,7 @@ func TestTranslate_mcpToolExtraNotEmitted(t *testing.T) {
 }
 
 func TestTranslate_cursorDedicatedEvent(t *testing.T) {
-	out, warns, err := Translate([]byte(cursorDedicatedSettings), agnostic.Cursor, agnostic.Claude)
+	out, warns, err := Translate([]byte(cursorDedicatedSettings), sdkcursor.Dialect, sdkclaude.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +296,7 @@ func TestTranslate_cursorDedicatedEvent(t *testing.T) {
 
 func TestTranslate_droppedRawFieldsWarning(t *testing.T) {
 	raw := `{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"x.sh","async":true}]}]}}`
-	_, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	_, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcopilot.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +321,7 @@ func TestTranslate_claudeGroupIfRule(t *testing.T) {
 	    }]
 	  }
 	}`
-	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	out, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcopilot.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +341,7 @@ func TestTranslate_claudeGroupIfRule(t *testing.T) {
 
 func TestTranslate_complexRegexKeptVerbatim(t *testing.T) {
 	raw := `{"hooks":{"PreToolUse":[{"matcher":"Bash{1,3}","hooks":[{"type":"command","command":"x.sh"}]}]}}`
-	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	out, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcopilot.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +361,7 @@ func TestTranslate_complexRegexKeptVerbatim(t *testing.T) {
 
 func TestTranslate_sourceNamedRegexWarns(t *testing.T) {
 	raw := `{"hooks":{"PreToolUse":[{"matcher":"^bash$","hooks":[{"type":"command","command":"x.sh"}]}]}}`
-	out, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	out, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcopilot.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,7 +381,7 @@ func TestTranslate_sourceNamedRegexWarns(t *testing.T) {
 
 func TestTranslate_unknownTokenAlwaysWarns(t *testing.T) {
 	raw := `{"hooks":{"PreToolUse":[{"matcher":"unknownTool","hooks":[{"type":"command","command":"x.sh"}]}]}}`
-	_, warns, err := Translate([]byte(raw), agnostic.Claude, agnostic.Copilot)
+	_, warns, err := Translate([]byte(raw), sdkclaude.Dialect, sdkcopilot.Dialect)
 	if err != nil {
 		t.Fatal(err)
 	}

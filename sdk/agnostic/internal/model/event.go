@@ -44,8 +44,8 @@ const (
 // Raw always carries the untouched native payload, so nothing is lost by
 // normalization; agent-specific handlers can re-decode it with native types.
 type Event struct {
-	// Agent is the dialect that emitted this hook event.
-	Agent Dialect
+	// Agent is the dialect that emitted this hook event (e.g. "claude").
+	Agent string
 	// Kind is the normalized event category.
 	Kind Kind
 	// Name is the native event name as received (e.g. "beforeShellExecution").

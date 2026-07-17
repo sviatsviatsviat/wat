@@ -7,6 +7,6 @@
 //
 // WithDialect forces a dialect instead of auto-detection. WithEvent supplies
 // the native event name for payloads that omit it (for example Copilot
-// camelCase). WithGetenv injects environment lookup for Detect and encode
-// side effects.
+// camelCase). WithGetenv injects environment lookup for dialect resolution and
+// encode side effects.
 package run

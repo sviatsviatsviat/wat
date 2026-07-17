@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 const claudeSettings = `{
@@ -61,7 +63,7 @@ const cursorDedicatedSettings = `{
 }`
 
 func TestParse_unknownDialect(t *testing.T) {
-	_, _, err := Parse([]byte("{}"), agnostic.Unknown)
+	_, _, err := Parse([]byte("{}"), "")
 	if err == nil {
 		t.Fatal("expected error for unknown dialect")
 	}
@@ -71,11 +73,11 @@ func TestEmit_producesValidJSON(t *testing.T) {
 	tests := []struct {
 		name    string
 		raw     string
-		dialect agnostic.Dialect
+		dialect string
 	}{
-		{name: "claude", raw: claudeSettings, dialect: agnostic.Claude},
-		{name: "copilot", raw: copilotSettings, dialect: agnostic.Copilot},
-		{name: "cursor", raw: cursorSettings, dialect: agnostic.Cursor},
+		{name: "claude", raw: claudeSettings, dialect: sdkclaude.Dialect},
+		{name: "copilot", raw: copilotSettings, dialect: sdkcopilot.Dialect},
+		{name: "cursor", raw: cursorSettings, dialect: sdkcursor.Dialect},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

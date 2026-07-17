@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
@@ -74,7 +74,7 @@ func TestResolveFixture_copilotRequiresEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = resolveFixture("copilot", "", payload, os.Getenv)
+	_, err = resolveFixture("copilot", "", payload)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -87,7 +87,7 @@ func TestResolveFixture_copilotRequiresEvent(t *testing.T) {
 // event, decision, and exit fields in the summary.
 func TestWriteTestReport_fixtureSummary(t *testing.T) {
 	var buf bytes.Buffer
-	writeTestReport(&buf, fixtureInfo{dialect: agnostic.Claude, event: "PreToolUse"}, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)
+	writeTestReport(&buf, fixtureInfo{dialect: sdkclaude.Dialect, event: "PreToolUse"}, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)
 
 	out := buf.String()
 	for _, want := range []string{"agent: claude", "event: PreToolUse", "decision: deny", "exit:   0"} {

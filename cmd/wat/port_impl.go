@@ -5,13 +5,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig"
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 type portConfig struct {
-	from       agnostic.Dialect
-	to         agnostic.Dialect
+	from       string
+	to         string
 	inputPath  string
 	outputPath string
 }
@@ -30,26 +33,26 @@ func defaultPortDeps() portDeps {
 	}
 }
 
-func defaultInputPath(from agnostic.Dialect, wd string) string {
+func defaultInputPath(from string, wd string) string {
 	switch from {
-	case agnostic.Claude:
+	case sdkclaude.Dialect:
 		return filepath.Join(wd, ".claude", "settings.json")
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		return filepath.Join(wd, ".github", "hooks", "wat.json")
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		return filepath.Join(wd, ".cursor", "hooks.json")
 	default:
 		return ""
 	}
 }
 
-func parsePortDialect(value, flag string) (agnostic.Dialect, error) {
+func parsePortDialect(value, flag string) (string, error) {
 	if value == "" {
-		return agnostic.Unknown, fmt.Errorf("--%s is required (claude, copilot, or cursor)", flag)
+		return "", fmt.Errorf("--%s is required (claude, copilot, or cursor)", flag)
 	}
-	d := agnostic.ParseDialect(value)
-	if d == agnostic.Unknown {
-		return agnostic.Unknown, fmt.Errorf("unknown agent dialect %q for --%s (want claude, copilot, or cursor)", value, flag)
+	d := dialect.Parse(value)
+	if d == "" {
+		return "", fmt.Errorf("unknown agent dialect %q for --%s (want claude, copilot, or cursor)", value, flag)
 	}
 	return d, nil
 }

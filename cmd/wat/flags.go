@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
 )
 
 // sharedFlags holds CLI flags reused across subcommands.
@@ -30,7 +30,7 @@ func validateAgent(agent string) error {
 	if agent == "" {
 		return nil
 	}
-	if agnostic.ParseDialect(agent) == agnostic.Unknown {
+	if dialect.Parse(agent) == "" {
 		return fmt.Errorf("unknown agent dialect %q (want claude, copilot, or cursor)", agent)
 	}
 	return nil

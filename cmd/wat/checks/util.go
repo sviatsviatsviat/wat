@@ -7,11 +7,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
 	portclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/claude"
 	portcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/copilot"
 	portcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // ParseWatRunFlags extracts --agent and --event from a wat run shell command.
@@ -129,23 +132,23 @@ func validateAgent(agent string) error {
 	if agent == "" {
 		return nil
 	}
-	if agnostic.ParseDialect(agent) == agnostic.Unknown {
+	if dialect.Parse(agent) == "" {
 		return fmt.Errorf("unknown agent dialect %q (want claude, copilot, or cursor)", agent)
 	}
 	return nil
 }
 
 func isValidInstallEvent(agent, event string) bool {
-	switch agnostic.ParseDialect(agent) {
-	case agnostic.Claude:
+	switch dialect.Parse(agent) {
+	case sdkclaude.Dialect:
 		return eventInMapValues(portclaude.EventForKind, event)
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		canonical, ok := sdkcopilot.CanonicalEventName(event)
 		if !ok {
 			return false
 		}
 		return eventInMapValues(portcopilot.EventForKind, canonical)
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		return eventInMapValues(portcursor.EventForKind, event) || portcursor.IsDedicatedEvent(event)
 	default:
 		return false
@@ -163,12 +166,12 @@ func eventInMapValues(m map[agnostic.Kind]string, event string) bool {
 
 // ExpectedInstallEvents returns hook event names wat install writes for agent.
 func ExpectedInstallEvents(agent string) ([]string, error) {
-	switch agnostic.ParseDialect(agent) {
-	case agnostic.Claude:
+	switch dialect.Parse(agent) {
+	case sdkclaude.Dialect:
 		return sortedValues(portclaude.EventForKind), nil
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		return sortedValues(portcopilot.EventForKind), nil
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		eventSet := map[string]bool{}
 		for _, ev := range sortedValues(portcursor.EventForKind) {
 			eventSet[ev] = true

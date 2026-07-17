@@ -9,7 +9,7 @@ import (
 func envelope(native sdkclaude.Event, raw []byte) model.Envelope {
 	env := sdkclaude.EnvelopeOf(native)
 	return model.Envelope{
-		Agent:          model.Claude,
+		Agent:          sdkclaude.Dialect,
 		Name:           native.EventName(),
 		Session:        env.SessionID,
 		Cwd:            env.Cwd,

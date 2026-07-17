@@ -13,7 +13,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -33,7 +33,7 @@ type testDeps struct {
 }
 
 type fixtureInfo struct {
-	dialect agnostic.Dialect
+	dialect string
 	event   string
 }
 
@@ -68,7 +68,7 @@ func runTest(cfg testConfig, deps testDeps) int {
 		return exitRuntimeFailure
 	}
 
-	info, err := resolveFixture(cfg.agent, cfg.event, payload, deps.getenv)
+	info, err := resolveFixture(cfg.agent, cfg.event, payload)
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "wat test: %v\n", err)
 		return exitRuntimeFailure
@@ -89,26 +89,23 @@ func runTest(cfg testConfig, deps testDeps) int {
 	return hookExit
 }
 
-func resolveFixture(agentFlag, eventHint string, payload []byte, getenv func(string) string) (fixtureInfo, error) {
-	dialect := agnostic.ParseDialect(agentFlag)
-	if dialect == agnostic.Unknown {
-		dialect = agnostic.Detect(payload, getenv)
-	}
-	if dialect == agnostic.Unknown {
-		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
+func resolveFixture(agentFlag, eventHint string, payload []byte) (fixtureInfo, error) {
+	agentDialect := dialect.Parse(agentFlag)
+	if agentDialect == "" {
+		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent)")
 	}
 
 	var event string
 	var err error
-	switch dialect {
-	case agnostic.Claude:
+	switch agentDialect {
+	case sdkclaude.Dialect:
 		native, decErr := sdkclaude.Decode(payload)
 		if decErr != nil {
 			err = decErr
 			break
 		}
 		event = native.EventName()
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		native, decErr := sdkcopilot.Decode(payload, sdkcopilot.WithEvent(eventHint))
 		if decErr != nil {
 			err = decErr
@@ -119,7 +116,7 @@ func resolveFixture(agentFlag, eventHint string, payload []byte, getenv func(str
 		} else {
 			event = native.EventName()
 		}
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		native, decErr := sdkcursor.Decode(payload, sdkcursor.WithEvent(eventHint))
 		if decErr != nil {
 			err = decErr
@@ -131,15 +128,15 @@ func resolveFixture(agentFlag, eventHint string, payload []byte, getenv func(str
 			event = native.EventName()
 		}
 	default:
-		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
+		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent)")
 	}
 	if err != nil {
-		if dialect == agnostic.Copilot && eventHint == "" {
+		if agentDialect == sdkcopilot.Dialect && eventHint == "" {
 			return fixtureInfo{}, fmt.Errorf("decode: %w (Copilot camelCase payloads require --event)", err)
 		}
 		return fixtureInfo{}, fmt.Errorf("decode: %w", err)
 	}
-	return fixtureInfo{dialect: dialect, event: event}, nil
+	return fixtureInfo{dialect: agentDialect, event: event}, nil
 }
 
 func execHookBinary(binPath string, payload []byte, cfg testConfig, deps runDeps) (hookStdout, hookStderr []byte, exitCode int, err error) {
@@ -188,7 +185,7 @@ func writeTestReport(w io.Writer, info fixtureInfo, hookStdout, hookStderr []byt
 	_, _ = fmt.Fprintf(w, "  exit:   %d\n", hookExit)
 }
 
-func summarizeHookDecision(dialect agnostic.Dialect, hookStdout []byte) string {
+func summarizeHookDecision(dialect string, hookStdout []byte) string {
 	hookStdout = bytes.TrimSpace(hookStdout)
 	if len(hookStdout) == 0 {
 		return ""
@@ -213,13 +210,13 @@ func summarizeHookDecision(dialect agnostic.Dialect, hookStdout []byte) string {
 	return ""
 }
 
-func decisionJSONKeys(dialect agnostic.Dialect) []string {
+func decisionJSONKeys(dialect string) []string {
 	switch dialect {
-	case agnostic.Claude:
+	case sdkclaude.Dialect:
 		return []string{"permissionDecision", "decision", "permission"}
-	case agnostic.Copilot:
+	case sdkcopilot.Dialect:
 		return []string{"permissionDecision", "decision", "permission"}
-	case agnostic.Cursor:
+	case sdkcursor.Dialect:
 		return []string{"permission", "permissionDecision", "decision"}
 	default:
 		return []string{"permissionDecision", "permission", "decision"}

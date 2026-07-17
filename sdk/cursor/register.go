@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	run.RegisterDialect("cursor", run.DialectOps{
+	run.RegisterDialect(Dialect, run.DialectOps{
 		Detect:    detectPayload,
 		EventName: eventNameFromRaw,
 		Merge:     MergeOutputs,
@@ -50,7 +50,7 @@ func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler("cursor", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
+	run.RegisterHandler(Dialect, name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		ev, err := decodeWithHint(raw, cfg.EventHint)
 		if err != nil {
@@ -78,7 +78,7 @@ func registerObserveHandler[E Event](fn func(context.Context, Hook[E]) error) {
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler("cursor", name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
+	run.RegisterHandler(Dialect, name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
 		cfg := run.ConfigFrom(ctx)
 		ev, err := decodeWithHint(raw, cfg.EventHint)
 		if err != nil {
