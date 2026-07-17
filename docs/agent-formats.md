@@ -34,6 +34,8 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 |----------|------|
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
 | `event.go` / `result.go` | Shared `Event`, `Kind`, result types; `Event.Agent` is a string |
+| `internal/model/<kind>.go` | Leaf definitions behind root aliases (`*Event`, `*Hook`, `*Handler`, `*Result`); same kind filenames as the package root |
+| `internal/model/event.go` / `envelope.go` | Shared `Kind`, monolithic `Event`, leaf payloads, and `Envelope` |
 | `tools/` | Canonical tool names and typed `Input` with `AsBash`, `AsWrite`, … |
 
 Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
