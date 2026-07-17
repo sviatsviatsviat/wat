@@ -5,6 +5,9 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func mapBeforeSubmitPrompt(e sdkcursor.BeforeSubmitPrompt, ev *model.Event) {
+// MapBeforeSubmitPrompt maps a Cursor BeforeSubmitPrompt hook into a unified Event.
+func MapBeforeSubmitPrompt(e sdkcursor.BeforeSubmitPrompt, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindUserPrompt)
 	ev.Prompt = e.Prompt
+	return ev
 }

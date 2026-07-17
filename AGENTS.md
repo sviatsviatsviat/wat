@@ -5,7 +5,7 @@
 **Packages:**
 
 - **`cmd/wat`** — CLI entrypoint (`init`, `install`, `run`, `port`, `test`, `doctor` in later tasks).
-- **`sdk/agnostic`** — Aggregated library: unified `Event`/`Result`, inbound `MapEvent` adapters, and `On*` registration that fans out onto per-agent SDK Chains. Depends on `sdk/claude`, `sdk/copilot`, and `sdk/cursor`.
+- **`sdk/agnostic`** — Aggregated library: unified `Event`/`Result`, inbound typed `Map*` adapters, and `On*` registration that fans out onto per-agent SDK Chains. Depends on `sdk/claude`, `sdk/copilot`, and `sdk/cursor`.
 - **`cmd/wat/internal/portconfig`** — CLI-only hook config porting for `wat port` (not a public library API).
 - **`sdk/claude`**, **`sdk/copilot`**, **`sdk/cursor`** — Per-agent SDKs; independent packages usable without `sdk/agnostic`.
 - **`internal/cmdast`** — Shell AST helpers (task 22; not present yet).

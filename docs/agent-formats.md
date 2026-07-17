@@ -20,7 +20,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf` |
 | `encode.go` | `Encode` router (wire mapping) |
 | `register.go` | Handler registration (`registerHandler`, dialect init) |
-| `chain.go` | `Chain` type and `OnAny` |
+| `chain.go` | `Chain` type and `Adapter()` |
 | `hook.go` | Hook wrappers embedding typed event + `run.Invocation` + `Raw()` |
 | `options.go` | Decode configuration (`WithEvent`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
@@ -36,7 +36,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
 | `register.go` | `Serve`, run options, `ResetHandlers` |
 | `types.go` | Public type aliases for `internal/model` |
-| `claude/`, `copilot/`, `cursor/` | Inbound `MapEvent` + kind/event registries |
+| `claude/`, `copilot/`, `cursor/` | Typed inbound `Map*` helpers and kind/event registries |
 
 Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
 
@@ -112,7 +112,7 @@ Payload shape is checked before environment variables because Cursor exports `CL
 
 Typed registration methods (`OnPreTool`, `OnPostTool`, `OnStop`, and others) accept only **portable** event kinds — those present on Claude Code, GitHub Copilot, and Cursor. Each kind has its own result type (`PreToolResult`, `PostToolResult`, `StopResult`, …) so hook authors can only set fields every agent can encode. Use `sdk/claude`, `sdk/copilot`, or `sdk/cursor` directly for agent-only capabilities.
 
-Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) and `OnAny` take per-kind observe handlers that return only `error` — no hook response. Each handler receives a hook wrapper (typed event + `run.Invocation`) instead of a bare `*Event`.
+Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) take per-kind observe handlers that return only `error` — no hook response. Each handler receives a hook wrapper (typed event + `run.Invocation`) instead of a bare `*Event`.
 
 ### Handler signatures
 
@@ -122,7 +122,6 @@ All four SDKs use the same handler shapes. Result-producing handlers take `(ctx,
 |---|---|---|
 | Result | `(ctx, hook PreToolHook, r PreToolResults) (PreToolResult, error)` — hook embeds **`PreToolEvent`** (normalized) | `(ctx, hook Hook[PreToolUse], r PreToolUseResults) (PreToolUseOutput, error)` — hook carries **native typed event** via `hook.Event` |
 | Observe | `(ctx, hook SessionEndHook) error` — hook embeds **`SessionEndEvent`** | `(ctx, hook Hook[SessionEnd]) error` — hook carries native typed event via `hook.Event` |
-| Catch-all | `OnAny(func(ctx, hook AnyHook) error)` — `AnyEvent` includes `Kind` | `Chain.OnAny(...)` |
 
 **Not in handler signatures:** bare `*Event` (agnostic) or cross-kind event blobs. Exported `agnostic.Event` remains for codecs, `wat test` summaries, and manual re-decode via `hook.Raw()`.
 
@@ -186,17 +185,17 @@ Register with the per-agent SDK when you need features outside the portable inte
 
 ### Per-agent Chain coverage
 
-Each per-agent SDK exposes a fluent `Chain` with one method per native hook surface (or shared builder where wire encode is identical). `Chain.OnAny` registers an observe-only catch-all handler. Claude-only `KindOther` events decode but have no dedicated Chain method unless registered via `OnAny`.
+Each per-agent SDK exposes a fluent `Chain` with one method per native hook surface (or shared builder where wire encode is identical). Claude-only long-tail events decode but have no dedicated portable `On*` — handle them on `sdk/claude` Chain methods when available.
 
-| SDK | Chain methods | Decode-only / `OnAny` |
+| SDK | Chain methods | Notes |
 |---|---|---|
-| **claude** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`, `Stop`, `SubagentStop`, `SessionStart`, `SubagentStart`, `Notification`, `PreCompact`, `SessionEnd`, `OnAny` | ~18 additional Claude events (`Setup`, `TaskCreated`, …) → `KindOther`; use `OnAny` or per-agent decode |
-| **copilot** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `AgentStop`, `SubagentStop`, `PermissionRequest`, `SessionStart`, `SubagentStart`, `Notification`, `SessionEnd`, `UserPromptSubmitted`, `PreCompact`, `ErrorOccurred`, `OnAny` | Full 13-event surface covered |
-| **cursor** | All 21 native events including `PreToolUse`, dedicated shell/MCP/file/tab hooks, lifecycle/telemetry observe methods, `OnAny` | Full 21-event surface covered |
+| **claude** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`, `Stop`, `SubagentStop`, `SessionStart`, `SubagentStart`, `Notification`, `PreCompact`, `SessionEnd`, plus Claude-only surfaces (`Elicitation`, …) | ~18 additional Claude events (`Setup`, `TaskCreated`, …) decode as long-tail |
+| **copilot** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `AgentStop`, `SubagentStop`, `PermissionRequest`, `SessionStart`, `SubagentStart`, `Notification`, `SessionEnd`, `UserPromptSubmitted`, `PreCompact`, `ErrorOccurred` | Full 13-event surface covered |
+| **cursor** | All 21 native events including `PreToolUse`, dedicated shell/MCP/file/tab hooks, lifecycle/telemetry observe methods | Full 21-event surface covered |
 
 ## Claude inbound mapping
 
-`sdk/agnostic/claude.MapEvent` maps a decoded Claude Code hook event into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/claude` Chains; native decode, encode, and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
+`sdk/agnostic/claude` provides typed `Map*` helpers (for example `MapPreToolUse`). Portable `On*` handlers fan out onto `sdk/claude` Chains; native decode, encode, and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
 
 ### Event name mapping
 
@@ -237,7 +236,7 @@ Agent-native encode surfaces (use `sdk/claude` directly):
 
 ## Copilot inbound mapping
 
-`sdk/agnostic/copilot.MapEvent` maps a decoded GitHub Copilot hook event (**camelCase CLI** or **VS Code compatible**: PascalCase event name, snake_case fields) into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/copilot` Chains; native decode stays in `sdk/copilot`.
+`sdk/agnostic/copilot` provides typed `Map*` helpers (**camelCase CLI** or **VS Code compatible**: PascalCase event name, snake_case fields). Portable `On*` handlers fan out onto `sdk/copilot` Chains; native decode stays in `sdk/copilot`.
 
 ### Wire formats
 
@@ -297,7 +296,7 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 
 ## Cursor inbound mapping
 
-`sdk/agnostic/cursor.MapEvent` maps a decoded Cursor hook event into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/cursor` Chains; native decode stays in `sdk/cursor`.
+`sdk/agnostic/cursor` provides typed `Map*` helpers. Portable `On*` handlers fan out onto `sdk/cursor` Chains; native decode stays in `sdk/cursor`.
 
 Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`; the full payload stays in `Event.Raw`.
 
@@ -364,12 +363,9 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
 - Normalization: [`sdk/agnostic/internal/model/event.go`](../sdk/agnostic/internal/model/event.go) — `NormalizeToolName`; [`toolinput.go`](../sdk/agnostic/internal/model/toolinput.go) — `ToolInput` with `AsBash`, `AsWrite`, and related accessors
 - Tests: [`sdk/agnostic/internal/model/event_test.go`](../sdk/agnostic/internal/model/event_test.go)
-- Claude inbound map: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `MapEvent`
-- Tests: [`sdk/agnostic/claude/map_test.go`](../sdk/agnostic/claude/map_test.go)
-- Copilot inbound map: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/) — `MapEvent`
-- Tests: [`sdk/agnostic/copilot/map_test.go`](../sdk/agnostic/copilot/map_test.go)
-- Cursor inbound map: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — `MapEvent`
-- Tests: [`sdk/agnostic/cursor/map_test.go`](../sdk/agnostic/cursor/map_test.go)
+- Claude inbound map: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — typed `Map*`
+- Copilot inbound map: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/) — typed `Map*`
+- Cursor inbound map: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — typed `Map*`
 - Serve / fan-out: [`sdk/agnostic/runner_test.go`](../sdk/agnostic/runner_test.go)
 - Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

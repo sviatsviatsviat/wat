@@ -69,7 +69,7 @@ func (c *Chain) OnPreCompact(fn PreCompactHandler) *Chain {
 
 func adaptClaudePreCompact(fn PreCompactHandler) func(context.Context, sdkclaude.Hook[sdkclaude.PreCompact], sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PreCompact], _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
-		typed, err := PreCompactEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PreCompactEventFrom(agclaude.MapPreCompact(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func adaptClaudePreCompact(fn PreCompactHandler) func(context.Context, sdkclaude
 
 func adaptCopilotPreCompact(fn PreCompactHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.PreCompact]) error {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PreCompact]) error {
-		typed, err := PreCompactEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PreCompactEventFrom(agcopilot.MapPreCompact(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func adaptCopilotPreCompact(fn PreCompactHandler) func(context.Context, sdkcopil
 
 func adaptCursorPreCompact(fn PreCompactHandler) func(context.Context, sdkcursor.Hook[sdkcursor.PreCompact], sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreCompact], _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
-		typed, err := PreCompactEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PreCompactEventFrom(agcursor.MapPreCompact(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}

@@ -5,6 +5,9 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func mapPreCompact(e sdkclaude.PreCompact, ev *model.Event) {
+// MapPreCompact maps a Claude PreCompact hook into a unified Event.
+func MapPreCompact(e sdkclaude.PreCompact, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindPreCompact)
 	ev.Compact = &model.CompactInfo{Trigger: e.Trigger, CustomInstructions: e.CustomInstructions}
+	return ev
 }

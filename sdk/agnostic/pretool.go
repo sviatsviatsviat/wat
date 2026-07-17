@@ -98,7 +98,7 @@ func (c *Chain) OnPreTool(fn PreToolHandler) *Chain {
 
 func adaptClaudePreTool(fn PreToolHandler) func(context.Context, sdkclaude.Hook[sdkclaude.PreToolUse], sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PreToolUse], native sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
-		typed, err := PreToolEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PreToolEventFrom(agclaude.MapPreToolUse(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +152,7 @@ func (r claudePreToolResult) WithUpdatedInput(input map[string]any) PreToolResul
 
 func adaptCopilotPreTool(fn PreToolHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.PreToolUse], sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PreToolUse], native sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
-		typed, err := PreToolEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PreToolEventFrom(agcopilot.MapPreToolUse(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -206,25 +206,25 @@ func (r copilotPreToolResult) WithUpdatedInput(input map[string]any) PreToolResu
 
 func adaptCursorPreTool(fn PreToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.PreToolUse], sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreToolUse], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
-		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapEvent(hook.Event, hook.Raw()), native, fn)
+		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapPreToolUse(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorBeforeShell(fn PreToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeShellExecution], sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeShellExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
-		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapEvent(hook.Event, hook.Raw()), native, fn)
+		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapBeforeShellExecution(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorBeforeMCP(fn PreToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeMCPExecution], sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeMCPExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
-		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapEvent(hook.Event, hook.Raw()), native, fn)
+		return callCursorPreTool(ctx, hook.Invocation(), agcursor.MapBeforeMCPExecution(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorBeforeRead(fn PreToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeReadFile], sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeReadFile], native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
-		typed, err := PreToolEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PreToolEventFrom(agcursor.MapBeforeReadFile(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}

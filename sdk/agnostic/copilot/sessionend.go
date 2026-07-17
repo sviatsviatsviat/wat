@@ -5,6 +5,9 @@ import (
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
-func mapSessionEnd(e sdkcopilot.SessionEnd, ev *model.Event) {
+// MapSessionEnd maps a Copilot SessionEnd hook into a unified Event.
+func MapSessionEnd(e sdkcopilot.SessionEnd, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindSessionEnd)
 	ev.Life = &model.Lifecycle{Reason: e.Reason}
+	return ev
 }

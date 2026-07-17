@@ -69,7 +69,7 @@ func (c *Chain) OnSubagentStart(fn SubagentStartHandler) *Chain {
 
 func adaptClaudeSubagentStart(fn SubagentStartHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SubagentStart], sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SubagentStart], _ sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
-		typed, err := SubagentStartEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SubagentStartEventFrom(agclaude.MapSubagentStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func adaptClaudeSubagentStart(fn SubagentStartHandler) func(context.Context, sdk
 
 func adaptCopilotSubagentStart(fn SubagentStartHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SubagentStart], sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStart], _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
-		typed, err := SubagentStartEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SubagentStartEventFrom(agcopilot.MapSubagentStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +89,7 @@ func adaptCopilotSubagentStart(fn SubagentStartHandler) func(context.Context, sd
 
 func adaptCursorSubagentStart(fn SubagentStartHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SubagentStart], sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SubagentStart], _ sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
-		typed, err := SubagentStartEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SubagentStartEventFrom(agcursor.MapSubagentStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}

@@ -103,22 +103,6 @@ func registerObserveHandler[E Event](owner string, fn func(context.Context, Hook
 	})
 }
 
-func registerAny(owner string, fn func(context.Context, AnyHook) error) {
-	if fn == nil {
-		return
-	}
-	run.RegisterAnyHandler(owner, "claude", func(ctx context.Context, raw []byte) ([]byte, int, error) {
-		ev, err := Decode(raw)
-		if err != nil {
-			return nil, HandlerErrorExit, err
-		}
-		if err := fn(ctx, NewAnyHook(run.InvocationFrom(ctx), ev)); err != nil {
-			return nil, handlerErrorExit(ctx, ev.EventName()), err
-		}
-		return nil, 0, nil
-	})
-}
-
 func handlerErrorExit(ctx context.Context, _ string) int {
 	rc := claudeRunConfig(run.ConfigFrom(ctx))
 	if rc.policy == FailBlock {

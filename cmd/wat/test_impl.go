@@ -1,6 +1,6 @@
 // wat test executes the user's compiled .wat/hooks binary (same cache path as
-// wat run). Agent SDK decode plus inbound MapEvent build the fixture summary
-// only; they do not replace hook execution.
+// wat run). Agent SDK decode validates the fixture and resolves the native
+// event name for the report; it does not replace hook execution.
 package main
 
 import (
@@ -14,9 +14,6 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
-	agclaude "github.com/sviatsviatsviat/wat/sdk/agnostic/claude"
-	agcopilot "github.com/sviatsviatsviat/wat/sdk/agnostic/copilot"
-	agcursor "github.com/sviatsviatsviat/wat/sdk/agnostic/cursor"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -33,6 +30,11 @@ type testDeps struct {
 	runDeps
 	readFixture func(path string, stdin io.Reader) ([]byte, error)
 	writeReport io.Writer
+}
+
+type fixtureInfo struct {
+	dialect agnostic.Dialect
+	event   string
 }
 
 func defaultTestDeps() testDeps {
@@ -66,7 +68,7 @@ func runTest(cfg testConfig, deps testDeps) int {
 		return exitRuntimeFailure
 	}
 
-	ev, dialect, err := decodeFixtureSummary(cfg.agent, cfg.event, payload, deps.getenv)
+	info, err := resolveFixture(cfg.agent, cfg.event, payload, deps.getenv)
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "wat test: %v\n", err)
 		return exitRuntimeFailure
@@ -83,20 +85,20 @@ func runTest(cfg testConfig, deps testDeps) int {
 		return exitRuntimeFailure
 	}
 
-	writeTestReport(deps.writeReport, ev, dialect, hookStdout, hookStderr, hookExit, cfg.verbose)
+	writeTestReport(deps.writeReport, info, hookStdout, hookStderr, hookExit, cfg.verbose)
 	return hookExit
 }
 
-func decodeFixtureSummary(agentFlag, eventHint string, payload []byte, getenv func(string) string) (*agnostic.Event, agnostic.Dialect, error) {
+func resolveFixture(agentFlag, eventHint string, payload []byte, getenv func(string) string) (fixtureInfo, error) {
 	dialect := agnostic.ParseDialect(agentFlag)
 	if dialect == agnostic.Unknown {
 		dialect = agnostic.Detect(payload, getenv)
 	}
 	if dialect == agnostic.Unknown {
-		return nil, agnostic.Unknown, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
+		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
 	}
 
-	var ev *agnostic.Event
+	var event string
 	var err error
 	switch dialect {
 	case agnostic.Claude:
@@ -105,31 +107,39 @@ func decodeFixtureSummary(agentFlag, eventHint string, payload []byte, getenv fu
 			err = decErr
 			break
 		}
-		ev = agclaude.MapEvent(native, payload)
+		event = native.EventName()
 	case agnostic.Copilot:
 		native, decErr := sdkcopilot.Decode(payload, sdkcopilot.WithEvent(eventHint))
 		if decErr != nil {
 			err = decErr
 			break
 		}
-		ev = agcopilot.MapEvent(native, payload)
+		if name := sdkcopilot.EnvelopeOf(native).ReceivedName(); name != "" {
+			event = name
+		} else {
+			event = native.EventName()
+		}
 	case agnostic.Cursor:
 		native, decErr := sdkcursor.Decode(payload, sdkcursor.WithEvent(eventHint))
 		if decErr != nil {
 			err = decErr
 			break
 		}
-		ev = agcursor.MapEvent(native, payload)
+		if name := sdkcursor.EnvelopeOf(native).ReceivedName(); name != "" {
+			event = name
+		} else {
+			event = native.EventName()
+		}
 	default:
-		return nil, dialect, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
+		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent or use a recognizable fixture)")
 	}
 	if err != nil {
 		if dialect == agnostic.Copilot && eventHint == "" {
-			return nil, dialect, fmt.Errorf("decode: %w (Copilot camelCase payloads require --event)", err)
+			return fixtureInfo{}, fmt.Errorf("decode: %w (Copilot camelCase payloads require --event)", err)
 		}
-		return nil, dialect, fmt.Errorf("decode: %w", err)
+		return fixtureInfo{}, fmt.Errorf("decode: %w", err)
 	}
-	return ev, dialect, nil
+	return fixtureInfo{dialect: dialect, event: event}, nil
 }
 
 func execHookBinary(binPath string, payload []byte, cfg testConfig, deps runDeps) (hookStdout, hookStderr []byte, exitCode int, err error) {
@@ -157,30 +167,10 @@ func execHookBinary(binPath string, payload []byte, cfg testConfig, deps runDeps
 	return outBuf.Bytes(), errBuf.Bytes(), exitOK, nil
 }
 
-func writeTestReport(w io.Writer, ev *agnostic.Event, dialect agnostic.Dialect, hookStdout, hookStderr []byte, hookExit int, verbose bool) {
-	_, _ = fmt.Fprintln(w, "event:")
-	_, _ = fmt.Fprintf(w, "  agent: %s\n", dialect)
-	_, _ = fmt.Fprintf(w, "  kind:  %s\n", ev.Kind)
-	_, _ = fmt.Fprintf(w, "  name:  %s\n", ev.Name)
-	if ev.Tool != nil {
-		_, _ = fmt.Fprintf(w, "  tool:  %s\n", ev.Tool.Name)
-		if ev.Tool.Shell != "" {
-			_, _ = fmt.Fprintf(w, "  shell: %s\n", ev.Tool.Shell)
-		}
-		if verbose {
-			if ev.Tool.Native != "" && ev.Tool.Native != ev.Tool.Name {
-				_, _ = fmt.Fprintf(w, "  tool_native: %s\n", ev.Tool.Native)
-			}
-		}
-	}
-	if verbose {
-		if ev.Session != "" {
-			_, _ = fmt.Fprintf(w, "  session: %s\n", ev.Session)
-		}
-		if ev.Cwd != "" {
-			_, _ = fmt.Fprintf(w, "  cwd:     %s\n", ev.Cwd)
-		}
-	}
+func writeTestReport(w io.Writer, info fixtureInfo, hookStdout, hookStderr []byte, hookExit int, verbose bool) {
+	_, _ = fmt.Fprintln(w, "fixture:")
+	_, _ = fmt.Fprintf(w, "  agent: %s\n", info.dialect)
+	_, _ = fmt.Fprintf(w, "  event: %s\n", info.event)
 
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "hook:")
@@ -189,7 +179,7 @@ func writeTestReport(w io.Writer, ev *agnostic.Event, dialect agnostic.Dialect, 
 	} else {
 		_, _ = fmt.Fprintln(w, "  stdout: (empty)")
 	}
-	if decision := summarizeHookDecision(dialect, hookStdout); decision != "" {
+	if decision := summarizeHookDecision(info.dialect, hookStdout); decision != "" {
 		_, _ = fmt.Fprintf(w, "  decision: %s\n", decision)
 	}
 	if verbose && len(hookStderr) > 0 {

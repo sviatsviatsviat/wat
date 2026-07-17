@@ -5,6 +5,9 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func mapStop(e sdkclaude.Stop, ev *model.Event) {
+// MapStop maps a Claude Stop hook into a unified Event.
+func MapStop(e sdkclaude.Stop, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindStop)
 	ev.Turn = &model.TurnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage}
+	return ev
 }

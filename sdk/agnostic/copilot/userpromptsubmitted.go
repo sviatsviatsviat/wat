@@ -5,6 +5,9 @@ import (
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
-func mapUserPromptSubmitted(e sdkcopilot.UserPromptSubmitted, ev *model.Event) {
+// MapUserPromptSubmitted maps a Copilot UserPromptSubmitted hook into a unified Event.
+func MapUserPromptSubmitted(e sdkcopilot.UserPromptSubmitted, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindUserPrompt)
 	ev.Prompt = e.Prompt
+	return ev
 }

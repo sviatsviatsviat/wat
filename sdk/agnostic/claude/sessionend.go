@@ -5,6 +5,9 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func mapSessionEnd(e sdkclaude.SessionEnd, ev *model.Event) {
+// MapSessionEnd maps a Claude SessionEnd hook into a unified Event.
+func MapSessionEnd(e sdkclaude.SessionEnd, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindSessionEnd)
 	ev.Life = &model.Lifecycle{Reason: e.Reason}
+	return ev
 }

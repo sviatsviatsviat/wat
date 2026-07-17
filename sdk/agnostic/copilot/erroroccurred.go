@@ -5,7 +5,9 @@ import (
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
-func mapErrorOccurred(e sdkcopilot.ErrorOccurred, ev *model.Event) {
+// MapErrorOccurred maps a Copilot ErrorOccurred hook into a unified Event.
+func MapErrorOccurred(e sdkcopilot.ErrorOccurred, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindAgentError)
 	if detail, ok := e.Detail(); ok {
 		noteType := detail.Name
 		if noteType == "" {
@@ -17,4 +19,5 @@ func mapErrorOccurred(e sdkcopilot.ErrorOccurred, ev *model.Event) {
 			Recoverable: e.Recoverable,
 		}
 	}
+	return ev
 }

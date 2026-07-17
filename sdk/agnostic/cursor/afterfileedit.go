@@ -7,19 +7,23 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func mapAfterFileEdit(e sdkcursor.AfterFileEdit, ev *model.Event, name string) {
+// MapAfterFileEdit maps a Cursor AfterFileEdit hook into a unified Event.
+func MapAfterFileEdit(e sdkcursor.AfterFileEdit, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindPostTool)
+	name := receivedName(e)
 	ev.Tool = &model.ToolCall{Name: model.ToolEdit, Native: name}
 	input, err := json.Marshal(map[string]any{
 		"file_path": e.FilePath,
 		"edits":     e.Edits,
 	})
 	if err != nil {
-		return
+		return ev
 	}
 	editsRaw, err := json.Marshal(e.Edits)
 	if err != nil {
-		return
+		return ev
 	}
 	ev.Tool.Input = model.NewToolInput(model.ToolEdit, name, input)
 	ev.Result = &model.ToolResult{Raw: editsRaw}
+	return ev
 }

@@ -5,6 +5,9 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func mapNotification(e sdkclaude.Notification, ev *model.Event) {
+// MapNotification maps a Claude Notification hook into a unified Event.
+func MapNotification(e sdkclaude.Notification, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindNotification)
 	ev.Note = &model.Note{Type: e.NotificationType, Message: e.Message}
+	return ev
 }

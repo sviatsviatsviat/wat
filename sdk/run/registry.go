@@ -29,7 +29,6 @@ type Registry struct {
 
 	dialectOrder []string
 	dialects     map[string]DialectOps
-	anyHandlers  map[string][]ownedProducer
 	handlers     map[string]map[string][]ownedProducer
 }
 
@@ -38,9 +37,8 @@ var defaultRegistry = NewRegistry()
 // NewRegistry returns an empty handler registry.
 func NewRegistry() *Registry {
 	return &Registry{
-		dialects:    make(map[string]DialectOps),
-		anyHandlers: make(map[string][]ownedProducer),
-		handlers:    make(map[string]map[string][]ownedProducer),
+		dialects: make(map[string]DialectOps),
+		handlers: make(map[string]map[string][]ownedProducer),
 	}
 }
 
@@ -64,11 +62,6 @@ func RegisterDialect(name string, ops DialectOps) {
 // RegisterHandler appends a handler for owner, dialect, and native event name.
 func RegisterHandler(owner, dialect, eventName string, p Producer) {
 	defaultRegistry.RegisterHandler(owner, dialect, eventName, p)
-}
-
-// RegisterAnyHandler appends a catch-all handler for owner on dialect.
-func RegisterAnyHandler(owner, dialect string, p Producer) {
-	defaultRegistry.RegisterAnyHandler(owner, dialect, p)
 }
 
 // RegisterDialect registers dialect ops on r. Duplicate names panic.
@@ -101,23 +94,10 @@ func (r *Registry) RegisterHandler(owner, dialect, eventName string, p Producer)
 	r.handlers[dialect][eventName] = append(r.handlers[dialect][eventName], ownedProducer{owner: owner, p: p})
 }
 
-// RegisterAnyHandler appends a catch-all handler for owner on dialect on r.
-func (r *Registry) RegisterAnyHandler(owner, dialect string, p Producer) {
-	if p == nil {
-		return
-	}
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.anyHandlers[dialect] = append(r.anyHandlers[dialect], ownedProducer{owner: owner, p: p})
-}
-
 func (r *Registry) producers(dialect, eventName string) []Producer {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var out []Producer
-	for _, h := range r.anyHandlers[dialect] {
-		out = append(out, h.p)
-	}
 	for _, h := range r.handlers[dialect][eventName] {
 		out = append(out, h.p)
 	}
@@ -134,7 +114,6 @@ func (r *Registry) dialectOps(name string) (DialectOps, bool) {
 func (r *Registry) resetHandlers() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.anyHandlers = make(map[string][]ownedProducer)
 	for name := range r.handlers {
 		r.handlers[name] = make(map[string][]ownedProducer)
 	}
@@ -143,9 +122,6 @@ func (r *Registry) resetHandlers() {
 func (r *Registry) resetOwner(owner string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	for dialect, list := range r.anyHandlers {
-		r.anyHandlers[dialect] = removeOwner(list, owner)
-	}
 	for dialect, events := range r.handlers {
 		for event, list := range events {
 			filtered := removeOwner(list, owner)

@@ -69,7 +69,7 @@ func (c *Chain) OnSessionEnd(fn SessionEndHandler) *Chain {
 
 func adaptClaudeSessionEnd(fn SessionEndHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SessionEnd]) error {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionEnd]) error {
-		typed, err := SessionEndEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SessionEndEventFrom(agclaude.MapSessionEnd(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
@@ -79,7 +79,7 @@ func adaptClaudeSessionEnd(fn SessionEndHandler) func(context.Context, sdkclaude
 
 func adaptCopilotSessionEnd(fn SessionEndHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SessionEnd]) error {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SessionEnd]) error {
-		typed, err := SessionEndEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SessionEndEventFrom(agcopilot.MapSessionEnd(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func adaptCopilotSessionEnd(fn SessionEndHandler) func(context.Context, sdkcopil
 
 func adaptCursorSessionEnd(fn SessionEndHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SessionEnd]) error {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SessionEnd]) error {
-		typed, err := SessionEndEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SessionEndEventFrom(agcursor.MapSessionEnd(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}

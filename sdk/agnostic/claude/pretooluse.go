@@ -6,6 +6,9 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func mapPreToolUse(e sdkclaude.PreToolUse, ev *model.Event) {
+// MapPreToolUse maps a Claude PreToolUse hook into a unified Event.
+func MapPreToolUse(e sdkclaude.PreToolUse, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindPreTool)
 	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
+	return ev
 }

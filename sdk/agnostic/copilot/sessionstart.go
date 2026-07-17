@@ -5,6 +5,9 @@ import (
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
-func mapSessionStart(e sdkcopilot.SessionStart, ev *model.Event) {
+// MapSessionStart maps a Copilot SessionStart hook into a unified Event.
+func MapSessionStart(e sdkcopilot.SessionStart, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindSessionStart)
 	ev.Life = &model.Lifecycle{Source: e.Source, InitialPrompt: e.InitialPrompt()}
+	return ev
 }

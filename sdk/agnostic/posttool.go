@@ -93,7 +93,7 @@ func (c *Chain) OnPostTool(fn PostToolHandler) *Chain {
 
 func adaptClaudePostTool(fn PostToolHandler) func(context.Context, sdkclaude.Hook[sdkclaude.PostToolUse], sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
-		typed, err := PostToolEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PostToolEventFrom(agclaude.MapPostToolUse(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +137,7 @@ func (r claudePostToolResult) WithUpdatedOutput(output string) PostToolResult {
 
 func adaptCopilotPostTool(fn PostToolHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.PostToolUse], sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUse], native sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
-		typed, err := PostToolEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PostToolEventFrom(agcopilot.MapPostToolUse(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -181,25 +181,25 @@ func (r copilotPostToolResult) WithUpdatedOutput(output string) PostToolResult {
 
 func adaptCursorPostTool(fn PostToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.PostToolUse], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUse], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapEvent(hook.Event, hook.Raw()), native, fn)
+		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapPostToolUse(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorAfterShell(fn PostToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.AfterShellExecution], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterShellExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapEvent(hook.Event, hook.Raw()), native, fn)
+		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapAfterShellExecution(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorAfterMCP(fn PostToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.AfterMCPExecution], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterMCPExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapEvent(hook.Event, hook.Raw()), native, fn)
+		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapAfterMCPExecution(hook.Event, hook.Raw()), native, fn)
 	}
 }
 
 func adaptCursorAfterFileEdit(fn PostToolHandler) func(context.Context, sdkcursor.Hook[sdkcursor.AfterFileEdit], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterFileEdit], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapEvent(hook.Event, hook.Raw()), native, fn)
+		return callCursorPostTool(ctx, hook.Invocation(), agcursor.MapAfterFileEdit(hook.Event, hook.Raw()), native, fn)
 	}
 }
 

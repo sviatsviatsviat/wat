@@ -14,7 +14,7 @@
 // plus hook-scoped result builders (PreToolResults, PostToolResults, and others)
 // that wrap the native agent Results. Advanced fields use fluent With* methods
 // on the returned result (for example WithUpdatedInput). Observe-only kinds use
-// OnSessionEnd, OnUserPrompt, OnPreCompact, OnSubagentStart, or OnAny with
+// OnSessionEnd, OnUserPrompt, OnPreCompact, and OnSubagentStart with
 // per-kind handler types. Register handlers with OnPreTool, OnPostTool, and the
 // other typed On methods, then call run.Main from
 // github.com/sviatsviatsviat/wat/sdk/run.

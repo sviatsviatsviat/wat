@@ -5,6 +5,9 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func mapSessionStart(e sdkclaude.SessionStart, ev *model.Event) {
+// MapSessionStart maps a Claude SessionStart hook into a unified Event.
+func MapSessionStart(e sdkclaude.SessionStart, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindSessionStart)
 	ev.Life = &model.Lifecycle{Source: e.Source, Model: e.Model}
+	return ev
 }

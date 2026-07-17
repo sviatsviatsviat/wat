@@ -7,7 +7,10 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func mapAfterMCPExecution(e sdkcursor.AfterMCPExecution, ev *model.Event, name string) {
+// MapAfterMCPExecution maps a Cursor AfterMCPExecution hook into a unified Event.
+func MapAfterMCPExecution(e sdkcursor.AfterMCPExecution, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindPostTool)
+	name := receivedName(e)
 	nameNorm, _ := model.NormalizeToolName(e.ToolName)
 	toolInput := model.NewToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
 	ev.Tool = &model.ToolCall{
@@ -17,4 +20,5 @@ func mapAfterMCPExecution(e sdkcursor.AfterMCPExecution, ev *model.Event, name s
 		MCP:    true,
 	}
 	ev.Result = &model.ToolResult{Raw: json.RawMessage(e.ResultJSON), DurationMs: e.DurationMillis()}
+	return ev
 }

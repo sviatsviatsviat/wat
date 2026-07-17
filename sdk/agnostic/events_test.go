@@ -23,11 +23,3 @@ func TestPreToolEventFrom(t *testing.T) {
 		t.Fatal("expected kind mismatch error")
 	}
 }
-
-func TestAnyEventFrom(t *testing.T) {
-	ev := &Event{Kind: KindUserPrompt, Prompt: "hi", Name: "UserPromptSubmit"}
-	got := AnyEventFrom(ev)
-	if got.Kind != KindUserPrompt || got.Prompt != "hi" {
-		t.Fatalf("AnyEvent = %+v", got)
-	}
-}

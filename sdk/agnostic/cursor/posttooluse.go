@@ -6,7 +6,10 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func mapPostToolUse(e sdkcursor.PostToolUse, ev *model.Event) {
+// MapPostToolUse maps a Cursor PostToolUse hook into a unified Event.
+func MapPostToolUse(e sdkcursor.PostToolUse, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindPostTool)
 	ev.Tool = adapter.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID)
 	ev.Result = &model.ToolResult{Text: e.ToolOutput, DurationMs: e.DurationMillis()}
+	return ev
 }

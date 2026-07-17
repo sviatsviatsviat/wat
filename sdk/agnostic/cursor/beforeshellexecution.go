@@ -5,6 +5,9 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func mapBeforeShellExecution(e sdkcursor.BeforeShellExecution, ev *model.Event, name string) {
-	ev.Tool = &model.ToolCall{Name: model.ToolBash, Native: name, Shell: e.Command}
+// MapBeforeShellExecution maps a Cursor BeforeShellExecution hook into a unified Event.
+func MapBeforeShellExecution(e sdkcursor.BeforeShellExecution, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindPreTool)
+	ev.Tool = &model.ToolCall{Name: model.ToolBash, Native: receivedName(e), Shell: e.Command}
+	return ev
 }

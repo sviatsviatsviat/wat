@@ -5,6 +5,9 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func mapSubagentStart(e sdkcursor.SubagentStart, ev *model.Event) {
+// MapSubagentStart maps a Cursor SubagentStart hook into a unified Event.
+func MapSubagentStart(e sdkcursor.SubagentStart, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindSubagentStart)
 	ev.Subagent = &model.Subagent{ID: e.SubagentID, Type: e.SubagentType, Task: e.Task}
+	return ev
 }

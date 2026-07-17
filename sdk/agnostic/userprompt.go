@@ -69,7 +69,7 @@ func (c *Chain) OnUserPrompt(fn UserPromptHandler) *Chain {
 
 func adaptClaudeUserPrompt(fn UserPromptHandler) func(context.Context, sdkclaude.Hook[sdkclaude.UserPromptSubmit], sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
-		typed, err := UserPromptEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		typed, err := UserPromptEventFrom(agclaude.MapUserPromptSubmit(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func adaptClaudeUserPrompt(fn UserPromptHandler) func(context.Context, sdkclaude
 
 func adaptCopilotUserPrompt(fn UserPromptHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
-		typed, err := UserPromptEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		typed, err := UserPromptEventFrom(agcopilot.MapUserPromptSubmitted(hook.Event, hook.Raw()))
 		if err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func adaptCopilotUserPrompt(fn UserPromptHandler) func(context.Context, sdkcopil
 
 func adaptCursorUserPrompt(fn UserPromptHandler) func(context.Context, sdkcursor.Hook[sdkcursor.BeforeSubmitPrompt], sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeSubmitPrompt], _ sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
-		typed, err := UserPromptEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		typed, err := UserPromptEventFrom(agcursor.MapBeforeSubmitPrompt(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}

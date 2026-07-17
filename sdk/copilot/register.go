@@ -97,23 +97,6 @@ func registerObserveHandler[E Event](owner string, fn func(context.Context, Hook
 	})
 }
 
-func registerAny(owner string, fn func(context.Context, AnyHook) error) {
-	if fn == nil {
-		return
-	}
-	run.RegisterAnyHandler(owner, "copilot", func(ctx context.Context, raw []byte) ([]byte, int, error) {
-		cfg := run.ConfigFrom(ctx)
-		ev, err := decodeWithHint(raw, cfg.EventHint)
-		if err != nil {
-			return nil, HandlerErrorExit, err
-		}
-		if err := fn(ctx, NewAnyHook(run.InvocationFrom(ctx), ev)); err != nil {
-			return nil, HandlerErrorExit, err
-		}
-		return nil, 0, nil
-	})
-}
-
 func handlerErrorExit(eventName string) int {
 	if eventName == EventPreToolUse {
 		return PreToolErrorExit

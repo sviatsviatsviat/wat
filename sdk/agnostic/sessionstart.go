@@ -85,7 +85,7 @@ func (c *Chain) OnSessionStart(fn SessionStartHandler) *Chain {
 
 func adaptClaudeSessionStart(fn SessionStartHandler) func(context.Context, sdkclaude.Hook[sdkclaude.SessionStart], sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionStart], native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
-		typed, err := SessionStartEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SessionStartEventFrom(agclaude.MapSessionStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +123,7 @@ func (r claudeSessionStartResult) IsZero() bool { return sdkclaude.IsZeroOutput(
 
 func adaptCopilotSessionStart(fn SessionStartHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.SessionStart], sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SessionStart], native sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
-		typed, err := SessionStartEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SessionStartEventFrom(agcopilot.MapSessionStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +161,7 @@ func (r copilotSessionStartResult) IsZero() bool { return sdkcopilot.IsZeroOutpu
 
 func adaptCursorSessionStart(fn SessionStartHandler) func(context.Context, sdkcursor.Hook[sdkcursor.SessionStart], sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SessionStart], native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
-		typed, err := SessionStartEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		typed, err := SessionStartEventFrom(agcursor.MapSessionStart(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}

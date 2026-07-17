@@ -66,13 +66,13 @@ func TestRunTest_emptyFixture(t *testing.T) {
 	}
 }
 
-func TestDecodeFixtureSummary_copilotRequiresEvent(t *testing.T) {
+func TestDecodeFixture_copilotRequiresEvent(t *testing.T) {
 	payload, err := os.ReadFile(fixturePath(t, "copilot", "pre_tool_force_push.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, _, err = decodeFixtureSummary("copilot", "", payload, os.Getenv)
+	_, err = resolveFixture("copilot", "", payload, os.Getenv)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -81,17 +81,12 @@ func TestDecodeFixtureSummary_copilotRequiresEvent(t *testing.T) {
 	}
 }
 
-func TestWriteTestReport_eventSummary(t *testing.T) {
-	ev := &agnostic.Event{
-		Kind: agnostic.KindPreTool,
-		Name: "PreToolUse",
-		Tool: &agnostic.ToolCall{Name: agnostic.ToolBash, Shell: "git push --force"},
-	}
+func TestWriteTestReport_fixtureSummary(t *testing.T) {
 	var buf bytes.Buffer
-	writeTestReport(&buf, ev, agnostic.Claude, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)
+	writeTestReport(&buf, fixtureInfo{dialect: agnostic.Claude, event: "PreToolUse"}, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)
 
 	out := buf.String()
-	for _, want := range []string{"kind:  PreTool", "tool:  bash", "shell: git push --force", "decision: deny", "exit:   0"} {
+	for _, want := range []string{"agent: claude", "event: PreToolUse", "decision: deny", "exit:   0"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("report missing %q:\n%s", want, out)
 		}
@@ -116,7 +111,7 @@ func TestRunTest_preToolDenyIntegration(t *testing.T) {
 			fixture:  filepath.Join(fixtures, "testdata", "fixtures", "claude", "pre_tool_force_push.json"),
 			wantExit: exitOK,
 			wantOutput: []string{
-				"kind:  PreTool",
+				"event: PreToolUse",
 				"deny",
 				"force pushes are not allowed",
 			},

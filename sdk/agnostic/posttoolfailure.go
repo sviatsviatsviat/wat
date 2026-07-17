@@ -86,7 +86,7 @@ func (c *Chain) OnPostToolFailure(fn PostToolFailureHandler) *Chain {
 
 func adaptClaudePostToolFailure(fn PostToolFailureHandler) func(context.Context, sdkclaude.Hook[sdkclaude.PostToolUseFailure], sdkclaude.PostToolUseFailureResults) (sdkclaude.PostToolUseOutput, error) {
 	return func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PostToolUseFailure], native sdkclaude.PostToolUseFailureResults) (sdkclaude.PostToolUseOutput, error) {
-		typed, err := PostToolFailureEventFrom(agclaude.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PostToolFailureEventFrom(agclaude.MapPostToolUseFailure(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +124,7 @@ func (r claudePostToolFailureResult) IsZero() bool { return sdkclaude.IsZeroOutp
 
 func adaptCopilotPostToolFailure(fn PostToolFailureHandler) func(context.Context, sdkcopilot.Hook[sdkcopilot.PostToolUseFailure], sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
 	return func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUseFailure], native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
-		typed, err := PostToolFailureEventFrom(agcopilot.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PostToolFailureEventFrom(agcopilot.MapPostToolUseFailure(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}
@@ -162,7 +162,7 @@ func (r copilotPostToolFailureResult) IsZero() bool { return sdkcopilot.IsZeroOu
 
 func adaptCursorPostToolFailure(fn PostToolFailureHandler) func(context.Context, sdkcursor.Hook[sdkcursor.PostToolUseFailure], sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 	return func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUseFailure], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		typed, err := PostToolFailureEventFrom(agcursor.MapEvent(hook.Event, hook.Raw()))
+		typed, err := PostToolFailureEventFrom(agcursor.MapPostToolUseFailure(hook.Event, hook.Raw()))
 		if err != nil {
 			return nil, err
 		}

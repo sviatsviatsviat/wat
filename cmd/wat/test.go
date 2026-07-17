@@ -12,14 +12,14 @@ func newTestCmd() *subcommandRunner {
 	addAgentFlag(fs, shared)
 	addEventFlag(fs, shared)
 	fixture := fs.String("fixture", "", "path to fixture JSON, or \"-\" for stdin")
-	verbose := fs.Bool("verbose", false, "print expanded event fields and hook stderr")
+	verbose := fs.Bool("verbose", false, "print hook stderr")
 	return &subcommandRunner{
 		name:    "test",
 		summary: "run hook script against fixture payloads",
 		long: "Run the user's hook script against a fixture payload without invoking an agent.\n\n" +
 			"wat test builds and executes the same cached .wat/hooks binary as wat run, feeding the\n" +
-			"fixture on stdin. It prints a decoded unified event summary (via MapEvent) and\n" +
-			"the hook's stdout JSON plus exit code so you can iterate on handlers locally.",
+			"fixture on stdin. It prints fixture agent/event, the hook's stdout JSON, and exit code\n" +
+			"so you can iterate on handlers locally.",
 		fs:     fs,
 		shared: shared,
 		run: func() int {

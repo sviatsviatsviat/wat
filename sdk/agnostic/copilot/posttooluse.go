@@ -6,7 +6,10 @@ import (
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
-func mapPostToolUse(e sdkcopilot.PostToolUse, ev *model.Event) {
+// MapPostToolUse maps a Copilot PostToolUse hook into a unified Event.
+func MapPostToolUse(e sdkcopilot.PostToolUse, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindPostTool)
 	ev.Tool = adapter.NewToolCall(e.NativeToolName(), e.Input().Raw(), "")
 	ev.Result = &model.ToolResult{Raw: adapter.CloneRaw(e.ResultRaw()), Text: e.ResultText()}
+	return ev
 }

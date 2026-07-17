@@ -1,9 +1,5 @@
 package cursor
 
-import (
-	"context"
-)
-
 // adapterOwner is the run registry owner used when agnostic fans out onto this SDK.
 const adapterOwner = "agnostic"
 
@@ -24,13 +20,4 @@ func (c *Chain) registerOwner() string {
 // dialect registry but remain independently resettable in tests.
 func Adapter() *Chain {
 	return &Chain{owner: adapterOwner}
-}
-
-// OnAny registers an observe-only handler invoked for every event.
-func (c *Chain) OnAny(fn func(context.Context, AnyHook) error) *Chain {
-	if c == nil {
-		c = &Chain{}
-	}
-	registerAny(c.registerOwner(), fn)
-	return c
 }

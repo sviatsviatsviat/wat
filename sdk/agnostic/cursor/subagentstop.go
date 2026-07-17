@@ -5,7 +5,9 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func mapSubagentStop(e sdkcursor.SubagentStop, ev *model.Event) {
+// MapSubagentStop maps a Cursor SubagentStop hook into a unified Event.
+func MapSubagentStop(e sdkcursor.SubagentStop, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindSubagentStop)
 	tp := ""
 	if e.AgentTranscriptPath != nil {
 		tp = *e.AgentTranscriptPath
@@ -19,4 +21,5 @@ func mapSubagentStop(e sdkcursor.SubagentStop, ev *model.Event) {
 		TranscriptPath: tp,
 		LoopCount:      e.LoopCount,
 	}
+	return ev
 }

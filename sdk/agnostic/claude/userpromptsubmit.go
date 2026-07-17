@@ -5,6 +5,9 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func mapUserPromptSubmit(e sdkclaude.UserPromptSubmit, ev *model.Event) {
+// MapUserPromptSubmit maps a Claude UserPromptSubmit hook into a unified Event.
+func MapUserPromptSubmit(e sdkclaude.UserPromptSubmit, raw []byte) *model.Event {
+	ev := newEvent(e, raw, model.KindUserPrompt)
 	ev.Prompt = e.Prompt
+	return ev
 }

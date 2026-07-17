@@ -250,25 +250,6 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 	}
 }
 
-func TestServe_OnAnyObserveOnly(t *testing.T) {
-	resetTest(t)
-	OnAny(func(ctx context.Context, hook AnyHook) error {
-		return nil
-	})
-	OnPreTool(func(ctx context.Context, hook PreToolHook, r PreToolResults) (PreToolResult, error) {
-		return r.Deny("blocked"), nil
-	})
-
-	var stdout, stderr bytes.Buffer
-	code := Serve(context.Background(), strings.NewReader(claudePreToolUse), &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
-	}
-	if !strings.Contains(stdout.String(), "deny") {
-		t.Fatalf("stdout = %s", stdout.Bytes())
-	}
-}
-
 func TestResetHandlers_OwnerScoped(t *testing.T) {
 	run.Reset()
 	claude.ResetHandlers()
