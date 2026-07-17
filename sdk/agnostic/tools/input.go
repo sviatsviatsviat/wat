@@ -1,4 +1,4 @@
-package agnostic
+package tools
 
 import (
 	"encoding/json"
@@ -6,20 +6,20 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// ToolInput is the tool input payload on a normalized ToolCall.
-type ToolInput struct {
+// Input is the tool input payload on a normalized ToolCall.
+type Input struct {
 	name   string
 	native string
 	raw    json.RawMessage
 }
 
-// newToolInput returns a ToolInput bound to canonical and native tool names.
+// NewInput returns an Input bound to canonical and native tool names.
 // It panics if both names and raw are empty.
-func newToolInput(canonical, native string, raw json.RawMessage) ToolInput {
+func NewInput(canonical, native string, raw json.RawMessage) Input {
 	if canonical == "" && native == "" && len(raw) == 0 {
-		panic("agnostic: newToolInput called with empty tool names and empty payload")
+		panic("tools: NewInput called with empty tool names and empty payload")
 	}
-	return ToolInput{
+	return Input{
 		name:   canonical,
 		native: native,
 		raw:    hookkit.CloneBytes(raw),
@@ -27,18 +27,18 @@ func newToolInput(canonical, native string, raw json.RawMessage) ToolInput {
 }
 
 // Name returns the canonical tool name (bash, write, read, …).
-func (in ToolInput) Name() string { return in.name }
+func (in Input) Name() string { return in.name }
 
 // Native returns the original agent tool name.
-func (in ToolInput) Native() string { return in.native }
+func (in Input) Native() string { return in.native }
 
 // Raw returns a copy of the native tool input JSON.
-func (in ToolInput) Raw() json.RawMessage { return hookkit.CloneBytes(in.raw) }
+func (in Input) Raw() json.RawMessage { return hookkit.CloneBytes(in.raw) }
 
 // HasRaw reports whether this input carries a JSON payload.
-func (in ToolInput) HasRaw() bool { return len(in.raw) > 0 }
+func (in Input) HasRaw() bool { return len(in.raw) > 0 }
 
-func as[T any](in ToolInput, expected string) (T, bool) {
+func as[T any](in Input, expected string) (T, bool) {
 	var v T
 	if in.name != expected {
 		return v, false

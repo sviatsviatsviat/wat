@@ -1,8 +1,9 @@
 // Package agnostic provides a unified hook event model for Claude Code,
 // GitHub Copilot, and Cursor. It defines normalized Event and Kind types,
 // kind-specific hook-response result types, Dialect identification via
-// ParseDialect and Detect, tool-name normalization, typed tool-input helpers,
-// and On* registration that fans out adapter handlers onto each agent SDK Chain.
+// ParseDialect and Detect, and On* registration that fans out adapter handlers
+// onto each agent SDK Chain. Canonical tool names and typed tool-input helpers
+// live in sdk/agnostic/tools.
 //
 // Inbound native→unified mapping is unexported next to each On* hook. Agnostic
 // depends on the per-agent SDKs; those SDKs remain usable without agnostic.

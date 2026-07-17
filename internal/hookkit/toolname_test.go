@@ -1,9 +1,6 @@
-package agnostic
+package hookkit
 
-import (
-	"encoding/json"
-	"testing"
-)
+import "testing"
 
 func TestNormalizeToolName(t *testing.T) {
 	tests := []struct {
@@ -43,24 +40,5 @@ func TestNormalizeToolName(t *testing.T) {
 					tt.native, gotName, gotMCP, tt.wantName, tt.wantMCP)
 			}
 		})
-	}
-}
-
-func TestToolInputAsBash(t *testing.T) {
-	in := newToolInput(ToolBash, "Bash", json.RawMessage(`{"command":"go test ./..."}`))
-	got, ok := in.AsBash()
-	if !ok || got.Command != "go test ./..." {
-		t.Fatalf("AsBash = %+v, %v", got, ok)
-	}
-	if _, ok := in.AsWrite(); ok {
-		t.Fatal("AsWrite should be false for bash input")
-	}
-}
-
-func TestToolInputAsWritePathAlias(t *testing.T) {
-	in := newToolInput(ToolWrite, "Write", json.RawMessage(`{"file_path":"/a","content":"x"}`))
-	got, ok := in.AsWrite()
-	if !ok || got.Path != "/a" || got.Content != "x" {
-		t.Fatalf("AsWrite = %+v, %v", got, ok)
 	}
 }

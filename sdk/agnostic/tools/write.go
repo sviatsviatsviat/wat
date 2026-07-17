@@ -1,6 +1,13 @@
-package agnostic
+package tools
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+)
+
+// ToolWrite is the normalized name for file write tools.
+const ToolWrite = hookkit.ToolWrite
 
 // WriteInput is the canonical write/create tool input.
 type WriteInput struct {
@@ -11,7 +18,7 @@ type WriteInput struct {
 }
 
 // AsWrite returns the write tool input when this payload is for a write tool.
-func (in ToolInput) AsWrite() (WriteInput, bool) {
+func (in Input) AsWrite() (WriteInput, bool) {
 	if in.name != ToolWrite {
 		return WriteInput{}, false
 	}

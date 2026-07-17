@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -266,7 +267,7 @@ func mapCursorPostToolUse(e sdkcursor.PostToolUse, raw []byte) *Event {
 
 func mapCursorAfterShellExecution(e sdkcursor.AfterShellExecution, raw []byte) *Event {
 	ev := cursorEvent(e, raw, KindPostTool)
-	ev.Tool = &ToolCall{Name: ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
+	ev.Tool = &ToolCall{Name: tools.ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
 	ev.Result = &ToolResult{Text: e.Output, DurationMs: e.DurationMillis()}
 	return ev
 }
@@ -274,8 +275,8 @@ func mapCursorAfterShellExecution(e sdkcursor.AfterShellExecution, raw []byte) *
 func mapCursorAfterMCPExecution(e sdkcursor.AfterMCPExecution, raw []byte) *Event {
 	ev := cursorEvent(e, raw, KindPostTool)
 	name := cursorReceivedName(e)
-	nameNorm, _ := NormalizeToolName(e.ToolName)
-	toolInput := newToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
+	nameNorm, _ := hookkit.NormalizeToolName(e.ToolName)
+	toolInput := tools.NewInput(nameNorm, e.ToolName, e.ToolInput.Raw())
 	ev.Tool = &ToolCall{
 		Name:   nameNorm,
 		Native: name,
@@ -289,7 +290,7 @@ func mapCursorAfterMCPExecution(e sdkcursor.AfterMCPExecution, raw []byte) *Even
 func mapCursorAfterFileEdit(e sdkcursor.AfterFileEdit, raw []byte) *Event {
 	ev := cursorEvent(e, raw, KindPostTool)
 	name := cursorReceivedName(e)
-	ev.Tool = &ToolCall{Name: ToolEdit, Native: name}
+	ev.Tool = &ToolCall{Name: tools.ToolEdit, Native: name}
 	input, err := json.Marshal(map[string]any{
 		"file_path": e.FilePath,
 		"edits":     e.Edits,
@@ -301,7 +302,7 @@ func mapCursorAfterFileEdit(e sdkcursor.AfterFileEdit, raw []byte) *Event {
 	if err != nil {
 		return ev
 	}
-	ev.Tool.Input = newToolInput(ToolEdit, name, input)
+	ev.Tool.Input = tools.NewInput(tools.ToolEdit, name, input)
 	ev.Result = &ToolResult{Raw: editsRaw}
 	return ev
 }

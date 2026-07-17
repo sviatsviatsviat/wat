@@ -123,6 +123,7 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -152,7 +153,7 @@ func main() {
 			if hook.Tool == nil {
 				return nil, nil
 			}
-			if hook.Tool.Name == agnostic.ToolEdit || hook.Tool.Name == agnostic.ToolWrite {
+			if hook.Tool.Name == tools.ToolEdit || hook.Tool.Name == tools.ToolWrite {
 				return r.Context("Run go test ./... to verify this change."), nil
 			}
 			return nil, nil

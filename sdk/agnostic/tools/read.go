@@ -1,6 +1,13 @@
-package agnostic
+package tools
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+)
+
+// ToolRead is the normalized name for file read tools.
+const ToolRead = hookkit.ToolRead
 
 // ReadInput is the canonical read/view tool input.
 type ReadInput struct {
@@ -13,7 +20,7 @@ type ReadInput struct {
 }
 
 // AsRead returns the read tool input when this payload is for a read tool.
-func (in ToolInput) AsRead() (ReadInput, bool) {
+func (in Input) AsRead() (ReadInput, bool) {
 	if in.name != ToolRead {
 		return ReadInput{}, false
 	}

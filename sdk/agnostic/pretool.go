@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -333,15 +335,15 @@ func mapCursorPreToolUse(e sdkcursor.PreToolUse, raw []byte) *Event {
 
 func mapCursorBeforeShellExecution(e sdkcursor.BeforeShellExecution, raw []byte) *Event {
 	ev := cursorEvent(e, raw, KindPreTool)
-	ev.Tool = &ToolCall{Name: ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
+	ev.Tool = &ToolCall{Name: tools.ToolBash, Native: cursorReceivedName(e), Shell: e.Command}
 	return ev
 }
 
 func mapCursorBeforeMCPExecution(e sdkcursor.BeforeMCPExecution, raw []byte) *Event {
 	ev := cursorEvent(e, raw, KindPreTool)
 	name := cursorReceivedName(e)
-	nameNorm, _ := NormalizeToolName(e.ToolName)
-	toolInput := newToolInput(nameNorm, e.ToolName, e.ToolInput.Raw())
+	nameNorm, _ := hookkit.NormalizeToolName(e.ToolName)
+	toolInput := tools.NewInput(nameNorm, e.ToolName, e.ToolInput.Raw())
 	ev.Tool = &ToolCall{
 		Name:   nameNorm,
 		Native: name,
@@ -354,7 +356,7 @@ func mapCursorBeforeMCPExecution(e sdkcursor.BeforeMCPExecution, raw []byte) *Ev
 func mapCursorBeforeReadFile(e sdkcursor.BeforeReadFile, raw []byte) *Event {
 	ev := cursorEvent(e, raw, KindPreTool)
 	name := cursorReceivedName(e)
-	ev.Tool = &ToolCall{Name: ToolRead, Native: name}
+	ev.Tool = &ToolCall{Name: tools.ToolRead, Native: name}
 	input, err := json.Marshal(map[string]any{
 		"file_path":   e.FilePath,
 		"content":     e.Content,
@@ -363,6 +365,6 @@ func mapCursorBeforeReadFile(e sdkcursor.BeforeReadFile, raw []byte) *Event {
 	if err != nil {
 		return ev
 	}
-	ev.Tool.Input = newToolInput(ToolRead, name, input)
+	ev.Tool.Input = tools.NewInput(tools.ToolRead, name, input)
 	return ev
 }

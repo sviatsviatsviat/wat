@@ -10,7 +10,9 @@ import (
 	portcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/copilot"
 	portcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 )
 
 const (
@@ -22,34 +24,34 @@ var copilotAnchoredPattern = regexp.MustCompile(`^\^\(\?:(.+)\)\$$`)
 
 var toolNamesFor = map[agnostic.Dialect]map[string]string{
 	agnostic.Claude: {
-		agnostic.ToolBash:      "Bash",
-		agnostic.ToolEdit:      "Edit",
-		agnostic.ToolWrite:     "Write",
-		agnostic.ToolRead:      "Read",
-		agnostic.ToolGlob:      "Glob",
-		agnostic.ToolGrep:      "Grep",
-		agnostic.ToolTask:      "Agent",
-		agnostic.ToolWebFetch:  "WebFetch",
-		agnostic.ToolWebSearch: "WebSearch",
+		tools.ToolBash:      "Bash",
+		tools.ToolEdit:      "Edit",
+		tools.ToolWrite:     "Write",
+		tools.ToolRead:      "Read",
+		tools.ToolGlob:      "Glob",
+		tools.ToolGrep:      "Grep",
+		tools.ToolTask:      "Agent",
+		tools.ToolWebFetch:  "WebFetch",
+		tools.ToolWebSearch: "WebSearch",
 	},
 	agnostic.Copilot: {
-		agnostic.ToolBash:     "bash",
-		agnostic.ToolEdit:     "edit",
-		agnostic.ToolWrite:    "create",
-		agnostic.ToolRead:     "view",
-		agnostic.ToolGlob:     "glob",
-		agnostic.ToolGrep:     "grep",
-		agnostic.ToolTask:     "task",
-		agnostic.ToolWebFetch: "web_fetch",
+		tools.ToolBash:     "bash",
+		tools.ToolEdit:     "edit",
+		tools.ToolWrite:    "create",
+		tools.ToolRead:     "view",
+		tools.ToolGlob:     "glob",
+		tools.ToolGrep:     "grep",
+		tools.ToolTask:     "task",
+		tools.ToolWebFetch: "web_fetch",
 	},
 	agnostic.Cursor: {
-		agnostic.ToolBash:   "Shell",
-		agnostic.ToolEdit:   "Write",
-		agnostic.ToolWrite:  "Write",
-		agnostic.ToolRead:   "Read",
-		agnostic.ToolGrep:   "Grep",
-		agnostic.ToolTask:   "Task",
-		agnostic.ToolDelete: "Delete",
+		tools.ToolBash:   "Shell",
+		tools.ToolEdit:   "Write",
+		tools.ToolWrite:  "Write",
+		tools.ToolRead:   "Read",
+		tools.ToolGrep:   "Grep",
+		tools.ToolTask:   "Task",
+		tools.ToolDelete: "Delete",
 	},
 }
 
@@ -299,7 +301,7 @@ func translateToolTokens(matcher string, to agnostic.Dialect) (string, []Warning
 	out := make([]string, 0, len(parts))
 	for _, part := range parts {
 		tok := strings.TrimSpace(part)
-		canon, mcp := agnostic.NormalizeToolName(tok)
+		canon, mcp := hookkit.NormalizeToolName(tok)
 		if mcp {
 			out = append(out, tok)
 			warns = append(warns, model.Warnf("matcher %q: MCP tool pattern kept verbatim; verify %s naming", tok, to))

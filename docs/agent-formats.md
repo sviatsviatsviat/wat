@@ -35,8 +35,8 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 |----------|------|
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
 | `register.go` | `Serve`, run options, `ResetHandlers` |
-| `event.go` / `dialect.go` / `result.go` | Shared `Event`, `Kind`, `Dialect`, `Result`, tool-name normalization |
-| `toolinput.go` (+ `bash.go`, …) | Typed `ToolInput` and per-tool accessors |
+| `event.go` / `dialect.go` / `result.go` | Shared `Event`, `Kind`, `Dialect`, `Result` |
+| `tools/` | Canonical tool names and typed `Input` with `AsBash`, `AsWrite`, … |
 
 Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
 
@@ -51,7 +51,7 @@ Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission
 
 ## Tool name normalization
 
-`agnostic.NormalizeToolName` maps native names to a canonical vocabulary. `ToolCall.Native` always keeps the original string.
+Codecs map native names onto a canonical vocabulary via `hookkit.NormalizeToolName` (internal). `ToolCall.Name` carries the result; `ToolCall.Native` always keeps the original string.
 
 | Agent | Surface | Builtin example | Normalized | MCP example | MCP detection |
 |-------|---------|-----------------|------------|-------------|---------------|
@@ -361,8 +361,8 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Config porting: `wat port --from` / `--to` (see [`cmd/wat/port.go`](../cmd/wat/port.go))
 - Detection: [`sdk/agnostic/dialect.go`](../sdk/agnostic/dialect.go) — `ParseDialect`, `Detect`
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
-- Normalization: [`sdk/agnostic/event.go`](../sdk/agnostic/event.go) — `NormalizeToolName`; [`toolinput.go`](../sdk/agnostic/toolinput.go) — `ToolInput` with `AsBash`, `AsWrite`, and related accessors
-- Tests: [`sdk/agnostic/event_test.go`](../sdk/agnostic/event_test.go)
+- Normalization: [`internal/hookkit/toolname.go`](../internal/hookkit/toolname.go) — `NormalizeToolName`; [`sdk/agnostic/tools`](../sdk/agnostic/tools/) — `Input` with `AsBash`, `AsWrite`, and related accessors
+- Tests: [`internal/hookkit/toolname_test.go`](../internal/hookkit/toolname_test.go); [`sdk/agnostic/tools`](../sdk/agnostic/tools/) (`input_test.go`)
 - Port kind/event registries: [`cmd/wat/internal/portconfig/`](../cmd/wat/internal/portconfig/) (`claude/`, `copilot/`, `cursor/`)
 - Serve / fan-out: [`sdk/agnostic/runner_test.go`](../sdk/agnostic/runner_test.go)
 - Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)

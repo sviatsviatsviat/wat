@@ -1,6 +1,13 @@
-package agnostic
+package tools
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+)
+
+// ToolEdit is the normalized name for file edit tools.
+const ToolEdit = hookkit.ToolEdit
 
 // EditInput is the canonical edit tool input.
 type EditInput struct {
@@ -15,7 +22,7 @@ type EditInput struct {
 }
 
 // AsEdit returns the edit tool input when this payload is for an edit tool.
-func (in ToolInput) AsEdit() (EditInput, bool) {
+func (in Input) AsEdit() (EditInput, bool) {
 	if in.name != ToolEdit {
 		return EditInput{}, false
 	}
