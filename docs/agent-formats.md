@@ -196,7 +196,7 @@ Each per-agent SDK exposes a fluent `Chain` with one method per native hook surf
 
 ## Claude inbound mapping
 
-`sdk/agnostic/claude.MapEvent` (and `Decode`) maps Claude Code hook stdin into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/claude` Chains; native encode and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
+`sdk/agnostic/claude.MapEvent` maps a decoded Claude Code hook event into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/claude` Chains; native decode, encode, and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
 
 ### Event name mapping
 
@@ -237,7 +237,7 @@ Agent-native encode surfaces (use `sdk/claude` directly):
 
 ## Copilot inbound mapping
 
-`sdk/agnostic/copilot.MapEvent` (and `Decode`) maps GitHub Copilot hook stdin in **camelCase CLI** or **VS Code compatible** (PascalCase event name, snake_case fields) format. Portable `On*` handlers fan out onto `sdk/copilot` Chains.
+`sdk/agnostic/copilot.MapEvent` maps a decoded GitHub Copilot hook event (**camelCase CLI** or **VS Code compatible**: PascalCase event name, snake_case fields) into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/copilot` Chains; native decode stays in `sdk/copilot`.
 
 ### Wire formats
 
@@ -297,7 +297,7 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 
 ## Cursor inbound mapping
 
-`sdk/agnostic/cursor.MapEvent` (and `Decode`) maps Cursor hook stdin into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/cursor` Chains.
+`sdk/agnostic/cursor.MapEvent` maps a decoded Cursor hook event into `agnostic.Event`. Portable `On*` handlers fan out onto `sdk/cursor` Chains; native decode stays in `sdk/cursor`.
 
 Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`; the full payload stays in `Event.Raw`.
 
@@ -364,12 +364,12 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`sdk/agnostic/dialect_test.go`](../sdk/agnostic/dialect_test.go)
 - Normalization: [`sdk/agnostic/internal/model/event.go`](../sdk/agnostic/internal/model/event.go) — `NormalizeToolName`; [`toolinput.go`](../sdk/agnostic/internal/model/toolinput.go) — `ToolInput` with `AsBash`, `AsWrite`, and related accessors
 - Tests: [`sdk/agnostic/internal/model/event_test.go`](../sdk/agnostic/internal/model/event_test.go)
-- Claude inbound map: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `MapEvent`, `Decode`
-- Tests: [`sdk/agnostic/claude/codec_test.go`](../sdk/agnostic/claude/codec_test.go)
-- Copilot inbound map: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/) — `MapEvent`, `Decode`, `PreToolErrorExit`, `WarnExit`
-- Tests: [`sdk/agnostic/copilot/codec_test.go`](../sdk/agnostic/copilot/codec_test.go)
-- Cursor inbound map: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — `MapEvent`, `Decode`, `WarnExit`, `HandlerErrorExit`
-- Tests: [`sdk/agnostic/cursor/codec_test.go`](../sdk/agnostic/cursor/codec_test.go)
+- Claude inbound map: [`sdk/agnostic/claude/`](../sdk/agnostic/claude/) — `MapEvent`
+- Tests: [`sdk/agnostic/claude/map_test.go`](../sdk/agnostic/claude/map_test.go)
+- Copilot inbound map: [`sdk/agnostic/copilot/`](../sdk/agnostic/copilot/) — `MapEvent`
+- Tests: [`sdk/agnostic/copilot/map_test.go`](../sdk/agnostic/copilot/map_test.go)
+- Cursor inbound map: [`sdk/agnostic/cursor/`](../sdk/agnostic/cursor/) — `MapEvent`
+- Tests: [`sdk/agnostic/cursor/map_test.go`](../sdk/agnostic/cursor/map_test.go)
 - Serve / fan-out: [`sdk/agnostic/runner_test.go`](../sdk/agnostic/runner_test.go)
 - Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

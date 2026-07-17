@@ -3,8 +3,6 @@ package copilot
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
@@ -28,24 +26,21 @@ const copilotVSCodeStop = `{
   "stop_reason": "end_turn"
 }`
 
-func TestCopilotDecode_CamelCaseRequiresEventHint(t *testing.T) {
-	_, err := Decode([]byte(copilotCamelPreToolUse), "")
-	if err == nil {
-		t.Fatal("expected error without eventHint")
+func mapRaw(t *testing.T, raw []byte, eventHint string) *model.Event {
+	t.Helper()
+	var opts []sdkcopilot.Option
+	if eventHint != "" {
+		opts = append(opts, sdkcopilot.WithEvent(eventHint))
 	}
-	if !errors.Is(err, sdkcopilot.ErrEventNameRequired) {
-		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
-	}
-	if !strings.Contains(err.Error(), "eventHint") {
-		t.Fatalf("error = %v", err)
-	}
-}
-
-func TestCopilotDecode_VSCodeStop(t *testing.T) {
-	ev, err := Decode([]byte(copilotVSCodeStop), "")
+	native, err := sdkcopilot.Decode(raw, opts...)
 	if err != nil {
 		t.Fatal(err)
 	}
+	return MapEvent(native, raw)
+}
+
+func TestCopilotMapEvent_VSCodeStop(t *testing.T) {
+	ev := mapRaw(t, []byte(copilotVSCodeStop), "")
 	if ev.Kind != model.KindStop || ev.Name != "Stop" {
 		t.Fatalf("model.Kind=%v Name=%q", ev.Kind, ev.Name)
 	}
@@ -57,7 +52,7 @@ func TestCopilotDecode_VSCodeStop(t *testing.T) {
 	}
 }
 
-func TestCopilotDecode_VSCodePreToolBash(t *testing.T) {
+func TestCopilotMapEvent_VSCodePreToolBash(t *testing.T) {
 	raw := `{
   "hook_event_name": "PreToolUse",
   "session_id": "s1",
@@ -66,16 +61,13 @@ func TestCopilotDecode_VSCodePreToolBash(t *testing.T) {
   "tool_name": "Bash",
   "tool_input": {"command": "ls -la"}
 }`
-	ev, err := Decode([]byte(raw), "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	ev := mapRaw(t, []byte(raw), "")
 	if ev.Tool == nil || ev.Tool.Name != model.ToolBash || ev.Tool.Native != "Bash" || ev.Tool.Shell != "ls -la" {
 		t.Fatalf("Tool=%+v", ev.Tool)
 	}
 }
 
-func TestCopilotDecode_NotificationWithoutEventHint(t *testing.T) {
+func TestCopilotMapEvent_NotificationWithoutEventHint(t *testing.T) {
 	raw := `{
   "sessionId": "s1",
   "timestamp": 1760000000000,
@@ -85,10 +77,7 @@ func TestCopilotDecode_NotificationWithoutEventHint(t *testing.T) {
   "title": "Shell completed",
   "notification_type": "shell_completed"
 }`
-	ev, err := Decode([]byte(raw), "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	ev := mapRaw(t, []byte(raw), "")
 	if ev.Kind != model.KindNotification || ev.Name != "Notification" {
 		t.Fatalf("model.Kind=%v Name=%q", ev.Kind, ev.Name)
 	}
@@ -97,7 +86,7 @@ func TestCopilotDecode_NotificationWithoutEventHint(t *testing.T) {
 	}
 }
 
-func TestCopilotDecode_Matrix(t *testing.T) {
+func TestCopilotMapEvent_Matrix(t *testing.T) {
 	tests := []struct {
 		name      string
 		raw       string
@@ -256,13 +245,21 @@ func TestCopilotDecode_Matrix(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:      "preToolUse camel",
+			raw:       copilotCamelPreToolUse,
+			eventHint: "preToolUse",
+			kind:      model.KindPreTool,
+			check: func(t *testing.T, ev *model.Event) {
+				if ev.Tool == nil || ev.Tool.Name != model.ToolBash || ev.Tool.Shell != "rm -rf /" {
+					t.Fatalf("Tool=%+v", ev.Tool)
+				}
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := Decode([]byte(tt.raw), tt.eventHint)
-			if err != nil {
-				t.Fatal(err)
-			}
+			ev := mapRaw(t, []byte(tt.raw), tt.eventHint)
 			if ev.Kind != tt.kind {
 				t.Fatalf("model.Kind=%v, want %v", ev.Kind, tt.kind)
 			}
@@ -271,39 +268,9 @@ func TestCopilotDecode_Matrix(t *testing.T) {
 	}
 }
 
-func TestCopilotDecode_InvalidJSON(t *testing.T) {
-	_, err := Decode([]byte("not json"), "preToolUse")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !errors.Is(err, sdkcopilot.ErrUnrecognizedFormat) {
-		t.Fatalf("errors.Is ErrUnrecognizedFormat = false, err = %v", err)
-	}
-	if !strings.Contains(err.Error(), "copilot: decode payload") {
-		t.Fatalf("error = %v", err)
-	}
-}
-
-func TestCopilotDecode_InvalidPayloadPreservesSentinel(t *testing.T) {
-	raw := []byte(`{"sessionId":"s1","timestamp":1,"cwd":[]}`)
-	_, err := Decode(raw, "preToolUse")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !errors.Is(err, sdkcopilot.ErrDecodePayload) {
-		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
-	}
-	if !strings.HasPrefix(err.Error(), "copilot: decode payload") {
-		t.Fatalf("error = %v", err)
-	}
-}
-
-func TestCopilotDecode_ToolInputNotAliased(t *testing.T) {
+func TestCopilotMapEvent_ToolInputNotAliased(t *testing.T) {
 	raw := []byte(`{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"bash","toolArgs":{"command":"ls"}}`)
-	ev, err := Decode(raw, "preToolUse")
-	if err != nil {
-		t.Fatal(err)
-	}
+	ev := mapRaw(t, raw, "preToolUse")
 	rawCopy := bytes.Clone(ev.Raw)
 	got := ev.Tool.Input.Raw()
 	got[0] = 'X'

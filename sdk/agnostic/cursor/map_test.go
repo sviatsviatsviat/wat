@@ -3,8 +3,6 @@ package cursor
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
@@ -44,11 +42,21 @@ const cursorAfterFileEdit = `{
   ]
 }`
 
-func TestCursorDecode_AfterFileEdit(t *testing.T) {
-	ev, err := Decode([]byte(cursorAfterFileEdit), "")
+func mapRaw(t *testing.T, raw []byte, eventHint string) *model.Event {
+	t.Helper()
+	var opts []sdkcursor.Option
+	if eventHint != "" {
+		opts = append(opts, sdkcursor.WithEvent(eventHint))
+	}
+	native, err := sdkcursor.Decode(raw, opts...)
 	if err != nil {
 		t.Fatal(err)
 	}
+	return MapEvent(native, raw)
+}
+
+func TestCursorMapEvent_AfterFileEdit(t *testing.T) {
+	ev := mapRaw(t, []byte(cursorAfterFileEdit), "")
 	if ev.Kind != model.KindPostTool || ev.Name != "afterFileEdit" {
 		t.Fatalf("model.Kind=%v Name=%q", ev.Kind, ev.Name)
 	}
@@ -77,7 +85,7 @@ func TestCursorDecode_AfterFileEdit(t *testing.T) {
 	}
 }
 
-func TestCursorDecode_Matrix(t *testing.T) {
+func TestCursorMapEvent_Matrix(t *testing.T) {
 	tests := []struct {
 		name      string
 		raw       string
@@ -298,10 +306,7 @@ func TestCursorDecode_Matrix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := Decode([]byte(tt.raw), tt.eventHint)
-			if err != nil {
-				t.Fatal(err)
-			}
+			ev := mapRaw(t, []byte(tt.raw), tt.eventHint)
 			if ev.Kind != tt.kind {
 				t.Fatalf("model.Kind=%v want %v", ev.Kind, tt.kind)
 			}
@@ -315,19 +320,5 @@ func TestCursorDecode_Matrix(t *testing.T) {
 				tt.check(t, ev)
 			}
 		})
-	}
-}
-
-func TestCursorDecode_RequiresEventHint(t *testing.T) {
-	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
-	_, err := Decode([]byte(raw), "")
-	if err == nil {
-		t.Fatal("expected error without eventHint")
-	}
-	if !errors.Is(err, sdkcursor.ErrEventNameRequired) {
-		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
-	}
-	if !strings.Contains(err.Error(), "eventHint") {
-		t.Fatalf("error = %v", err)
 	}
 }

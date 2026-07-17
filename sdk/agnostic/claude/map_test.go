@@ -2,8 +2,6 @@ package claude
 
 import (
 	"bytes"
-	"errors"
-	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
@@ -33,25 +31,18 @@ import (
 //   - PostToolUseOutput.updatedToolOutput → Result.UpdatedOutput
 //   - PermissionRequestOutput.message → Result.Reason; Interrupt deferred
 
-func TestClaudeDecode_InvalidJSONPreservesSentinel(t *testing.T) {
-	_, err := Decode([]byte("not json"), "")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !errors.Is(err, sdkclaude.ErrDecodePayload) {
-		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
-	}
-	if !strings.HasPrefix(err.Error(), "claude: decode payload") {
-		t.Fatalf("error = %v", err)
-	}
-}
-
-func TestClaudeDecode_UnknownEvent(t *testing.T) {
-	raw := []byte(`{"session_id":"s1","hook_event_name":"Setup","cwd":"/w"}`)
-	ev, err := Decode(raw, "")
+func mapRaw(t *testing.T, raw []byte) *model.Event {
+	t.Helper()
+	native, err := sdkclaude.Decode(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
+	return MapEvent(native, raw)
+}
+
+func TestClaudeMapEvent_UnknownEvent(t *testing.T) {
+	raw := []byte(`{"session_id":"s1","hook_event_name":"Setup","cwd":"/w"}`)
+	ev := mapRaw(t, raw)
 	if ev.Kind != model.KindOther || ev.Name != "Setup" {
 		t.Fatalf("model.Kind=%v Name=%q", ev.Kind, ev.Name)
 	}
@@ -60,7 +51,7 @@ func TestClaudeDecode_UnknownEvent(t *testing.T) {
 	}
 }
 
-func TestClaudeDecode_Matrix(t *testing.T) {
+func TestClaudeMapEvent_Matrix(t *testing.T) {
 	tests := []struct {
 		name  string
 		raw   string
@@ -203,10 +194,7 @@ func TestClaudeDecode_Matrix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := Decode([]byte(tt.raw), "")
-			if err != nil {
-				t.Fatal(err)
-			}
+			ev := mapRaw(t, []byte(tt.raw))
 			if ev.Kind != tt.kind {
 				t.Fatalf("model.Kind=%v, want %v", ev.Kind, tt.kind)
 			}
@@ -218,7 +206,7 @@ func TestClaudeDecode_Matrix(t *testing.T) {
 	}
 }
 
-func TestClaudeDecode_LongTailKindOther(t *testing.T) {
+func TestClaudeMapEvent_LongTailKindOther(t *testing.T) {
 	tests := []struct {
 		name string
 		raw  string
@@ -239,10 +227,7 @@ func TestClaudeDecode_LongTailKindOther(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			raw := []byte(tt.raw)
-			ev, err := Decode(raw, "")
-			if err != nil {
-				t.Fatal(err)
-			}
+			ev := mapRaw(t, raw)
 			if ev.Kind != model.KindOther || ev.Name != tt.name {
 				t.Fatalf("model.Kind=%v Name=%q", ev.Kind, ev.Name)
 			}
@@ -253,12 +238,9 @@ func TestClaudeDecode_LongTailKindOther(t *testing.T) {
 	}
 }
 
-func TestClaudeDecode_ToolInputNotAliased(t *testing.T) {
+func TestClaudeMapEvent_ToolInputNotAliased(t *testing.T) {
 	raw := []byte(`{"session_id":"s","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}`)
-	ev, err := Decode(raw, "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	ev := mapRaw(t, raw)
 	rawCopy := bytes.Clone(ev.Raw)
 	got := ev.Tool.Input.Raw()
 	got[0] = 'X'
@@ -267,15 +249,5 @@ func TestClaudeDecode_ToolInputNotAliased(t *testing.T) {
 	}
 	if bytes.Equal(ev.Tool.Input.Raw(), got) {
 		t.Fatal("Tool.Input.Raw() did not return a defensive copy")
-	}
-}
-
-func TestClaudeDecode_InvalidJSON(t *testing.T) {
-	_, err := Decode([]byte("not json"), "")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !strings.Contains(err.Error(), "claude:") {
-		t.Fatalf("error = %v", err)
 	}
 }

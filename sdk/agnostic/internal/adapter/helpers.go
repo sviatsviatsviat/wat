@@ -3,8 +3,6 @@ package adapter
 
 import (
 	"encoding/json"
-	"fmt"
-	"strings"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
@@ -53,32 +51,4 @@ func InvertKindEvent(m map[model.Kind]string) map[string]model.Kind {
 		out[event] = kind
 	}
 	return out
-}
-
-// MappedDecodeError rewrites an SDK decode error for agnostic while preserving Unwrap.
-type MappedDecodeError struct {
-	Msg string
-	Err error
-}
-
-func (e *MappedDecodeError) Error() string { return e.Msg }
-
-func (e *MappedDecodeError) Unwrap() error { return e.Err }
-
-// MapDecodeErrorMessage rewrites SDK decode errors with an agent label.
-func MapDecodeErrorMessage(err error, agent, sdk string) error {
-	prefix := sdk + ": "
-	msg := err.Error()
-	if strings.HasPrefix(msg, prefix) {
-		return &MappedDecodeError{
-			Msg: fmt.Sprintf("%s: %s", agent, msg[len(prefix):]),
-			Err: err,
-		}
-	}
-	return fmt.Errorf("%s: %w", agent, err)
-}
-
-// RemapDecodeError replaces the error message while preserving Unwrap.
-func RemapDecodeError(err error, msg string) error {
-	return &MappedDecodeError{Msg: msg, Err: err}
 }
