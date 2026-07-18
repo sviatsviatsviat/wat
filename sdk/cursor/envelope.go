@@ -2,6 +2,8 @@ package cursor
 
 import (
 	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // HandlerErrorExit is exit code 1. The runner should use this when a handler
@@ -59,4 +61,21 @@ func (e Envelope) Transcript() string {
 // ReceivedName returns the hook event name as received on the wire.
 func (e Envelope) ReceivedName() string {
 	return e.receivedName
+}
+
+func (e *Envelope) setEnvelopeMeta(received, canonical string, raw json.RawMessage) {
+	e.receivedName = received
+	e.canonical = canonical
+	e.decodedRaw = hookkit.CloneRaw(raw)
+}
+
+// DecodedRaw returns the untouched JSON stored on the envelope.
+func (e Envelope) DecodedRaw() json.RawMessage {
+	return hookkit.CloneRaw(e.decodedRaw)
+}
+
+// envelope returns a copy of the envelope for Event satisfaction.
+// Named envelope (not Envelope) so it does not collide with the embedded field.
+func (e Envelope) envelope() Envelope {
+	return e
 }

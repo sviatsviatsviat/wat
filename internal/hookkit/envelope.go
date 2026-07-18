@@ -8,21 +8,19 @@ type EnvelopeAccessor interface {
 }
 
 // RawBytes returns the untouched JSON for an event when available.
-func RawBytes(ev any, rawEventRaw json.RawMessage, accessor EnvelopeAccessor, marshal func(any) ([]byte, error)) json.RawMessage {
-	if len(rawEventRaw) > 0 {
-		return CloneBytes(rawEventRaw)
-	}
+// It prefers accessor.DecodedRaw, then falls back to json.Marshal(ev).
+func RawBytes(ev any, accessor EnvelopeAccessor) json.RawMessage {
 	if accessor != nil {
 		if raw := accessor.DecodedRaw(); len(raw) > 0 {
 			return CloneRaw(raw)
 		}
 	}
-	if marshal != nil {
-		b, err := marshal(ev)
-		if err != nil {
-			return nil
-		}
-		return b
+	if ev == nil {
+		return nil
 	}
-	return nil
+	b, err := json.Marshal(ev)
+	if err != nil {
+		return nil
+	}
+	return b
 }

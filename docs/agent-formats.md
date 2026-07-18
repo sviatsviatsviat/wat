@@ -8,16 +8,16 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 `claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `On*` registration fans adapter handlers onto each agent SDK via package-level `On*` helpers, wrapping native events and Results builders.
 
-Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed `On*` registration helper and chain method for that event. Shared wire and registration infrastructure lives under `internal/`.
+Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed `On*` registration helper and chain method for that event. Shared decode helpers live in `internal/hookkit`.
 
 | Location | Role |
 |----------|------|
 | `doc.go` | Package overview |
 | `<event>.go` | Event struct, output, results, `On*` helper + chain method, decode registration, encode for one hook |
 | `registry.go` | Event-name constants, alias tables |
-| `envelope.go` | Shared payload fields |
-| `envelope_meta.go` | Compile-time envelope metadata (raw JSON preservation) |
-| `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf` |
+| `event.go` | `Event` interface (`EventName`, envelope access) |
+| `envelope.go` | Shared payload fields and raw-JSON preservation |
+| `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf`, per-SDK decoder registry |
 | `encode.go` | `Encode` router (wire mapping) |
 | `register.go` | Handler registration (`registerHandler`, dialect init) |
 | `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |
@@ -25,7 +25,6 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `options.go` | Decode configuration (`WithEvent`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
-| `internal/decode.go` | Decoder registry |
 | `tools/` | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
 
 **Agnostic** uses the same root vertical-slice layout for portable hook kinds (`pretool.go`, `stop.go`, …):

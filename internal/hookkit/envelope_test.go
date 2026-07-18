@@ -16,18 +16,24 @@ func (e *testEnvelope) DecodedRaw() json.RawMessage {
 func TestRawBytes(t *testing.T) {
 	t.Parallel()
 	env := &testEnvelope{raw: json.RawMessage(`{"x":1}`)}
-	got := RawBytes(env, nil, env, nil)
+	got := RawBytes(env, env)
 	if string(got) != `{"x":1}` {
 		t.Fatalf("RawBytes() = %q", got)
 	}
-	raw := json.RawMessage(`{"fallback":true}`)
-	got = RawBytes(nil, raw, nil, nil)
-	if string(got) != string(raw) {
-		t.Fatalf("RawBytes(raw event) = %q", got)
+
+	got = RawBytes(map[string]int{"y": 2}, nil)
+	if string(got) != `{"y":2}` {
+		t.Fatalf("RawBytes(marshal fallback) = %q", got)
 	}
-	empty := json.RawMessage{}
-	got = RawBytes(nil, empty, env, nil)
-	if string(got) != `{"x":1}` {
-		t.Fatalf("RawBytes(empty raw) = %q, want accessor fallback", got)
+
+	got = RawBytes(nil, nil)
+	if got != nil {
+		t.Fatalf("RawBytes(nil) = %q, want nil", got)
+	}
+
+	empty := &testEnvelope{}
+	got = RawBytes(map[string]int{"z": 3}, empty)
+	if string(got) != `{"z":3}` {
+		t.Fatalf("RawBytes(empty accessor) = %q, want marshal fallback", got)
 	}
 }

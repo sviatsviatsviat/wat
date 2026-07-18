@@ -2,6 +2,8 @@ package claude
 
 import (
 	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // PermissionMode is the Claude Code permission mode on hook events.
@@ -72,4 +74,19 @@ type Envelope struct {
 	AgentType string `json:"agent_type,omitempty"`
 
 	decodedRaw json.RawMessage `json:"-"`
+}
+
+func (e *Envelope) setDecodedRaw(raw json.RawMessage) {
+	e.decodedRaw = hookkit.CloneRaw(raw)
+}
+
+// DecodedRaw returns the untouched JSON stored on the envelope.
+func (e Envelope) DecodedRaw() json.RawMessage {
+	return hookkit.CloneRaw(e.decodedRaw)
+}
+
+// envelope returns a copy of the envelope for Event satisfaction.
+// Named envelope (not Envelope) so it does not collide with the embedded field.
+func (e Envelope) envelope() Envelope {
+	return e
 }

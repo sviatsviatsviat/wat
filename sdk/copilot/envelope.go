@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // Format identifies the Copilot hook wire format.
@@ -111,4 +113,21 @@ func (e Envelope) Transcript() string {
 // ReceivedName returns the hook event name as received on the wire.
 func (e Envelope) ReceivedName() string {
 	return e.receivedName
+}
+
+func (e *Envelope) setEnvelopeMeta(received, canonical string, raw json.RawMessage) {
+	e.receivedName = received
+	e.canonical = canonical
+	e.decodedRaw = hookkit.CloneRaw(raw)
+}
+
+// DecodedRaw returns the untouched JSON stored on the envelope.
+func (e Envelope) DecodedRaw() json.RawMessage {
+	return hookkit.CloneRaw(e.decodedRaw)
+}
+
+// envelope returns a copy of the envelope for Event satisfaction.
+// Named envelope (not Envelope) so it does not collide with the embedded field.
+func (e Envelope) envelope() Envelope {
+	return e
 }
