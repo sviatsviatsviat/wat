@@ -115,7 +115,7 @@ func (o permissionRequestOutput) WithTerminalSequence(seq string) PermissionRequ
 	return o
 }
 
-// PermissionRequestResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// PermissionRequestResults is the hook-scoped response builder supplied to On* handlers by registration.
 type PermissionRequestResults interface {
 	// Allow returns an allow verdict.
 	Allow() PermissionRequestOutput
@@ -162,8 +162,13 @@ func (o permissionRequestOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// PermissionRequest registers a PermissionRequest handler.
-func (c *Chain) PermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *Chain {
+// OnPermissionRequest registers a PermissionRequest handler.
+func OnPermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
+	return (&chain{}).PermissionRequest(fn)
+}
+
+// PermissionRequest registers another PermissionRequest handler on the chain.
+func (c *chain) PermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

@@ -12,7 +12,7 @@ func RegisterPreCompact(fn model.PreCompactHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkcursor.Chain).PreCompact(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreCompact], _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
+	sdkcursor.OnPreCompact(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreCompact], _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
 		return nil, fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event, hook.Raw())))
 	})
 }

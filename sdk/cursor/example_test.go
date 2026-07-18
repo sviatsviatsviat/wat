@@ -7,8 +7,8 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleChain() {
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
+func ExampleOnBeforeShellExecution() {
+	cursor.OnBeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		if hook.Event.Command == "rm -rf /" {
 			return r.Deny("blocked"), nil
 		}

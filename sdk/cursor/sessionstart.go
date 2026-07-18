@@ -50,7 +50,7 @@ func (o sessionStartOutput) WithAdditionalContext(text string) SessionStartOutpu
 	return o
 }
 
-// SessionStartResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// SessionStartResults is the hook-scoped response builder supplied to On* handlers by registration.
 type SessionStartResults interface {
 	// Context returns a context-injection-only SessionStart result.
 	Context(text string) SessionStartOutput
@@ -97,8 +97,13 @@ func init() {
 	registerDecoder(EventSessionStart, decodeAs[SessionStart])
 }
 
-// SessionStart registers a sessionStart handler.
-func (c *Chain) SessionStart(fn func(context.Context, Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *Chain {
+// OnSessionStart registers a sessionStart handler.
+func OnSessionStart(fn func(context.Context, Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
+	return (&chain{}).SessionStart(fn)
+}
+
+// SessionStart registers another SessionStart handler on the chain.
+func (c *chain) SessionStart(fn func(context.Context, Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

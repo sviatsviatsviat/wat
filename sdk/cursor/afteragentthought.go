@@ -18,8 +18,13 @@ func init() {
 	registerDecoder(EventAfterAgentThought, decodeAs[AfterAgentThought])
 }
 
-// AfterAgentThought registers an observe-only afterAgentThought handler.
-func (c *Chain) AfterAgentThought(fn func(context.Context, Hook[AfterAgentThought]) error) *Chain {
+// OnAfterAgentThought registers an observe-only afterAgentThought handler.
+func OnAfterAgentThought(fn func(context.Context, Hook[AfterAgentThought]) error) *chain {
+	return (&chain{}).AfterAgentThought(fn)
+}
+
+// AfterAgentThought registers another AfterAgentThought handler on the chain.
+func (c *chain) AfterAgentThought(fn func(context.Context, Hook[AfterAgentThought]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

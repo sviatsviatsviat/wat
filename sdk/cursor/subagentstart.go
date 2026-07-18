@@ -20,7 +20,7 @@ type SubagentStart struct {
 // EventName returns the canonical hook event name.
 func (SubagentStart) EventName() string { return EventSubagentStart }
 
-// SubagentStartResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// SubagentStartResults is the hook-scoped response builder supplied to On* handlers by registration.
 type SubagentStartResults interface {
 	// Allow returns an allow verdict.
 	Allow() PermissionOutput
@@ -57,8 +57,13 @@ func init() {
 	registerDecoder(EventSubagentStart, decodeAs[SubagentStart])
 }
 
-// SubagentStart registers a subagentStart handler.
-func (c *Chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (PermissionOutput, error)) *Chain {
+// OnSubagentStart registers a subagentStart handler.
+func OnSubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (PermissionOutput, error)) *chain {
+	return (&chain{}).SubagentStart(fn)
+}
+
+// SubagentStart registers another SubagentStart handler on the chain.
+func (c *chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

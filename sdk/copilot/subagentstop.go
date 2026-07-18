@@ -54,8 +54,13 @@ func init() {
 	registerDecoder(EventSubagentStop, decodeAs[SubagentStop])
 }
 
-// SubagentStop registers a SubagentStop handler.
-func (c *Chain) SubagentStop(fn func(context.Context, Hook[SubagentStop], StopResults) (StopOutput, error)) *Chain {
+// OnSubagentStop registers a SubagentStop handler.
+func OnSubagentStop(fn func(context.Context, Hook[SubagentStop], StopResults) (StopOutput, error)) *chain {
+	return (&chain{}).SubagentStop(fn)
+}
+
+// SubagentStop registers another SubagentStop handler on the chain.
+func (c *chain) SubagentStop(fn func(context.Context, Hook[SubagentStop], StopResults) (StopOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

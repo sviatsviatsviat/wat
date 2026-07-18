@@ -52,7 +52,7 @@ func (o beforeSubmitPromptOutput) WithUserMessage(msg string) BeforeSubmitPrompt
 	return o
 }
 
-// BeforeSubmitPromptResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// BeforeSubmitPromptResults is the hook-scoped response builder supplied to On* handlers by registration.
 type BeforeSubmitPromptResults interface {
 	// Block blocks prompt submission with a user-facing message.
 	Block(userMessage string) BeforeSubmitPromptOutput
@@ -100,8 +100,13 @@ func init() {
 	registerDecoder(EventBeforeSubmitPrompt, decodeAs[BeforeSubmitPrompt])
 }
 
-// BeforeSubmitPrompt registers a beforeSubmitPrompt handler.
-func (c *Chain) BeforeSubmitPrompt(fn func(context.Context, Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *Chain {
+// OnBeforeSubmitPrompt registers a beforeSubmitPrompt handler.
+func OnBeforeSubmitPrompt(fn func(context.Context, Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *chain {
+	return (&chain{}).BeforeSubmitPrompt(fn)
+}
+
+// BeforeSubmitPrompt registers another BeforeSubmitPrompt handler on the chain.
+func (c *chain) BeforeSubmitPrompt(fn func(context.Context, Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

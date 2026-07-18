@@ -20,7 +20,7 @@ type BeforeReadFile struct {
 // EventName returns the canonical hook event name.
 func (BeforeReadFile) EventName() string { return EventBeforeReadFile }
 
-// BeforeReadFileResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// BeforeReadFileResults is the hook-scoped response builder supplied to On* handlers by registration.
 type BeforeReadFileResults interface {
 	// Allow returns an allow verdict.
 	Allow() PermissionOutput
@@ -57,8 +57,13 @@ func init() {
 	registerDecoder(EventBeforeReadFile, decodeAs[BeforeReadFile])
 }
 
-// BeforeReadFile registers a beforeReadFile handler.
-func (c *Chain) BeforeReadFile(fn func(context.Context, Hook[BeforeReadFile], BeforeReadFileResults) (PermissionOutput, error)) *Chain {
+// OnBeforeReadFile registers a beforeReadFile handler.
+func OnBeforeReadFile(fn func(context.Context, Hook[BeforeReadFile], BeforeReadFileResults) (PermissionOutput, error)) *chain {
+	return (&chain{}).BeforeReadFile(fn)
+}
+
+// BeforeReadFile registers another BeforeReadFile handler on the chain.
+func (c *chain) BeforeReadFile(fn func(context.Context, Hook[BeforeReadFile], BeforeReadFileResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

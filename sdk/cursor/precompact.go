@@ -33,7 +33,7 @@ func (o preCompactOutput) isZero() bool {
 	return o.userMessage == ""
 }
 
-// PreCompactResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// PreCompactResults is the hook-scoped response builder supplied to On* handlers by registration.
 type PreCompactResults interface {
 	// UserMessage returns a preCompact result with a user-facing message.
 	UserMessage(text string) PreCompactOutput
@@ -74,8 +74,13 @@ func init() {
 	registerDecoder(EventPreCompact, decodeAs[PreCompact])
 }
 
-// PreCompact registers a preCompact handler.
-func (c *Chain) PreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (PreCompactOutput, error)) *Chain {
+// OnPreCompact registers a preCompact handler.
+func OnPreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (PreCompactOutput, error)) *chain {
+	return (&chain{}).PreCompact(fn)
+}
+
+// PreCompact registers another PreCompact handler on the chain.
+func (c *chain) PreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (PreCompactOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

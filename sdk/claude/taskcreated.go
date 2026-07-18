@@ -21,7 +21,7 @@ func init() {
 	registerDecoder(EventTaskCreated, decodeAs[TaskCreated])
 }
 
-// TaskCreatedResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// TaskCreatedResults is the hook-scoped response builder supplied to On* handlers by registration.
 type TaskCreatedResults interface {
 	// Context returns a context-injection-only TaskCreated result.
 	Context(text string) CommonOutput
@@ -37,8 +37,13 @@ func (taskCreatedResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// TaskCreated registers a TaskCreated handler.
-func (c *Chain) TaskCreated(fn func(context.Context, Hook[TaskCreated], TaskCreatedResults) (CommonOutput, error)) *Chain {
+// OnTaskCreated registers a TaskCreated handler.
+func OnTaskCreated(fn func(context.Context, Hook[TaskCreated], TaskCreatedResults) (CommonOutput, error)) *chain {
+	return (&chain{}).TaskCreated(fn)
+}
+
+// TaskCreated registers another TaskCreated handler on the chain.
+func (c *chain) TaskCreated(fn func(context.Context, Hook[TaskCreated], TaskCreatedResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

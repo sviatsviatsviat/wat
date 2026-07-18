@@ -14,7 +14,7 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkclaude.Chain).PostToolUse(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
+	sdkclaude.OnPostToolUse(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
 		out, err := fn(ctx, model.NewPostToolHook(hook.Invocation(), mapPostToolUse(hook.Event, hook.Raw())), newPostToolResults(native))
 		if err != nil || out == nil {
 			return nil, err

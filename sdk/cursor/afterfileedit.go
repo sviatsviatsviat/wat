@@ -22,8 +22,13 @@ func init() {
 	registerDecoder(EventAfterFileEdit, decodeAs[AfterFileEdit])
 }
 
-// AfterFileEdit registers an afterFileEdit handler.
-func (c *Chain) AfterFileEdit(fn func(context.Context, Hook[AfterFileEdit], PostToolResults) (PostToolOutput, error)) *Chain {
+// OnAfterFileEdit registers an afterFileEdit handler.
+func OnAfterFileEdit(fn func(context.Context, Hook[AfterFileEdit], PostToolResults) (PostToolOutput, error)) *chain {
+	return (&chain{}).AfterFileEdit(fn)
+}
+
+// AfterFileEdit registers another AfterFileEdit handler on the chain.
+func (c *chain) AfterFileEdit(fn func(context.Context, Hook[AfterFileEdit], PostToolResults) (PostToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

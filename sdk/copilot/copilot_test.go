@@ -497,7 +497,7 @@ func TestTimestamp_UnmarshalJSON(t *testing.T) {
 
 func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 	run.Reset()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
+	copilot.OnPreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return nil, errors.New("boom")
 	})
 	var stdout bytes.Buffer
@@ -509,7 +509,7 @@ func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 
 func TestMux_Serve_PreToolDeny(t *testing.T) {
 	run.Reset()
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+	copilot.OnPreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		return r.Deny("nope"), nil
 	})
 	var stdout bytes.Buffer

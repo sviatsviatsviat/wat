@@ -1,7 +1,7 @@
 package cursor
 
 // Test-only Results accessors for external tests (cursor_test).
-// Production code must use Chain-injected Results; these are not part of the public API surface in non-test builds.
+// Production code must use On*-injected Results; these are not part of the public API surface in non-test builds.
 
 func PermissionResultsForTest() PermissionResults { return permissionResults{} }
 

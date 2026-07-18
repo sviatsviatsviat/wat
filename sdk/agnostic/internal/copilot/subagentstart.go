@@ -12,7 +12,7 @@ func RegisterSubagentStart(fn model.SubagentStartHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkcopilot.Chain).SubagentStart(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStart], _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
+	sdkcopilot.OnSubagentStart(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStart], _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
 		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event, hook.Raw())))
 	})
 }

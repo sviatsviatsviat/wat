@@ -87,7 +87,7 @@ func (o preToolOutput) WithModifiedArgs(args map[string]any) PreToolOutput {
 	return o
 }
 
-// PreToolResults is the hook-scoped response builder supplied to Chain.PreToolUse handlers by registration.
+// PreToolResults is the hook-scoped response builder supplied to OnPreToolUse handlers by registration.
 type PreToolResults interface {
 	// Allow returns an allow verdict.
 	Allow() PreToolOutput
@@ -156,8 +156,13 @@ func init() {
 	})
 }
 
-// PreToolUse registers a PreToolUse handler.
-func (c *Chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *Chain {
+// OnPreToolUse registers a PreToolUse handler.
+func OnPreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *chain {
+	return (&chain{}).PreToolUse(fn)
+}
+
+// PreToolUse registers another PreToolUse handler on the chain.
+func (c *chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

@@ -7,8 +7,8 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleChain() {
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+func ExampleOnPreToolUse() {
+	claude.OnPreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		if _, ok := hook.Event.ToolInput.AsBash(); ok {
 			return r.Deny("blocked"), nil
 		}

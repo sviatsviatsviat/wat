@@ -7,8 +7,8 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func ExampleChain() {
-	new(copilot.Chain).PreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+func ExampleOnPreToolUse() {
+	copilot.OnPreToolUse(func(ctx context.Context, hook copilot.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
 		if hook.Event.ToolName == "powershell" {
 			return r.Deny("blocked"), nil
 		}

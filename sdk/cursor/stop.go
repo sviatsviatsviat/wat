@@ -35,7 +35,7 @@ func (o stopOutput) isZero() bool {
 	return o.followUpMessage == ""
 }
 
-// StopResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// StopResults is the hook-scoped response builder supplied to On* handlers by registration.
 type StopResults interface {
 	// FollowUp blocks completion and feeds a follow-up instruction to the agent.
 	FollowUp(text string) StopOutput
@@ -76,8 +76,13 @@ func init() {
 	registerDecoder(EventStop, decodeAs[Stop])
 }
 
-// Stop registers a stop handler.
-func (c *Chain) Stop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *Chain {
+// OnStop registers a stop handler.
+func OnStop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *chain {
+	return (&chain{}).Stop(fn)
+}
+
+// Stop registers another Stop handler on the chain.
+func (c *chain) Stop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

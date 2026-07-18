@@ -91,7 +91,7 @@ func (o elicitationOutput) WithTerminalSequence(seq string) ElicitationOutput {
 	return o
 }
 
-// ElicitationResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// ElicitationResults is the hook-scoped response builder supplied to On* handlers by registration.
 type ElicitationResults interface {
 	// Accept returns an accept action result.
 	Accept() ElicitationOutput
@@ -135,8 +135,13 @@ func (o elicitationOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// Elicitation registers an Elicitation handler.
-func (c *Chain) Elicitation(fn func(context.Context, Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *Chain {
+// OnElicitation registers an Elicitation handler.
+func OnElicitation(fn func(context.Context, Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
+	return (&chain{}).Elicitation(fn)
+}
+
+// Elicitation registers another Elicitation handler on the chain.
+func (c *chain) Elicitation(fn func(context.Context, Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

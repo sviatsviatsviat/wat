@@ -45,7 +45,7 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 
 func TestMux_Serve_PreToolDeny(t *testing.T) {
 	run.Reset()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+	claude.OnPreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return r.Deny("destructive command"), nil
 	})
 
@@ -204,7 +204,7 @@ func TestDecode_InvalidJSON(t *testing.T) {
 
 func TestMux_FailPolicy(t *testing.T) {
 	run.Reset()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+	claude.OnPreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return nil, context.Canceled
 	})
 
@@ -213,7 +213,7 @@ func TestMux_FailPolicy(t *testing.T) {
 		t.Fatalf("FailOpen exit = %d, want %d", code, claude.HandlerErrorExit)
 	}
 	run.Reset()
-	new(claude.Chain).PreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+	claude.OnPreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return nil, context.Canceled
 	})
 	code = run.Serve(context.Background(), strings.NewReader(claudePreToolUse), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailBlock))

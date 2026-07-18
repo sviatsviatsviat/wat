@@ -31,8 +31,13 @@ func init() {
 	})
 }
 
-// BeforeMCPExecution registers a beforeMCPExecution handler.
-func (c *Chain) BeforeMCPExecution(fn func(context.Context, Hook[BeforeMCPExecution], PermissionResults) (PermissionOutput, error)) *Chain {
+// OnBeforeMCPExecution registers a beforeMCPExecution handler.
+func OnBeforeMCPExecution(fn func(context.Context, Hook[BeforeMCPExecution], PermissionResults) (PermissionOutput, error)) *chain {
+	return (&chain{}).BeforeMCPExecution(fn)
+}
+
+// BeforeMCPExecution registers another BeforeMCPExecution handler on the chain.
+func (c *chain) BeforeMCPExecution(fn func(context.Context, Hook[BeforeMCPExecution], PermissionResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

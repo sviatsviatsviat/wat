@@ -111,7 +111,7 @@ func (o postToolUseOutput) WithTerminalSequence(seq string) PostToolUseOutput {
 	return o
 }
 
-// PostToolUseResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// PostToolUseResults is the hook-scoped response builder supplied to On* handlers by registration.
 type PostToolUseResults interface {
 	// Context returns a context-injection-only PostToolUse result.
 	Context(text string) PostToolUseOutput
@@ -154,8 +154,13 @@ func (o postToolUseOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// PostToolUse registers a PostToolUse handler.
-func (c *Chain) PostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *Chain {
+// OnPostToolUse registers a PostToolUse handler.
+func OnPostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
+	return (&chain{}).PostToolUse(fn)
+}
+
+// PostToolUse registers another PostToolUse handler on the chain.
+func (c *chain) PostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

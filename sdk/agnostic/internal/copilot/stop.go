@@ -14,7 +14,7 @@ func RegisterStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkcopilot.Chain).AgentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+	sdkcopilot.OnAgentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapAgentStop(hook.Event, hook.Raw()), native, fn)
 	})
 }
@@ -24,7 +24,7 @@ func RegisterSubagentStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkcopilot.Chain).SubagentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+	sdkcopilot.OnSubagentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event, hook.Raw()), native, fn)
 	})
 }

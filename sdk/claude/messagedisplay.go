@@ -85,7 +85,7 @@ func (o messageDisplayOutput) WithTerminalSequence(seq string) MessageDisplayOut
 	return o
 }
 
-// MessageDisplayResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// MessageDisplayResults is the hook-scoped response builder supplied to On* handlers by registration.
 type MessageDisplayResults interface {
 	// Override returns a display-content override result.
 	Override(content string) MessageDisplayOutput
@@ -113,8 +113,13 @@ func (o messageDisplayOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// MessageDisplay registers a MessageDisplay handler.
-func (c *Chain) MessageDisplay(fn func(context.Context, Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *Chain {
+// OnMessageDisplay registers a MessageDisplay handler.
+func OnMessageDisplay(fn func(context.Context, Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
+	return (&chain{}).MessageDisplay(fn)
+}
+
+// MessageDisplay registers another MessageDisplay handler on the chain.
+func (c *chain) MessageDisplay(fn func(context.Context, Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

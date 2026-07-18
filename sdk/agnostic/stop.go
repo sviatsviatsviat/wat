@@ -23,33 +23,33 @@ type StopResults = model.StopResults
 type StopHandler = model.StopHandler
 
 // OnStop registers a handler for Stop events across all agents.
-func OnStop(fn StopHandler) *Chain {
+func OnStop(fn StopHandler) *chain {
 	if fn == nil {
-		return &Chain{}
+		return &chain{}
 	}
 	claude.RegisterStop(fn)
 	copilot.RegisterStop(fn)
 	cursor.RegisterStop(fn)
-	return &Chain{}
+	return &chain{}
 }
 
 // OnSubagentStop registers a handler for SubagentStop events across all agents.
-func OnSubagentStop(fn StopHandler) *Chain {
+func OnSubagentStop(fn StopHandler) *chain {
 	if fn == nil {
-		return &Chain{}
+		return &chain{}
 	}
 	claude.RegisterSubagentStop(fn)
 	copilot.RegisterSubagentStop(fn)
 	cursor.RegisterSubagentStop(fn)
-	return &Chain{}
+	return &chain{}
 }
 
 // OnStop registers another Stop handler on the chain.
-func (c *Chain) OnStop(fn StopHandler) *Chain {
+func (c *chain) OnStop(fn StopHandler) *chain {
 	return OnStop(fn)
 }
 
 // OnSubagentStop registers another SubagentStop handler on the chain.
-func (c *Chain) OnSubagentStop(fn StopHandler) *Chain {
+func (c *chain) OnSubagentStop(fn StopHandler) *chain {
 	return OnSubagentStop(fn)
 }

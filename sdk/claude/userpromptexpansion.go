@@ -28,7 +28,7 @@ func init() {
 	registerDecoder(EventUserPromptExpansion, decodeAs[UserPromptExpansion])
 }
 
-// UserPromptExpansionResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// UserPromptExpansionResults is the hook-scoped response builder supplied to On* handlers by registration.
 type UserPromptExpansionResults interface {
 	// Context returns a context-injection-only UserPromptExpansion result.
 	Context(text string) CommonOutput
@@ -44,8 +44,13 @@ func (userPromptExpansionResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// UserPromptExpansion registers a UserPromptExpansion handler.
-func (c *Chain) UserPromptExpansion(fn func(context.Context, Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *Chain {
+// OnUserPromptExpansion registers a UserPromptExpansion handler.
+func OnUserPromptExpansion(fn func(context.Context, Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
+	return (&chain{}).UserPromptExpansion(fn)
+}
+
+// UserPromptExpansion registers another UserPromptExpansion handler on the chain.
+func (c *chain) UserPromptExpansion(fn func(context.Context, Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

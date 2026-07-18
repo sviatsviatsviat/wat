@@ -13,7 +13,7 @@ func RegisterPreTool(fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkclaude.Chain).PreToolUse(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PreToolUse], native sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
+	sdkclaude.OnPreToolUse(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PreToolUse], native sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
 		out, err := fn(ctx, model.NewPreToolHook(hook.Invocation(), mapPreToolUse(hook.Event, hook.Raw())), newPreToolResults(native))
 		if err != nil || out == nil {
 			return nil, err

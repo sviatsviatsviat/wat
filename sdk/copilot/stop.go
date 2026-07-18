@@ -20,7 +20,7 @@ func (o stopOutput) isZero() bool {
 	return o.reason == ""
 }
 
-// StopResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// StopResults is the hook-scoped response builder supplied to On* handlers by registration.
 type StopResults interface {
 	// FollowUp blocks completion and feeds reason back to the agent.
 	FollowUp(reason string) StopOutput

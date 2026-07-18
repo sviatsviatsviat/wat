@@ -12,7 +12,7 @@ func RegisterUserPrompt(fn model.UserPromptHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkcopilot.Chain).UserPromptSubmitted(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
+	sdkcopilot.OnUserPromptSubmitted(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
 		return fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmitted(hook.Event, hook.Raw())))
 	})
 }

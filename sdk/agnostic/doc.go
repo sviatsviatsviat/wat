@@ -1,7 +1,7 @@
 // Package agnostic provides a unified hook event model for Claude Code,
 // GitHub Copilot, and Cursor. It defines typed events and hook-response result
 // types, and On* registration that fans out adapter handlers onto each agent
-// SDK Chain. Canonical tool names and typed tool-input helpers live in
+// SDK via On* helpers. Canonical tool names and typed tool-input helpers live in
 // sdk/agnostic/tools. Envelope.Agent is a plain string matching each per-agent
 // SDK Dialect constant (claude.Dialect, …).
 //
@@ -17,7 +17,8 @@
 // on the returned result (for example WithUpdatedInput). Observe-only kinds use
 // OnSessionEnd, OnUserPrompt, OnPreCompact, and OnSubagentStart with
 // per-kind handler types. Register handlers with OnPreTool, OnPostTool, and the
-// other typed On methods, then call run.Main from
+// other typed On methods (fluent chaining continues via the returned handle; do
+// not construct a chain directly), then call run.Main from
 // github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Agent-only capabilities (BlockPrompt, Env, HaltSession, and others) belong in

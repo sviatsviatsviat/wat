@@ -18,8 +18,13 @@ func init() {
 	registerDecoder(EventUserPromptSubmitted, decodeAs[UserPromptSubmitted])
 }
 
-// UserPromptSubmitted registers an observe-only userPromptSubmitted handler.
-func (c *Chain) UserPromptSubmitted(fn func(context.Context, Hook[UserPromptSubmitted]) error) *Chain {
+// OnUserPromptSubmitted registers an observe-only userPromptSubmitted handler.
+func OnUserPromptSubmitted(fn func(context.Context, Hook[UserPromptSubmitted]) error) *chain {
+	return (&chain{}).UserPromptSubmitted(fn)
+}
+
+// UserPromptSubmitted registers another UserPromptSubmitted handler on the chain.
+func (c *chain) UserPromptSubmitted(fn func(context.Context, Hook[UserPromptSubmitted]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

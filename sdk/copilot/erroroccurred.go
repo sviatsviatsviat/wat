@@ -49,8 +49,13 @@ func init() {
 	registerDecoder(EventErrorOccurred, decodeAs[ErrorOccurred])
 }
 
-// ErrorOccurred registers an observe-only errorOccurred handler.
-func (c *Chain) ErrorOccurred(fn func(context.Context, Hook[ErrorOccurred]) error) *Chain {
+// OnErrorOccurred registers an observe-only errorOccurred handler.
+func OnErrorOccurred(fn func(context.Context, Hook[ErrorOccurred]) error) *chain {
+	return (&chain{}).ErrorOccurred(fn)
+}
+
+// ErrorOccurred registers another ErrorOccurred handler on the chain.
+func (c *chain) ErrorOccurred(fn func(context.Context, Hook[ErrorOccurred]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

@@ -30,8 +30,13 @@ func init() {
 	registerDecoder(EventPreCompact, decodeAs[PreCompact])
 }
 
-// PreCompact registers an observe-only preCompact handler.
-func (c *Chain) PreCompact(fn func(context.Context, Hook[PreCompact]) error) *Chain {
+// OnPreCompact registers an observe-only preCompact handler.
+func OnPreCompact(fn func(context.Context, Hook[PreCompact]) error) *chain {
+	return (&chain{}).PreCompact(fn)
+}
+
+// PreCompact registers another PreCompact handler on the chain.
+func (c *chain) PreCompact(fn func(context.Context, Hook[PreCompact]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

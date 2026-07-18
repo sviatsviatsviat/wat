@@ -16,8 +16,13 @@ func init() {
 	registerDecoder(EventWorkspaceOpen, decodeAs[WorkspaceOpen])
 }
 
-// WorkspaceOpen registers an observe-only workspaceOpen handler.
-func (c *Chain) WorkspaceOpen(fn func(context.Context, Hook[WorkspaceOpen]) error) *Chain {
+// OnWorkspaceOpen registers an observe-only workspaceOpen handler.
+func OnWorkspaceOpen(fn func(context.Context, Hook[WorkspaceOpen]) error) *chain {
+	return (&chain{}).WorkspaceOpen(fn)
+}
+
+// WorkspaceOpen registers another WorkspaceOpen handler on the chain.
+func (c *chain) WorkspaceOpen(fn func(context.Context, Hook[WorkspaceOpen]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

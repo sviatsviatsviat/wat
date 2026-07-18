@@ -89,7 +89,7 @@ func (o stopOutput) WithTerminalSequence(seq string) StopOutput {
 	return o
 }
 
-// StopResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// StopResults is the hook-scoped response builder supplied to On* handlers by registration.
 type StopResults interface {
 	// Context returns non-blocking feedback that continues the conversation.
 	Context(text string) StopOutput
@@ -129,8 +129,13 @@ func (o stopOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// Stop registers a Stop handler.
-func (c *Chain) Stop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *Chain {
+// OnStop registers a Stop handler.
+func OnStop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *chain {
+	return (&chain{}).Stop(fn)
+}
+
+// Stop registers another Stop handler on the chain.
+func (c *chain) Stop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

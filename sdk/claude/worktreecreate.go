@@ -75,7 +75,7 @@ func (o worktreeCreateOutput) WithTerminalSequence(seq string) WorktreeCreateOut
 	return o
 }
 
-// WorktreeCreateResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// WorktreeCreateResults is the hook-scoped response builder supplied to On* handlers by registration.
 type WorktreeCreateResults interface {
 	// Path returns a worktree-path result.
 	Path(path string) WorktreeCreateOutput
@@ -102,8 +102,13 @@ func (o worktreeCreateOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// WorktreeCreate registers a WorktreeCreate handler.
-func (c *Chain) WorktreeCreate(fn func(context.Context, Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *Chain {
+// OnWorktreeCreate registers a WorktreeCreate handler.
+func OnWorktreeCreate(fn func(context.Context, Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
+	return (&chain{}).WorktreeCreate(fn)
+}
+
+// WorktreeCreate registers another WorktreeCreate handler on the chain.
+func (c *chain) WorktreeCreate(fn func(context.Context, Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

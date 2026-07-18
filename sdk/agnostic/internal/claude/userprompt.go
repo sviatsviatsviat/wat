@@ -12,7 +12,7 @@ func RegisterUserPrompt(fn model.UserPromptHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkclaude.Chain).UserPromptSubmit(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
+	sdkclaude.OnUserPromptSubmit(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
 		return nil, fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmit(hook.Event, hook.Raw())))
 	})
 }

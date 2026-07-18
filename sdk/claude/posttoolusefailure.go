@@ -35,7 +35,7 @@ func init() {
 	})
 }
 
-// PostToolUseFailureResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// PostToolUseFailureResults is the hook-scoped response builder supplied to On* handlers by registration.
 type PostToolUseFailureResults interface {
 	// Context returns recovery guidance for PostToolUseFailure events.
 	Context(text string) PostToolUseOutput
@@ -51,8 +51,13 @@ func (postToolUseFailureResults) Context(text string) PostToolUseOutput {
 	return postToolUseOutput{additionalContext: text}
 }
 
-// PostToolUseFailure registers a PostToolUseFailure handler.
-func (c *Chain) PostToolUseFailure(fn func(context.Context, Hook[PostToolUseFailure], PostToolUseFailureResults) (PostToolUseOutput, error)) *Chain {
+// OnPostToolUseFailure registers a PostToolUseFailure handler.
+func OnPostToolUseFailure(fn func(context.Context, Hook[PostToolUseFailure], PostToolUseFailureResults) (PostToolUseOutput, error)) *chain {
+	return (&chain{}).PostToolUseFailure(fn)
+}
+
+// PostToolUseFailure registers another PostToolUseFailure handler on the chain.
+func (c *chain) PostToolUseFailure(fn func(context.Context, Hook[PostToolUseFailure], PostToolUseFailureResults) (PostToolUseOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

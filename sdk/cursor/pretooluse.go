@@ -38,8 +38,13 @@ func init() {
 	})
 }
 
-// PreToolUse registers a preToolUse handler.
-func (c *Chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PermissionResults) (PermissionOutput, error)) *Chain {
+// OnPreToolUse registers a preToolUse handler.
+func OnPreToolUse(fn func(context.Context, Hook[PreToolUse], PermissionResults) (PermissionOutput, error)) *chain {
+	return (&chain{}).PreToolUse(fn)
+}
+
+// PreToolUse registers another PreToolUse handler on the chain.
+func (c *chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PermissionResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

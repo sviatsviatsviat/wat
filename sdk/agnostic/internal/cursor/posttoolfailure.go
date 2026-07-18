@@ -13,7 +13,7 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkcursor.Chain).PostToolUseFailure(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUseFailure], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+	sdkcursor.OnPostToolUseFailure(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUseFailure], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event, hook.Raw())), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err

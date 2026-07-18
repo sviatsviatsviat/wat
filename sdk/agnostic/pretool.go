@@ -23,18 +23,18 @@ type PreToolResults = model.PreToolResults
 type PreToolHandler = model.PreToolHandler
 
 // OnPreTool registers a handler for PreTool events across all agents.
-func OnPreTool(fn PreToolHandler) *Chain {
+func OnPreTool(fn PreToolHandler) *chain {
 	if fn == nil {
-		return &Chain{}
+		return &chain{}
 	}
 	claude.RegisterPreTool(fn)
 	copilot.RegisterPreTool(fn)
 	cursor.RegisterPreTool(fn)
 	cursor.RegisterBeforeReadFile(fn)
-	return &Chain{}
+	return &chain{}
 }
 
 // OnPreTool registers another PreTool handler on the chain.
-func (c *Chain) OnPreTool(fn PreToolHandler) *Chain {
+func (c *chain) OnPreTool(fn PreToolHandler) *chain {
 	return OnPreTool(fn)
 }

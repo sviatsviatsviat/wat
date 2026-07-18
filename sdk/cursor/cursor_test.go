@@ -454,7 +454,7 @@ func TestEncode_PermissionUpdatedInputEmptyEventName(t *testing.T) {
 
 func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 	run.Reset()
-	new(cursor.Chain).BeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
+	cursor.OnBeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		return r.Deny("blocked"), nil
 	})
 	var stdout bytes.Buffer

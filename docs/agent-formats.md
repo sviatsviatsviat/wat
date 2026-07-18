@@ -6,21 +6,21 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 ## Per-agent SDK skeleton
 
-`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `On*` registration fans adapter handlers onto each agent `Chain`, wrapping native events and Results builders.
+`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `On*` registration fans adapter handlers onto each agent SDK via package-level `On*` helpers, wrapping native events and Results builders.
 
-Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed `Chain` registration method for that event. Shared wire and registration infrastructure lives under `internal/`.
+Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed `On*` registration helper and chain method for that event. Shared wire and registration infrastructure lives under `internal/`.
 
 | Location | Role |
 |----------|------|
 | `doc.go` | Package overview |
-| `<event>.go` | Event struct, output, results, `Chain` method, decode registration, encode for one hook |
+| `<event>.go` | Event struct, output, results, `On*` helper + chain method, decode registration, encode for one hook |
 | `registry.go` | Event-name constants, alias tables |
 | `envelope.go` | Shared payload fields |
 | `envelope_meta.go` | Compile-time envelope metadata (raw JSON preservation) |
 | `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf` |
 | `encode.go` | `Encode` router (wire mapping) |
 | `register.go` | Handler registration (`registerHandler`, dialect init) |
-| `chain.go` | `Chain` type |
+| `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |
 | `hook.go` | Hook wrappers embedding typed event + `run.Invocation` + `Raw()` |
 | `options.go` | Decode configuration (`WithEvent`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
@@ -33,6 +33,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | Location | Role |
 |----------|------|
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
+| `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |
 | `event.go` / `result.go` | Shared `Event`, `Kind`, result types; `Event.Agent` is a string |
 | `internal/model/<kind>.go` | Leaf definitions behind root aliases (`*Event`, `*Hook`, `*Handler`, `*Result`); same kind filenames as the package root |
 | `internal/model/event.go` / `envelope.go` | Shared `Kind`, monolithic `Event`, leaf payloads, and `Envelope` |
@@ -113,7 +114,7 @@ All four SDKs use the same handler shapes. Result-producing handlers take `(ctx,
 
 ### Hook-scoped result builders
 
-Each result-producing Chain method or `On*` registration injects a builder interface scoped to that hook only — one exported builder type per Chain/`On*` method, even when method sets are identical. Shared unexported implementation is fine; shared exported interfaces are not. Examples:
+Each result-producing `On*` registration injects a builder interface scoped to that hook only — one exported builder type per `On*` helper, even when method sets are identical. Shared unexported implementation is fine; shared exported interfaces are not. Examples:
 
 - `PostToolUseFailureResults` exposes only `Context` (not `Block` from post-success hooks).
 - Claude `SubagentStartResults`, `NotificationResults`, and `PreCompactResults` are separate types (not a shared `CommonResults`).
@@ -135,8 +136,8 @@ Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …).
 | `SubagentStop` | yes | yes | yes | `OnSubagentStop` |
 | `Stop` | yes | yes | yes | `OnStop` |
 | `PreCompact` | yes | yes | yes | `OnPreCompact` (observe-only) |
-| `PermissionRequest` | yes | yes | no | no — use `Chain.PermissionRequest` on `sdk/claude` / `sdk/copilot` |
-| `Notification` | yes | yes | no | no — use `Chain.Notification` on `sdk/claude` / `sdk/copilot` |
+| `PermissionRequest` | yes | yes | no | no — use `OnPermissionRequest` on `sdk/claude` / `sdk/copilot` |
+| `Notification` | yes | yes | no | no — use `OnNotification` on `sdk/claude` / `sdk/copilot` |
 | `AgentError` | yes | yes | no | no — decode-only typed events (`StopFailure`, `errorOccurred`) |
 | `Other` | yes | yes | yes | no |
 
@@ -169,19 +170,19 @@ Register with the per-agent SDK when you need features outside the portable inte
 | `Context` on `PreTool` | Claude only | `sdk/claude` |
 | `Decision` on `SubagentStart` | Cursor only | `sdk/cursor` |
 
-### Per-agent Chain coverage
+### Per-agent On* coverage
 
-Each per-agent SDK exposes a fluent `Chain` with one method per native hook surface (or shared builder where wire encode is identical). Claude-only long-tail events decode but have no dedicated portable `On*` — handle them on `sdk/claude` Chain methods when available.
+Each per-agent SDK exposes package-level `On*` helpers (and fluent chain methods) with one entry per native hook surface (or shared builder where wire encode is identical). Claude-only long-tail events decode but have no dedicated portable `On*` — handle them with `sdk/claude` `On*` helpers when available.
 
-| SDK | Chain methods | Notes |
+| SDK | On* helpers | Notes |
 |---|---|---|
-| **claude** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`, `Stop`, `SubagentStop`, `SessionStart`, `SubagentStart`, `Notification`, `PreCompact`, `SessionEnd`, plus Claude-only surfaces (`Elicitation`, …) | ~18 additional Claude events (`Setup`, `TaskCreated`, …) decode as long-tail |
-| **copilot** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `AgentStop`, `SubagentStop`, `PermissionRequest`, `SessionStart`, `SubagentStart`, `Notification`, `SessionEnd`, `UserPromptSubmitted`, `PreCompact`, `ErrorOccurred` | Full 13-event surface covered |
-| **cursor** | All 21 native events including `PreToolUse`, dedicated shell/MCP/file/tab hooks, lifecycle/telemetry observe methods | Full 21-event surface covered |
+| **claude** | `OnPreToolUse`, `OnPostToolUse`, `OnPostToolUseFailure`, `OnPermissionRequest`, `OnUserPromptSubmit`, `OnStop`, `OnSubagentStop`, `OnSessionStart`, `OnSubagentStart`, `OnNotification`, `OnPreCompact`, `OnSessionEnd`, plus Claude-only surfaces (`OnElicitation`, …) | ~18 additional Claude events (`Setup`, `TaskCreated`, …) decode as long-tail |
+| **copilot** | `OnPreToolUse`, `OnPostToolUse`, `OnPostToolUseFailure`, `OnAgentStop`, `OnSubagentStop`, `OnPermissionRequest`, `OnSessionStart`, `OnSubagentStart`, `OnNotification`, `OnSessionEnd`, `OnUserPromptSubmitted`, `OnPreCompact`, `OnErrorOccurred` | Full 13-event surface covered |
+| **cursor** | All 21 native events including `OnPreToolUse`, dedicated shell/MCP/file/tab hooks, lifecycle/telemetry observe helpers | Full 21-event surface covered |
 
 ## Claude inbound mapping
 
-Portable `On*` handlers fan out onto `sdk/claude` Chains with unexported inbound mapping in `sdk/agnostic`; native decode, encode, and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
+Portable `On*` handlers fan out onto `sdk/claude` via package-level `On*` helpers with unexported inbound mapping in `sdk/agnostic`; native decode, encode, and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
 
 ### Event name mapping
 
@@ -222,7 +223,7 @@ Agent-native encode surfaces (use `sdk/claude` directly):
 
 ## Copilot inbound mapping
 
-Portable `On*` handlers fan out onto `sdk/copilot` Chains with unexported inbound mapping in `sdk/agnostic` (**camelCase CLI** or **VS Code compatible**: PascalCase event name, snake_case fields). Native decode stays in `sdk/copilot`.
+Portable `On*` handlers fan out onto `sdk/copilot` via package-level `On*` helpers with unexported inbound mapping in `sdk/agnostic` (**camelCase CLI** or **VS Code compatible**: PascalCase event name, snake_case fields). Native decode stays in `sdk/copilot`.
 
 ### Wire formats
 
@@ -282,7 +283,7 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 
 ## Cursor inbound mapping
 
-Portable `On*` handlers fan out onto `sdk/cursor` Chains with unexported inbound mapping in `sdk/agnostic`. Native decode stays in `sdk/cursor`.
+Portable `On*` handlers fan out onto `sdk/cursor` via package-level `On*` helpers with unexported inbound mapping in `sdk/agnostic`. Native decode stays in `sdk/cursor`.
 
 Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`; the full payload stays in `Event.Raw`.
 
@@ -351,5 +352,5 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`internal/hookkit/toolname_test.go`](../internal/hookkit/toolname_test.go); [`sdk/agnostic/tools`](../sdk/agnostic/tools/) (`input_test.go`)
 - Port kind/event registries: [`cmd/wat/internal/portconfig/`](../cmd/wat/internal/portconfig/) (`claude/`, `copilot/`, `cursor/`)
 - Serve / fan-out: [`sdk/agnostic/runner_test.go`](../sdk/agnostic/runner_test.go)
-- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `Chain` registering into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
+- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `On*` registration into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

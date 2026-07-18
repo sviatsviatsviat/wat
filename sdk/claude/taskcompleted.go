@@ -21,7 +21,7 @@ func init() {
 	registerDecoder(EventTaskCompleted, decodeAs[TaskCompleted])
 }
 
-// TaskCompletedResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// TaskCompletedResults is the hook-scoped response builder supplied to On* handlers by registration.
 type TaskCompletedResults interface {
 	// Context returns a context-injection-only TaskCompleted result.
 	Context(text string) CommonOutput
@@ -37,8 +37,13 @@ func (taskCompletedResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// TaskCompleted registers a TaskCompleted handler.
-func (c *Chain) TaskCompleted(fn func(context.Context, Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *Chain {
+// OnTaskCompleted registers a TaskCompleted handler.
+func OnTaskCompleted(fn func(context.Context, Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
+	return (&chain{}).TaskCompleted(fn)
+}
+
+// TaskCompleted registers another TaskCompleted handler on the chain.
+func (c *chain) TaskCompleted(fn func(context.Context, Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

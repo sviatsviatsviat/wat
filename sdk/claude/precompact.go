@@ -22,7 +22,7 @@ func init() {
 	registerDecoder(EventPreCompact, decodeAs[PreCompact])
 }
 
-// PreCompactResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// PreCompactResults is the hook-scoped response builder supplied to On* handlers by registration.
 type PreCompactResults interface {
 	// Context returns a context-injection-only PreCompact result.
 	Context(text string) CommonOutput
@@ -38,8 +38,13 @@ func (preCompactResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// PreCompact registers a PreCompact handler.
-func (c *Chain) PreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (CommonOutput, error)) *Chain {
+// OnPreCompact registers a PreCompact handler.
+func OnPreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (CommonOutput, error)) *chain {
+	return (&chain{}).PreCompact(fn)
+}
+
+// PreCompact registers another PreCompact handler on the chain.
+func (c *chain) PreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

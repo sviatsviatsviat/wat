@@ -12,7 +12,7 @@ func RegisterSessionEnd(fn model.SessionEndHandler) {
 	if fn == nil {
 		return
 	}
-	new(sdkclaude.Chain).SessionEnd(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionEnd]) error {
+	sdkclaude.OnSessionEnd(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionEnd]) error {
 		return fn(ctx, model.NewSessionEndHook(hook.Invocation(), mapSessionEnd(hook.Event, hook.Raw())))
 	})
 }

@@ -37,7 +37,7 @@ func (o postToolOutput) WithAdditionalContext(text string) PostToolOutput {
 	return o
 }
 
-// PostToolResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// PostToolResults is the hook-scoped response builder supplied to On* handlers by registration.
 type PostToolResults interface {
 	// Context returns a context-injection-only PostTool result.
 	Context(text string) PostToolOutput

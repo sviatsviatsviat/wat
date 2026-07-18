@@ -17,17 +17,17 @@ type SessionEndHook = model.SessionEndHook
 type SessionEndHandler = model.SessionEndHandler
 
 // OnSessionEnd registers an observe-only handler for SessionEnd events.
-func OnSessionEnd(fn SessionEndHandler) *Chain {
+func OnSessionEnd(fn SessionEndHandler) *chain {
 	if fn == nil {
-		return &Chain{}
+		return &chain{}
 	}
 	claude.RegisterSessionEnd(fn)
 	copilot.RegisterSessionEnd(fn)
 	cursor.RegisterSessionEnd(fn)
-	return &Chain{}
+	return &chain{}
 }
 
 // OnSessionEnd registers another observe-only SessionEnd handler on the chain.
-func (c *Chain) OnSessionEnd(fn SessionEndHandler) *Chain {
+func (c *chain) OnSessionEnd(fn SessionEndHandler) *chain {
 	return OnSessionEnd(fn)
 }

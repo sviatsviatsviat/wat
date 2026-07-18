@@ -20,8 +20,13 @@ func init() {
 	registerDecoder(EventAfterTabFileEdit, decodeAs[AfterTabFileEdit])
 }
 
-// AfterTabFileEdit registers an observe-only afterTabFileEdit handler.
-func (c *Chain) AfterTabFileEdit(fn func(context.Context, Hook[AfterTabFileEdit]) error) *Chain {
+// OnAfterTabFileEdit registers an observe-only afterTabFileEdit handler.
+func OnAfterTabFileEdit(fn func(context.Context, Hook[AfterTabFileEdit]) error) *chain {
+	return (&chain{}).AfterTabFileEdit(fn)
+}
+
+// AfterTabFileEdit registers another AfterTabFileEdit handler on the chain.
+func (c *chain) AfterTabFileEdit(fn func(context.Context, Hook[AfterTabFileEdit]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

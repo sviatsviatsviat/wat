@@ -56,7 +56,7 @@ func (o subagentStartOutput) isZero() bool {
 	return o.additionalContext == ""
 }
 
-// SubagentStartResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// SubagentStartResults is the hook-scoped response builder supplied to On* handlers by registration.
 type SubagentStartResults interface {
 	// Context returns a context-injection-only SubagentStart result.
 	Context(text string) SubagentStartOutput
@@ -91,8 +91,13 @@ func init() {
 	registerDecoder(EventSubagentStart, decodeAs[SubagentStart])
 }
 
-// SubagentStart registers a SubagentStart handler.
-func (c *Chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (SubagentStartOutput, error)) *Chain {
+// OnSubagentStart registers a SubagentStart handler.
+func OnSubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (SubagentStartOutput, error)) *chain {
+	return (&chain{}).SubagentStart(fn)
+}
+
+// SubagentStart registers another SubagentStart handler on the chain.
+func (c *chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (SubagentStartOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

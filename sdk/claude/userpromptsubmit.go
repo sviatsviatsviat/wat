@@ -106,7 +106,7 @@ func (o userPromptSubmitOutput) WithTerminalSequence(seq string) UserPromptSubmi
 	return o
 }
 
-// UserPromptSubmitResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// UserPromptSubmitResults is the hook-scoped response builder supplied to On* handlers by registration.
 type UserPromptSubmitResults interface {
 	// Context returns a non-blocking context-injection result.
 	Context(text string) UserPromptSubmitOutput
@@ -159,8 +159,13 @@ func (o userPromptSubmitOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// UserPromptSubmit registers a UserPromptSubmit handler.
-func (c *Chain) UserPromptSubmit(fn func(context.Context, Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *Chain {
+// OnUserPromptSubmit registers a UserPromptSubmit handler.
+func OnUserPromptSubmit(fn func(context.Context, Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
+	return (&chain{}).UserPromptSubmit(fn)
+}
+
+// UserPromptSubmit registers another UserPromptSubmit handler on the chain.
+func (c *chain) UserPromptSubmit(fn func(context.Context, Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

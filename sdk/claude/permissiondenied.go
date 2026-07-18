@@ -88,7 +88,7 @@ func (o permissionDeniedOutput) WithTerminalSequence(seq string) PermissionDenie
 	return o
 }
 
-// PermissionDeniedResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// PermissionDeniedResults is the hook-scoped response builder supplied to On* handlers by registration.
 type PermissionDeniedResults interface {
 	// Retry returns a retry-requested PermissionDenied result.
 	Retry() PermissionDeniedOutput
@@ -115,8 +115,13 @@ func (o permissionDeniedOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// PermissionDenied registers a PermissionDenied handler.
-func (c *Chain) PermissionDenied(fn func(context.Context, Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *Chain {
+// OnPermissionDenied registers a PermissionDenied handler.
+func OnPermissionDenied(fn func(context.Context, Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
+	return (&chain{}).PermissionDenied(fn)
+}
+
+// PermissionDenied registers another PermissionDenied handler on the chain.
+func (c *chain) PermissionDenied(fn func(context.Context, Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

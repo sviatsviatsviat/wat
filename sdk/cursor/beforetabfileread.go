@@ -18,7 +18,7 @@ type BeforeTabFileRead struct {
 // EventName returns the canonical hook event name.
 func (BeforeTabFileRead) EventName() string { return EventBeforeTabFileRead }
 
-// BeforeTabFileReadResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// BeforeTabFileReadResults is the hook-scoped response builder supplied to On* handlers by registration.
 type BeforeTabFileReadResults interface {
 	// Allow returns an allow verdict.
 	Allow() PermissionOutput
@@ -55,8 +55,13 @@ func init() {
 	registerDecoder(EventBeforeTabFileRead, decodeAs[BeforeTabFileRead])
 }
 
-// BeforeTabFileRead registers a beforeTabFileRead handler.
-func (c *Chain) BeforeTabFileRead(fn func(context.Context, Hook[BeforeTabFileRead], BeforeTabFileReadResults) (PermissionOutput, error)) *Chain {
+// OnBeforeTabFileRead registers a beforeTabFileRead handler.
+func OnBeforeTabFileRead(fn func(context.Context, Hook[BeforeTabFileRead], BeforeTabFileReadResults) (PermissionOutput, error)) *chain {
+	return (&chain{}).BeforeTabFileRead(fn)
+}
+
+// BeforeTabFileRead registers another BeforeTabFileRead handler on the chain.
+func (c *chain) BeforeTabFileRead(fn func(context.Context, Hook[BeforeTabFileRead], BeforeTabFileReadResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

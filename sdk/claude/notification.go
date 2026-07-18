@@ -22,7 +22,7 @@ func init() {
 	registerDecoder(EventNotification, decodeAs[Notification])
 }
 
-// NotificationResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// NotificationResults is the hook-scoped response builder supplied to On* handlers by registration.
 type NotificationResults interface {
 	// Context returns a context-injection-only Notification result.
 	Context(text string) CommonOutput
@@ -38,8 +38,13 @@ func (notificationResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// Notification registers a Notification handler.
-func (c *Chain) Notification(fn func(context.Context, Hook[Notification], NotificationResults) (CommonOutput, error)) *Chain {
+// OnNotification registers a Notification handler.
+func OnNotification(fn func(context.Context, Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
+	return (&chain{}).Notification(fn)
+}
+
+// Notification registers another Notification handler on the chain.
+func (c *chain) Notification(fn func(context.Context, Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

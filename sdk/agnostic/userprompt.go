@@ -17,17 +17,17 @@ type UserPromptHook = model.UserPromptHook
 type UserPromptHandler = model.UserPromptHandler
 
 // OnUserPrompt registers an observe-only handler for UserPrompt events.
-func OnUserPrompt(fn UserPromptHandler) *Chain {
+func OnUserPrompt(fn UserPromptHandler) *chain {
 	if fn == nil {
-		return &Chain{}
+		return &chain{}
 	}
 	claude.RegisterUserPrompt(fn)
 	copilot.RegisterUserPrompt(fn)
 	cursor.RegisterUserPrompt(fn)
-	return &Chain{}
+	return &chain{}
 }
 
 // OnUserPrompt registers another observe-only UserPrompt handler on the chain.
-func (c *Chain) OnUserPrompt(fn UserPromptHandler) *Chain {
+func (c *chain) OnUserPrompt(fn UserPromptHandler) *chain {
 	return OnUserPrompt(fn)
 }

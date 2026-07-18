@@ -16,24 +16,24 @@ type PostToolFailureHook = model.PostToolFailureHook
 // PostToolFailureResult is the portable hook response for PostToolFailure events.
 type PostToolFailureResult = model.PostToolFailureResult
 
-// PostToolFailureResults is the hook-scoped response builder supplied to Chain handlers by registration.
+// PostToolFailureResults is the hook-scoped response builder supplied to OnPostToolFailure handlers by registration.
 type PostToolFailureResults = model.PostToolFailureResults
 
 // PostToolFailureHandler handles portable PostToolFailure events.
 type PostToolFailureHandler = model.PostToolFailureHandler
 
 // OnPostToolFailure registers a handler for PostToolFailure events across all agents.
-func OnPostToolFailure(fn PostToolFailureHandler) *Chain {
+func OnPostToolFailure(fn PostToolFailureHandler) *chain {
 	if fn == nil {
-		return &Chain{}
+		return &chain{}
 	}
 	claude.RegisterPostToolFailure(fn)
 	copilot.RegisterPostToolFailure(fn)
 	cursor.RegisterPostToolFailure(fn)
-	return &Chain{}
+	return &chain{}
 }
 
 // OnPostToolFailure registers another PostToolFailure handler on the chain.
-func (c *Chain) OnPostToolFailure(fn PostToolFailureHandler) *Chain {
+func (c *chain) OnPostToolFailure(fn PostToolFailureHandler) *chain {
 	return OnPostToolFailure(fn)
 }

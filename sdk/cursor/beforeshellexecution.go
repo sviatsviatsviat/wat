@@ -22,8 +22,13 @@ func init() {
 	registerDecoder(EventBeforeShellExecution, decodeAs[BeforeShellExecution])
 }
 
-// BeforeShellExecution registers a beforeShellExecution handler.
-func (c *Chain) BeforeShellExecution(fn func(context.Context, Hook[BeforeShellExecution], PermissionResults) (PermissionOutput, error)) *Chain {
+// OnBeforeShellExecution registers a beforeShellExecution handler.
+func OnBeforeShellExecution(fn func(context.Context, Hook[BeforeShellExecution], PermissionResults) (PermissionOutput, error)) *chain {
+	return (&chain{}).BeforeShellExecution(fn)
+}
+
+// BeforeShellExecution registers another BeforeShellExecution handler on the chain.
+func (c *chain) BeforeShellExecution(fn func(context.Context, Hook[BeforeShellExecution], PermissionResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}

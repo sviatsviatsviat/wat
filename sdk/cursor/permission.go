@@ -59,7 +59,7 @@ func (o permissionOutput) WithUpdatedInput(input map[string]any) PermissionOutpu
 	return o
 }
 
-// PermissionResults is the hook-scoped response builder supplied to permission Chain handlers by registration.
+// PermissionResults is the hook-scoped response builder supplied to permission On* handlers by registration.
 type PermissionResults interface {
 	// Allow returns an allow verdict.
 	Allow() PermissionOutput
