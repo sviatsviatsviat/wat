@@ -1,8 +1,11 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // FileChanged is the FileChanged hook event.
 type FileChanged struct {
 	Envelope
+	hookkit.RawPayload
 	// FilePath is the changed file path.
 	FilePath string `json:"file_path"`
 }

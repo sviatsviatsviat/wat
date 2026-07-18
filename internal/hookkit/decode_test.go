@@ -25,3 +25,23 @@ func TestDecodeAsAndThen(t *testing.T) {
 		t.Fatal("expected unmarshal error")
 	}
 }
+
+func TestDecodeAsAndThen_SetsRawPayload(t *testing.T) {
+	t.Parallel()
+	type ev struct {
+		RawPayload
+		Name string `json:"name"`
+	}
+	raw := []byte(`{"name":"x"}`)
+	got, err := DecodeAsAndThen[ev](raw, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !jsonEqual(got.Raw(), raw) {
+		t.Fatalf("Raw() = %s, want %s", got.Raw(), raw)
+	}
+}
+
+func jsonEqual(a, b []byte) bool {
+	return string(a) == string(b)
+}

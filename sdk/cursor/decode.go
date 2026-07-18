@@ -26,18 +26,25 @@ func decodeAsAndThen[T Event](raw []byte, received, canonical string, after func
 	if err != nil {
 		return nil, fmt.Errorf("cursor: decode %T: %w", ev, fmt.Errorf("%w: %w", ErrDecodePayload, err))
 	}
-	attachEnvelopeMeta(&ev, received, canonical, raw)
+	attachEnvelopeMeta(&ev, received, canonical)
 	return ev, nil
 }
 
-func attachEnvelopeMeta(ev any, received, canonical string, raw []byte) {
+func attachEnvelopeMeta(ev any, received, canonical string) {
 	s, ok := ev.(interface {
-		setEnvelopeMeta(received, canonical string, raw json.RawMessage)
+		setEnvelopeMeta(received, canonical string)
 	})
 	if !ok {
 		panic(fmt.Sprintf("cursor: %T cannot attach envelope meta", ev))
 	}
-	s.setEnvelopeMeta(received, canonical, raw)
+	s.setEnvelopeMeta(received, canonical)
+}
+
+func newRawEvent(env Envelope, received, canonical string, raw []byte) RawEvent {
+	ev := RawEvent{Envelope: env}
+	ev.setEnvelopeMeta(received, canonical)
+	ev.SetRaw(raw)
+	return ev
 }
 
 // Decode parses a Cursor hook stdin payload into a typed Event.
@@ -74,13 +81,12 @@ func DecodeWithHint(raw []byte, eventHint string) (Event, error) {
 		}
 		return ev.(Event), nil
 	}
-	env.setEnvelopeMeta(received, "", raw)
-	return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
+	return newRawEvent(env, received, "", raw), nil
 }
 
 // RawBytes returns the untouched JSON for an event when available.
 func RawBytes(ev Event) json.RawMessage {
-	return hookkit.RawBytes(ev, ev.envelope())
+	return ev.Raw()
 }
 
 // EnvelopeOf returns the shared envelope from a decoded event.

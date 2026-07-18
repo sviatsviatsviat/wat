@@ -3,6 +3,7 @@ package cursor
 import (
 	"context"
 	"encoding/json"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -10,6 +11,7 @@ import (
 // SessionStart is the sessionStart hook event.
 type SessionStart struct {
 	Envelope
+	hookkit.RawPayload
 	// IsBackgroundAgent reports whether this is a background agent session.
 	IsBackgroundAgent bool `json:"is_background_agent"`
 }

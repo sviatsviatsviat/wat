@@ -79,7 +79,7 @@ func TestDecode_UnknownEvent(t *testing.T) {
 	if !ok {
 		t.Fatalf("want RawEvent, got %T", ev)
 	}
-	if !bytes.Equal(re.Raw, raw) {
+	if !bytes.Equal(re.Raw(), raw) {
 		t.Fatal("Raw not preserved")
 	}
 }

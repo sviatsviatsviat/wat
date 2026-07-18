@@ -3,6 +3,7 @@ package cursor
 import (
 	"context"
 	"encoding/json"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -10,6 +11,7 @@ import (
 // BeforeSubmitPrompt is the beforeSubmitPrompt hook event.
 type BeforeSubmitPrompt struct {
 	Envelope
+	hookkit.RawPayload
 	// Prompt is the user prompt about to be submitted.
 	Prompt string `json:"prompt"`
 	// Attachments are context attachments associated with the prompt.

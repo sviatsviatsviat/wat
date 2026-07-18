@@ -5,35 +5,35 @@ import (
 	"testing"
 )
 
-type testEnvelope struct {
+type testRaw struct {
 	raw json.RawMessage
 }
 
-func (e *testEnvelope) DecodedRaw() json.RawMessage {
+func (e *testRaw) Raw() json.RawMessage {
 	return e.raw
 }
 
-func TestRawBytes(t *testing.T) {
+func TestEventRaw(t *testing.T) {
 	t.Parallel()
-	env := &testEnvelope{raw: json.RawMessage(`{"x":1}`)}
-	got := RawBytes(env, env)
+	acc := &testRaw{raw: json.RawMessage(`{"x":1}`)}
+	got := EventRaw(acc, acc)
 	if string(got) != `{"x":1}` {
-		t.Fatalf("RawBytes() = %q", got)
+		t.Fatalf("EventRaw() = %q", got)
 	}
 
-	got = RawBytes(map[string]int{"y": 2}, nil)
+	got = EventRaw(map[string]int{"y": 2}, nil)
 	if string(got) != `{"y":2}` {
-		t.Fatalf("RawBytes(marshal fallback) = %q", got)
+		t.Fatalf("EventRaw(marshal fallback) = %q", got)
 	}
 
-	got = RawBytes(nil, nil)
+	got = EventRaw(nil, nil)
 	if got != nil {
-		t.Fatalf("RawBytes(nil) = %q, want nil", got)
+		t.Fatalf("EventRaw(nil) = %q, want nil", got)
 	}
 
-	empty := &testEnvelope{}
-	got = RawBytes(map[string]int{"z": 3}, empty)
+	empty := &testRaw{}
+	got = EventRaw(map[string]int{"z": 3}, empty)
 	if string(got) != `{"z":3}` {
-		t.Fatalf("RawBytes(empty accessor) = %q, want marshal fallback", got)
+		t.Fatalf("EventRaw(empty accessor) = %q, want marshal fallback", got)
 	}
 }

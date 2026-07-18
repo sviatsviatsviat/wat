@@ -3,12 +3,14 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // SubagentStart is the subagentStart hook event.
 type SubagentStart struct {
 	Envelope
+	hookkit.RawPayload
 	// SubagentID is the subagent identifier.
 	SubagentID string `json:"subagent_id"`
 	// SubagentType is the subagent type.

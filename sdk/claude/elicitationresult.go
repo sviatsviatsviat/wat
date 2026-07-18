@@ -2,11 +2,13 @@ package claude
 
 import (
 	"encoding/json"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // ElicitationResult is the ElicitationResult hook event.
 type ElicitationResult struct {
 	Envelope
+	hookkit.RawPayload
 	// ServerName is the MCP server name.
 	ServerName string `json:"server_name"`
 	// Action is the user action (accept, decline, cancel).

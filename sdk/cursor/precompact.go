@@ -3,6 +3,7 @@ package cursor
 import (
 	"context"
 	"encoding/json"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -10,6 +11,7 @@ import (
 // PreCompact is the preCompact hook event.
 type PreCompact struct {
 	Envelope
+	hookkit.RawPayload
 	// Trigger is the compaction trigger.
 	Trigger string `json:"trigger"`
 }

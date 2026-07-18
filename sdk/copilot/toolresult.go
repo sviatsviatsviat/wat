@@ -1,8 +1,6 @@
 package copilot
 
-import (
-	"encoding/json"
-)
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
 
 // ToolResult is a Copilot tool result object in either wire format.
 type ToolResult struct {
@@ -37,8 +35,7 @@ type ErrorDetail struct {
 // RawEvent holds an unknown hook event with the full payload preserved.
 type RawEvent struct {
 	Envelope
-	// Raw is the untouched native JSON payload.
-	Raw json.RawMessage
+	hookkit.RawPayload
 }
 
 // EventName returns the canonical or received hook event name.

@@ -3,6 +3,7 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -10,6 +11,7 @@ import (
 // PreToolUse is the PreToolUse hook event.
 type PreToolUse struct {
 	Envelope
+	hookkit.RawPayload
 	// ToolName is the tool name (matcher field).
 	ToolName string `json:"tool_name"`
 	// ToolInput is the typed tool input for ToolName.

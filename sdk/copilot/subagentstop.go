@@ -3,12 +3,14 @@ package copilot
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // SubagentStop is the subagentStop hook event.
 type SubagentStop struct {
 	Envelope
+	hookkit.RawPayload
 	// AgentName is the agent name (VS Code).
 	AgentName string `json:"agent_name"`
 	// AgentNameCamel is the agent name (camelCase).

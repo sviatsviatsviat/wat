@@ -3,12 +3,14 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // BeforeShellExecution is the beforeShellExecution hook event.
 type BeforeShellExecution struct {
 	Envelope
+	hookkit.RawPayload
 	// Command is the shell command about to run.
 	Command string `json:"command"`
 	// Sandbox reports whether the command runs in a sandbox.

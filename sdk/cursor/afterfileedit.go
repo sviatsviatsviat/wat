@@ -3,12 +3,14 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // AfterFileEdit is the afterFileEdit hook event.
 type AfterFileEdit struct {
 	Envelope
+	hookkit.RawPayload
 	// FilePath is the edited file path.
 	FilePath string `json:"file_path"`
 	// Edits are the applied edits.

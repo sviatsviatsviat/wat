@@ -22,6 +22,7 @@ type PostToolBatchCall struct {
 // PostToolBatch is the PostToolBatch hook event.
 type PostToolBatch struct {
 	Envelope
+	hookkit.RawPayload
 	// ToolCalls holds per-call metadata for the resolved parallel batch.
 	ToolCalls []PostToolBatchCall `json:"tool_calls"`
 }

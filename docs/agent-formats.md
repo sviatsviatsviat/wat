@@ -15,8 +15,8 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `doc.go` | Package overview |
 | `<event>.go` | Event struct, output, results, `On*` helper + chain method, decode registration, encode for one hook |
 | `registry.go` | Event-name constants, alias tables |
-| `event.go` | `Event` interface (`EventName`, envelope access) |
-| `envelope.go` | Shared payload fields and raw-JSON preservation |
+| `event.go` | `Event` interface (`EventName`, `Raw`, envelope access) |
+| `envelope.go` | Shared payload fields |
 | `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf`, per-SDK decoder registry |
 | `encode.go` | `Encode` router (wire mapping) |
 | `register.go` | Handler registration (`registerHandler`, dialect init) |

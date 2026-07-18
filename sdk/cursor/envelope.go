@@ -1,11 +1,5 @@
 package cursor
 
-import (
-	"encoding/json"
-
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
-)
-
 // HandlerErrorExit is exit code 1. The runner should use this when a handler
 // returns an error under Cursor's default fail-open policy.
 const HandlerErrorExit = 1
@@ -37,9 +31,8 @@ type Envelope struct {
 	// SessionID is a fallback session identifier when conversation_id is absent.
 	SessionID string `json:"session_id"`
 
-	receivedName string          `json:"-"`
-	canonical    string          `json:"-"`
-	decodedRaw   json.RawMessage `json:"-"`
+	receivedName string `json:"-"`
+	canonical    string `json:"-"`
 }
 
 // Session returns the session identifier from conversation_id or session_id.
@@ -63,15 +56,9 @@ func (e Envelope) ReceivedName() string {
 	return e.receivedName
 }
 
-func (e *Envelope) setEnvelopeMeta(received, canonical string, raw json.RawMessage) {
+func (e *Envelope) setEnvelopeMeta(received, canonical string) {
 	e.receivedName = received
 	e.canonical = canonical
-	e.decodedRaw = hookkit.CloneRaw(raw)
-}
-
-// DecodedRaw returns the untouched JSON stored on the envelope.
-func (e Envelope) DecodedRaw() json.RawMessage {
-	return hookkit.CloneRaw(e.decodedRaw)
 }
 
 // envelope returns a copy of the envelope for Event satisfaction.

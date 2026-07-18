@@ -3,12 +3,14 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // UserPromptExpansion is the UserPromptExpansion hook event.
 type UserPromptExpansion struct {
 	Envelope
+	hookkit.RawPayload
 	// ExpansionType is the expansion kind (slash_command, mcp_prompt).
 	ExpansionType string `json:"expansion_type"`
 	// CommandName is the slash command name.

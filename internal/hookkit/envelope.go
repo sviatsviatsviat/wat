@@ -2,16 +2,16 @@ package hookkit
 
 import "encoding/json"
 
-// EnvelopeAccessor exposes decoded raw JSON from an event envelope.
-type EnvelopeAccessor interface {
-	DecodedRaw() json.RawMessage
+// RawAccessor exposes untouched JSON from a decoded event.
+type RawAccessor interface {
+	Raw() json.RawMessage
 }
 
-// RawBytes returns the untouched JSON for an event when available.
-// It prefers accessor.DecodedRaw, then falls back to json.Marshal(ev).
-func RawBytes(ev any, accessor EnvelopeAccessor) json.RawMessage {
+// EventRaw returns the untouched JSON for an event when available.
+// It prefers accessor.Raw, then falls back to json.Marshal(ev).
+func EventRaw(ev any, accessor RawAccessor) json.RawMessage {
 	if accessor != nil {
-		if raw := accessor.DecodedRaw(); len(raw) > 0 {
+		if raw := accessor.Raw(); len(raw) > 0 {
 			return CloneRaw(raw)
 		}
 	}

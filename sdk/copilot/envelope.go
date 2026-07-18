@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // Format identifies the Copilot hook wire format.
@@ -89,9 +87,8 @@ type Envelope struct {
 	// TranscriptCamel is the conversation transcript path (camelCase).
 	TranscriptCamel string `json:"transcriptPath"`
 
-	receivedName string          `json:"-"`
-	canonical    string          `json:"-"`
-	decodedRaw   json.RawMessage `json:"-"`
+	receivedName string `json:"-"`
+	canonical    string `json:"-"`
 }
 
 // Session returns the session identifier from either wire format.
@@ -115,15 +112,9 @@ func (e Envelope) ReceivedName() string {
 	return e.receivedName
 }
 
-func (e *Envelope) setEnvelopeMeta(received, canonical string, raw json.RawMessage) {
+func (e *Envelope) setEnvelopeMeta(received, canonical string) {
 	e.receivedName = received
 	e.canonical = canonical
-	e.decodedRaw = hookkit.CloneRaw(raw)
-}
-
-// DecodedRaw returns the untouched JSON stored on the envelope.
-func (e Envelope) DecodedRaw() json.RawMessage {
-	return hookkit.CloneRaw(e.decodedRaw)
 }
 
 // envelope returns a copy of the envelope for Event satisfaction.

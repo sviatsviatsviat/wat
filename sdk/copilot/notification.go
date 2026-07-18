@@ -3,12 +3,14 @@ package copilot
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Notification is the notification hook event.
 type Notification struct {
 	Envelope
+	hookkit.RawPayload
 	// Message is the notification message.
 	Message string `json:"message"`
 	// Title is the notification title.

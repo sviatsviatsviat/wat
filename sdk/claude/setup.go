@@ -1,8 +1,11 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // Setup is the Setup hook event.
 type Setup struct {
 	Envelope
+	hookkit.RawPayload
 	// Trigger is the setup trigger (init, maintenance).
 	Trigger string `json:"trigger"`
 }

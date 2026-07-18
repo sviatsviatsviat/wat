@@ -3,12 +3,14 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // SessionStart is the SessionStart hook event.
 type SessionStart struct {
 	Envelope
+	hookkit.RawPayload
 	// Source is the session start source (startup, resume, clear, compact).
 	Source string `json:"source"`
 	// Model is the model name when provided.

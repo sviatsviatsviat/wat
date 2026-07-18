@@ -3,12 +3,14 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PreCompact is the PreCompact hook event.
 type PreCompact struct {
 	Envelope
+	hookkit.RawPayload
 	// Trigger is the compaction trigger (manual, auto).
 	Trigger string `json:"trigger"`
 	// CustomInstructions are user-provided compaction instructions.

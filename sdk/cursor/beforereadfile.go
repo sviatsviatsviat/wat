@@ -3,12 +3,14 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // BeforeReadFile is the beforeReadFile hook event.
 type BeforeReadFile struct {
 	Envelope
+	hookkit.RawPayload
 	// FilePath is the file path being read.
 	FilePath string `json:"file_path"`
 	// Content is the file content.

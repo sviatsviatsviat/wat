@@ -1,14 +1,11 @@
 package cursor
 
-import (
-	"encoding/json"
-)
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
 
 // RawEvent holds an unknown or future event with the full payload preserved.
 type RawEvent struct {
 	Envelope
-	// Raw is the untouched JSON payload.
-	Raw json.RawMessage
+	hookkit.RawPayload
 }
 
 // EventName returns the received event name or an empty string.

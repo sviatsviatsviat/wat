@@ -2,11 +2,13 @@ package copilot
 
 import (
 	"context"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // SessionEnd is the sessionEnd hook event.
 type SessionEnd struct {
 	Envelope
+	hookkit.RawPayload
 	// Reason is the session end reason.
 	Reason string `json:"reason"`
 }

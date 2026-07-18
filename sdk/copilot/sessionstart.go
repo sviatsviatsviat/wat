@@ -3,6 +3,7 @@ package copilot
 import (
 	"context"
 	"encoding/json"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -10,6 +11,7 @@ import (
 // SessionStart is the sessionStart hook event.
 type SessionStart struct {
 	Envelope
+	hookkit.RawPayload
 	// Source is the session start source.
 	Source string `json:"source"`
 	// InitialPrompt is the initial prompt (camelCase).

@@ -26,16 +26,13 @@ func decodeAsAndThen[T Event](raw []byte, after func(*T, []byte)) (Event, error)
 	if err != nil {
 		return nil, fmt.Errorf("claude: decode %T: %w", ev, fmt.Errorf("%w: %w", ErrDecodePayload, err))
 	}
-	attachDecodedRaw(&ev, raw)
 	return ev, nil
 }
 
-func attachDecodedRaw(ev any, raw []byte) {
-	s, ok := ev.(interface{ setDecodedRaw(json.RawMessage) })
-	if !ok {
-		panic(fmt.Sprintf("claude: %T cannot attach decoded raw", ev))
-	}
-	s.setDecodedRaw(raw)
+func newRawEvent(env Envelope, raw []byte) RawEvent {
+	ev := RawEvent{Envelope: env}
+	ev.SetRaw(raw)
+	return ev
 }
 
 // Decode parses a Claude Code hook stdin payload into a typed Event.
@@ -49,8 +46,7 @@ func Decode(raw []byte) (Event, error) {
 	}
 	name := env.HookEventName
 	if name == "" {
-		env.setDecodedRaw(raw)
-		return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
+		return newRawEvent(env, raw), nil
 	}
 	if fn, ok := decoders.Lookup(name); ok {
 		ev, err := fn(raw, name, name)
@@ -59,13 +55,12 @@ func Decode(raw []byte) (Event, error) {
 		}
 		return ev.(Event), nil
 	}
-	env.setDecodedRaw(raw)
-	return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
+	return newRawEvent(env, raw), nil
 }
 
 // RawBytes returns the untouched JSON for an event when available.
 func RawBytes(ev Event) json.RawMessage {
-	return hookkit.RawBytes(ev, ev.envelope())
+	return ev.Raw()
 }
 
 // EnvelopeOf returns the shared envelope from a decoded event.

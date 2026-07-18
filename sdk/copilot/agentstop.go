@@ -3,12 +3,14 @@ package copilot
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // AgentStop is the agentStop hook event.
 type AgentStop struct {
 	Envelope
+	hookkit.RawPayload
 	// StopReason is the stop reason (VS Code).
 	StopReason string `json:"stop_reason"`
 	// StopReasonCamel is the stop reason (camelCase).

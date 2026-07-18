@@ -2,11 +2,13 @@ package copilot
 
 import (
 	"context"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // UserPromptSubmitted is the userPromptSubmitted hook event.
 type UserPromptSubmitted struct {
 	Envelope
+	hookkit.RawPayload
 	// Prompt is the submitted user prompt text.
 	Prompt string `json:"prompt"`
 }
