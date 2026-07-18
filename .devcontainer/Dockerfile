@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/go:2.1.5-1.26-bookworm
+FROM mcr.microsoft.com/devcontainers/go:2-1.25-bookworm
 
 ENV PATH="/go/bin:${PATH}"
 # Named volume inherits ownership from this path on first use.
