@@ -63,9 +63,20 @@ const cursorDedicatedSettings = `{
 }`
 
 func TestParse_unknownDialect(t *testing.T) {
-	_, _, err := Parse([]byte("{}"), "")
-	if err == nil {
-		t.Fatal("expected error for unknown dialect")
+	tests := []struct {
+		name    string
+		dialect string
+	}{
+		{name: "empty", dialect: ""},
+		{name: "unknown", dialect: "unknown"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := Parse([]byte("{}"), tt.dialect)
+			if err == nil {
+				t.Fatalf("expected error for dialect %q", tt.dialect)
+			}
+		})
 	}
 }
 
