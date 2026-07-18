@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/cursor/internal"
 )
+
+var decoders = hookkit.NewDecoderRegistry()
 
 type decodeFn func([]byte, string, string) (Event, error)
 
 func registerDecoder(name string, fn decodeFn) {
-	internal.RegisterDecoder(name, func(raw []byte, received, canonical string) (any, error) {
+	decoders.Register(name, func(raw []byte, received, canonical string) (any, error) {
 		return fn(raw, received, canonical)
 	})
 }
@@ -56,7 +57,7 @@ func DecodeWithHint(raw []byte, eventHint string) (Event, error) {
 	}
 
 	canonical := received
-	if fn, ok := internal.DecoderFor(canonical); ok {
+	if fn, ok := decoders.Lookup(canonical); ok {
 		ev, err := fn(raw, received, canonical)
 		if err != nil {
 			return nil, err

@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/claude/internal"
 )
+
+var decoders = hookkit.NewDecoderRegistry()
 
 type decodeFn func([]byte) (Event, error)
 
 func registerDecoder(name string, fn decodeFn) {
-	internal.RegisterDecoder(name, func(raw []byte, _, _ string) (any, error) {
+	decoders.Register(name, func(raw []byte, _, _ string) (any, error) {
 		return fn(raw)
 	})
 }
@@ -43,7 +44,7 @@ func Decode(raw []byte) (Event, error) {
 		env.setDecodedRaw(raw)
 		return RawEvent{Envelope: env, Raw: hookkit.CloneBytes(raw)}, nil
 	}
-	if fn, ok := internal.DecoderFor(name); ok {
+	if fn, ok := decoders.Lookup(name); ok {
 		ev, err := fn(raw, name, name)
 		if err != nil {
 			return nil, err
