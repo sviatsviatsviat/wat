@@ -15,7 +15,7 @@ func RegisterPostTool(fn model.PostToolHandler) {
 		return
 	}
 	sdkclaude.OnPostToolUse(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
-		out, err := fn(ctx, model.NewPostToolHook(hook.Invocation(), mapPostToolUse(hook.Event, hook.Raw())), newPostToolResults(native))
+		out, err := fn(ctx, model.NewPostToolHook(hook.Invocation(), mapPostToolUse(hook.Event)), newPostToolResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}
@@ -27,9 +27,9 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	})
 }
 
-func mapPostToolUse(e sdkclaude.PostToolUse, raw []byte) *model.PostToolEvent {
+func mapPostToolUse(e sdkclaude.PostToolUse) *model.PostToolEvent {
 	return &model.PostToolEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
 		Result:   &model.ToolResult{Raw: hookkit.CloneRaw(e.ToolResponse), Text: hookkit.RawToText(e.ToolResponse)},
 	}

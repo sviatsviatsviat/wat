@@ -15,13 +15,13 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `doc.go` | Package overview |
 | `<event>.go` | Event struct, output, results, `On*` helper + chain method, decode registration, encode for one hook |
 | `registry.go` | Event-name constants, alias tables |
-| `event.go` | `Event` interface (`EventName`, `Raw`, envelope access) |
+| `event.go` | `Event` interface (`EventName`, envelope access) |
 | `envelope.go` | Shared payload fields |
-| `decode.go` | `Decode`, `RawBytes`, `EnvelopeOf`, per-SDK decoder registry |
+| `decode.go` | internal decode, `EnvelopeOf`, per-SDK decoder registry |
 | `encode.go` | `Encode` router (wire mapping) |
 | `register.go` | Handler registration (`registerHandler`, dialect init) |
 | `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |
-| `hook.go` | Hook wrappers embedding typed event + `run.Invocation` + `Raw()` |
+| `hook.go` | Hook wrappers embedding typed event + `run.Invocation` |
 | `options.go` | Decode configuration (`WithEvent`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
@@ -84,7 +84,6 @@ Typed handlers receive kind-specific events that embed a shared envelope:
 
 - `Agent` — string dialect name (`claude.Dialect`, `copilot.Dialect`, or `cursor.Dialect`)
 - `Name` — native hook event name as received
-- `Raw` — untouched native JSON payload
 
 Config porting uses an internal `Kind` taxonomy (`KindPreTool`, `KindStop`, …) in `cmd/wat/internal/portconfig/model` — not part of the hook-author SDK.
 
@@ -102,14 +101,14 @@ Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) t
 
 ### Handler signatures
 
-All four SDKs use the same handler shapes. Result-producing handlers take `(ctx, hook, results)`; observe-only handlers take `(ctx, hook) error`. Access event fields on the hook (embedded typed event in agnostic; `hook.Event` in per-agent SDKs). Use `hook.Invocation()` for serve-time settings (`Dialect`, `EventHint`, `Getenv`, `DialectConfig`) and `hook.Raw()` for the untouched native JSON.
+All four SDKs use the same handler shapes. Result-producing handlers take `(ctx, hook, results)`; observe-only handlers take `(ctx, hook) error`. Access event fields on the hook (embedded typed event in agnostic; `hook.Event` in per-agent SDKs). Use `hook.Invocation()` for serve-time settings (`Dialect`, `EventHint`, `Getenv`, `DialectConfig`).
 
 | Category | agnostic | claude / copilot / cursor |
 |---|---|---|
 | Result | `(ctx, hook PreToolHook, r PreToolResults) (PreToolResult, error)` — hook embeds **`PreToolEvent`** (normalized) | `(ctx, hook Hook[PreToolUse], r PreToolUseResults) (PreToolUseOutput, error)` — hook carries **native typed event** via `hook.Event` |
 | Observe | `(ctx, hook SessionEndHook) error` — hook embeds **`SessionEndEvent`** | `(ctx, hook Hook[SessionEnd]) error` — hook carries native typed event via `hook.Event` |
 
-**Not in handler signatures:** bare `*Event` (agnostic) or cross-kind event blobs. Exported `agnostic.Event` remains for codecs, `wat test` summaries, and manual re-decode via `hook.Raw()`.
+**Not in handler signatures:** bare `*Event` (agnostic) or cross-kind event blobs. Exported `agnostic.Event` remains for codecs and `wat test` summaries.
 
 ### Hook-scoped result builders
 
@@ -188,7 +187,7 @@ Portable `On*` handlers fan out onto `sdk/claude` via package-level `On*` helper
 | Claude `hook_event_name` | `Kind` |
 |---|---|
 | `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `SubagentStart`, `SubagentStop`, `Stop`, `PreCompact`, `Notification`, `StopFailure` | Normalized (see `go doc agnostic Kind`) |
-| All other Claude events (`Setup`, `UserPromptExpansion`, `PostToolBatch`, `PermissionDenied`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `MessageDisplay`, `InstructionsLoaded`, `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeCreate`, `WorktreeRemove`, `PostCompact`, `Elicitation`, `ElicitationResult`, …) | `KindOther` — full payload preserved in `Event.Raw` |
+| All other Claude events (`Setup`, `UserPromptExpansion`, `PostToolBatch`, `PermissionDenied`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `MessageDisplay`, `InstructionsLoaded`, `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeCreate`, `WorktreeRemove`, `PostCompact`, `Elicitation`, `ElicitationResult`, …) | `KindOther` |
 
 `PreToolUse` with `tool_name: "Bash"` extracts `tool_input.command` into `ToolCall.Shell`.
 
@@ -284,7 +283,7 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 
 Portable `On*` handlers fan out onto `sdk/cursor` via package-level `On*` helpers with unexported inbound mapping in `sdk/agnostic`. Native decode stays in `sdk/cursor`.
 
-Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`; the full payload stays in `Event.Raw`.
+Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`.
 
 ### Event name mapping
 
@@ -351,5 +350,5 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`internal/hookkit/toolname_test.go`](../internal/hookkit/toolname_test.go); [`sdk/agnostic/tools`](../sdk/agnostic/tools/) (`input_test.go`)
 - Port kind/event registries: [`cmd/wat/internal/portconfig/`](../cmd/wat/internal/portconfig/) (`claude/`, `copilot/`, `cursor/`)
 - Serve / fan-out: [`sdk/agnostic/runner_test.go`](../sdk/agnostic/runner_test.go)
-- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Decode`/`Encode`, `On*` registration into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
+- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Encode`, `On*` registration into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

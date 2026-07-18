@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -30,9 +29,6 @@ func NewPreCompactHook(inv run.Invocation, ev *PreCompactEvent) PreCompactHook {
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h PreCompactHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h PreCompactHook) Raw() json.RawMessage { return h.PreCompactEvent.Raw }
 
 // PreCompactHandler handles observe-only PreCompact events.
 type PreCompactHandler func(ctx context.Context, hook PreCompactHook) error

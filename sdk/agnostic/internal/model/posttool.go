@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -31,9 +30,6 @@ func NewPostToolHook(inv run.Invocation, ev *PostToolEvent) PostToolHook {
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h PostToolHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h PostToolHook) Raw() json.RawMessage { return h.PostToolEvent.Raw }
 
 // PostToolHandler handles portable PostTool events.
 type PostToolHandler func(ctx context.Context, hook PostToolHook, results PostToolResults) (PostToolResult, error)

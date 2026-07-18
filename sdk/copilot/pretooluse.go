@@ -24,7 +24,6 @@ const (
 // PreToolUse is the preToolUse hook event.
 type PreToolUse struct {
 	Envelope
-	hookkit.RawPayload
 	// ToolName is the tool name (VS Code snake_case).
 	ToolName string `json:"tool_name"`
 	// ToolNameCamel is the tool name (camelCase).

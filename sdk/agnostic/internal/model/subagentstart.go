@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -30,9 +29,6 @@ func NewSubagentStartHook(inv run.Invocation, ev *SubagentStartEvent) SubagentSt
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h SubagentStartHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h SubagentStartHook) Raw() json.RawMessage { return h.SubagentStartEvent.Raw }
 
 // SubagentStartHandler handles observe-only SubagentStart events.
 type SubagentStartHandler func(ctx context.Context, hook SubagentStartHook) error

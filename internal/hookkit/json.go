@@ -15,6 +15,14 @@ func CloneRaw(raw json.RawMessage) json.RawMessage {
 	return CloneBytes(raw)
 }
 
+// NullToNil returns nil when raw is empty or JSON null; otherwise raw unchanged.
+func NullToNil(raw json.RawMessage) json.RawMessage {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil
+	}
+	return raw
+}
+
 // RawObjectField returns a copy of the JSON object field named key.
 // Missing, empty, and null fields yield nil.
 func RawObjectField(raw json.RawMessage, key string) json.RawMessage {

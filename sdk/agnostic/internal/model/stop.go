@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -31,9 +30,6 @@ func NewStopHook(inv run.Invocation, ev *StopEvent) StopHook {
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h StopHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h StopHook) Raw() json.RawMessage { return h.StopEvent.Raw }
 
 // StopHandler handles portable Stop and SubagentStop events.
 type StopHandler func(ctx context.Context, hook StopHook, results StopResults) (StopResult, error)

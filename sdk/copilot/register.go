@@ -12,7 +12,10 @@ func init() {
 	run.RegisterDialect(Dialect, run.DialectOps{
 		Detect:    detectPayload,
 		EventName: eventNameFromRaw,
-		Merge:     MergeOutputs,
+		Decode: func(raw []byte, hint string) (any, error) {
+			return decodeWithHint(raw, hint)
+		},
+		Merge: MergeOutputs,
 	})
 }
 
@@ -28,18 +31,6 @@ func detectPayload(raw []byte, getenv func(string) string) bool {
 	return has("sessionId") || (has("hook_event_name") && has("timestamp"))
 }
 
-func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
-	ev, err := decodeWithHint(raw, eventHint)
-	if err != nil {
-		return "", err
-	}
-	name := ev.EventName()
-	if name == "" {
-		return "", fmt.Errorf("copilot: empty event name")
-	}
-	return name, nil
-}
-
 func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return
@@ -47,15 +38,10 @@ func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler(Dialect, name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
-		cfg := run.ConfigFrom(ctx)
-		ev, err := decodeWithHint(raw, cfg.EventHint)
-		if err != nil {
-			return nil, HandlerErrorExit, err
-		}
-		typed, ok := ev.(E)
+	run.RegisterHandler(Dialect, name, func(ctx context.Context, event any) ([]byte, int, error) {
+		typed, ok := event.(E)
 		if !ok {
-			return nil, HandlerErrorExit, fmt.Errorf("copilot: handler for %s received %T", name, ev)
+			return nil, HandlerErrorExit, fmt.Errorf("copilot: handler for %s received %T", name, event)
 		}
 		result, err := fn(ctx, typed)
 		if err != nil {
@@ -75,15 +61,10 @@ func registerObserveHandler[E Event](fn func(context.Context, Hook[E]) error) {
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler(Dialect, name, func(ctx context.Context, raw []byte) ([]byte, int, error) {
-		cfg := run.ConfigFrom(ctx)
-		ev, err := decodeWithHint(raw, cfg.EventHint)
-		if err != nil {
-			return nil, HandlerErrorExit, err
-		}
-		typed, ok := ev.(E)
+	run.RegisterHandler(Dialect, name, func(ctx context.Context, event any) ([]byte, int, error) {
+		typed, ok := event.(E)
 		if !ok {
-			return nil, HandlerErrorExit, fmt.Errorf("copilot: handler for %s received %T", name, ev)
+			return nil, HandlerErrorExit, fmt.Errorf("copilot: handler for %s received %T", name, event)
 		}
 		if err := fn(ctx, NewHook(run.InvocationFrom(ctx), typed)); err != nil {
 			return nil, handlerErrorExit(name), err

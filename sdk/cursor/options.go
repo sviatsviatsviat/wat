@@ -4,7 +4,7 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// Option configures Decode.
+// Option configures decode (test helpers and internal callers).
 type Option func(*decodeConfig)
 
 type decodeConfig struct {

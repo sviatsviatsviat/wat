@@ -57,9 +57,6 @@ func TestDecodeEncode_BeforeShellDeny(t *testing.T) {
 	if shell.Command != "git push --force" || shell.Session() != "c1" {
 		t.Fatalf("bad event: %+v", shell)
 	}
-	if !bytes.Equal(cursor.RawBytes(ev), []byte(cursorShell)) {
-		t.Fatal("Raw not preserved")
-	}
 
 	out, code, err := cursor.Encode(cursor.EventBeforeShellExecution, cursor.PermissionResultsForTest().Deny("force push blocked"))
 	if err != nil {
@@ -110,9 +107,6 @@ func TestDecode_AfterFileEdit(t *testing.T) {
 	}
 	if edit.FilePath != "main.go" || len(edit.Edits) != 1 || edit.Edits[0].OldString != "foo" {
 		t.Fatalf("bad edit: %+v", edit)
-	}
-	if !bytes.Equal(cursor.RawBytes(ev), []byte(cursorAfterFileEdit)) {
-		t.Fatal("Raw not preserved")
 	}
 }
 
@@ -329,9 +323,6 @@ func TestDecode_Matrix(t *testing.T) {
 			}
 			if ev.EventName() == "" {
 				t.Fatal("EventName empty")
-			}
-			if len(cursor.RawBytes(ev)) == 0 {
-				t.Fatal("Raw empty")
 			}
 			if tt.check != nil {
 				tt.check(t, ev)

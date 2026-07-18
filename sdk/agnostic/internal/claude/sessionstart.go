@@ -14,7 +14,7 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 		return
 	}
 	sdkclaude.OnSessionStart(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionStart], native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
-		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event, hook.Raw())), newSessionStartResults(native))
+		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event)), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}
@@ -26,9 +26,9 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 	})
 }
 
-func mapSessionStart(e sdkclaude.SessionStart, raw []byte) *model.SessionStartEvent {
+func mapSessionStart(e sdkclaude.SessionStart) *model.SessionStartEvent {
 	return &model.SessionStartEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Life:     &model.Lifecycle{Source: e.Source, Model: e.Model},
 	}
 }

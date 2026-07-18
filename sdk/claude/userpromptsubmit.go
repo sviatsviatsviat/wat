@@ -3,14 +3,12 @@ package claude
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // UserPromptSubmit is the UserPromptSubmit hook event.
 type UserPromptSubmit struct {
 	Envelope
-	hookkit.RawPayload
 	// Prompt is the submitted user prompt text.
 	Prompt string `json:"prompt"`
 }

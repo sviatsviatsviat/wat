@@ -3,14 +3,12 @@ package claude
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // SubagentStop is the SubagentStop hook event.
 type SubagentStop struct {
 	Envelope
-	hookkit.RawPayload
 	// StopHookActive is true when a stop hook already forced continuation.
 	StopHookActive bool `json:"stop_hook_active"`
 	// LastAssistantMessage is the final assistant text of the turn.

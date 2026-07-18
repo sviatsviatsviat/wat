@@ -13,13 +13,13 @@ func RegisterPreCompact(fn model.PreCompactHandler) {
 		return
 	}
 	sdkcursor.OnPreCompact(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreCompact], _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
-		return nil, fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event, hook.Raw())))
+		return nil, fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event)))
 	})
 }
 
-func mapPreCompact(e sdkcursor.PreCompact, raw []byte) *model.PreCompactEvent {
+func mapPreCompact(e sdkcursor.PreCompact) *model.PreCompactEvent {
 	return &model.PreCompactEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Compact:  &model.CompactInfo{Trigger: e.Trigger},
 	}
 }

@@ -3,7 +3,6 @@ package copilot
 import (
 	"context"
 	"encoding/json"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
@@ -12,7 +11,6 @@ import (
 // PostToolUse is the postToolUse hook event.
 type PostToolUse struct {
 	Envelope
-	hookkit.RawPayload
 	// ToolName is the tool name (VS Code).
 	ToolName string `json:"tool_name"`
 	// ToolNameCamel is the tool name (camelCase).
@@ -56,9 +54,6 @@ func (e PostToolUse) ResultText() string {
 
 // ResultRaw returns the tool result JSON from either wire format.
 func (e PostToolUse) ResultRaw() json.RawMessage {
-	if raw := extractRawObjectField(e.Raw(), "toolResult", "tool_result"); raw != nil {
-		return raw
-	}
 	if e.ToolResult.TextResultForLLM != "" || e.ToolResult.ResultType != "" {
 		return marshalToolResultCamel(e.ToolResult)
 	}

@@ -1,11 +1,8 @@
 package claude
 
-import "github.com/sviatsviatsviat/wat/internal/hookkit"
-
 // InstructionsLoaded is the InstructionsLoaded hook event.
 type InstructionsLoaded struct {
 	Envelope
-	hookkit.RawPayload
 	// FilePath is the loaded instruction file path.
 	FilePath string `json:"file_path"`
 	// MemoryType is the memory type (User, Project, Local, Managed).

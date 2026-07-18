@@ -2,13 +2,11 @@ package copilot
 
 import (
 	"context"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // PreCompact is the preCompact hook event.
 type PreCompact struct {
 	Envelope
-	hookkit.RawPayload
 	// Trigger is the compaction trigger.
 	Trigger string `json:"trigger"`
 	// CustomInstructions are user-provided compaction instructions (VS Code).

@@ -12,7 +12,6 @@ import (
 // PermissionRequest is the permissionRequest hook event.
 type PermissionRequest struct {
 	Envelope
-	hookkit.RawPayload
 	// ToolName is the tool name (VS Code).
 	ToolName string `json:"tool_name"`
 	// ToolNameCamel is the tool name (camelCase).

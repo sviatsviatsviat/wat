@@ -4,8 +4,7 @@
 // needed.
 //
 // Encode returns flat camelCase stdout JSON and a process exit code. camelCase
-// payloads require run.WithEvent (or Decode WithEvent) unless hook_event_name
-// is present on the wire.
+// payloads require run.WithEvent unless hook_event_name is present on the wire.
 //
 // Example:
 //

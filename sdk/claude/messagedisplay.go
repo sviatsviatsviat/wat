@@ -3,14 +3,12 @@ package claude
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // MessageDisplay is the MessageDisplay hook event.
 type MessageDisplay struct {
 	Envelope
-	hookkit.RawPayload
 	// TurnID is the turn identifier.
 	TurnID string `json:"turn_id"`
 	// MessageID is the message identifier.

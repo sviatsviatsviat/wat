@@ -13,13 +13,13 @@ func RegisterSubagentStart(fn model.SubagentStartHandler) {
 		return
 	}
 	sdkcursor.OnSubagentStart(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SubagentStart], _ sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
-		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event, hook.Raw())))
+		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event)))
 	})
 }
 
-func mapSubagentStart(e sdkcursor.SubagentStart, raw []byte) *model.SubagentStartEvent {
+func mapSubagentStart(e sdkcursor.SubagentStart) *model.SubagentStartEvent {
 	return &model.SubagentStartEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Subagent: &model.Subagent{ID: e.SubagentID, Type: e.SubagentType, Task: e.Task},
 	}
 }

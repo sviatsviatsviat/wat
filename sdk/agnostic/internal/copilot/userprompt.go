@@ -13,13 +13,13 @@ func RegisterUserPrompt(fn model.UserPromptHandler) {
 		return
 	}
 	sdkcopilot.OnUserPromptSubmitted(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.UserPromptSubmitted]) error {
-		return fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmitted(hook.Event, hook.Raw())))
+		return fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmitted(hook.Event)))
 	})
 }
 
-func mapUserPromptSubmitted(e sdkcopilot.UserPromptSubmitted, raw []byte) *model.UserPromptEvent {
+func mapUserPromptSubmitted(e sdkcopilot.UserPromptSubmitted) *model.UserPromptEvent {
 	return &model.UserPromptEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Prompt:   e.Prompt,
 	}
 }

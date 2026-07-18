@@ -21,3 +21,6 @@ func SessionStartResultsForTest() SessionStartResults { return sessionStartResul
 func SubagentStartResultsForTest() SubagentStartResults { return subagentStartResults{} }
 
 func NotificationResultsForTest() NotificationResults { return notificationResults{} }
+
+// Decode is a test-only alias for decode (available to copilot_test).
+func Decode(raw []byte, opts ...Option) (Event, error) { return decode(raw, opts...) }

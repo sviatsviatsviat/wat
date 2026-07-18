@@ -3,13 +3,11 @@ package copilot
 import (
 	"context"
 	"encoding/json"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // ErrorOccurred is the errorOccurred hook event.
 type ErrorOccurred struct {
 	Envelope
-	hookkit.RawPayload
 	// Error is the error payload (string or object).
 	Error json.RawMessage `json:"error"`
 	// ErrorContext is additional error context (VS Code).

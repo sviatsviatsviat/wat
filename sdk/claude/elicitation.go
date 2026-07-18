@@ -3,7 +3,6 @@ package claude
 import (
 	"context"
 	"encoding/json"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -11,7 +10,6 @@ import (
 // Elicitation is the Elicitation hook event.
 type Elicitation struct {
 	Envelope
-	hookkit.RawPayload
 	// ServerName is the MCP server name.
 	ServerName string `json:"server_name"`
 	// Message is the elicitation message.

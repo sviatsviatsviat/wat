@@ -1,9 +1,5 @@
 package copilot
 
-import (
-	"encoding/json"
-)
-
 // Canonical camelCase GitHub Copilot hook event names for config keys and mux dispatch.
 const (
 	EventSessionStart        = "sessionStart"
@@ -66,7 +62,14 @@ func CanonicalEventName(name string) (string, bool) {
 // payload scope when wire names are ambiguous.
 func ResolveCanonical(raw []byte, received string) (string, bool) {
 	if received == "Stop" {
-		if payloadHasSubagentScope(raw) {
+		return resolveCanonical(received, payloadHasSubagentScope(raw))
+	}
+	return CanonicalEventName(received)
+}
+
+func resolveCanonical(received string, hasSubagentScope bool) (string, bool) {
+	if received == "Stop" {
+		if hasSubagentScope {
 			return EventSubagentStop, true
 		}
 		return EventAgentStop, true
@@ -75,17 +78,11 @@ func ResolveCanonical(raw []byte, received string) (string, bool) {
 }
 
 func payloadHasSubagentScope(raw []byte) bool {
-	var peek struct {
-		AgentName             string `json:"agent_name"`
-		AgentNameCamel        string `json:"agentName"`
-		AgentDisplayName      string `json:"agent_display_name"`
-		AgentDisplayNameCamel string `json:"agentDisplayName"`
-	}
-	if json.Unmarshal(raw, &peek) != nil {
+	peek, err := peekPayload(raw)
+	if err != nil {
 		return false
 	}
-	return peek.AgentName != "" || peek.AgentNameCamel != "" ||
-		peek.AgentDisplayName != "" || peek.AgentDisplayNameCamel != ""
+	return peek.hasSubagentScope()
 }
 
 // EventAliasMap returns a copy of wire-name to canonical-name aliases.

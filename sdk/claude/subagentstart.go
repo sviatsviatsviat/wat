@@ -3,14 +3,12 @@ package claude
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // SubagentStart is the SubagentStart hook event.
 type SubagentStart struct {
 	Envelope
-	hookkit.RawPayload
 }
 
 // EventName returns the hook event name.

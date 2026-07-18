@@ -17,6 +17,7 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
+	sdkrun "github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 type testConfig struct {
@@ -96,32 +97,26 @@ func resolveFixture(agentFlag, eventHint string, payload []byte) (fixtureInfo, e
 	}
 
 	var event string
-	var err error
+	decoded, decErr := sdkrun.Decode(agentDialect, eventHint, payload)
+	if decErr != nil {
+		if agentDialect == sdkcopilot.Dialect && eventHint == "" {
+			return fixtureInfo{}, fmt.Errorf("decode: %w (Copilot camelCase payloads require --event)", decErr)
+		}
+		return fixtureInfo{}, fmt.Errorf("decode: %w", decErr)
+	}
 	switch agentDialect {
 	case sdkclaude.Dialect:
-		native, decErr := sdkclaude.Decode(payload)
-		if decErr != nil {
-			err = decErr
-			break
-		}
+		native := decoded.(sdkclaude.Event)
 		event = native.EventName()
 	case sdkcopilot.Dialect:
-		native, decErr := sdkcopilot.Decode(payload, sdkcopilot.WithEvent(eventHint))
-		if decErr != nil {
-			err = decErr
-			break
-		}
+		native := decoded.(sdkcopilot.Event)
 		if name := sdkcopilot.EnvelopeOf(native).ReceivedName(); name != "" {
 			event = name
 		} else {
 			event = native.EventName()
 		}
 	case sdkcursor.Dialect:
-		native, decErr := sdkcursor.Decode(payload, sdkcursor.WithEvent(eventHint))
-		if decErr != nil {
-			err = decErr
-			break
-		}
+		native := decoded.(sdkcursor.Event)
 		if name := sdkcursor.EnvelopeOf(native).ReceivedName(); name != "" {
 			event = name
 		} else {
@@ -129,12 +124,6 @@ func resolveFixture(agentFlag, eventHint string, payload []byte) (fixtureInfo, e
 		}
 	default:
 		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent)")
-	}
-	if err != nil {
-		if agentDialect == sdkcopilot.Dialect && eventHint == "" {
-			return fixtureInfo{}, fmt.Errorf("decode: %w (Copilot camelCase payloads require --event)", err)
-		}
-		return fixtureInfo{}, fmt.Errorf("decode: %w", err)
 	}
 	return fixtureInfo{dialect: agentDialect, event: event}, nil
 }

@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -30,9 +29,6 @@ func NewSessionStartHook(inv run.Invocation, ev *SessionStartEvent) SessionStart
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h SessionStartHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h SessionStartHook) Raw() json.RawMessage { return h.SessionStartEvent.Raw }
 
 // SessionStartHandler handles portable SessionStart events.
 type SessionStartHandler func(ctx context.Context, hook SessionStartHook, results SessionStartResults) (SessionStartResult, error)

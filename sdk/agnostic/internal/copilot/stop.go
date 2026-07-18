@@ -15,7 +15,7 @@ func RegisterStop(fn model.StopHandler) {
 		return
 	}
 	sdkcopilot.OnAgentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
-		return callStop(ctx, hook.Invocation(), mapAgentStop(hook.Event, hook.Raw()), native, fn)
+		return callStop(ctx, hook.Invocation(), mapAgentStop(hook.Event), native, fn)
 	})
 }
 
@@ -25,7 +25,7 @@ func RegisterSubagentStop(fn model.StopHandler) {
 		return
 	}
 	sdkcopilot.OnSubagentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
-		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event, hook.Raw()), native, fn)
+		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event), native, fn)
 	})
 }
 
@@ -41,16 +41,16 @@ func callStop(ctx context.Context, inv run.Invocation, ev *model.StopEvent, nati
 	return nativeOut, nil
 }
 
-func mapAgentStop(e sdkcopilot.AgentStop, raw []byte) *model.StopEvent {
+func mapAgentStop(e sdkcopilot.AgentStop) *model.StopEvent {
 	return &model.StopEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Turn:     &model.TurnEnd{Status: e.Reason()},
 	}
 }
 
-func mapSubagentStop(e sdkcopilot.SubagentStop, raw []byte) *model.StopEvent {
+func mapSubagentStop(e sdkcopilot.SubagentStop) *model.StopEvent {
 	return &model.StopEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Subagent: &model.Subagent{
 			Type:   e.Name(),
 			Status: e.Reason(),

@@ -39,7 +39,6 @@ func TestEventEnvelopeAccess(t *testing.T) {
 	for _, ev := range cases {
 		t.Run(ev.EventName(), func(t *testing.T) {
 			_ = EnvelopeOf(ev)
-			_ = RawBytes(ev)
 		})
 	}
 }

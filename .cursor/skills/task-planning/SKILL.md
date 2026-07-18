@@ -44,7 +44,7 @@ Copy and tailor this block into every new or updated task plan:
 |-----------|------------|
 | `sdk/agnostic` API | Normalization/codec tests per agent column in agent-formats doc |
 | CLI (`cmd/wat`) | Help on stdout; invalid usage on stderr + exit 1; CLI table tests with `wantOutput` |
-| Codec | Fixture decode test per supporting agent; `Event.Raw` preserved |
+| Codec | Fixture decode test per supporting agent |
 | CI / workflow | Every `uses:` line pinned; bump all references to same dependency together |
 | Docs-only | No CHANGELOG entry unless user-facing behavior text changed |
 

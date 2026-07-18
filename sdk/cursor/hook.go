@@ -1,8 +1,6 @@
 package cursor
 
 import (
-	"encoding/json"
-
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -20,6 +18,3 @@ func NewHook[E Event](inv run.Invocation, ev E) Hook[E] {
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h Hook[E]) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload when available.
-func (h Hook[E]) Raw() json.RawMessage { return RawBytes(h.Event) }

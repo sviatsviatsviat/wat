@@ -5,15 +5,19 @@ import (
 	"sync"
 )
 
-// Producer handles one hook invocation: decode, run logic, and encode to native JSON.
-type Producer func(ctx context.Context, raw []byte) (output []byte, exit int, err error)
+// Producer handles one hook invocation: run logic on an already-decoded event
+// and encode native JSON. Serve decodes the payload once before calling producers.
+type Producer func(ctx context.Context, event any) (output []byte, exit int, err error)
 
-// DialectOps supplies dialect-specific detection, event naming, and output merge.
+// DialectOps supplies dialect-specific detection, event naming, decode, and output merge.
 type DialectOps struct {
 	// Detect reports whether raw matches this dialect.
 	Detect func(raw []byte, getenv func(string) string) bool
 	// EventName returns the native event name for raw using eventHint when needed.
+	// It should be a cheap discriminant peek, not a full typed decode.
 	EventName func(raw []byte, eventHint string) (string, error)
+	// Decode parses raw into a dialect-specific event value for handler dispatch.
+	Decode func(raw []byte, eventHint string) (event any, err error)
 	// Merge combines native JSON outputs from multiple handlers for one event.
 	Merge func(outputs [][]byte) ([]byte, error)
 }

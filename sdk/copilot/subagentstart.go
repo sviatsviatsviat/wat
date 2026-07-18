@@ -3,14 +3,12 @@ package copilot
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // SubagentStart is the subagentStart hook event.
 type SubagentStart struct {
 	Envelope
-	hookkit.RawPayload
 	// AgentName is the agent name (VS Code).
 	AgentName string `json:"agent_name"`
 	// AgentNameCamel is the agent name (camelCase).

@@ -15,7 +15,7 @@ func RegisterStop(fn model.StopHandler) {
 		return
 	}
 	sdkcursor.OnStop(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.Stop], native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
-		return callStop(ctx, hook.Invocation(), mapStop(hook.Event, hook.Raw()), native, fn)
+		return callStop(ctx, hook.Invocation(), mapStop(hook.Event), native, fn)
 	})
 }
 
@@ -25,7 +25,7 @@ func RegisterSubagentStop(fn model.StopHandler) {
 		return
 	}
 	sdkcursor.OnSubagentStop(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SubagentStop], native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
-		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event, hook.Raw()), native, fn)
+		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event), native, fn)
 	})
 }
 
@@ -41,20 +41,20 @@ func callStop(ctx context.Context, inv run.Invocation, ev *model.StopEvent, nati
 	return nativeOut, nil
 }
 
-func mapStop(e sdkcursor.Stop, raw []byte) *model.StopEvent {
+func mapStop(e sdkcursor.Stop) *model.StopEvent {
 	return &model.StopEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Turn:     &model.TurnEnd{Status: e.Status, LoopCount: e.LoopCount},
 	}
 }
 
-func mapSubagentStop(e sdkcursor.SubagentStop, raw []byte) *model.StopEvent {
+func mapSubagentStop(e sdkcursor.SubagentStop) *model.StopEvent {
 	tp := ""
 	if e.AgentTranscriptPath != nil {
 		tp = *e.AgentTranscriptPath
 	}
 	return &model.StopEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Subagent: &model.Subagent{
 			ID:             e.SubagentID,
 			Type:           e.SubagentType,

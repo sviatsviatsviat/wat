@@ -3,7 +3,6 @@ package claude
 import (
 	"context"
 	"encoding/json"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -11,7 +10,6 @@ import (
 // TaskCompleted is the TaskCompleted hook event.
 type TaskCompleted struct {
 	Envelope
-	hookkit.RawPayload
 	// Task is the task payload JSON.
 	Task json.RawMessage `json:"task"`
 }

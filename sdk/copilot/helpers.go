@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 )
 
@@ -15,23 +14,6 @@ func isShellToolName(name string) bool {
 	default:
 		return false
 	}
-}
-
-func extractRawObjectField(raw json.RawMessage, camelKey, snakeKey string) json.RawMessage {
-	if len(raw) == 0 {
-		return nil
-	}
-	var fields map[string]json.RawMessage
-	if json.Unmarshal(raw, &fields) != nil {
-		return nil
-	}
-	if b, ok := fields[camelKey]; ok && len(b) > 0 && string(b) != "null" {
-		return hookkit.CloneRaw(b)
-	}
-	if b, ok := fields[snakeKey]; ok && len(b) > 0 && string(b) != "null" {
-		return hookkit.CloneRaw(b)
-	}
-	return nil
 }
 
 func marshalToolResultCamel(r ToolResult) json.RawMessage {

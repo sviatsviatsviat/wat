@@ -3,7 +3,6 @@ package cursor
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -11,7 +10,6 @@ import (
 // AfterMCPExecution is the afterMCPExecution hook event.
 type AfterMCPExecution struct {
 	Envelope
-	hookkit.RawPayload
 	// ToolName is the native tool name (typically MCP:<tool>).
 	ToolName string `json:"tool_name"`
 	// ToolInput is the tool arguments from tool_input, bound to ToolName after decode.

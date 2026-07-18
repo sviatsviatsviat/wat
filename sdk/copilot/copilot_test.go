@@ -42,9 +42,6 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 	if pre.NativeToolName() != "bash" || pre.ShellCommand() != "rm -rf /" {
 		t.Fatalf("bad tool: name=%q shell=%q", pre.NativeToolName(), pre.ShellCommand())
 	}
-	if !bytes.Equal(copilot.RawBytes(ev), []byte(copilotCamelPreToolUse)) {
-		t.Fatal("Raw not preserved")
-	}
 
 	out, code, err := copilot.Encode(copilot.EventPreToolUse, copilot.PreToolResultsForTest().Deny("destructive command"))
 	if err != nil || code != 0 {
@@ -354,12 +351,8 @@ func TestDecode_ToolInputNotAliased(t *testing.T) {
 		t.Fatal(err)
 	}
 	pre := ev.(copilot.PreToolUse)
-	rawCopy := bytes.Clone(copilot.RawBytes(ev))
 	got := pre.ToolArgs.Raw()
 	got[0] = 'X'
-	if !bytes.Equal(copilot.RawBytes(ev), rawCopy) {
-		t.Fatal("mutating ToolArgs.Raw() copy affected RawBytes")
-	}
 	if bytes.Equal(pre.ToolArgs.Raw(), got) {
 		t.Fatal("ToolArgs.Raw() did not return a defensive copy")
 	}
@@ -531,16 +524,6 @@ func TestToolInput_AsBash(t *testing.T) {
 	input, ok := pre.Input().AsBash()
 	if !ok || input.Command != "ls -la" {
 		t.Fatalf("AsBash = %+v, %v", input, ok)
-	}
-}
-
-func TestRawBytes_PreservesTypedDecode(t *testing.T) {
-	ev, err := copilot.Decode([]byte(copilotCamelPreToolUse), copilot.WithEvent("preToolUse"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Equal(copilot.RawBytes(ev), []byte(copilotCamelPreToolUse)) {
-		t.Fatal("RawBytes mismatch")
 	}
 }
 

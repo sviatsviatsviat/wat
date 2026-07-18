@@ -28,3 +28,6 @@ func TaskCompletedResultsForTest() TaskCompletedResults   { return taskCompleted
 func UserPromptExpansionResultsForTest() UserPromptExpansionResults {
 	return userPromptExpansionResults{}
 }
+
+// Decode is a test-only alias for decode (available to claude_test).
+func Decode(raw []byte) (Event, error) { return decode(raw) }

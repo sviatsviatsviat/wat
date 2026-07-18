@@ -14,7 +14,7 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 		return
 	}
 	sdkcursor.OnPostToolUseFailure(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUseFailure], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event, hook.Raw())), newPostToolFailureResults(native))
+		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event)), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}
@@ -26,9 +26,9 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 	})
 }
 
-func mapPostToolUseFailure(e sdkcursor.PostToolUseFailure, raw []byte) *model.PostToolFailureEvent {
+func mapPostToolUseFailure(e sdkcursor.PostToolUseFailure) *model.PostToolFailureEvent {
 	return &model.PostToolFailureEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
 		Result: &model.ToolResult{
 			Error:       e.ErrorMessage,

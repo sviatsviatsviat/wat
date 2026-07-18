@@ -1,12 +1,11 @@
 package copilot
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
-func envelope(native sdkcopilot.Event, raw []byte) model.Envelope {
+func envelope(native sdkcopilot.Event) model.Envelope {
 	env := sdkcopilot.EnvelopeOf(native)
 	name := native.EventName()
 	if received := env.ReceivedName(); received != "" {
@@ -18,6 +17,5 @@ func envelope(native sdkcopilot.Event, raw []byte) model.Envelope {
 		Session:        env.Session(),
 		Cwd:            env.Cwd,
 		TranscriptPath: env.Transcript(),
-		Raw:            hookkit.CloneRaw(raw),
 	}
 }

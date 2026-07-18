@@ -26,7 +26,6 @@ func TestEventEnvelopeAccess(t *testing.T) {
 		}
 		t.Run(name, func(t *testing.T) {
 			_ = EnvelopeOf(ev)
-			_ = RawBytes(ev)
 		})
 	}
 }

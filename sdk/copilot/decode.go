@@ -40,55 +40,71 @@ func attachEnvelopeMeta(ev any, received, canonical string) {
 	s.setEnvelopeMeta(received, canonical)
 }
 
-func newRawEvent(env Envelope, received, canonical string, raw []byte) RawEvent {
-	ev := RawEvent{Envelope: env}
-	ev.setEnvelopeMeta(received, canonical)
-	ev.SetRaw(raw)
-	return ev
+// payloadPeek is a minimal discriminant for format, event name, and Stop scope.
+type payloadPeek struct {
+	HookEventName         string `json:"hook_event_name"`
+	SessionID             string `json:"sessionId"`
+	AgentName             string `json:"agent_name"`
+	AgentNameCamel        string `json:"agentName"`
+	AgentDisplayName      string `json:"agent_display_name"`
+	AgentDisplayNameCamel string `json:"agentDisplayName"`
 }
 
-// SniffFormat detects the Copilot wire format from a payload.
-func SniffFormat(raw []byte) Format {
-	var peek struct {
-		HookEventName string `json:"hook_event_name"`
-		SessionID     string `json:"sessionId"`
+func peekPayload(raw []byte) (payloadPeek, error) {
+	var peek payloadPeek
+	if err := json.Unmarshal(raw, &peek); err != nil {
+		return peek, err
 	}
-	if json.Unmarshal(raw, &peek) != nil {
-		return FormatUnknown
-	}
-	if peek.HookEventName != "" {
+	return peek, nil
+}
+
+func (p payloadPeek) format() Format {
+	if p.HookEventName != "" {
 		return FormatVSCode
 	}
-	if peek.SessionID != "" {
+	if p.SessionID != "" {
 		return FormatCamel
 	}
 	return FormatUnknown
 }
 
-// Decode parses a hook stdin payload into a typed Event.
-func Decode(raw []byte, opts ...Option) (Event, error) {
-	cfg := defaultDecodeConfig()
-	applyOptions(&cfg, opts...)
-	return DecodeWithHint(raw, cfg.eventHint.Hint)
+func (p payloadPeek) hasSubagentScope() bool {
+	return p.AgentName != "" || p.AgentNameCamel != "" ||
+		p.AgentDisplayName != "" || p.AgentDisplayNameCamel != ""
 }
 
-// DecodeWithHint parses raw using an explicit event hint.
-func DecodeWithHint(raw []byte, eventHint string) (Event, error) {
+// SniffFormat detects the Copilot wire format from a payload.
+func SniffFormat(raw []byte) Format {
+	peek, err := peekPayload(raw)
+	if err != nil {
+		return FormatUnknown
+	}
+	return peek.format()
+}
+
+// decode parses a hook stdin payload into a typed Event.
+func decode(raw []byte, opts ...Option) (Event, error) {
+	cfg := defaultDecodeConfig()
+	applyOptions(&cfg, opts...)
+	return decodeWithHint(raw, cfg.eventHint.Hint)
+}
+
+// decodeWithHint parses raw using an explicit event hint.
+// It peeks format and event name once, then unmarshals into the matching type.
+func decodeWithHint(raw []byte, eventHint string) (Event, error) {
 	if len(raw) == 0 {
 		return nil, ErrEmptyPayload
 	}
 
-	format := SniffFormat(raw)
-	if format == FormatUnknown {
+	peek, err := peekPayload(raw)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrDecodePayload, err)
+	}
+	if peek.format() == FormatUnknown {
 		return nil, ErrUnrecognizedFormat
 	}
 
-	var env Envelope
-	if err := json.Unmarshal(raw, &env); err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrDecodePayload, err)
-	}
-
-	received := env.HookEventName
+	received := peek.HookEventName
 	if received == "" {
 		received = eventHint
 	}
@@ -96,9 +112,9 @@ func DecodeWithHint(raw []byte, eventHint string) (Event, error) {
 		return nil, ErrEventNameRequired
 	}
 
-	canonical, known := ResolveCanonical(raw, received)
+	canonical, known := resolveCanonical(received, peek.hasSubagentScope())
 	if !known {
-		return newRawEvent(env, received, "", raw), nil
+		return decodeAs[RawEvent](raw, received, "")
 	}
 
 	if fn, ok := decoders.Lookup(canonical); ok {
@@ -108,19 +124,36 @@ func DecodeWithHint(raw []byte, eventHint string) (Event, error) {
 		}
 		return ev.(Event), nil
 	}
-	return newRawEvent(env, received, canonical, raw), nil
+	return decodeAs[RawEvent](raw, received, canonical)
 }
 
-// RawBytes returns the untouched JSON for an event when available.
-func RawBytes(ev Event) json.RawMessage {
-	return ev.Raw()
+// eventNameFromRaw peeks the canonical hook event name without a full typed decode.
+func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
+	if len(raw) == 0 {
+		return "", ErrEmptyPayload
+	}
+	peek, err := peekPayload(raw)
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrDecodePayload, err)
+	}
+	if peek.format() == FormatUnknown {
+		return "", ErrUnrecognizedFormat
+	}
+	received := peek.HookEventName
+	if received == "" {
+		received = eventHint
+	}
+	if received == "" {
+		return "", ErrEventNameRequired
+	}
+	canonical, known := resolveCanonical(received, peek.hasSubagentScope())
+	if !known {
+		return received, nil
+	}
+	return canonical, nil
 }
 
 // EnvelopeOf returns the shared envelope from a decoded event.
 func EnvelopeOf(ev Event) Envelope {
 	return ev.envelope()
-}
-
-func decodeWithHint(raw []byte, hint string) (Event, error) {
-	return DecodeWithHint(raw, hint)
 }

@@ -3,7 +3,6 @@ package cursor
 import (
 	"context"
 	"encoding/json"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -11,7 +10,6 @@ import (
 // Stop is the stop hook event.
 type Stop struct {
 	Envelope
-	hookkit.RawPayload
 	// Status is the stop status.
 	Status string `json:"status"`
 	// LoopCount is the stop-loop iteration count.

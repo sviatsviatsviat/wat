@@ -1,11 +1,8 @@
 package claude
 
-import "github.com/sviatsviatsviat/wat/internal/hookkit"
-
 // ConfigChange is the ConfigChange hook event.
 type ConfigChange struct {
 	Envelope
-	hookkit.RawPayload
 	// Source is the config source that changed.
 	Source string `json:"source"`
 }

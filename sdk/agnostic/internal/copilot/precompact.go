@@ -13,13 +13,13 @@ func RegisterPreCompact(fn model.PreCompactHandler) {
 		return
 	}
 	sdkcopilot.OnPreCompact(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PreCompact]) error {
-		return fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event, hook.Raw())))
+		return fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event)))
 	})
 }
 
-func mapPreCompact(e sdkcopilot.PreCompact, raw []byte) *model.PreCompactEvent {
+func mapPreCompact(e sdkcopilot.PreCompact) *model.PreCompactEvent {
 	return &model.PreCompactEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Compact: &model.CompactInfo{
 			Trigger:            e.Trigger,
 			CustomInstructions: e.Instructions(),

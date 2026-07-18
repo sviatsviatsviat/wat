@@ -3,7 +3,6 @@ package claude
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -11,7 +10,6 @@ import (
 // PostToolUseFailure is the PostToolUseFailure hook event.
 type PostToolUseFailure struct {
 	Envelope
-	hookkit.RawPayload
 	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
 	// ToolInput is the typed tool input for ToolName.

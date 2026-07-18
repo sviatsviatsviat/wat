@@ -13,13 +13,13 @@ func RegisterSubagentStart(fn model.SubagentStartHandler) {
 		return
 	}
 	sdkclaude.OnSubagentStart(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SubagentStart], _ sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
-		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event, hook.Raw())))
+		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event)))
 	})
 }
 
-func mapSubagentStart(e sdkclaude.SubagentStart, raw []byte) *model.SubagentStartEvent {
+func mapSubagentStart(e sdkclaude.SubagentStart) *model.SubagentStartEvent {
 	return &model.SubagentStartEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Subagent: &model.Subagent{ID: e.AgentID, Type: e.AgentType},
 	}
 }

@@ -1,11 +1,8 @@
 package cursor
 
-import "github.com/sviatsviatsviat/wat/internal/hookkit"
-
-// RawEvent holds an unknown or future event with the full payload preserved.
+// RawEvent holds an unknown or future hook event decoded from the shared envelope only.
 type RawEvent struct {
 	Envelope
-	hookkit.RawPayload
 }
 
 // EventName returns the received event name or an empty string.

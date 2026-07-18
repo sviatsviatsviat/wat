@@ -14,7 +14,7 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 		return
 	}
 	sdkcopilot.OnPostToolUseFailure(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUseFailure], native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
-		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event, hook.Raw())), newPostToolFailureResults(native))
+		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event)), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}
@@ -26,9 +26,9 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 	})
 }
 
-func mapPostToolUseFailure(e sdkcopilot.PostToolUseFailure, raw []byte) *model.PostToolFailureEvent {
+func mapPostToolUseFailure(e sdkcopilot.PostToolUseFailure) *model.PostToolFailureEvent {
 	ev := &model.PostToolFailureEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Tool:     model.NewToolCall(e.NativeToolName(), e.Input().Raw(), ""),
 	}
 	if msg := e.ErrorMessage(); msg != "" {

@@ -1,11 +1,8 @@
 package claude
 
-import "github.com/sviatsviatsviat/wat/internal/hookkit"
-
 // CwdChanged is the CwdChanged hook event.
 type CwdChanged struct {
 	Envelope
-	hookkit.RawPayload
 	// NewCwd is the new working directory.
 	NewCwd string `json:"new_cwd"`
 	// OldCwd is the previous working directory.

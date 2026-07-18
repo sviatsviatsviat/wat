@@ -11,7 +11,6 @@ import (
 // PreToolUse is the preToolUse hook event.
 type PreToolUse struct {
 	Envelope
-	hookkit.RawPayload
 	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
 	// ToolInput is the typed tool input for ToolName.

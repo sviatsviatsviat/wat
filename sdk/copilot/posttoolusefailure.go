@@ -3,7 +3,6 @@ package copilot
 import (
 	"context"
 	"encoding/json"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
@@ -12,7 +11,6 @@ import (
 // PostToolUseFailure is the postToolUseFailure hook event.
 type PostToolUseFailure struct {
 	Envelope
-	hookkit.RawPayload
 	// ToolName is the tool name (VS Code).
 	ToolName string `json:"tool_name"`
 	// ToolNameCamel is the tool name (camelCase).

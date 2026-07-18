@@ -7,9 +7,9 @@ import (
 	"os"
 )
 
-// Serve reads a hook payload from in, dispatches registered handlers on the
-// default registry, writes merged stdout to out, diagnostics to errw, and
-// returns the process exit code.
+// Serve reads a hook payload from in, decodes it once, dispatches registered
+// handlers on the default registry, writes merged stdout to out, diagnostics
+// to errw, and returns the process exit code.
 func Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Writer, opts ...Option) int {
 	return defaultRegistry.serve(ctx, in, out, errw, applyOptions(opts...))
 }
@@ -53,12 +53,22 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 		return 0
 	}
 
+	if ops.Decode == nil {
+		_, _ = fmt.Fprintf(errw, "run: %s: missing Decode\n", dialect)
+		return 1
+	}
+	event, err := ops.Decode(raw, cfg.EventHint)
+	if err != nil {
+		_, _ = fmt.Fprintf(errw, "run: %s: decode: %v\n", dialect, err)
+		return 1
+	}
+
 	ctx = WithConfig(ctx, cfg)
 
 	var outputs [][]byte
 	exitCode := 0
 	for _, p := range producers {
-		stdout, code, err := p(ctx, raw)
+		stdout, code, err := p(ctx, event)
 		if err != nil {
 			_, _ = fmt.Fprintln(errw, err.Error())
 			if code != 0 {

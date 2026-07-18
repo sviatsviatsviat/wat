@@ -13,13 +13,13 @@ func RegisterUserPrompt(fn model.UserPromptHandler) {
 		return
 	}
 	sdkclaude.OnUserPromptSubmit(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
-		return nil, fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmit(hook.Event, hook.Raw())))
+		return nil, fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmit(hook.Event)))
 	})
 }
 
-func mapUserPromptSubmit(e sdkclaude.UserPromptSubmit, raw []byte) *model.UserPromptEvent {
+func mapUserPromptSubmit(e sdkclaude.UserPromptSubmit) *model.UserPromptEvent {
 	return &model.UserPromptEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Prompt:   e.Prompt,
 	}
 }

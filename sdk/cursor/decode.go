@@ -1,7 +1,6 @@
 package cursor
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -40,32 +39,24 @@ func attachEnvelopeMeta(ev any, received, canonical string) {
 	s.setEnvelopeMeta(received, canonical)
 }
 
-func newRawEvent(env Envelope, received, canonical string, raw []byte) RawEvent {
-	ev := RawEvent{Envelope: env}
-	ev.setEnvelopeMeta(received, canonical)
-	ev.SetRaw(raw)
-	return ev
-}
-
-// Decode parses a Cursor hook stdin payload into a typed Event.
-func Decode(raw []byte, opts ...Option) (Event, error) {
+// decode parses a Cursor hook stdin payload into a typed Event.
+func decode(raw []byte, opts ...Option) (Event, error) {
 	cfg := defaultDecodeConfig()
 	applyOptions(&cfg, opts...)
-	return DecodeWithHint(raw, cfg.eventHint.Hint)
+	return decodeWithHint(raw, cfg.eventHint.Hint)
 }
 
-// DecodeWithHint parses raw using an explicit event hint.
-func DecodeWithHint(raw []byte, eventHint string) (Event, error) {
+// decodeWithHint parses raw using an explicit event hint.
+// It peeks the event name once, then unmarshals into the matching type.
+func decodeWithHint(raw []byte, eventHint string) (Event, error) {
 	if len(raw) == 0 {
 		return nil, ErrEmptyPayload
 	}
 
-	var env Envelope
-	if err := json.Unmarshal(raw, &env); err != nil {
+	received, err := hookkit.PeekHookEventName(raw)
+	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDecodePayload, err)
 	}
-
-	received := env.HookEventName
 	if received == "" {
 		received = eventHint
 	}
@@ -81,19 +72,28 @@ func DecodeWithHint(raw []byte, eventHint string) (Event, error) {
 		}
 		return ev.(Event), nil
 	}
-	return newRawEvent(env, received, "", raw), nil
+	return decodeAs[RawEvent](raw, received, "")
 }
 
-// RawBytes returns the untouched JSON for an event when available.
-func RawBytes(ev Event) json.RawMessage {
-	return ev.Raw()
+// eventNameFromRaw peeks the hook event name without a full typed decode.
+func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
+	if len(raw) == 0 {
+		return "", ErrEmptyPayload
+	}
+	received, err := hookkit.PeekHookEventName(raw)
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrDecodePayload, err)
+	}
+	if received == "" {
+		received = eventHint
+	}
+	if received == "" {
+		return "", ErrEventNameRequired
+	}
+	return received, nil
 }
 
 // EnvelopeOf returns the shared envelope from a decoded event.
 func EnvelopeOf(ev Event) Envelope {
 	return ev.envelope()
-}
-
-func decodeWithHint(raw []byte, hint string) (Event, error) {
-	return DecodeWithHint(raw, hint)
 }

@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -30,9 +29,6 @@ func NewPreToolHook(inv run.Invocation, ev *PreToolEvent) PreToolHook {
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h PreToolHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h PreToolHook) Raw() json.RawMessage { return h.PreToolEvent.Raw }
 
 // PreToolHandler handles portable PreTool events.
 type PreToolHandler func(ctx context.Context, hook PreToolHook, results PreToolResults) (PreToolResult, error)

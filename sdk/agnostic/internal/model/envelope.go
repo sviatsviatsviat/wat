@@ -1,7 +1,5 @@
 package model
 
-import "encoding/json"
-
 // Envelope carries shared metadata present on every normalized hook event.
 type Envelope struct {
 	// Agent is the dialect that emitted this hook event (e.g. "claude").
@@ -14,6 +12,4 @@ type Envelope struct {
 	Cwd string
 	// TranscriptPath is the conversation transcript path when provided.
 	TranscriptPath string
-	// Raw is the untouched native JSON payload.
-	Raw json.RawMessage
 }

@@ -1,12 +1,11 @@
 package cursor
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func envelope(native sdkcursor.Event, raw []byte) model.Envelope {
+func envelope(native sdkcursor.Event) model.Envelope {
 	env := sdkcursor.EnvelopeOf(native)
 	name := native.EventName()
 	if received := env.ReceivedName(); received != "" {
@@ -18,7 +17,6 @@ func envelope(native sdkcursor.Event, raw []byte) model.Envelope {
 		Session:        env.Session(),
 		Cwd:            env.Cwd,
 		TranscriptPath: env.Transcript(),
-		Raw:            hookkit.CloneRaw(raw),
 	}
 }
 

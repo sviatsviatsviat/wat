@@ -2,13 +2,11 @@ package claude
 
 import (
 	"context"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // SessionEnd is the SessionEnd hook event.
 type SessionEnd struct {
 	Envelope
-	hookkit.RawPayload
 	// Reason is the session end reason.
 	Reason string `json:"reason"`
 }

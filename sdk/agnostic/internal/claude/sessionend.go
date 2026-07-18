@@ -13,13 +13,13 @@ func RegisterSessionEnd(fn model.SessionEndHandler) {
 		return
 	}
 	sdkclaude.OnSessionEnd(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionEnd]) error {
-		return fn(ctx, model.NewSessionEndHook(hook.Invocation(), mapSessionEnd(hook.Event, hook.Raw())))
+		return fn(ctx, model.NewSessionEndHook(hook.Invocation(), mapSessionEnd(hook.Event)))
 	})
 }
 
-func mapSessionEnd(e sdkclaude.SessionEnd, raw []byte) *model.SessionEndEvent {
+func mapSessionEnd(e sdkclaude.SessionEnd) *model.SessionEndEvent {
 	return &model.SessionEndEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Life:     &model.Lifecycle{Reason: e.Reason},
 	}
 }

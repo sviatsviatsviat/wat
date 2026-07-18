@@ -1,11 +1,8 @@
 package claude
 
-import "github.com/sviatsviatsviat/wat/internal/hookkit"
-
 // PostCompact is the PostCompact hook event.
 type PostCompact struct {
 	Envelope
-	hookkit.RawPayload
 	// Trigger is the compaction trigger.
 	Trigger string `json:"trigger"`
 }

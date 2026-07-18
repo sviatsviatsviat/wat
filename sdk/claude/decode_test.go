@@ -1,7 +1,6 @@
 package claude_test
 
 import (
-	"bytes"
 	"errors"
 	"strings"
 	"testing"
@@ -79,8 +78,11 @@ func TestDecode_UnknownEvent(t *testing.T) {
 	if !ok {
 		t.Fatalf("want RawEvent, got %T", ev)
 	}
-	if !bytes.Equal(re.Raw(), raw) {
-		t.Fatal("Raw not preserved")
+	if re.EventName() != "FutureEvent" {
+		t.Fatalf("EventName = %q, want FutureEvent", re.EventName())
+	}
+	if re.SessionID != "s1" || re.Cwd != "/w" {
+		t.Fatalf("envelope not decoded: %+v", re.Envelope)
 	}
 }
 
@@ -111,16 +113,4 @@ func TestDecode_InvalidJSON(t *testing.T) {
 			t.Fatalf("error = %v", err)
 		}
 	})
-}
-
-func TestRawBytes_PreservesTypedDecode(t *testing.T) {
-	raw := []byte(preToolUsePayload)
-	ev, err := claude.Decode(raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := claude.RawBytes(ev)
-	if !bytes.Equal(got, raw) {
-		t.Fatalf("RawBytes = %s, want original payload", got)
-	}
 }

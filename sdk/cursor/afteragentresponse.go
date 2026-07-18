@@ -2,13 +2,11 @@ package cursor
 
 import (
 	"context"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // AfterAgentResponse is the afterAgentResponse hook event.
 type AfterAgentResponse struct {
 	Envelope
-	hookkit.RawPayload
 	// Text is the agent response text.
 	Text string `json:"text"`
 }

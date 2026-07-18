@@ -14,7 +14,7 @@ func RegisterPreTool(fn model.PreToolHandler) {
 		return
 	}
 	sdkcopilot.OnPreToolUse(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PreToolUse], native sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
-		out, err := fn(ctx, model.NewPreToolHook(hook.Invocation(), mapPreToolUse(hook.Event, hook.Raw())), newPreToolResults(native))
+		out, err := fn(ctx, model.NewPreToolHook(hook.Invocation(), mapPreToolUse(hook.Event)), newPreToolResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}
@@ -26,9 +26,9 @@ func RegisterPreTool(fn model.PreToolHandler) {
 	})
 }
 
-func mapPreToolUse(e sdkcopilot.PreToolUse, raw []byte) *model.PreToolEvent {
+func mapPreToolUse(e sdkcopilot.PreToolUse) *model.PreToolEvent {
 	return &model.PreToolEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Tool:     model.NewToolCall(e.NativeToolName(), e.Input().Raw(), ""),
 	}
 }

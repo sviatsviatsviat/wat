@@ -7,8 +7,6 @@ import (
 )
 
 // Event is the unified, agent-independent view of a hook invocation.
-// Raw always carries the untouched native payload, so nothing is lost by
-// normalization; agent-specific handlers can re-decode it with native types.
 type Event struct {
 	// Agent is the dialect that emitted this hook event (e.g. "claude").
 	Agent string
@@ -20,8 +18,6 @@ type Event struct {
 	Cwd string
 	// TranscriptPath is the conversation transcript path when provided.
 	TranscriptPath string
-	// Raw is the untouched native JSON payload.
-	Raw json.RawMessage
 
 	// Prompt holds the user prompt text for user-prompt events.
 	Prompt string

@@ -14,7 +14,7 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 		return
 	}
 	sdkcopilot.OnSessionStart(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SessionStart], native sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
-		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event, hook.Raw())), newSessionStartResults(native))
+		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event)), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}
@@ -26,9 +26,9 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 	})
 }
 
-func mapSessionStart(e sdkcopilot.SessionStart, raw []byte) *model.SessionStartEvent {
+func mapSessionStart(e sdkcopilot.SessionStart) *model.SessionStartEvent {
 	return &model.SessionStartEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Life:     &model.Lifecycle{Source: e.Source, InitialPrompt: e.InitialPrompt()},
 	}
 }

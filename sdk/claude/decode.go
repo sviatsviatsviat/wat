@@ -1,7 +1,6 @@
 package claude
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -29,24 +28,18 @@ func decodeAsAndThen[T Event](raw []byte, after func(*T, []byte)) (Event, error)
 	return ev, nil
 }
 
-func newRawEvent(env Envelope, raw []byte) RawEvent {
-	ev := RawEvent{Envelope: env}
-	ev.SetRaw(raw)
-	return ev
-}
-
-// Decode parses a Claude Code hook stdin payload into a typed Event.
-func Decode(raw []byte) (Event, error) {
+// decode parses a Claude Code hook stdin payload into a typed Event.
+// It peeks hook_event_name once, then unmarshals the payload into the matching type.
+func decode(raw []byte) (Event, error) {
 	if len(raw) == 0 {
 		return nil, ErrEmptyPayload
 	}
-	var env Envelope
-	if err := json.Unmarshal(raw, &env); err != nil {
+	name, err := hookkit.PeekHookEventName(raw)
+	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDecodePayload, err)
 	}
-	name := env.HookEventName
 	if name == "" {
-		return newRawEvent(env, raw), nil
+		return decodeAs[RawEvent](raw)
 	}
 	if fn, ok := decoders.Lookup(name); ok {
 		ev, err := fn(raw, name, name)
@@ -55,12 +48,25 @@ func Decode(raw []byte) (Event, error) {
 		}
 		return ev.(Event), nil
 	}
-	return newRawEvent(env, raw), nil
+	return decodeAs[RawEvent](raw)
 }
 
-// RawBytes returns the untouched JSON for an event when available.
-func RawBytes(ev Event) json.RawMessage {
-	return ev.Raw()
+// eventNameFromRaw peeks the hook event name without a full typed decode.
+func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
+	if len(raw) == 0 {
+		return "", ErrEmptyPayload
+	}
+	name, err := hookkit.PeekHookEventName(raw)
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrDecodePayload, err)
+	}
+	if name == "" {
+		name = eventHint
+	}
+	if name == "" {
+		return "", fmt.Errorf("claude: empty event name")
+	}
+	return name, nil
 }
 
 // EnvelopeOf returns the shared envelope from a decoded event.

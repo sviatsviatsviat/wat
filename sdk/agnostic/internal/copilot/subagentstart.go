@@ -13,13 +13,13 @@ func RegisterSubagentStart(fn model.SubagentStartHandler) {
 		return
 	}
 	sdkcopilot.OnSubagentStart(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStart], _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
-		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event, hook.Raw())))
+		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event)))
 	})
 }
 
-func mapSubagentStart(e sdkcopilot.SubagentStart, raw []byte) *model.SubagentStartEvent {
+func mapSubagentStart(e sdkcopilot.SubagentStart) *model.SubagentStartEvent {
 	return &model.SubagentStartEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Subagent: &model.Subagent{
 			Type:    e.Name(),
 			Task:    e.DisplayName(),

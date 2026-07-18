@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -30,9 +29,6 @@ func NewUserPromptHook(inv run.Invocation, ev *UserPromptEvent) UserPromptHook {
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h UserPromptHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h UserPromptHook) Raw() json.RawMessage { return h.UserPromptEvent.Raw }
 
 // UserPromptHandler handles observe-only UserPrompt events.
 type UserPromptHandler func(ctx context.Context, hook UserPromptHook) error

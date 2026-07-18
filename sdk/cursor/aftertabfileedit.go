@@ -2,13 +2,11 @@ package cursor
 
 import (
 	"context"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // AfterTabFileEdit is the afterTabFileEdit hook event.
 type AfterTabFileEdit struct {
 	Envelope
-	hookkit.RawPayload
 	// FilePath is the edited file path.
 	FilePath string `json:"file_path"`
 	// Edits are the applied edits.

@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -30,9 +29,6 @@ func NewSessionEndHook(inv run.Invocation, ev *SessionEndEvent) SessionEndHook {
 
 // Invocation returns serve-time settings for this hook invocation.
 func (h SessionEndHook) Invocation() run.Invocation { return h.inv }
-
-// Raw returns the untouched native JSON payload.
-func (h SessionEndHook) Raw() json.RawMessage { return h.SessionEndEvent.Raw }
 
 // SessionEndHandler handles observe-only SessionEnd events.
 type SessionEndHandler func(ctx context.Context, hook SessionEndHook) error

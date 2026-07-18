@@ -3,14 +3,12 @@ package cursor
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // AfterShellExecution is the afterShellExecution hook event.
 type AfterShellExecution struct {
 	Envelope
-	hookkit.RawPayload
 	// Command is the shell command that ran.
 	Command string `json:"command"`
 	// Output is the terminal output.

@@ -13,13 +13,13 @@ func RegisterUserPrompt(fn model.UserPromptHandler) {
 		return
 	}
 	sdkcursor.OnBeforeSubmitPrompt(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeSubmitPrompt], _ sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
-		return nil, fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapBeforeSubmitPrompt(hook.Event, hook.Raw())))
+		return nil, fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapBeforeSubmitPrompt(hook.Event)))
 	})
 }
 
-func mapBeforeSubmitPrompt(e sdkcursor.BeforeSubmitPrompt, raw []byte) *model.UserPromptEvent {
+func mapBeforeSubmitPrompt(e sdkcursor.BeforeSubmitPrompt) *model.UserPromptEvent {
 	return &model.UserPromptEvent{
-		Envelope: envelope(e, raw),
+		Envelope: envelope(e),
 		Prompt:   e.Prompt,
 	}
 }

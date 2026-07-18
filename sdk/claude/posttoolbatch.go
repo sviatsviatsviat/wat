@@ -22,7 +22,6 @@ type PostToolBatchCall struct {
 // PostToolBatch is the PostToolBatch hook event.
 type PostToolBatch struct {
 	Envelope
-	hookkit.RawPayload
 	// ToolCalls holds per-call metadata for the resolved parallel batch.
 	ToolCalls []PostToolBatchCall `json:"tool_calls"`
 }
@@ -47,15 +46,8 @@ func bindPostToolBatchToolInputs(e *PostToolBatch, raw []byte) {
 	for i := range e.ToolCalls {
 		var input json.RawMessage
 		if i < len(wire.ToolCalls) {
-			input = cloneToolInputRaw(wire.ToolCalls[i].ToolInput)
+			input = hookkit.NullToNil(wire.ToolCalls[i].ToolInput)
 		}
 		e.ToolCalls[i].ToolInput = tools.NewInput(e.ToolCalls[i].ToolName, input)
 	}
-}
-
-func cloneToolInputRaw(raw json.RawMessage) json.RawMessage {
-	if string(raw) == "null" {
-		return nil
-	}
-	return hookkit.CloneBytes(raw)
 }

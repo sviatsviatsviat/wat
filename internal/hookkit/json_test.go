@@ -21,6 +21,20 @@ func TestCloneRaw(t *testing.T) {
 	}
 }
 
+func TestNullToNil(t *testing.T) {
+	t.Parallel()
+	if NullToNil(nil) != nil {
+		t.Fatal("nil should stay nil")
+	}
+	if NullToNil(json.RawMessage("null")) != nil {
+		t.Fatal("JSON null should become nil")
+	}
+	in := json.RawMessage(`{"a":1}`)
+	if string(NullToNil(in)) != `{"a":1}` {
+		t.Fatalf("NullToNil = %s", NullToNil(in))
+	}
+}
+
 func TestRawObjectField(t *testing.T) {
 	t.Parallel()
 	raw := json.RawMessage(`{"tool_input":{"command":"ls"},"other":null}`)

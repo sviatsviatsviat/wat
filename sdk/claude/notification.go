@@ -3,14 +3,12 @@ package claude
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Notification is the Notification hook event.
 type Notification struct {
 	Envelope
-	hookkit.RawPayload
 	// Message is the notification message.
 	Message string `json:"message"`
 	// NotificationType is the notification category.
