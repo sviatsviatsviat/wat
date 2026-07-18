@@ -20,14 +20,6 @@ func (i Invocation) Dialect() string {
 	return i.cfg.Dialect
 }
 
-// EventHint returns the native event name hint for payloads that omit it.
-func (i Invocation) EventHint() string {
-	if i.cfg == nil {
-		return ""
-	}
-	return i.cfg.EventHint
-}
-
 // Getenv looks up an environment variable using the serve-time getenv function.
 func (i Invocation) Getenv(key string) string {
 	if i.cfg == nil || i.cfg.Getenv == nil {

@@ -16,31 +16,13 @@ func isShellToolName(name string) bool {
 	}
 }
 
-func marshalToolResultCamel(r ToolResult) json.RawMessage {
+func marshalToolResult(r ToolResult) json.RawMessage {
 	out := map[string]string{}
 	if r.ResultType != "" {
-		out["resultType"] = r.ResultType
+		out["result_type"] = r.ResultType
 	}
 	if r.TextResultForLLM != "" {
-		out["textResultForLlm"] = r.TextResultForLLM
-	}
-	if len(out) == 0 {
-		return nil
-	}
-	b, err := json.Marshal(out)
-	if err != nil {
-		return nil
-	}
-	return b
-}
-
-func marshalToolResultSnake(r ToolResult) json.RawMessage {
-	out := map[string]string{}
-	if r.ResultTypeSnake != "" {
-		out["result_type"] = r.ResultTypeSnake
-	}
-	if r.TextResultSnake != "" {
-		out["text_result_for_llm"] = r.TextResultSnake
+		out["text_result_for_llm"] = r.TextResultForLLM
 	}
 	if len(out) == 0 {
 		return nil

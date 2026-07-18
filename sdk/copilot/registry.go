@@ -1,59 +1,46 @@
 package copilot
 
-// Canonical camelCase GitHub Copilot hook event names for config keys and mux dispatch.
+// Canonical PascalCase GitHub Copilot hook event names for config keys and mux dispatch.
 const (
-	EventSessionStart        = "sessionStart"
-	EventSessionEnd          = "sessionEnd"
-	EventUserPromptSubmitted = "userPromptSubmitted"
-	EventPreToolUse          = "preToolUse"
-	EventPostToolUse         = "postToolUse"
-	EventPostToolUseFailure  = "postToolUseFailure"
-	EventPermissionRequest   = "permissionRequest"
-	EventSubagentStart       = "subagentStart"
-	EventSubagentStop        = "subagentStop"
-	EventAgentStop           = "agentStop"
-	EventPreCompact          = "preCompact"
-	EventNotification        = "notification"
-	EventErrorOccurred       = "errorOccurred"
+	EventSessionStart        = "SessionStart"
+	EventSessionEnd          = "SessionEnd"
+	EventUserPromptSubmitted = "UserPromptSubmit"
+	EventPreToolUse          = "PreToolUse"
+	EventPostToolUse         = "PostToolUse"
+	EventPostToolUseFailure  = "PostToolUseFailure"
+	EventPermissionRequest   = "PermissionRequest"
+	EventSubagentStart       = "SubagentStart"
+	EventSubagentStop        = "SubagentStop"
+	EventAgentStop           = "Stop"
+	EventPreCompact          = "PreCompact"
+	EventNotification        = "Notification"
+	EventErrorOccurred       = "ErrorOccurred"
 )
 
-// eventAliases maps wire event names (camelCase and VS Code PascalCase) to canonical names.
-var eventAliases = map[string]string{
-	EventSessionStart:        EventSessionStart,
-	"SessionStart":           EventSessionStart,
-	EventSessionEnd:          EventSessionEnd,
-	"SessionEnd":             EventSessionEnd,
-	EventUserPromptSubmitted: EventUserPromptSubmitted,
-	"UserPromptSubmit":       EventUserPromptSubmitted,
-	EventPreToolUse:          EventPreToolUse,
-	"PreToolUse":             EventPreToolUse,
-	EventPostToolUse:         EventPostToolUse,
-	"PostToolUse":            EventPostToolUse,
-	EventPostToolUseFailure:  EventPostToolUseFailure,
-	"PostToolUseFailure":     EventPostToolUseFailure,
-	EventPermissionRequest:   EventPermissionRequest,
-	"PermissionRequest":      EventPermissionRequest,
-	EventSubagentStart:       EventSubagentStart,
-	"SubagentStart":          EventSubagentStart,
-	EventSubagentStop:        EventSubagentStop,
-	"SubagentStop":           EventSubagentStop,
-	EventAgentStop:           EventAgentStop,
-	"Stop":                   EventAgentStop,
-	EventPreCompact:          EventPreCompact,
-	"PreCompact":             EventPreCompact,
-	EventNotification:        EventNotification,
-	"Notification":           EventNotification,
-	EventErrorOccurred:       EventErrorOccurred,
-	"ErrorOccurred":          EventErrorOccurred,
+// knownEvents lists canonical decoder/handler keys.
+var knownEvents = map[string]struct{}{
+	EventSessionStart:        {},
+	EventSessionEnd:          {},
+	EventUserPromptSubmitted: {},
+	EventPreToolUse:          {},
+	EventPostToolUse:         {},
+	EventPostToolUseFailure:  {},
+	EventPermissionRequest:   {},
+	EventSubagentStart:       {},
+	EventSubagentStop:        {},
+	EventAgentStop:           {},
+	EventPreCompact:          {},
+	EventNotification:        {},
+	EventErrorOccurred:       {},
 }
 
-// CanonicalEventName normalizes a wire event name to the canonical camelCase form.
+// CanonicalEventName normalizes a wire event name to the canonical form.
 func CanonicalEventName(name string) (string, bool) {
 	if name == "" {
 		return "", false
 	}
-	if canonical, ok := eventAliases[name]; ok {
-		return canonical, true
+	if _, ok := knownEvents[name]; ok {
+		return name, true
 	}
 	return name, false
 }
@@ -85,11 +72,11 @@ func payloadHasSubagentScope(raw []byte) bool {
 	return peek.hasSubagentScope()
 }
 
-// EventAliasMap returns a copy of wire-name to canonical-name aliases.
+// EventAliasMap returns a copy of known event name to itself (identity map).
 func EventAliasMap() map[string]string {
-	out := make(map[string]string, len(eventAliases))
-	for k, v := range eventAliases {
-		out[k] = v
+	out := make(map[string]string, len(knownEvents))
+	for k := range knownEvents {
+		out[k] = k
 	}
 	return out
 }

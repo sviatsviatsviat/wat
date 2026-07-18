@@ -6,7 +6,7 @@ type Envelope struct {
 	Agent string
 	// Name is the native event name as received.
 	Name string
-	// Session holds session_id, sessionId, or conversation_id from the native payload.
+	// Session holds session_id or conversation_id from the native payload.
 	Session string
 	// Cwd is the working directory from the native payload.
 	Cwd string

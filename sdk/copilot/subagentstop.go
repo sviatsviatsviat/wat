@@ -6,48 +6,33 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// SubagentStop is the subagentStop hook event.
+// SubagentStop is the SubagentStop hook event.
 type SubagentStop struct {
 	Envelope
-	// AgentName is the agent name (VS Code).
+	// AgentName is the agent name.
 	AgentName string `json:"agent_name"`
-	// AgentNameCamel is the agent name (camelCase).
-	AgentNameCamel string `json:"agentName"`
-	// AgentDisplayName is the display name (VS Code).
+	// AgentDisplayName is the display name.
 	AgentDisplayName string `json:"agent_display_name"`
-	// AgentDisplayNameCamel is the display name (camelCase).
-	AgentDisplayNameCamel string `json:"agentDisplayName"`
-	// StopReason is the stop reason (VS Code).
+	// StopReason is the stop reason.
 	StopReason string `json:"stop_reason"`
-	// StopReasonCamel is the stop reason (camelCase).
-	StopReasonCamel string `json:"stopReason"`
 }
 
 // EventName returns the canonical hook event name.
 func (SubagentStop) EventName() string { return EventSubagentStop }
 
-// Name returns the agent name from either wire format.
+// Name returns the agent name.
 func (e SubagentStop) Name() string {
-	if e.AgentName != "" {
-		return e.AgentName
-	}
-	return e.AgentNameCamel
+	return e.AgentName
 }
 
-// DisplayName returns the agent display name from either wire format.
+// DisplayName returns the agent display name.
 func (e SubagentStop) DisplayName() string {
-	if e.AgentDisplayName != "" {
-		return e.AgentDisplayName
-	}
-	return e.AgentDisplayNameCamel
+	return e.AgentDisplayName
 }
 
-// Reason returns the stop reason from either wire format.
+// Reason returns the stop reason.
 func (e SubagentStop) Reason() string {
-	if e.StopReason != "" {
-		return e.StopReason
-	}
-	return e.StopReasonCamel
+	return e.StopReason
 }
 
 func init() {

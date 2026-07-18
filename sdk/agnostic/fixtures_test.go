@@ -11,12 +11,13 @@ const claudePreToolUse = `{
   "tool_input": {"command": "rm -rf /tmp/build", "description": "clean"}
 }`
 
-const copilotCamelPreToolUse = `{
-  "sessionId": "s1",
-  "timestamp": 1760000000000,
+const copilotPreToolUse = `{
+  "hook_event_name": "PreToolUse",
+  "session_id": "s1",
+  "timestamp": "2026-07-12T10:00:00Z",
   "cwd": "/w",
-  "toolName": "bash",
-  "toolArgs": {"command": "rm -rf /"}
+  "tool_name": "bash",
+  "tool_input": {"command": "rm -rf /"}
 }`
 
 const cursorShell = `{

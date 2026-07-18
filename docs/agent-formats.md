@@ -22,7 +22,6 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `register.go` | Handler registration (`registerHandler`, dialect init) |
 | `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |
 | `hook.go` | Hook wrappers embedding typed event + `run.Invocation` |
-| `options.go` | Decode configuration (`WithEvent`, …) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
 | `tools/` | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
@@ -43,8 +42,7 @@ Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission
 **Intentional protocol differences** (do not expect parity):
 
 - **Event count** — Claude exposes ~30 events; Copilot exposes 13; Cursor exposes 21.
-- **Wire format** — Copilot accepts camelCase CLI and VS Code snake_case in one SDK; Claude and Cursor use a single envelope shape with `hook_event_name`.
-- **Decode hints** — Copilot camelCase payloads need `WithEvent` unless `hook_event_name` is on the wire; Claude and Cursor read `hook_event_name` directly when present.
+- **Wire format** — Claude, Copilot, and Cursor payloads include `hook_event_name`; Copilot uses PascalCase event names with snake_case fields.
 - **Encode contract** — Copilot and Cursor `Encode` return `([]byte, exitCode, error)`; Claude `Encode` returns `([]byte, error)` with blocking in JSON fields.
 - **Side effects** — Claude `SessionStartOutput.Env` writes `CLAUDE_ENV_FILE`; Copilot and Cursor pass `env` in stdout JSON.
 - **Config schema** — Claude `settings.json` (`Settings`) vs Copilot/Cursor `hooks.json` (`File`).
@@ -56,8 +54,7 @@ Inbound mappers map native names onto a canonical vocabulary via `hookkit.Normal
 | Agent | Surface | Builtin example | Normalized | MCP example | MCP detection |
 |-------|---------|-----------------|------------|-------------|---------------|
 | Claude Code | `PreToolUse` | `Bash` | `bash` | `mcp__github__create_issue` | `mcp__` prefix → `mcp=true`, name unchanged |
-| Copilot | PascalCase `PreToolUse` | `Bash` | `bash` | `mcp__github__create_issue` | same as Claude (Claude-format matchers) |
-| Copilot | camelCase `preToolUse` | `bash` | `bash` | `my-server-list_items` | codec sets `ToolCall.MCP` from structured metadata (not inferred from hyphens) |
+| Copilot | PascalCase `PreToolUse` | `Bash` / `bash` | `bash` | `mcp__github__create_issue` or structured MCP metadata | `mcp__` prefix or codec metadata |
 | Cursor | `preToolUse` / dedicated shell hooks | `Shell` | `bash` | `MCP:browser_navigate` | `MCP:` prefix → `mcp=true`, name unchanged |
 
 ### Builtin alias examples
@@ -101,7 +98,7 @@ Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) t
 
 ### Handler signatures
 
-All four SDKs use the same handler shapes. Result-producing handlers take `(ctx, hook, results)`; observe-only handlers take `(ctx, hook) error`. Access event fields on the hook (embedded typed event in agnostic; `hook.Event` in per-agent SDKs). Use `hook.Invocation()` for serve-time settings (`Dialect`, `EventHint`, `Getenv`, `DialectConfig`).
+All four SDKs use the same handler shapes. Result-producing handlers take `(ctx, hook, results)`; observe-only handlers take `(ctx, hook) error`. Access event fields on the hook (embedded typed event in agnostic; `hook.Event` in per-agent SDKs). Use `hook.Invocation()` for serve-time settings (`Dialect`, `Getenv`, `DialectConfig`).
 
 | Category | agnostic | claude / copilot / cursor |
 |---|---|---|
@@ -221,36 +218,31 @@ Agent-native encode surfaces (use `sdk/claude` directly):
 
 ## Copilot inbound mapping
 
-Portable `On*` handlers fan out onto `sdk/copilot` via package-level `On*` helpers with unexported inbound mapping in `sdk/agnostic` (**camelCase CLI** or **VS Code compatible**: PascalCase event name, snake_case fields). Native decode stays in `sdk/copilot`.
+Portable `On*` handlers fan out onto `sdk/copilot` via package-level `On*` helpers with unexported inbound mapping in `sdk/agnostic` (PascalCase `hook_event_name`, snake_case fields). Native decode stays in `sdk/copilot`.
 
-### Wire formats
+### Wire format
 
-| Signal in payload | Format | Event name source |
-|---|---|---|
-| `sessionId` | camelCase CLI | Config key via `eventHint` (required except `notification`, which carries `hook_event_name`) |
-| `hook_event_name` | VS Code compatible | Payload (`PreToolUse`, `Stop`, …) |
-
-Timestamps decode as ms-epoch numbers (camelCase) or ISO-8601 strings (VS Code).
+Payloads require `hook_event_name` (for example `PreToolUse`, `Stop`). Shared fields use snake_case (`session_id`, `tool_name`, `tool_input`, …). Timestamps are RFC3339 strings.
 
 ### Event name mapping
 
 | Copilot event | `Kind` |
 |---|---|
-| `sessionStart` / `SessionStart` | `KindSessionStart` |
-| `sessionEnd` / `SessionEnd` | `KindSessionEnd` |
-| `userPromptSubmitted` / `UserPromptSubmit` | `KindUserPrompt` |
-| `preToolUse` / `PreToolUse` | `KindPreTool` |
-| `postToolUse` / `PostToolUse` | `KindPostTool` |
-| `postToolUseFailure` / `PostToolUseFailure` | `KindPostToolFailure` |
-| `permissionRequest` / `PermissionRequest` | `KindPermissionRequest` |
-| `subagentStart` / `SubagentStart` | `KindSubagentStart` |
-| `subagentStop` / `SubagentStop` | `KindSubagentStop` |
-| `agentStop` / `Stop` | `KindStop` |
-| `preCompact` / `PreCompact` | `KindPreCompact` |
-| `notification` / `Notification` | `KindNotification` |
-| `errorOccurred` / `ErrorOccurred` | `KindAgentError` |
+| `SessionStart` | `KindSessionStart` |
+| `SessionEnd` | `KindSessionEnd` |
+| `UserPromptSubmit` | `KindUserPrompt` |
+| `PreToolUse` | `KindPreTool` |
+| `PostToolUse` | `KindPostTool` |
+| `PostToolUseFailure` | `KindPostToolFailure` |
+| `PermissionRequest` | `KindPermissionRequest` |
+| `SubagentStart` | `KindSubagentStart` |
+| `SubagentStop` | `KindSubagentStop` |
+| `Stop` | `KindStop` |
+| `PreCompact` | `KindPreCompact` |
+| `Notification` | `KindNotification` |
+| `ErrorOccurred` | `KindAgentError` |
 
-`preToolUse` with `toolName: "bash"` or VS Code `tool_name: "Bash"` extracts shell `command` into `ToolCall.Shell`.
+`PreToolUse` with `tool_name: "Bash"` (or `bash`) extracts shell `command` into `ToolCall.Shell`.
 
 ### Encode surfaces
 
@@ -258,25 +250,25 @@ Portable Results wrappers delegate to `sdk/copilot` `*Results` builders. Full Co
 
 | Event kind | Portable fields → Copilot JSON | Exit code |
 |---|---|---|
-| PreTool | `Decision`, `Reason` → `permissionDecision`, `permissionDecisionReason`; `UpdatedInput` → `modifiedArgs` | `0` |
-| PostTool | `UpdatedOutput` → `modifiedResult`; `Context` → `additionalContext` | `0` |
+| PreTool | `Decision`, `Reason` → `permission_decision`, `permission_decision_reason`; `UpdatedInput` → `modified_args` | `0` |
+| PostTool | `UpdatedOutput` → `modified_result`; `Context` → `additional_context` | `0` |
 | Stop / SubagentStop | `FollowUp` → `decision:block` + `reason` | `0` |
 | PostToolFailure | `Context` → stdout text (recovery guidance) | `2` |
-| SessionStart | `Context` → `additionalContext` | `0` |
+| SessionStart | `Context` → `additional_context` | `0` |
 
 Agent-native encode surfaces (use `sdk/copilot` directly):
 
 | Event kind | Key fields | Exit code |
 |---|---|---|
 | PermissionRequest | `Decision`, `Reason`, `HaltSession` → `behavior`, `message`, `interrupt` | `2` on deny |
-| SubagentStart / Notification | `Context` → `additionalContext` | `0` |
+| SubagentStart / Notification | `Context` → `additional_context` | `0` |
 
 ### Exit codes
 
 | Constant | Value | When |
 |---|---|---|
 | `copilot.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `copilot.PreToolErrorExit` | `1` | Same value; use when a `preToolUse` handler returns an error (fail-closed deny) |
+| `copilot.PreToolErrorExit` | `1` | Same value; use when a `PreToolUse` handler returns an error (fail-closed deny) |
 | `copilot.WarnExit` | `2` | `Encode` returns this for documented `postToolUseFailure` context paths |
 
 ## Cursor inbound mapping

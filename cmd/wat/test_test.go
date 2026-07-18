@@ -66,19 +66,16 @@ func TestRunTest_emptyFixture(t *testing.T) {
 	}
 }
 
-// TestResolveFixture_copilotRequiresEvent checks that resolveFixture rejects
-// Copilot fixtures when --event is missing.
-func TestResolveFixture_copilotRequiresEvent(t *testing.T) {
-	payload, err := os.ReadFile(fixturePath(t, "copilot", "pre_tool_force_push.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
+// TestResolveFixture_copilotRequiresHookEventName checks that resolveFixture
+// rejects Copilot fixtures that omit hook_event_name.
+func TestResolveFixture_copilotRequiresHookEventName(t *testing.T) {
+	payload := []byte(`{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`)
 
-	_, err = resolveFixture("copilot", "", payload)
+	_, err := resolveFixture("copilot", "", payload)
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "--event") {
+	if !strings.Contains(err.Error(), "hook_event_name") && !strings.Contains(err.Error(), "event name") {
 		t.Fatalf("error = %q", err.Error())
 	}
 }
@@ -123,11 +120,10 @@ func TestRunTest_preToolDenyIntegration(t *testing.T) {
 		{
 			name:     "copilot",
 			agent:    "copilot",
-			event:    "preToolUse",
 			fixture:  filepath.Join(fixtures, "testdata", "fixtures", "copilot", "pre_tool_force_push.json"),
 			wantExit: exitOK,
 			wantOutput: []string{
-				`"permissionDecision":"deny"`,
+				`"permission_decision":"deny"`,
 				"force pushes are not allowed",
 			},
 		},
@@ -205,12 +201,6 @@ func setupTestHookProject(t *testing.T) string {
 		t.Fatalf("go mod tidy: %v\n%s", err, out)
 	}
 	return dir
-}
-
-func fixturePath(t *testing.T, parts ...string) string {
-	t.Helper()
-	all := append([]string{"testdata", "fixtures"}, parts...)
-	return filepath.Join(testModuleRoot(t), filepath.Join(all...))
 }
 
 func testModuleRoot(t *testing.T) string {

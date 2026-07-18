@@ -30,4 +30,13 @@ func UserPromptExpansionResultsForTest() UserPromptExpansionResults {
 }
 
 // Decode is a test-only alias for decode (available to claude_test).
-func Decode(raw []byte) (Event, error) { return decode(raw) }
+func Decode(raw []byte) (Event, error) {
+	ev, err := decode(raw)
+	if err != nil {
+		return nil, err
+	}
+	if ev == nil {
+		return nil, nil
+	}
+	return ev.(Event), nil
+}

@@ -12,10 +12,8 @@ func init() {
 	run.RegisterDialect(Dialect, run.DialectOps{
 		Detect:    detectPayload,
 		EventName: eventNameFromRaw,
-		Decode: func(raw []byte, hint string) (any, error) {
-			return decodeWithHint(raw, hint)
-		},
-		Merge: MergeOutputs,
+		Decode:    decode,
+		Merge:     MergeOutputs,
 	})
 }
 

@@ -138,7 +138,7 @@ func main() {
 		cmd := hook.Tool.Shell
 		switch {
 		case strings.Contains(cmd, "push --force"), strings.Contains(cmd, "push -f"):
-			// → Claude: permissionDecision:"deny"; Copilot: permissionDecision:"deny";
+			// → Claude: permissionDecision:"deny"; Copilot: permission_decision:"deny";
 			//   Cursor: permission:"deny" + agent_message.
 			return r.Deny("force pushes are not allowed; rebase and push normally"), nil
 		case strings.HasPrefix(cmd, "git push"):
@@ -171,6 +171,6 @@ func main() {
 			return nil, nil
 		})
 
-	run.Main() // reads WAT_AGENT/WAT_EVENT, dispatches, merges, exits
+	run.Main() // reads WAT_AGENT, dispatches, merges, exits
 }
 `

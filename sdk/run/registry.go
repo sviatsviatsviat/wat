@@ -13,11 +13,11 @@ type Producer func(ctx context.Context, event any) (output []byte, exit int, err
 type DialectOps struct {
 	// Detect reports whether raw matches this dialect.
 	Detect func(raw []byte, getenv func(string) string) bool
-	// EventName returns the native event name for raw using eventHint when needed.
+	// EventName returns the native event name for raw.
 	// It should be a cheap discriminant peek, not a full typed decode.
-	EventName func(raw []byte, eventHint string) (string, error)
+	EventName func(raw []byte) (string, error)
 	// Decode parses raw into a dialect-specific event value for handler dispatch.
-	Decode func(raw []byte, eventHint string) (event any, err error)
+	Decode func(raw []byte) (event any, err error)
 	// Merge combines native JSON outputs from multiple handlers for one event.
 	Merge func(outputs [][]byte) ([]byte, error)
 }

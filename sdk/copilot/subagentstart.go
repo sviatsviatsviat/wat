@@ -6,41 +6,31 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// SubagentStart is the subagentStart hook event.
+// SubagentStart is the SubagentStart hook event.
 type SubagentStart struct {
 	Envelope
-	// AgentName is the agent name (VS Code).
+	// AgentName is the agent name.
 	AgentName string `json:"agent_name"`
-	// AgentNameCamel is the agent name (camelCase).
-	AgentNameCamel string `json:"agentName"`
-	// AgentDisplayName is the display name (VS Code).
+	// AgentDisplayName is the display name.
 	AgentDisplayName string `json:"agent_display_name"`
-	// AgentDisplayNameCamel is the display name (camelCase).
-	AgentDisplayNameCamel string `json:"agentDisplayName"`
-	// AgentDescription is the agent description (camelCase).
-	AgentDescription string `json:"agentDescription"`
+	// AgentDescription is the agent description.
+	AgentDescription string `json:"agent_description"`
 }
 
 // EventName returns the canonical hook event name.
 func (SubagentStart) EventName() string { return EventSubagentStart }
 
-// Name returns the agent name from either wire format.
+// Name returns the agent name.
 func (e SubagentStart) Name() string {
-	if e.AgentName != "" {
-		return e.AgentName
-	}
-	return e.AgentNameCamel
+	return e.AgentName
 }
 
-// DisplayName returns the agent display name from either wire format.
+// DisplayName returns the agent display name.
 func (e SubagentStart) DisplayName() string {
-	if e.AgentDisplayName != "" {
-		return e.AgentDisplayName
-	}
-	return e.AgentDisplayNameCamel
+	return e.AgentDisplayName
 }
 
-// SubagentStartOutput is the response for subagentStart events.
+// SubagentStartOutput is the response for SubagentStart events.
 // Construct via SubagentStartResults builders. A nil value is a no-op.
 type SubagentStartOutput interface {
 	isSubagentStartOutput()

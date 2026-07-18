@@ -37,11 +37,11 @@ const claudeSettings = `{
 const copilotSettings = `{
   "version": 1,
   "hooks": {
-    "preToolUse": [
+    "PreToolUse": [
       {"type": "command", "command": ".claude/hooks/block-rm.sh", "matcher": "bash", "timeoutSec": 15},
       {"type": "command", "command": ".claude/hooks/lint.sh", "matcher": "edit|write"}
     ],
-    "agentStop": [
+    "Stop": [
       {"type": "command", "command": ".claude/hooks/require-tests.sh"}
     ]
   }

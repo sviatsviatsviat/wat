@@ -8,62 +8,44 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// PostToolUse is the postToolUse hook event.
+// PostToolUse is the PostToolUse hook event.
 type PostToolUse struct {
 	Envelope
-	// ToolName is the tool name (VS Code).
+	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
-	// ToolNameCamel is the tool name (camelCase).
-	ToolNameCamel string `json:"toolName"`
-	// ToolInput is the typed tool input (VS Code).
+	// ToolInput is the typed tool input.
 	ToolInput tools.Input `json:"-"`
-	// ToolArgs is the typed tool input (camelCase).
-	ToolArgs tools.Input `json:"-"`
-	// ToolResult is the tool result (camelCase).
-	ToolResult ToolResult `json:"toolResult"`
-	// ToolResultSnake is the tool result (VS Code).
-	ToolResultSnake ToolResult `json:"tool_result"`
+	// ToolResult is the tool result.
+	ToolResult ToolResult `json:"tool_result"`
 }
 
 // EventName returns the canonical hook event name.
 func (PostToolUse) EventName() string { return EventPostToolUse }
 
-// NativeToolName returns the tool name from either wire format.
+// NativeToolName returns the tool name.
 func (e PostToolUse) NativeToolName() string {
-	if e.ToolName != "" {
-		return e.ToolName
-	}
-	return e.ToolNameCamel
+	return e.ToolName
 }
 
-// Input returns tool input from either wire format.
+// Input returns tool input.
 func (e PostToolUse) Input() tools.Input {
-	if e.ToolInput.HasRaw() {
-		return e.ToolInput
-	}
-	return e.ToolArgs
+	return e.ToolInput
 }
 
-// ResultText returns the textual tool result from either wire format.
+// ResultText returns the textual tool result.
 func (e PostToolUse) ResultText() string {
-	if t := e.ToolResult.Text(); t != "" {
-		return t
-	}
-	return e.ToolResultSnake.Text()
+	return e.ToolResult.Text()
 }
 
-// ResultRaw returns the tool result JSON from either wire format.
+// ResultRaw returns the tool result JSON.
 func (e PostToolUse) ResultRaw() json.RawMessage {
 	if e.ToolResult.TextResultForLLM != "" || e.ToolResult.ResultType != "" {
-		return marshalToolResultCamel(e.ToolResult)
-	}
-	if e.ToolResultSnake.TextResultSnake != "" || e.ToolResultSnake.ResultTypeSnake != "" {
-		return marshalToolResultSnake(e.ToolResultSnake)
+		return marshalToolResult(e.ToolResult)
 	}
 	return nil
 }
 
-// PostToolOutput is the response for postToolUse events.
+// PostToolOutput is the response for PostToolUse events.
 // Construct via PostToolResults builders and With* methods. A nil value is a no-op.
 type PostToolOutput interface {
 	isPostToolOutput()
@@ -118,13 +100,13 @@ func (postToolOutput) allowedEvents() []string {
 func (o postToolOutput) encode() ([]byte, int, error) {
 	out := map[string]any{}
 	if o.modifiedResult != "" {
-		out["modifiedResult"] = map[string]any{
-			"resultType":       "success",
-			"textResultForLlm": o.modifiedResult,
+		out["modified_result"] = map[string]any{
+			"result_type":         "success",
+			"text_result_for_llm": o.modifiedResult,
 		}
 	}
 	if o.additionalContext != "" {
-		out["additionalContext"] = o.additionalContext
+		out["additional_context"] = o.additionalContext
 	}
 	if len(out) == 0 {
 		return nil, 0, nil
@@ -136,9 +118,7 @@ func (o postToolOutput) encode() ([]byte, int, error) {
 func init() {
 	registerDecoder(EventPostToolUse, func(raw []byte, received, canonical string) (Event, error) {
 		return decodeAsAndThen(raw, received, canonical, func(e *PostToolUse, raw []byte) {
-			name := e.NativeToolName()
-			e.ToolInput = tools.NewInputFromPayload(name, raw, "tool_input")
-			e.ToolArgs = tools.NewInputFromPayload(name, raw, "toolArgs")
+			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})
 }

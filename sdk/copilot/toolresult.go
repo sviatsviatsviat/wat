@@ -1,23 +1,16 @@
 package copilot
 
-// ToolResult is a Copilot tool result object in either wire format.
+// ToolResult is a Copilot tool result object.
 type ToolResult struct {
-	// ResultType is the result type (camelCase).
-	ResultType string `json:"resultType"`
-	// TextResultForLLM is the LLM-facing text (camelCase).
-	TextResultForLLM string `json:"textResultForLlm"`
-	// ResultTypeSnake is the result type (VS Code).
-	ResultTypeSnake string `json:"result_type"`
-	// TextResultSnake is the LLM-facing text (VS Code).
-	TextResultSnake string `json:"text_result_for_llm"`
+	// ResultType is the result type.
+	ResultType string `json:"result_type"`
+	// TextResultForLLM is the LLM-facing text.
+	TextResultForLLM string `json:"text_result_for_llm"`
 }
 
-// Text returns the textual result from either wire format.
+// Text returns the textual result.
 func (r ToolResult) Text() string {
-	if r.TextResultForLLM != "" {
-		return r.TextResultForLLM
-	}
-	return r.TextResultSnake
+	return r.TextResultForLLM
 }
 
 // ErrorDetail is a structured Copilot error object.

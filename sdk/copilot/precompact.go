@@ -4,33 +4,28 @@ import (
 	"context"
 )
 
-// PreCompact is the preCompact hook event.
+// PreCompact is the PreCompact hook event.
 type PreCompact struct {
 	Envelope
 	// Trigger is the compaction trigger.
 	Trigger string `json:"trigger"`
-	// CustomInstructions are user-provided compaction instructions (VS Code).
+	// CustomInstructions are user-provided compaction instructions.
 	CustomInstructions string `json:"custom_instructions"`
-	// CustomInstructionsCamel are user-provided compaction instructions (camelCase).
-	CustomInstructionsCamel string `json:"customInstructions"`
 }
 
 // EventName returns the canonical hook event name.
 func (PreCompact) EventName() string { return EventPreCompact }
 
-// Instructions returns custom compaction instructions from either wire format.
+// Instructions returns custom compaction instructions.
 func (e PreCompact) Instructions() string {
-	if e.CustomInstructions != "" {
-		return e.CustomInstructions
-	}
-	return e.CustomInstructionsCamel
+	return e.CustomInstructions
 }
 
 func init() {
 	registerDecoder(EventPreCompact, decodeAs[PreCompact])
 }
 
-// OnPreCompact registers an observe-only preCompact handler.
+// OnPreCompact registers an observe-only PreCompact handler.
 func OnPreCompact(fn func(context.Context, Hook[PreCompact]) error) *chain {
 	return (&chain{}).PreCompact(fn)
 }

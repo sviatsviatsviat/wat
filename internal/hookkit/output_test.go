@@ -13,11 +13,11 @@ func TestValidateEncodePair(t *testing.T) {
 	}
 	canonicalize := func(name string) (string, bool) {
 		if name == "PreToolUse" {
-			return "preToolUse", true
+			return "PreToolUse", true
 		}
 		return name, false
 	}
-	if err := ValidateEncodePair("copilot", "PreToolUse", out, []string{"preToolUse"}, canonicalize); err != nil {
+	if err := ValidateEncodePair("copilot", "PreToolUse", out, []string{"PreToolUse"}, canonicalize); err != nil {
 		t.Fatal(err)
 	}
 }

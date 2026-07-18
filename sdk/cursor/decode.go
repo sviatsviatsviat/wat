@@ -40,15 +40,8 @@ func attachEnvelopeMeta(ev any, received, canonical string) {
 }
 
 // decode parses a Cursor hook stdin payload into a typed Event.
-func decode(raw []byte, opts ...Option) (Event, error) {
-	cfg := defaultDecodeConfig()
-	applyOptions(&cfg, opts...)
-	return decodeWithHint(raw, cfg.eventHint.Hint)
-}
-
-// decodeWithHint parses raw using an explicit event hint.
-// It peeks the event name once, then unmarshals into the matching type.
-func decodeWithHint(raw []byte, eventHint string) (Event, error) {
+// It peeks hook_event_name once, then unmarshals into the matching type.
+func decode(raw []byte) (any, error) {
 	if len(raw) == 0 {
 		return nil, ErrEmptyPayload
 	}
@@ -56,9 +49,6 @@ func decodeWithHint(raw []byte, eventHint string) (Event, error) {
 	received, err := hookkit.PeekHookEventName(raw)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDecodePayload, err)
-	}
-	if received == "" {
-		received = eventHint
 	}
 	if received == "" {
 		return nil, ErrEventNameRequired
@@ -76,16 +66,13 @@ func decodeWithHint(raw []byte, eventHint string) (Event, error) {
 }
 
 // eventNameFromRaw peeks the hook event name without a full typed decode.
-func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
+func eventNameFromRaw(raw []byte) (string, error) {
 	if len(raw) == 0 {
 		return "", ErrEmptyPayload
 	}
 	received, err := hookkit.PeekHookEventName(raw)
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrDecodePayload, err)
-	}
-	if received == "" {
-		received = eventHint
 	}
 	if received == "" {
 		return "", ErrEventNameRequired

@@ -13,10 +13,10 @@ func TestServe_DecodesOnce(t *testing.T) {
 	var decodeCalls atomic.Int32
 	r.RegisterDialect("testdialect", DialectOps{
 		Detect: func([]byte, func(string) string) bool { return true },
-		EventName: func([]byte, string) (string, error) {
+		EventName: func([]byte) (string, error) {
 			return "TestEvent", nil
 		},
-		Decode: func(raw []byte, _ string) (any, error) {
+		Decode: func(raw []byte) (any, error) {
 			decodeCalls.Add(1)
 			return string(raw), nil
 		},
@@ -49,10 +49,10 @@ func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 	var decodeCalls atomic.Int32
 	r.RegisterDialect("empty", DialectOps{
 		Detect: func([]byte, func(string) string) bool { return true },
-		EventName: func([]byte, string) (string, error) {
+		EventName: func([]byte) (string, error) {
 			return "NoHandlers", nil
 		},
-		Decode: func([]byte, string) (any, error) {
+		Decode: func([]byte) (any, error) {
 			decodeCalls.Add(1)
 			return nil, nil
 		},

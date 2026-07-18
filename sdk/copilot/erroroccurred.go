@@ -5,15 +5,13 @@ import (
 	"encoding/json"
 )
 
-// ErrorOccurred is the errorOccurred hook event.
+// ErrorOccurred is the ErrorOccurred hook event.
 type ErrorOccurred struct {
 	Envelope
 	// Error is the error payload (string or object).
 	Error json.RawMessage `json:"error"`
-	// ErrorContext is additional error context (VS Code).
+	// ErrorContext is additional error context.
 	ErrorContext string `json:"error_context"`
-	// ErrorContextCamel is additional error context (camelCase).
-	ErrorContextCamel string `json:"errorContext"`
 	// Recoverable is true when the error may be retried.
 	Recoverable *bool `json:"recoverable"`
 }
@@ -21,12 +19,9 @@ type ErrorOccurred struct {
 // EventName returns the canonical hook event name.
 func (ErrorOccurred) EventName() string { return EventErrorOccurred }
 
-// Context returns error context from either wire format.
+// Context returns error context.
 func (e ErrorOccurred) Context() string {
-	if e.ErrorContext != "" {
-		return e.ErrorContext
-	}
-	return e.ErrorContextCamel
+	return e.ErrorContext
 }
 
 // Detail parses structured error details when present.
@@ -49,7 +44,7 @@ func init() {
 	registerDecoder(EventErrorOccurred, decodeAs[ErrorOccurred])
 }
 
-// OnErrorOccurred registers an observe-only errorOccurred handler.
+// OnErrorOccurred registers an observe-only ErrorOccurred handler.
 func OnErrorOccurred(fn func(context.Context, Hook[ErrorOccurred]) error) *chain {
 	return (&chain{}).ErrorOccurred(fn)
 }

@@ -40,14 +40,11 @@ func attachEnvelopeMeta(ev any, received, canonical string) {
 	s.setEnvelopeMeta(received, canonical)
 }
 
-// payloadPeek is a minimal discriminant for format, event name, and Stop scope.
+// payloadPeek is a minimal discriminant for event name and Stop scope.
 type payloadPeek struct {
-	HookEventName         string `json:"hook_event_name"`
-	SessionID             string `json:"sessionId"`
-	AgentName             string `json:"agent_name"`
-	AgentNameCamel        string `json:"agentName"`
-	AgentDisplayName      string `json:"agent_display_name"`
-	AgentDisplayNameCamel string `json:"agentDisplayName"`
+	HookEventName    string `json:"hook_event_name"`
+	AgentName        string `json:"agent_name"`
+	AgentDisplayName string `json:"agent_display_name"`
 }
 
 func peekPayload(raw []byte) (payloadPeek, error) {
@@ -58,40 +55,13 @@ func peekPayload(raw []byte) (payloadPeek, error) {
 	return peek, nil
 }
 
-func (p payloadPeek) format() Format {
-	if p.HookEventName != "" {
-		return FormatVSCode
-	}
-	if p.SessionID != "" {
-		return FormatCamel
-	}
-	return FormatUnknown
-}
-
 func (p payloadPeek) hasSubagentScope() bool {
-	return p.AgentName != "" || p.AgentNameCamel != "" ||
-		p.AgentDisplayName != "" || p.AgentDisplayNameCamel != ""
-}
-
-// SniffFormat detects the Copilot wire format from a payload.
-func SniffFormat(raw []byte) Format {
-	peek, err := peekPayload(raw)
-	if err != nil {
-		return FormatUnknown
-	}
-	return peek.format()
+	return p.AgentName != "" || p.AgentDisplayName != ""
 }
 
 // decode parses a hook stdin payload into a typed Event.
-func decode(raw []byte, opts ...Option) (Event, error) {
-	cfg := defaultDecodeConfig()
-	applyOptions(&cfg, opts...)
-	return decodeWithHint(raw, cfg.eventHint.Hint)
-}
-
-// decodeWithHint parses raw using an explicit event hint.
-// It peeks format and event name once, then unmarshals into the matching type.
-func decodeWithHint(raw []byte, eventHint string) (Event, error) {
+// It requires hook_event_name, then unmarshals into the matching type.
+func decode(raw []byte) (any, error) {
 	if len(raw) == 0 {
 		return nil, ErrEmptyPayload
 	}
@@ -100,14 +70,7 @@ func decodeWithHint(raw []byte, eventHint string) (Event, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDecodePayload, err)
 	}
-	if peek.format() == FormatUnknown {
-		return nil, ErrUnrecognizedFormat
-	}
-
 	received := peek.HookEventName
-	if received == "" {
-		received = eventHint
-	}
 	if received == "" {
 		return nil, ErrEventNameRequired
 	}
@@ -128,7 +91,7 @@ func decodeWithHint(raw []byte, eventHint string) (Event, error) {
 }
 
 // eventNameFromRaw peeks the canonical hook event name without a full typed decode.
-func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
+func eventNameFromRaw(raw []byte) (string, error) {
 	if len(raw) == 0 {
 		return "", ErrEmptyPayload
 	}
@@ -136,13 +99,7 @@ func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrDecodePayload, err)
 	}
-	if peek.format() == FormatUnknown {
-		return "", ErrUnrecognizedFormat
-	}
 	received := peek.HookEventName
-	if received == "" {
-		received = eventHint
-	}
 	if received == "" {
 		return "", ErrEventNameRequired
 	}

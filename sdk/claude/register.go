@@ -12,10 +12,8 @@ func init() {
 	run.RegisterDialect(Dialect, run.DialectOps{
 		Detect:    detectPayload,
 		EventName: eventNameFromRaw,
-		Decode: func(raw []byte, _ string) (any, error) {
-			return decode(raw)
-		},
-		Merge: MergeOutputs,
+		Decode:    decode,
+		Merge:     MergeOutputs,
 	})
 }
 
@@ -25,7 +23,7 @@ func detectPayload(raw []byte, getenv func(string) string) bool {
 		return false
 	}
 	has := func(k string) bool { _, ok := probe[k]; return ok }
-	if has("cursor_version") || has("conversation_id") || has("sessionId") {
+	if has("cursor_version") || has("conversation_id") {
 		return false
 	}
 	if has("hook_event_name") && has("timestamp") {

@@ -8,10 +8,8 @@ import (
 var (
 	// ErrEmptyPayload indicates stdin was empty.
 	ErrEmptyPayload = errors.New("copilot: empty payload")
-	// ErrUnrecognizedFormat indicates the payload is not camelCase or VS Code format.
-	ErrUnrecognizedFormat = errors.New("copilot: decode payload: unrecognized format")
-	// ErrEventNameRequired indicates camelCase payloads need WithEvent.
-	ErrEventNameRequired = errors.New("copilot: decode: event name required (camelCase payloads need WithEvent)")
+	// ErrEventNameRequired indicates the payload omitted hook_event_name.
+	ErrEventNameRequired = errors.New("copilot: decode: event name required (hook_event_name is required)")
 	// ErrDecodePayload indicates JSON parsing of the hook payload failed.
 	ErrDecodePayload = errors.New("copilot: decode payload")
 )

@@ -13,11 +13,11 @@ import (
 const copilotSettings = `{
   "version": 1,
   "hooks": {
-    "preToolUse": [
+    "PreToolUse": [
       {"type": "command", "command": ".claude/hooks/block-rm.sh", "matcher": "bash", "timeoutSec": 15},
       {"type": "command", "command": ".claude/hooks/lint.sh", "matcher": "edit|write"}
     ],
-    "agentStop": [
+    "Stop": [
       {"type": "command", "command": ".claude/hooks/require-tests.sh"}
     ]
   }
@@ -27,7 +27,7 @@ func TestParse_invalidHandlerPreservedInExtras(t *testing.T) {
 	const copilotInvalid = `{
   "version": 1,
   "hooks": {
-    "preToolUse": [{"command": ["not-a-string"]}]
+    "PreToolUse": [{"command": ["not-a-string"]}]
   }
 }`
 	cfg, warns, err := Parse([]byte(copilotInvalid))
@@ -40,7 +40,7 @@ func TestParse_invalidHandlerPreservedInExtras(t *testing.T) {
 	if len(cfg.Extras) != 1 {
 		t.Fatalf("want 1 extra, got %d", len(cfg.Extras))
 	}
-	if cfg.Extras[0].Event != "preToolUse" {
+	if cfg.Extras[0].Event != "PreToolUse" {
 		t.Fatalf("extra event = %q", cfg.Extras[0].Event)
 	}
 	wantRaw := json.RawMessage(`{"command": ["not-a-string"]}`)
@@ -74,7 +74,7 @@ func TestParse_timeoutAndCommand(t *testing.T) {
 	}
 	pre := cfg.Hooks[model.KindPreTool]
 	if len(pre) != 2 {
-		t.Fatalf("want 2 preToolUse entries, got %d", len(pre))
+		t.Fatalf("want 2 PreToolUse entries, got %d", len(pre))
 	}
 	foundTimeout := false
 	for _, e := range pre {
@@ -91,7 +91,7 @@ func TestParse_timeoutAndCommand(t *testing.T) {
 }
 
 func TestParse_timeoutAlias(t *testing.T) {
-	raw := `{"version":1,"hooks":{"preToolUse":[{"type":"command","command":"x.sh","timeout":42}]}}`
+	raw := `{"version":1,"hooks":{"PreToolUse":[{"type":"command","command":"x.sh","timeout":42}]}}`
 	cfg, _, err := Parse([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +102,7 @@ func TestParse_timeoutAlias(t *testing.T) {
 }
 
 func TestParse_powershellOnlyNotCommand(t *testing.T) {
-	raw := `{"version":1,"hooks":{"preToolUse":[{"type":"command","powershell":"Get-ChildItem"}]}}`
+	raw := `{"version":1,"hooks":{"PreToolUse":[{"type":"command","powershell":"Get-ChildItem"}]}}`
 	cfg, warns, err := Parse([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
@@ -172,7 +172,7 @@ func TestEmit_roundTrip(t *testing.T) {
 }
 
 func TestHandlerExtraFieldsRoundTrip(t *testing.T) {
-	raw := `{"version":1,"hooks":{"preToolUse":[{"type":"command","command":"x.sh","cwd":"/tmp","timeoutSec":10}]}}`
+	raw := `{"version":1,"hooks":{"PreToolUse":[{"type":"command","command":"x.sh","cwd":"/tmp","timeoutSec":10}]}}`
 	cfg1, _, err := Parse([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
@@ -195,7 +195,7 @@ func TestHandlerExtraFieldsRoundTrip(t *testing.T) {
 }
 
 func TestEmit_clearsStaleFieldsOnOverlay(t *testing.T) {
-	raw := `{"version":1,"hooks":{"preToolUse":[{"type":"http","url":"https://old.example","matcher":"bash","timeoutSec":5,"cwd":"/tmp"}]}}`
+	raw := `{"version":1,"hooks":{"PreToolUse":[{"type":"http","url":"https://old.example","matcher":"bash","timeoutSec":5,"cwd":"/tmp"}]}}`
 	cfg1, _, err := Parse([]byte(raw))
 	if err != nil {
 		t.Fatal(err)

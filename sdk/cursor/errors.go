@@ -8,8 +8,8 @@ import (
 var (
 	// ErrEmptyPayload indicates stdin was empty.
 	ErrEmptyPayload = errors.New("cursor: empty payload")
-	// ErrEventNameRequired indicates payloads need hook_event_name or WithEvent.
-	ErrEventNameRequired = errors.New("cursor: decode: event name required (use WithEvent when hook_event_name is absent)")
+	// ErrEventNameRequired indicates the payload omitted hook_event_name.
+	ErrEventNameRequired = errors.New("cursor: decode: event name required (hook_event_name is required)")
 	// ErrDecodePayload indicates JSON parsing of the hook payload failed.
 	ErrDecodePayload = errors.New("cursor: decode payload")
 )

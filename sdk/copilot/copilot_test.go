@@ -13,12 +13,13 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-const copilotCamelPreToolUse = `{
-  "sessionId": "s1",
-  "timestamp": 1760000000000,
+const copilotPreToolUse = `{
+  "hook_event_name": "PreToolUse",
+  "session_id": "s1",
+  "timestamp": "2026-07-12T10:00:00Z",
   "cwd": "/w",
-  "toolName": "bash",
-  "toolArgs": {"command": "rm -rf /"}
+  "tool_name": "bash",
+  "tool_input": {"command": "rm -rf /"}
 }`
 
 const copilotVSCodeStop = `{
@@ -31,7 +32,7 @@ const copilotVSCodeStop = `{
 }`
 
 func TestDecodeEncode_PreToolDeny(t *testing.T) {
-	ev, err := copilot.Decode([]byte(copilotCamelPreToolUse), copilot.WithEvent("preToolUse"))
+	ev, err := copilot.Decode([]byte(copilotPreToolUse))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,8 +49,8 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
 	var got struct {
-		Decision string `json:"permissionDecision"`
-		Reason   string `json:"permissionDecisionReason"`
+		Decision string `json:"permission_decision"`
+		Reason   string `json:"permission_decision_reason"`
 	}
 	if err := json.Unmarshal(out, &got); err != nil {
 		t.Fatal(err)
@@ -59,13 +60,13 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 	}
 }
 
-func TestDecode_CamelCaseRequiresWithEvent(t *testing.T) {
-	_, err := copilot.Decode([]byte(copilotCamelPreToolUse))
+func TestDecode_RequiresHookEventName(t *testing.T) {
+	_, err := copilot.Decode([]byte(`{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`))
 	if err == nil {
-		t.Fatal("expected error without WithEvent")
+		t.Fatal("expected error without hook_event_name")
 	}
-	if !strings.Contains(err.Error(), "WithEvent") {
-		t.Fatalf("error = %v", err)
+	if !errors.Is(err, copilot.ErrEventNameRequired) {
+		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
 	}
 }
 
@@ -122,12 +123,12 @@ func TestDecode_VSCodePreToolBash(t *testing.T) {
 	}
 }
 
-func TestDecode_NotificationWithoutWithEvent(t *testing.T) {
+func TestDecode_Notification(t *testing.T) {
 	raw := `{
-  "sessionId": "s1",
-  "timestamp": 1760000000000,
-  "cwd": "/w",
   "hook_event_name": "Notification",
+  "session_id": "s1",
+  "timestamp": "2026-07-12T10:00:00Z",
+  "cwd": "/w",
   "message": "shell done",
   "title": "Shell completed",
   "notification_type": "shell_completed"
@@ -152,24 +153,11 @@ func TestDecode_Matrix(t *testing.T) {
 	tests := []struct {
 		name      string
 		raw       string
-		eventHint string
 		eventName string
 		check     func(t *testing.T, ev copilot.Event)
 	}{
 		{
-			name:      "sessionStart camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","source":"startup","initialPrompt":"hi"}`,
-			eventHint: "sessionStart",
-			eventName: copilot.EventSessionStart,
-			check: func(t *testing.T, ev copilot.Event) {
-				e, ok := ev.(copilot.SessionStart)
-				if !ok || e.Source != "startup" || e.InitialPrompt() != "hi" {
-					t.Fatalf("SessionStart=%+v", ev)
-				}
-			},
-		},
-		{
-			name:      "sessionStart vscode",
+			name:      "sessionStart",
 			raw:       `{"hook_event_name":"SessionStart","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","source":"new","initial_prompt":"go"}`,
 			eventName: copilot.EventSessionStart,
 			check: func(t *testing.T, ev copilot.Event) {
@@ -180,9 +168,8 @@ func TestDecode_Matrix(t *testing.T) {
 			},
 		},
 		{
-			name:      "sessionEnd camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","reason":"complete"}`,
-			eventHint: "sessionEnd",
+			name:      "sessionEnd",
+			raw:       `{"hook_event_name":"SessionEnd","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","reason":"complete"}`,
 			eventName: copilot.EventSessionEnd,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.SessionEnd)
@@ -192,9 +179,8 @@ func TestDecode_Matrix(t *testing.T) {
 			},
 		},
 		{
-			name:      "userPromptSubmitted camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","prompt":"hello"}`,
-			eventHint: "userPromptSubmitted",
+			name:      "userPromptSubmitted",
+			raw:       `{"hook_event_name":"UserPromptSubmit","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","prompt":"hello"}`,
 			eventName: copilot.EventUserPromptSubmitted,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.UserPromptSubmitted)
@@ -204,32 +190,19 @@ func TestDecode_Matrix(t *testing.T) {
 			},
 		},
 		{
-			name:      "postToolUse camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"view","toolArgs":{},"toolResult":{"resultType":"success","textResultForLlm":"contents"}}`,
-			eventHint: "postToolUse",
+			name:      "postToolUse",
+			raw:       `{"hook_event_name":"PostToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"view","tool_input":{},"tool_result":{"result_type":"success","text_result_for_llm":"contents"}}`,
 			eventName: copilot.EventPostToolUse,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.PostToolUse)
-				if !ok || e.NativeToolName() != "view" || e.ResultText() != "contents" {
+				if !ok || e.ResultText() != "contents" {
 					t.Fatalf("PostToolUse=%+v", ev)
 				}
 			},
 		},
 		{
-			name:      "postToolUse vscode",
-			raw:       `{"hook_event_name":"PostToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"Read","tool_input":{},"tool_result":{"result_type":"success","text_result_for_llm":"file"}}`,
-			eventName: copilot.EventPostToolUse,
-			check: func(t *testing.T, ev copilot.Event) {
-				e, ok := ev.(copilot.PostToolUse)
-				if !ok || e.NativeToolName() != "Read" || e.ResultText() != "file" {
-					t.Fatalf("PostToolUse=%+v", ev)
-				}
-			},
-		},
-		{
-			name:      "postToolUseFailure camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"bash","toolArgs":{},"error":"timeout"}`,
-			eventHint: "postToolUseFailure",
+			name:      "postToolUseFailure",
+			raw:       `{"hook_event_name":"PostToolUseFailure","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"bash","tool_input":{},"error":"timeout"}`,
 			eventName: copilot.EventPostToolUseFailure,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.PostToolUseFailure)
@@ -239,9 +212,8 @@ func TestDecode_Matrix(t *testing.T) {
 			},
 		},
 		{
-			name:      "permissionRequest camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"create","toolArgs":{"path":"a.txt"}}`,
-			eventHint: "permissionRequest",
+			name:      "permissionRequest",
+			raw:       `{"hook_event_name":"PermissionRequest","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"create","tool_input":{"path":"a.txt"}}`,
 			eventName: copilot.EventPermissionRequest,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.PermissionRequest)
@@ -251,9 +223,8 @@ func TestDecode_Matrix(t *testing.T) {
 			},
 		},
 		{
-			name:      "subagentStart camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","transcriptPath":"/t","agentName":"explore","agentDisplayName":"Explore","agentDescription":"search codebase"}`,
-			eventHint: "subagentStart",
+			name:      "subagentStart",
+			raw:       `{"hook_event_name":"SubagentStart","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"explore","agent_display_name":"Explore","agent_description":"search codebase"}`,
 			eventName: copilot.EventSubagentStart,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.SubagentStart)
@@ -263,20 +234,8 @@ func TestDecode_Matrix(t *testing.T) {
 			},
 		},
 		{
-			name:      "subagentStop vscode",
-			raw:       `{"hook_event_name":"SubagentStop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"task","stop_reason":"end_turn"}`,
-			eventName: copilot.EventSubagentStop,
-			check: func(t *testing.T, ev copilot.Event) {
-				e, ok := ev.(copilot.SubagentStop)
-				if !ok || e.Name() != "task" || e.Reason() != "end_turn" {
-					t.Fatalf("SubagentStop=%+v", ev)
-				}
-			},
-		},
-		{
-			name:      "agentStop camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","transcriptPath":"/t","stopReason":"end_turn"}`,
-			eventHint: "agentStop",
+			name:      "agentStop",
+			raw:       `{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","stop_reason":"end_turn"}`,
 			eventName: copilot.EventAgentStop,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.AgentStop)
@@ -286,20 +245,19 @@ func TestDecode_Matrix(t *testing.T) {
 			},
 		},
 		{
-			name:      "preCompact vscode",
-			raw:       `{"hook_event_name":"PreCompact","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","trigger":"auto","custom_instructions":"keep tests"}`,
+			name:      "preCompact",
+			raw:       `{"hook_event_name":"PreCompact","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","trigger":"auto","custom_instructions":"keep"}`,
 			eventName: copilot.EventPreCompact,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.PreCompact)
-				if !ok || e.Trigger != "auto" || e.Instructions() != "keep tests" {
+				if !ok || e.Instructions() != "keep" {
 					t.Fatalf("PreCompact=%+v", ev)
 				}
 			},
 		},
 		{
-			name:      "errorOccurred camel",
-			raw:       `{"sessionId":"s","timestamp":1,"cwd":"/w","error":{"message":"slow down","name":"RateLimit"},"errorContext":"model_call","recoverable":true}`,
-			eventHint: "errorOccurred",
+			name:      "errorOccurred",
+			raw:       `{"hook_event_name":"ErrorOccurred","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","error":{"message":"slow down","name":"RateLimit"},"error_context":"model_call","recoverable":true}`,
 			eventName: copilot.EventErrorOccurred,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.ErrorOccurred)
@@ -318,11 +276,7 @@ func TestDecode_Matrix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var opts []copilot.Option
-			if tt.eventHint != "" {
-				opts = append(opts, copilot.WithEvent(tt.eventHint))
-			}
-			ev, err := copilot.Decode([]byte(tt.raw), opts...)
+			ev, err := copilot.Decode([]byte(tt.raw))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -335,7 +289,7 @@ func TestDecode_Matrix(t *testing.T) {
 }
 
 func TestDecode_InvalidJSON(t *testing.T) {
-	_, err := copilot.Decode([]byte("not json"), copilot.WithEvent("preToolUse"))
+	_, err := copilot.Decode([]byte("not json"))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -345,16 +299,16 @@ func TestDecode_InvalidJSON(t *testing.T) {
 }
 
 func TestDecode_ToolInputNotAliased(t *testing.T) {
-	raw := []byte(`{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"bash","toolArgs":{"command":"ls"}}`)
-	ev, err := copilot.Decode(raw, copilot.WithEvent("preToolUse"))
+	raw := []byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"bash","tool_input":{"command":"ls"}}`)
+	ev, err := copilot.Decode(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
 	pre := ev.(copilot.PreToolUse)
-	got := pre.ToolArgs.Raw()
+	got := pre.ToolInput.Raw()
 	got[0] = 'X'
-	if bytes.Equal(pre.ToolArgs.Raw(), got) {
-		t.Fatal("ToolArgs.Raw() did not return a defensive copy")
+	if bytes.Equal(pre.ToolInput.Raw(), got) {
+		t.Fatal("ToolInput.Raw() did not return a defensive copy")
 	}
 }
 
@@ -363,7 +317,7 @@ func TestEncode_PreToolAllowModifiedArgs(t *testing.T) {
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
-	if !strings.Contains(string(out), `"permissionDecision":"allow"`) || !strings.Contains(string(out), `"modifiedArgs"`) {
+	if !strings.Contains(string(out), `"permission_decision":"allow"`) || !strings.Contains(string(out), `"modified_args"`) {
 		t.Fatalf("bad output: %s", out)
 	}
 }
@@ -374,7 +328,7 @@ func TestEncode_PostToolUpdatedOutput(t *testing.T) {
 		t.Fatal(err, code)
 	}
 	s := string(out)
-	if !strings.Contains(s, `"textResultForLlm":"rewritten"`) || !strings.Contains(s, `"additionalContext":"extra guidance"`) {
+	if !strings.Contains(s, `"text_result_for_llm":"rewritten"`) || !strings.Contains(s, `"additional_context":"extra guidance"`) {
 		t.Fatalf("bad output: %s", out)
 	}
 }
@@ -430,7 +384,7 @@ func TestEncode_SessionStartContext(t *testing.T) {
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
-	if !strings.Contains(string(out), `"additionalContext"`) {
+	if !strings.Contains(string(out), `"additional_context"`) {
 		t.Fatalf("bad output: %s", out)
 	}
 }
@@ -463,10 +417,9 @@ func TestTimestamp_UnmarshalJSON(t *testing.T) {
 		want    int64
 		wantErr bool
 	}{
-		{name: "ms epoch", raw: `1760000000000`, want: 1760000000000},
 		{name: "iso8601", raw: `"2026-07-12T10:00:00Z"`, want: 1783850400000},
+		{name: "ms epoch rejected", raw: `1760000000000`, wantErr: true},
 		{name: "invalid RFC3339", raw: `"not-a-time"`, wantErr: true},
-		{name: "non-integer epoch", raw: `1.5`, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -494,7 +447,7 @@ func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 		return nil, errors.New("boom")
 	})
 	var stdout bytes.Buffer
-	code := run.Serve(context.Background(), strings.NewReader(copilotCamelPreToolUse), &stdout, &bytes.Buffer{}, run.WithEvent("preToolUse"))
+	code := run.Serve(context.Background(), strings.NewReader(copilotPreToolUse), &stdout, &bytes.Buffer{})
 	if code != copilot.PreToolErrorExit {
 		t.Fatalf("exit = %d, want %d", code, copilot.PreToolErrorExit)
 	}
@@ -506,17 +459,17 @@ func TestMux_Serve_PreToolDeny(t *testing.T) {
 		return r.Deny("nope"), nil
 	})
 	var stdout bytes.Buffer
-	code := run.Serve(context.Background(), strings.NewReader(copilotCamelPreToolUse), &stdout, &bytes.Buffer{}, run.WithEvent("preToolUse"))
+	code := run.Serve(context.Background(), strings.NewReader(copilotPreToolUse), &stdout, &bytes.Buffer{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
-	if !strings.Contains(stdout.String(), `"permissionDecision":"deny"`) {
+	if !strings.Contains(stdout.String(), `"permission_decision":"deny"`) {
 		t.Fatalf("stdout=%s", stdout.String())
 	}
 }
 
 func TestToolInput_AsBash(t *testing.T) {
-	ev, err := copilot.Decode([]byte(`{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"Bash","toolArgs":{"command":"ls -la"}}`), copilot.WithEvent("preToolUse"))
+	ev, err := copilot.Decode([]byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"Bash","tool_input":{"command":"ls -la"}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -552,28 +505,16 @@ func TestDecode_VSCodeStopWithAgentScope(t *testing.T) {
 	}
 }
 
-func TestDecode_PostToolUseResultRawPreservesWireShape(t *testing.T) {
-	raw := `{"sessionId":"s","timestamp":1,"cwd":"/w","toolName":"view","toolArgs":{},"toolResult":{"resultType":"success","textResultForLlm":"contents"}}`
-	ev, err := copilot.Decode([]byte(raw), copilot.WithEvent("postToolUse"))
+func TestDecode_PostToolUseResultRaw(t *testing.T) {
+	raw := `{"hook_event_name":"PostToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"view","tool_input":{},"tool_result":{"result_type":"success","text_result_for_llm":"contents"}}`
+	ev, err := copilot.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
 	post := ev.(copilot.PostToolUse)
 	got := string(post.ResultRaw())
-	if strings.Contains(got, "result_type") || strings.Contains(got, "text_result_for_llm") {
-		t.Fatalf("ResultRaw mixed conventions: %s", got)
-	}
-	if !strings.Contains(got, "textResultForLlm") || !strings.Contains(got, "contents") {
+	if !strings.Contains(got, "text_result_for_llm") || !strings.Contains(got, "contents") {
 		t.Fatalf("ResultRaw=%s", got)
-	}
-}
-
-func TestSniffFormat(t *testing.T) {
-	if got := copilot.SniffFormat([]byte(copilotCamelPreToolUse)); got != copilot.FormatCamel {
-		t.Fatalf("Format=%v, want FormatCamel", got)
-	}
-	if got := copilot.SniffFormat([]byte(copilotVSCodeStop)); got != copilot.FormatVSCode {
-		t.Fatalf("Format=%v, want FormatVSCode", got)
 	}
 }
 

@@ -7,29 +7,24 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// SessionStart is the sessionStart hook event.
+// SessionStart is the SessionStart hook event.
 type SessionStart struct {
 	Envelope
 	// Source is the session start source.
 	Source string `json:"source"`
-	// InitialPrompt is the initial prompt (camelCase).
-	InitialPromptCamel string `json:"initialPrompt"`
-	// InitialPromptSnake is the initial prompt (VS Code).
-	InitialPromptSnake string `json:"initial_prompt"`
+	// InitialPromptValue is the initial prompt.
+	InitialPromptValue string `json:"initial_prompt"`
 }
 
 // EventName returns the canonical hook event name.
 func (SessionStart) EventName() string { return EventSessionStart }
 
-// InitialPrompt returns the initial prompt from either wire format.
+// InitialPrompt returns the initial prompt.
 func (e SessionStart) InitialPrompt() string {
-	if e.InitialPromptSnake != "" {
-		return e.InitialPromptSnake
-	}
-	return e.InitialPromptCamel
+	return e.InitialPromptValue
 }
 
-// SessionStartOutput is the response for sessionStart events.
+// SessionStartOutput is the response for SessionStart events.
 // Construct via SessionStartResults builders. A nil value is a no-op.
 type SessionStartOutput interface {
 	isSessionStartOutput()
@@ -80,7 +75,7 @@ func encodeAdditionalContext(context string) ([]byte, int, error) {
 	if context == "" {
 		return nil, 0, nil
 	}
-	out := map[string]any{"additionalContext": context}
+	out := map[string]any{"additional_context": context}
 	b, err := json.Marshal(out)
 	return b, 0, err
 }

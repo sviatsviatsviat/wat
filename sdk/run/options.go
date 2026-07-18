@@ -11,7 +11,6 @@ type Option func(*Config)
 // Config holds resolved serve-time settings passed to handlers via context.
 type Config struct {
 	Dialect        string
-	EventHint      string
 	Getenv         func(string) string
 	dialectConfigs map[string]any
 }
@@ -64,13 +63,6 @@ func WithDialect(name string) Option {
 	}
 }
 
-// WithEvent supplies the native event name when the payload omits it.
-func WithEvent(name string) Option {
-	return func(c *Config) {
-		c.EventHint = name
-	}
-}
-
 // WithGetenv injects environment lookup for dialect detection and encode side effects.
 func WithGetenv(getenv func(string) string) Option {
 	return func(c *Config) {
@@ -95,9 +87,6 @@ func applyEnv(cfg *Config) {
 		if v := cfg.Getenv("WAT_AGENT"); v != "" {
 			cfg.Dialect = parseDialectEnv(v)
 		}
-	}
-	if cfg.EventHint == "" {
-		cfg.EventHint = cfg.Getenv("WAT_EVENT")
 	}
 }
 

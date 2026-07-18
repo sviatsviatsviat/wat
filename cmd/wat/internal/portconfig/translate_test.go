@@ -75,9 +75,9 @@ func TestTranslate_claudeToCopilot(t *testing.T) {
 	if err := json.Unmarshal(out, &f); err != nil {
 		t.Fatal(err)
 	}
-	pre := f.Hooks["preToolUse"]
+	pre := f.Hooks["PreToolUse"]
 	if len(pre) != 2 {
-		t.Fatalf("want 2 preToolUse handlers: %s", out)
+		t.Fatalf("want 2 PreToolUse handlers: %s", out)
 	}
 	foundBash := false
 	for _, h := range pre {
@@ -91,8 +91,8 @@ func TestTranslate_claudeToCopilot(t *testing.T) {
 	if !foundBash {
 		t.Errorf("Bash should map to bash: %s", out)
 	}
-	if len(f.Hooks["agentStop"]) != 1 {
-		t.Errorf("Stop should map to agentStop: %s", out)
+	if len(f.Hooks["Stop"]) != 1 {
+		t.Errorf("Stop should map to Stop: %s", out)
 	}
 }
 
@@ -112,7 +112,7 @@ func TestTranslate_cursorToClaude(t *testing.T) {
 
 func TestTranslate_copilotAnchoredRegex(t *testing.T) {
 	t.Run("copilot_to_claude", func(t *testing.T) {
-		raw := `{"version":1,"hooks":{"preToolUse":[{"type":"command","command":"x.sh","matcher":"^(?:bash)$"}]}}`
+		raw := `{"version":1,"hooks":{"PreToolUse":[{"type":"command","command":"x.sh","matcher":"^(?:bash)$"}]}}`
 		out, warns, err := Translate([]byte(raw), sdkcopilot.Dialect, sdkclaude.Dialect)
 		if err != nil {
 			t.Fatal(err)

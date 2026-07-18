@@ -5,8 +5,7 @@
 // decodes the payload once, dispatches all matching handlers with that event,
 // merges their native JSON outputs, and exits with the appropriate code.
 //
-// WithDialect forces a dialect instead of auto-detection. WithEvent supplies
-// the native event name for payloads that omit it (for example Copilot
-// camelCase). WithGetenv injects environment lookup for dialect resolution and
-// encode side effects.
+// WithDialect forces a dialect instead of auto-detection. WithGetenv injects
+// environment lookup for dialect resolution and encode side effects. Payloads
+// must include hook_event_name on the wire.
 package run

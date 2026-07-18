@@ -8,17 +8,13 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// PostToolUseFailure is the postToolUseFailure hook event.
+// PostToolUseFailure is the PostToolUseFailure hook event.
 type PostToolUseFailure struct {
 	Envelope
-	// ToolName is the tool name (VS Code).
+	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
-	// ToolNameCamel is the tool name (camelCase).
-	ToolNameCamel string `json:"toolName"`
-	// ToolInput is the typed tool input (VS Code).
+	// ToolInput is the typed tool input.
 	ToolInput tools.Input `json:"-"`
-	// ToolArgs is the typed tool input (camelCase).
-	ToolArgs tools.Input `json:"-"`
 	// Error is the failure payload (string or object).
 	Error json.RawMessage `json:"error"`
 }
@@ -26,20 +22,14 @@ type PostToolUseFailure struct {
 // EventName returns the canonical hook event name.
 func (PostToolUseFailure) EventName() string { return EventPostToolUseFailure }
 
-// NativeToolName returns the tool name from either wire format.
+// NativeToolName returns the tool name.
 func (e PostToolUseFailure) NativeToolName() string {
-	if e.ToolName != "" {
-		return e.ToolName
-	}
-	return e.ToolNameCamel
+	return e.ToolName
 }
 
-// Input returns tool input from either wire format.
+// Input returns tool input.
 func (e PostToolUseFailure) Input() tools.Input {
-	if e.ToolInput.HasRaw() {
-		return e.ToolInput
-	}
-	return e.ToolArgs
+	return e.ToolInput
 }
 
 // ErrorMessage returns the failure message from the error field.
@@ -58,7 +48,7 @@ func (e PostToolUseFailure) ErrorMessage() string {
 	return string(e.Error)
 }
 
-// PostToolFailureOutput is the response for postToolUseFailure events.
+// PostToolFailureOutput is the response for PostToolUseFailure events.
 // Construct via PostToolFailureResults builders. A nil value is a no-op.
 type PostToolFailureOutput interface {
 	isPostToolFailureOutput()
@@ -76,7 +66,7 @@ func (o postToolFailureOutput) isZero() bool {
 
 // PostToolFailureResults is the hook-scoped response builder supplied to On* handlers by registration.
 type PostToolFailureResults interface {
-	// Context returns recovery guidance for postToolUseFailure events.
+	// Context returns recovery guidance for PostToolUseFailure events.
 	Context(text string) PostToolFailureOutput
 	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
 	Noop() PostToolFailureOutput
@@ -87,7 +77,7 @@ type postToolFailureResults struct{}
 
 func (postToolFailureResults) isPostToolFailureResults() {}
 
-// Context returns recovery guidance for postToolUseFailure events.
+// Context returns recovery guidance for PostToolUseFailure events.
 func (postToolFailureResults) Context(text string) PostToolFailureOutput {
 	return postToolFailureOutput{context: text}
 }
@@ -111,9 +101,7 @@ func (o postToolFailureOutput) encode() ([]byte, int, error) {
 func init() {
 	registerDecoder(EventPostToolUseFailure, func(raw []byte, received, canonical string) (Event, error) {
 		return decodeAsAndThen(raw, received, canonical, func(e *PostToolUseFailure, raw []byte) {
-			name := e.NativeToolName()
-			e.ToolInput = tools.NewInputFromPayload(name, raw, "tool_input")
-			e.ToolArgs = tools.NewInputFromPayload(name, raw, "toolArgs")
+			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})
 }

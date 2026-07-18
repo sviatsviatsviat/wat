@@ -14,6 +14,6 @@ func ExampleOnPreToolUse() {
 		}
 		return r.Noop(), nil
 	})
-	// Hook entrypoint: run.Main(run.WithEvent("preToolUse"))
+	// Hook entrypoint: run.Main()
 	_ = run.Main
 }

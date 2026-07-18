@@ -6,24 +6,19 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// AgentStop is the agentStop hook event.
+// AgentStop is the Stop (agentStop) hook event.
 type AgentStop struct {
 	Envelope
-	// StopReason is the stop reason (VS Code).
+	// StopReason is the stop reason.
 	StopReason string `json:"stop_reason"`
-	// StopReasonCamel is the stop reason (camelCase).
-	StopReasonCamel string `json:"stopReason"`
 }
 
 // EventName returns the canonical hook event name.
 func (AgentStop) EventName() string { return EventAgentStop }
 
-// Reason returns the stop reason from either wire format.
+// Reason returns the stop reason.
 func (e AgentStop) Reason() string {
-	if e.StopReason != "" {
-		return e.StopReason
-	}
-	return e.StopReasonCamel
+	return e.StopReason
 }
 
 func init() {

@@ -13,7 +13,7 @@ type outputEncoder interface {
 	encode() ([]byte, int, error)
 }
 
-// Encode renders a typed output struct as Copilot flat camelCase stdout JSON and
+// Encode renders a typed output struct as Copilot snake_case stdout JSON and
 // returns the process exit code.
 func Encode(eventName string, out any) ([]byte, int, error) {
 	out = hookkit.NormalizeOutput(out)

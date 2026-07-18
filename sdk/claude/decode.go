@@ -30,7 +30,7 @@ func decodeAsAndThen[T Event](raw []byte, after func(*T, []byte)) (Event, error)
 
 // decode parses a Claude Code hook stdin payload into a typed Event.
 // It peeks hook_event_name once, then unmarshals the payload into the matching type.
-func decode(raw []byte) (Event, error) {
+func decode(raw []byte) (any, error) {
 	if len(raw) == 0 {
 		return nil, ErrEmptyPayload
 	}
@@ -52,16 +52,13 @@ func decode(raw []byte) (Event, error) {
 }
 
 // eventNameFromRaw peeks the hook event name without a full typed decode.
-func eventNameFromRaw(raw []byte, eventHint string) (string, error) {
+func eventNameFromRaw(raw []byte) (string, error) {
 	if len(raw) == 0 {
 		return "", ErrEmptyPayload
 	}
 	name, err := hookkit.PeekHookEventName(raw)
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrDecodePayload, err)
-	}
-	if name == "" {
-		name = eventHint
 	}
 	if name == "" {
 		return "", fmt.Errorf("claude: empty event name")

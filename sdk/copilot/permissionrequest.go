@@ -9,36 +9,26 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// PermissionRequest is the permissionRequest hook event.
+// PermissionRequest is the PermissionRequest hook event.
 type PermissionRequest struct {
 	Envelope
-	// ToolName is the tool name (VS Code).
+	// ToolName is the tool name.
 	ToolName string `json:"tool_name"`
-	// ToolNameCamel is the tool name (camelCase).
-	ToolNameCamel string `json:"toolName"`
-	// ToolInput is the typed tool input (VS Code).
+	// ToolInput is the typed tool input.
 	ToolInput tools.Input `json:"-"`
-	// ToolArgs is the typed tool input (camelCase).
-	ToolArgs tools.Input `json:"-"`
 }
 
 // EventName returns the canonical hook event name.
 func (PermissionRequest) EventName() string { return EventPermissionRequest }
 
-// NativeToolName returns the tool name from either wire format.
+// NativeToolName returns the tool name.
 func (e PermissionRequest) NativeToolName() string {
-	if e.ToolName != "" {
-		return e.ToolName
-	}
-	return e.ToolNameCamel
+	return e.ToolName
 }
 
-// Input returns tool input from either wire format.
+// Input returns tool input.
 func (e PermissionRequest) Input() tools.Input {
-	if e.ToolInput.HasRaw() {
-		return e.ToolInput
-	}
-	return e.ToolArgs
+	return e.ToolInput
 }
 
 // ShellCommand extracts the shell command when the tool is a shell execution tool.
@@ -49,7 +39,7 @@ func (e PermissionRequest) ShellCommand() string {
 	return hookkit.ExtractShellCommand(e.Input().Raw())
 }
 
-// PermissionRequestOutput is the response for permissionRequest events.
+// PermissionRequestOutput is the response for PermissionRequest events.
 // Construct via PermissionRequestResults builders and With* methods. A nil value is a no-op.
 type PermissionRequestOutput interface {
 	isPermissionRequestOutput()
@@ -145,9 +135,7 @@ func (o permissionRequestOutput) encode() ([]byte, int, error) {
 func init() {
 	registerDecoder(EventPermissionRequest, func(raw []byte, received, canonical string) (Event, error) {
 		return decodeAsAndThen(raw, received, canonical, func(e *PermissionRequest, raw []byte) {
-			name := e.NativeToolName()
-			e.ToolInput = tools.NewInputFromPayload(name, raw, "tool_input")
-			e.ToolArgs = tools.NewInputFromPayload(name, raw, "toolArgs")
+			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})
 }

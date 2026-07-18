@@ -110,16 +110,16 @@ func TestDecode_AfterFileEdit(t *testing.T) {
 	}
 }
 
-func TestDecode_RequiresWithEvent(t *testing.T) {
+func TestDecode_RequiresHookEventName(t *testing.T) {
 	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
 	_, err := cursor.Decode([]byte(raw))
 	if err == nil {
-		t.Fatal("expected error without WithEvent")
+		t.Fatal("expected error without hook_event_name")
 	}
 	if !errors.Is(err, cursor.ErrEventNameRequired) {
 		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
 	}
-	if !strings.Contains(err.Error(), "WithEvent") {
+	if !strings.Contains(err.Error(), "hook_event_name") {
 		t.Fatalf("error = %v", err)
 	}
 }
@@ -137,11 +137,10 @@ func TestDecode_InvalidTypedEvent(t *testing.T) {
 
 func TestDecode_Matrix(t *testing.T) {
 	tests := []struct {
-		name      string
-		raw       string
-		eventHint string
-		wantType  any
-		check     func(t *testing.T, ev cursor.Event)
+		name     string
+		raw      string
+		wantType any
+		check    func(t *testing.T, ev cursor.Event)
 	}{
 		{
 			name:     "sessionStart",
@@ -295,22 +294,10 @@ func TestDecode_Matrix(t *testing.T) {
 			raw:      `{"hook_event_name":"workspaceOpen","cursor_version":"1.7.2","workspace_roots":["/w"]}`,
 			wantType: cursor.WorkspaceOpen{},
 		},
-		{
-			name:      "beforeShellExecution eventHint",
-			raw:       `{"conversation_id":"c1","command":"ls","cwd":"/w"}`,
-			eventHint: cursor.EventBeforeShellExecution,
-			wantType:  cursor.BeforeShellExecution{},
-			check: func(t *testing.T, ev cursor.Event) {
-				e := ev.(cursor.BeforeShellExecution)
-				if e.Command != "ls" || e.Cwd != "/w" {
-					t.Fatalf("event=%+v", e)
-				}
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := cursor.Decode([]byte(tt.raw), cursor.WithEvent(tt.eventHint))
+			ev, err := cursor.Decode([]byte(tt.raw))
 			if err != nil {
 				t.Fatal(err)
 			}

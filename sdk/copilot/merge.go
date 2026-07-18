@@ -32,11 +32,11 @@ func MergeOutputs(outputs [][]byte) ([]byte, error) {
 func mergeCopilotTop(dst, src map[string]any) {
 	for k, v := range src {
 		switch k {
-		case "permissionDecision":
-			hookkit.ApplyRankedDecision(dst, src, "permissionDecision", "permissionDecisionReason", v, hookkit.PermissionRank)
-		case "permissionDecisionReason":
-			hookkit.ApplyOrphanDetail(dst, "permissionDecision", "permissionDecisionReason", v)
-		case "additionalContext":
+		case "permission_decision":
+			hookkit.ApplyRankedDecision(dst, src, "permission_decision", "permission_decision_reason", v, hookkit.PermissionRank)
+		case "permission_decision_reason":
+			hookkit.ApplyOrphanDetail(dst, "permission_decision", "permission_decision_reason", v)
+		case "additional_context":
 			dst[k] = hookkit.JoinContext(dst[k], v)
 		case "decision":
 			hookkit.ApplyRankedDecision(dst, src, "decision", "reason", v, hookkit.BlockDecisionRank)

@@ -73,7 +73,7 @@ func TestServe_WithDialectOverride(t *testing.T) {
 	var stderr bytes.Buffer
 	code := run.Serve(
 		context.Background(),
-		strings.NewReader(copilotCamelPreToolUse),
+		strings.NewReader(`{"sessionId":"s1","timestamp":1,"cwd":"/w"}`),
 		new(bytes.Buffer),
 		&stderr,
 		run.WithDialect(copilot.Dialect),
@@ -86,7 +86,7 @@ func TestServe_WithDialectOverride(t *testing.T) {
 	}
 }
 
-func TestServe_WithEvent(t *testing.T) {
+func TestServe_CopilotPreTool(t *testing.T) {
 	resetTest(t)
 	OnPreTool(func(ctx context.Context, hook PreToolHook, r PreToolResults) (PreToolResult, error) {
 		return r.Deny("nope"), nil
@@ -95,10 +95,9 @@ func TestServe_WithEvent(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := run.Serve(
 		context.Background(),
-		strings.NewReader(copilotCamelPreToolUse),
+		strings.NewReader(copilotPreToolUse),
 		&stdout,
 		&stderr,
-		run.WithEvent("preToolUse"),
 	)
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
@@ -153,10 +152,9 @@ func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
 	var stderr bytes.Buffer
 	code := run.Serve(
 		context.Background(),
-		strings.NewReader(copilotCamelPreToolUse),
+		strings.NewReader(copilotPreToolUse),
 		new(bytes.Buffer),
 		&stderr,
-		run.WithEvent("preToolUse"),
 	)
 	if code != copilot.PreToolErrorExit {
 		t.Fatalf("exit = %d, want %d", code, copilot.PreToolErrorExit)
@@ -215,11 +213,10 @@ func TestServe_PreToolDenyAllAgents(t *testing.T) {
 		},
 		{
 			name:     "copilot",
-			payload:  copilotCamelPreToolUse,
-			opts:     []run.Option{run.WithEvent("preToolUse")},
+			payload:  copilotPreToolUse,
 			wantExit: 0,
 			wantStdout: func(s string) bool {
-				return strings.Contains(s, `"permissionDecision":"deny"`) &&
+				return strings.Contains(s, `"permission_decision":"deny"`) &&
 					strings.Contains(s, "destructive command blocked")
 			},
 		},

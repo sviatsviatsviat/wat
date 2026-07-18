@@ -19,7 +19,7 @@ func addAgentFlag(fs *flag.FlagSet, f *sharedFlags) {
 }
 
 func addEventFlag(fs *flag.FlagSet, f *sharedFlags) {
-	f.event = fs.String("event", "", "native event name (required for Copilot camelCase payloads)")
+	f.event = fs.String("event", "", "native event name (install/doctor identity; not used for decode)")
 }
 
 func addFailClosedFlag(fs *flag.FlagSet, f *sharedFlags) {

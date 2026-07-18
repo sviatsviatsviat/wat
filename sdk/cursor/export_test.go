@@ -18,4 +18,13 @@ func BeforeSubmitPromptResultsForTest() BeforeSubmitPromptResults {
 func PreCompactResultsForTest() PreCompactResults { return preCompactResults{} }
 
 // Decode is a test-only alias for decode (available to cursor_test).
-func Decode(raw []byte, opts ...Option) (Event, error) { return decode(raw, opts...) }
+func Decode(raw []byte) (Event, error) {
+	ev, err := decode(raw)
+	if err != nil {
+		return nil, err
+	}
+	if ev == nil {
+		return nil, nil
+	}
+	return ev.(Event), nil
+}

@@ -1,6 +1,6 @@
 // wat test executes the user's compiled .wat/hooks binary (same cache path as
-// wat run). Agent SDK decode validates the fixture and resolves the native
-// event name for the report; it does not replace hook execution.
+// wat run). The fixture report peeks hook_event_name from the payload; it does
+// not replace hook execution.
 package main
 
 import (
@@ -14,10 +14,10 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
-	sdkrun "github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 type testConfig struct {
@@ -90,38 +90,26 @@ func runTest(cfg testConfig, deps testDeps) int {
 	return hookExit
 }
 
-func resolveFixture(agentFlag, eventHint string, payload []byte) (fixtureInfo, error) {
+func resolveFixture(agentFlag, _ string, payload []byte) (fixtureInfo, error) {
 	agentDialect := dialect.Parse(agentFlag)
 	if agentDialect == "" {
 		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent)")
 	}
 
-	var event string
-	decoded, decErr := sdkrun.Decode(agentDialect, eventHint, payload)
-	if decErr != nil {
-		if agentDialect == sdkcopilot.Dialect && eventHint == "" {
-			return fixtureInfo{}, fmt.Errorf("decode: %w (Copilot camelCase payloads require --event)", decErr)
+	event, err := hookkit.PeekHookEventName(payload)
+	if err != nil {
+		return fixtureInfo{}, fmt.Errorf("decode: %w", err)
+	}
+	if event == "" {
+		return fixtureInfo{}, fmt.Errorf("decode: hook_event_name is required")
+	}
+	if agentDialect == sdkcopilot.Dialect {
+		if canonical, ok := sdkcopilot.ResolveCanonical(payload, event); ok {
+			event = canonical
 		}
-		return fixtureInfo{}, fmt.Errorf("decode: %w", decErr)
 	}
 	switch agentDialect {
-	case sdkclaude.Dialect:
-		native := decoded.(sdkclaude.Event)
-		event = native.EventName()
-	case sdkcopilot.Dialect:
-		native := decoded.(sdkcopilot.Event)
-		if name := sdkcopilot.EnvelopeOf(native).ReceivedName(); name != "" {
-			event = name
-		} else {
-			event = native.EventName()
-		}
-	case sdkcursor.Dialect:
-		native := decoded.(sdkcursor.Event)
-		if name := sdkcursor.EnvelopeOf(native).ReceivedName(); name != "" {
-			event = name
-		} else {
-			event = native.EventName()
-		}
+	case sdkclaude.Dialect, sdkcopilot.Dialect, sdkcursor.Dialect:
 	default:
 		return fixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent)")
 	}
@@ -137,9 +125,6 @@ func execHookBinary(binPath string, payload []byte, cfg testConfig, deps runDeps
 	cmd.Env = append([]string(nil), os.Environ()...)
 	if cfg.agent != "" {
 		cmd.Env = append(cmd.Env, "WAT_AGENT="+cfg.agent)
-	}
-	if cfg.event != "" {
-		cmd.Env = append(cmd.Env, "WAT_EVENT="+cfg.event)
 	}
 
 	runErr := deps.runCmd(cmd)
@@ -204,10 +189,10 @@ func decisionJSONKeys(dialect string) []string {
 	case sdkclaude.Dialect:
 		return []string{"permissionDecision", "decision", "permission"}
 	case sdkcopilot.Dialect:
-		return []string{"permissionDecision", "decision", "permission"}
+		return []string{"permission_decision", "decision", "permission"}
 	case sdkcursor.Dialect:
-		return []string{"permission", "permissionDecision", "decision"}
+		return []string{"permission", "permission_decision", "decision"}
 	default:
-		return []string{"permissionDecision", "permission", "decision"}
+		return []string{"permissionDecision", "permission_decision", "permission", "decision"}
 	}
 }
