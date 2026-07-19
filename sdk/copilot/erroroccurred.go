@@ -30,7 +30,7 @@ func (e ErrorOccurred) Context() string {
 
 // Detail parses structured error details when present.
 func (e ErrorOccurred) Detail() (ErrorDetail, bool) {
-	if len(e.Error) == 0 || string(bytesTrimSpace(e.Error)) == "null" {
+	if hookkit.NullToNil(e.Error) == nil {
 		return ErrorDetail{}, false
 	}
 	var s string

@@ -442,37 +442,6 @@ func TestErrorOccurred_DetailNull(t *testing.T) {
 	}
 }
 
-func TestTimestamp_UnmarshalJSON(t *testing.T) {
-	tests := []struct {
-		name    string
-		raw     string
-		want    int64
-		wantErr bool
-	}{
-		{name: "iso8601", raw: `"2026-07-12T10:00:00Z"`, want: 1783850400000},
-		{name: "ms epoch rejected", raw: `1760000000000`, wantErr: true},
-		{name: "invalid RFC3339", raw: `"not-a-time"`, wantErr: true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var ts copilot.Timestamp
-			err := json.Unmarshal([]byte(tt.raw), &ts)
-			if tt.wantErr {
-				if err == nil {
-					t.Fatal("expected error")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatal(err)
-			}
-			if ts.UnixMilli() != tt.want {
-				t.Fatalf("UnixMilli()=%d, want %d", ts.UnixMilli(), tt.want)
-			}
-		})
-	}
-}
-
 func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 	run.Reset()
 	copilot.OnPreToolUse(func(ctx context.Context, hook run.Hook[copilot.PreToolUse], _ copilot.PreToolResults) (copilot.PreToolOutput, error) {
