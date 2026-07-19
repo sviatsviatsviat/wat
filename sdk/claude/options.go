@@ -6,7 +6,7 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// Option configures Encode side effects.
+// Option configures encode side effects (CLAUDE_ENV_FILE and related).
 type Option func(*runtimeConfig)
 
 type runtimeConfig struct {
@@ -48,7 +48,7 @@ func claudeRunConfig(cfg *run.Config) *runtimeConfig {
 	return &rc
 }
 
-// WithGetenv injects environment lookup for CLAUDE_ENV_FILE Encode side effects.
+// WithGetenv injects environment lookup for CLAUDE_ENV_FILE encode side effects.
 func WithGetenv(getenv func(string) string) Option {
 	return func(c *runtimeConfig) {
 		c.getenv = getenv

@@ -34,6 +34,7 @@ func init() {
 // PreToolUseOutput is the response for PreToolUse events.
 // Construct via PreToolUseResults builders and With* methods. A nil value is a no-op.
 type PreToolUseOutput interface {
+	Output
 	isPreToolUseOutput()
 	// WithUpdatedInput replaces tool arguments when set.
 	WithUpdatedInput(input map[string]any) PreToolUseOutput
@@ -58,6 +59,8 @@ type preToolUseOutput struct {
 	updatedInput      map[string]any
 	additionalContext string
 }
+
+func (preToolUseOutput) isClaudeOutput() {}
 
 func (preToolUseOutput) isPreToolUseOutput() {}
 

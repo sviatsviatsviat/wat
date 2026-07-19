@@ -24,6 +24,7 @@ func init() {
 // Construct via WorktreeCreateResults builders and With* methods.
 // A nil value is a no-op.
 type WorktreeCreateOutput interface {
+	Output
 	isWorktreeCreateOutput()
 	// WithContinue sets whether Claude should continue the session.
 	WithContinue(v bool) WorktreeCreateOutput
@@ -41,6 +42,8 @@ type worktreeCreateOutput struct {
 	common
 	worktreePath string
 }
+
+func (worktreeCreateOutput) isClaudeOutput() {}
 
 func (worktreeCreateOutput) isWorktreeCreateOutput() {}
 func (o worktreeCreateOutput) isZero() bool {

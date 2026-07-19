@@ -37,7 +37,7 @@ func TestServe_DecodesOnce(t *testing.T) {
 	})
 	var handlerCalls atomic.Int32
 	for range 3 {
-		r.RegisterHandler("testdialect", "TestEvent", func(_ context.Context, event any) ([]byte, int, error) {
+		r.RegisterHandler("testdialect", "TestEvent", func(_ context.Context, event Event) ([]byte, int, error) {
 			handlerCalls.Add(1)
 			if event != testEvent(`{"ok":true}`) {
 				t.Errorf("event = %#v", event)

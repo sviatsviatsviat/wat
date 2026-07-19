@@ -22,6 +22,7 @@ func (SessionStart) EventName() string { return EventSessionStart }
 // SessionStartOutput is the response for sessionStart events.
 // Construct via SessionStartResults builders and With* methods. A nil value is a no-op.
 type SessionStartOutput interface {
+	Output
 	isSessionStartOutput()
 	// WithEnv sets environment variables for the session.
 	WithEnv(env map[string]string) SessionStartOutput
@@ -33,6 +34,8 @@ type sessionStartOutput struct {
 	env               map[string]string
 	additionalContext string
 }
+
+func (sessionStartOutput) isCursorOutput() {}
 
 func (sessionStartOutput) isSessionStartOutput() {}
 

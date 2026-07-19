@@ -7,37 +7,43 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// outputEncoder is implemented by concrete hook outputs for Encode.
+// Output is any Claude Code hook response. Only this package implements it.
+type Output interface {
+	isClaudeOutput()
+}
+
+// outputEncoder is implemented by concrete hook outputs for encode.
 type outputEncoder interface {
+	Output
 	isZero() bool
 	allowedEvents() []string
 	encodeInto(top, hso map[string]any)
 }
 
-// Encode renders a typed output as Claude Code stdout JSON.
+// encode renders a typed output as Claude Code stdout JSON.
 // eventName is written into hookSpecificOutput.hookEventName.
 // A nil or zero output produces no stdout.
-func Encode(eventName string, out any, opts ...Option) ([]byte, error) {
+func encode(eventName string, out Output, opts ...Option) ([]byte, error) {
 	cfg := defaultRuntimeConfig()
 	applyOptions(&cfg, opts...)
 	if eventName == "" {
 		return nil, fmt.Errorf("claude: encode: empty event name")
 	}
-	out = hookkit.NormalizeOutput(out)
-	if err := applyEnvSideEffect(eventName, out, cfg); err != nil {
+	normalized := hookkit.NormalizeOutput(out)
+	if err := applyEnvSideEffect(eventName, normalized, cfg); err != nil {
 		return nil, err
 	}
-	if out == nil {
+	if normalized == nil {
 		return nil, nil
 	}
-	enc, ok := out.(outputEncoder)
+	enc, ok := normalized.(outputEncoder)
 	if !ok {
-		return nil, fmt.Errorf("claude: encode: unsupported output type %T", out)
+		return nil, fmt.Errorf("claude: encode: unsupported output type %T", normalized)
 	}
 	if enc.isZero() {
 		return nil, nil
 	}
-	if err := hookkit.ValidateEncodePair(Dialect, eventName, out, enc.allowedEvents(), nil); err != nil {
+	if err := hookkit.ValidateEncodePair(Dialect, eventName, normalized, enc.allowedEvents(), nil); err != nil {
 		return nil, err
 	}
 
@@ -64,7 +70,10 @@ func applyEnvSideEffect(eventName string, out any, cfg runtimeConfig) error {
 	return w.writeSessionEnv(cfg)
 }
 
-func isZeroOutput(out any) bool {
+func isZeroOutput(out Output) bool {
+	if out == nil {
+		return true
+	}
 	if z, ok := out.(interface{ isZero() bool }); ok {
 		return z.isZero()
 	}
@@ -72,4 +81,4 @@ func isZeroOutput(out any) bool {
 }
 
 // IsZeroOutput reports whether out is an empty hook response.
-func IsZeroOutput(out any) bool { return isZeroOutput(out) }
+func IsZeroOutput(out Output) bool { return isZeroOutput(out) }

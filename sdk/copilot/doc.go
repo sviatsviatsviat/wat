@@ -2,7 +2,8 @@
 // typed handlers with On* helpers into the shared run registry, then call
 // run.Main from github.com/sviatsviatsviat/wat/sdk/run.
 //
-// Encode returns snake_case stdout JSON and a process exit code. Payloads must
+// Hook stdout JSON is encoded internally from Output (sealed; only this package
+// implements it) as snake_case JSON with a process exit code. Payloads must
 // include hook_event_name on the wire.
 //
 // Example:

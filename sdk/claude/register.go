@@ -34,14 +34,14 @@ func detectPayload(raw []byte, getenv func(string) string) bool {
 	return has("session_id")
 }
 
-func registerHandler[E run.Event, O any](fn func(context.Context, E) (O, error)) {
+func registerHandler[E run.Event, O Output](fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler(Dialect, name, func(ctx context.Context, event any) ([]byte, int, error) {
+	run.RegisterHandler(Dialect, name, func(ctx context.Context, event run.Event) ([]byte, int, error) {
 		typed, ok := event.(E)
 		if !ok {
 			return nil, HandlerErrorExit, fmt.Errorf("claude: handler for %s received %T", name, event)
@@ -54,7 +54,7 @@ func registerHandler[E run.Event, O any](fn func(context.Context, E) (O, error))
 			return nil, 0, nil
 		}
 		rc := claudeRunConfig(run.ConfigFrom(ctx))
-		stdout, err := Encode(name, result, rc.encodeOpts()...)
+		stdout, err := encode(name, result, rc.encodeOpts()...)
 		return stdout, 0, err
 	})
 }
@@ -66,7 +66,7 @@ func registerObserveHandler[E run.Event](fn func(context.Context, run.Hook[E]) e
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler(Dialect, name, func(ctx context.Context, event any) ([]byte, int, error) {
+	run.RegisterHandler(Dialect, name, func(ctx context.Context, event run.Event) ([]byte, int, error) {
 		typed, ok := event.(E)
 		if !ok {
 			return nil, HandlerErrorExit, fmt.Errorf("claude: handler for %s received %T", name, event)

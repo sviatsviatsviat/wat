@@ -40,6 +40,7 @@ func init() {
 // Construct via PostToolUseResults / PostToolUseFailureResults builders and With* methods.
 // A nil value is a no-op.
 type PostToolUseOutput interface {
+	Output
 	isPostToolUseOutput()
 	// WithUpdatedToolOutput replaces the tool result when set.
 	WithUpdatedToolOutput(output any) PostToolUseOutput
@@ -64,6 +65,8 @@ type postToolUseOutput struct {
 	additionalContext string
 	updatedToolOutput any
 }
+
+func (postToolUseOutput) isClaudeOutput() {}
 
 func (postToolUseOutput) isPostToolUseOutput() {}
 func (o postToolUseOutput) isZero() bool {

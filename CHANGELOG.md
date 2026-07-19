@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Sealed `Output` interfaces in `sdk/claude`, `sdk/copilot`, and `sdk/cursor`: event `*Output` types embed `Output` (only the package can implement it); `IsZeroOutput` accepts `Output`; encode/decode are package-internal
 - `sdk/run` shared hook handler registry with `RegisterDialect`, `RegisterHandler`, `Serve`, and `Main`; agnostic and per-agent SDKs register into one singleton; package-level `On*` helpers with fluent chaining in each SDK; `Serve` peeks the event name then decodes the payload once before dispatching `Producer`s with the decoded event
 - `wat` CLI with subcommands `init`, `install`, `run`, `port`, `test`, and `doctor`; root and per-command help; `--agent`, `--event`, and `--fail-closed` flags on the subcommands that need them
 - `wat doctor` verifies Go toolchain, `.wat/` hook project compile, build cache, and installed hook entries; prints `PASS`/`FAIL`/`WARN` lines with fix suggestions; exits 4 when any check fails (warnings alone exit 0)
@@ -24,9 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Typed `OnPreTool`, `OnPostTool`, `OnStop`, and related handlers plus observe-only `OnSessionEnd` with fluent chaining; hook scripts call `run.Main` (reads `WAT_AGENT` automatically)
 - Serve options `run.WithDialect` (string dialect name such as `claude.Dialect`) and `run.WithGetenv` for explicit dialect and testable environment lookup; payloads must include `hook_event_name` (Claude, Copilot, and Cursor)
 - Per-agent `Dialect` string constants (`claude.Dialect`, `copilot.Dialect`, `cursor.Dialect`) for `sdk/run` registration and `Envelope.Agent`
-- `claude` package with typed Claude Code hook events, `Encode`, `On*` handlers with hook-scoped result builders registering into `sdk/run`, and `sdk/claude/tools` event-bound tool input (`tools.Input` with `AsBash`, `AsWrite`, and related accessors)
-- `copilot` package with typed GitHub Copilot hook events (PascalCase `hook_event_name`, snake_case fields and Encode stdout), `On*` handlers with hook-scoped result builders registering into `sdk/run`, and `sdk/copilot/tools` event-bound tool input (`tools.Input` with `AsBash`, `AsCreate`, and related accessors)
-- `cursor` package with typed Cursor hook events (21 surfaces), `Encode` (`ErrEventNameRequired` when `hook_event_name` is absent), `On*` handlers with hook-scoped result builders registering into `sdk/run`, and `sdk/cursor/tools` event-bound tool input (`tools.Input` with `AsShell`, `AsRead`, and related accessors)
+- `claude` package with typed Claude Code hook events, package-internal encode, `On*` handlers with hook-scoped result builders registering into `sdk/run`, and `sdk/claude/tools` event-bound tool input (`tools.Input` with `AsBash`, `AsWrite`, and related accessors)
+- `copilot` package with typed GitHub Copilot hook events (PascalCase `hook_event_name`, snake_case fields and package-internal encode), `On*` handlers with hook-scoped result builders registering into `sdk/run`, and `sdk/copilot/tools` event-bound tool input (`tools.Input` with `AsBash`, `AsCreate`, and related accessors)
+- `cursor` package with typed Cursor hook events (21 surfaces), package-internal encode (`ErrEventNameRequired` when `hook_event_name` is absent), `On*` handlers with hook-scoped result builders registering into `sdk/run`, and `sdk/cursor/tools` event-bound tool input (`tools.Input` with `AsShell`, `AsRead`, and related accessors)
 - Decode error sentinels (`ErrEmptyPayload`, `ErrDecodePayload`) for stable error handling; shared envelope fields are embedded on each event type (read via promoted fields such as `SessionID` / `Cwd`)
 - Shared `run.Event` (`EventName()` only; defined in `internal/hookkit`) and `run.Hook` for typed handler context; `run.Codec.Decode` returns `Event`
 - `claude.Handler.TimeoutSeconds` for hook config timeout lookup

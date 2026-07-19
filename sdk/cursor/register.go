@@ -34,14 +34,14 @@ func detectPayload(raw []byte, getenv func(string) string) bool {
 	return false
 }
 
-func registerHandler[E run.Event, O any](fn func(context.Context, E) (O, error)) {
+func registerHandler[E run.Event, O Output](fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler(Dialect, name, func(ctx context.Context, event any) ([]byte, int, error) {
+	run.RegisterHandler(Dialect, name, func(ctx context.Context, event run.Event) ([]byte, int, error) {
 		typed, ok := event.(E)
 		if !ok {
 			return nil, HandlerErrorExit, fmt.Errorf("cursor: handler for %s received %T", name, event)
@@ -53,7 +53,7 @@ func registerHandler[E run.Event, O any](fn func(context.Context, E) (O, error))
 		if isZeroOutput(result) {
 			return nil, 0, nil
 		}
-		return Encode(name, result)
+		return encode(name, result)
 	})
 }
 
@@ -64,7 +64,7 @@ func registerObserveHandler[E run.Event](fn func(context.Context, run.Hook[E]) e
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler(Dialect, name, func(ctx context.Context, event any) ([]byte, int, error) {
+	run.RegisterHandler(Dialect, name, func(ctx context.Context, event run.Event) ([]byte, int, error) {
 		typed, ok := event.(E)
 		if !ok {
 			return nil, HandlerErrorExit, fmt.Errorf("cursor: handler for %s received %T", name, event)

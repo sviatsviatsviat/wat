@@ -25,12 +25,15 @@ func (Notification) EventName() string { return EventNotification }
 // NotificationOutput is the response for notification events.
 // Construct via NotificationResults builders. A nil value is a no-op.
 type NotificationOutput interface {
+	Output
 	isNotificationOutput()
 }
 
 type notificationOutput struct {
 	additionalContext string
 }
+
+func (notificationOutput) isCopilotOutput() {}
 
 func (notificationOutput) isNotificationOutput() {}
 

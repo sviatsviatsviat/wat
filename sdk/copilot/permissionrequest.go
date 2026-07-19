@@ -42,6 +42,7 @@ func (e PermissionRequest) ShellCommand() string {
 // PermissionRequestOutput is the response for PermissionRequest events.
 // Construct via PermissionRequestResults builders and With* methods. A nil value is a no-op.
 type PermissionRequestOutput interface {
+	Output
 	isPermissionRequestOutput()
 	// WithInterrupt stops the session when true.
 	WithInterrupt(v bool) PermissionRequestOutput
@@ -53,6 +54,8 @@ type permissionRequestOutput struct {
 	interrupt        bool
 	suppressWarnExit bool
 }
+
+func (permissionRequestOutput) isCopilotOutput() {}
 
 func (permissionRequestOutput) isPermissionRequestOutput() {}
 

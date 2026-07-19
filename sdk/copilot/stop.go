@@ -7,12 +7,15 @@ import (
 // StopOutput is the response for agentStop and subagentStop events.
 // Construct via StopResults builders. A nil value is a no-op.
 type StopOutput interface {
+	Output
 	isStopOutput()
 }
 
 type stopOutput struct {
 	reason string
 }
+
+func (stopOutput) isCopilotOutput() {}
 
 func (stopOutput) isStopOutput() {}
 

@@ -34,6 +34,7 @@ func init() {
 // Construct via MessageDisplayResults builders and With* methods.
 // A nil value is a no-op.
 type MessageDisplayOutput interface {
+	Output
 	isMessageDisplayOutput()
 	// WithContinue sets whether Claude should continue the session.
 	WithContinue(v bool) MessageDisplayOutput
@@ -51,6 +52,8 @@ type messageDisplayOutput struct {
 	common
 	displayContent *string
 }
+
+func (messageDisplayOutput) isClaudeOutput() {}
 
 func (messageDisplayOutput) isMessageDisplayOutput() {}
 func (o messageDisplayOutput) isZero() bool {

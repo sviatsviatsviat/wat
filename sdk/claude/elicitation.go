@@ -31,6 +31,7 @@ func init() {
 // Construct via ElicitationResults builders and With* methods.
 // A nil value is a no-op.
 type ElicitationOutput interface {
+	Output
 	isElicitationOutput()
 	// WithContent sets the elicitation response content.
 	WithContent(content map[string]any) ElicitationOutput
@@ -51,6 +52,8 @@ type elicitationOutput struct {
 	action  string
 	content map[string]any
 }
+
+func (elicitationOutput) isClaudeOutput() {}
 
 func (elicitationOutput) isElicitationOutput() {}
 func (o elicitationOutput) isZero() bool {

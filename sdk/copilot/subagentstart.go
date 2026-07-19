@@ -35,12 +35,15 @@ func (e SubagentStart) DisplayName() string {
 // SubagentStartOutput is the response for SubagentStart events.
 // Construct via SubagentStartResults builders. A nil value is a no-op.
 type SubagentStartOutput interface {
+	Output
 	isSubagentStartOutput()
 }
 
 type subagentStartOutput struct {
 	additionalContext string
 }
+
+func (subagentStartOutput) isCopilotOutput() {}
 
 func (subagentStartOutput) isSubagentStartOutput() {}
 

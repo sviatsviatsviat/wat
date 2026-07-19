@@ -37,6 +37,7 @@ func init() {
 // Construct via PermissionDeniedResults builders and With* methods.
 // A nil value is a no-op.
 type PermissionDeniedOutput interface {
+	Output
 	isPermissionDeniedOutput()
 	// WithContinue sets whether Claude should continue the session.
 	WithContinue(v bool) PermissionDeniedOutput
@@ -54,6 +55,8 @@ type permissionDeniedOutput struct {
 	common
 	retry bool
 }
+
+func (permissionDeniedOutput) isClaudeOutput() {}
 
 func (permissionDeniedOutput) isPermissionDeniedOutput() {}
 func (o permissionDeniedOutput) isZero() bool {

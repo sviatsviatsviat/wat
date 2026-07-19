@@ -26,6 +26,7 @@ func init() {
 // Construct via UserPromptSubmitResults builders and With* methods.
 // A nil value is a no-op.
 type UserPromptSubmitOutput interface {
+	Output
 	isUserPromptSubmitOutput()
 	// WithAdditionalContext injects model context.
 	WithAdditionalContext(text string) UserPromptSubmitOutput
@@ -53,6 +54,8 @@ type userPromptSubmitOutput struct {
 	sessionTitle           string
 	suppressOriginalPrompt bool
 }
+
+func (userPromptSubmitOutput) isClaudeOutput() {}
 
 func (userPromptSubmitOutput) isUserPromptSubmitOutput() {}
 func (o userPromptSubmitOutput) isZero() bool {

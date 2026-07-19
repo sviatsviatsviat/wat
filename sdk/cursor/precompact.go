@@ -22,12 +22,15 @@ func (PreCompact) EventName() string { return EventPreCompact }
 // PreCompactOutput is the response for preCompact events.
 // Construct via PreCompactResults builders. A nil value is a no-op.
 type PreCompactOutput interface {
+	Output
 	isPreCompactOutput()
 }
 
 type preCompactOutput struct {
 	userMessage string
 }
+
+func (preCompactOutput) isCursorOutput() {}
 
 func (preCompactOutput) isPreCompactOutput() {}
 

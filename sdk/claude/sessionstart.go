@@ -30,6 +30,7 @@ func init() {
 // Construct via SessionStartResults builders and With* methods.
 // A nil value is a no-op.
 type SessionStartOutput interface {
+	Output
 	isSessionStartOutput()
 	// WithInitialUserMessage sets the initial user message.
 	WithInitialUserMessage(msg string) SessionStartOutput
@@ -64,6 +65,8 @@ type sessionStartOutput struct {
 	reloadSkills       bool
 	env                map[string]string
 }
+
+func (sessionStartOutput) isClaudeOutput() {}
 
 func (sessionStartOutput) isSessionStartOutput() {}
 func (o sessionStartOutput) isZero() bool {

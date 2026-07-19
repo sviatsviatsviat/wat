@@ -29,12 +29,15 @@ func (e SessionStart) InitialPrompt() string {
 // SessionStartOutput is the response for SessionStart events.
 // Construct via SessionStartResults builders. A nil value is a no-op.
 type SessionStartOutput interface {
+	Output
 	isSessionStartOutput()
 }
 
 type sessionStartOutput struct {
 	additionalContext string
 }
+
+func (sessionStartOutput) isCopilotOutput() {}
 
 func (sessionStartOutput) isSessionStartOutput() {}
 

@@ -7,6 +7,7 @@ import (
 // PostToolOutput is the response for post-tool events.
 // Construct via PostToolResults builders and With* methods. A nil value is a no-op.
 type PostToolOutput interface {
+	Output
 	isPostToolOutput()
 	// WithUpdatedMCPOutput replaces MCP tool output when set.
 	WithUpdatedMCPOutput(output any) PostToolOutput
@@ -18,6 +19,8 @@ type postToolOutput struct {
 	updatedMCPOutput  any
 	additionalContext string
 }
+
+func (postToolOutput) isCursorOutput() {}
 
 func (postToolOutput) isPostToolOutput() {}
 

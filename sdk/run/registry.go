@@ -7,7 +7,7 @@ import (
 
 // Producer handles one hook invocation: run logic on an already-decoded event
 // and encode native JSON. Serve decodes the payload once before calling producers.
-type Producer func(ctx context.Context, event any) (output []byte, exit int, err error)
+type Producer func(ctx context.Context, event Event) (output []byte, exit int, err error)
 
 // Codec peeks event names and decodes payloads for one agent dialect.
 type Codec interface {

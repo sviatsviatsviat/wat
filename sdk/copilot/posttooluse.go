@@ -50,6 +50,7 @@ func (e PostToolUse) ResultRaw() json.RawMessage {
 // PostToolOutput is the response for PostToolUse events.
 // Construct via PostToolResults builders and With* methods. A nil value is a no-op.
 type PostToolOutput interface {
+	Output
 	isPostToolOutput()
 	// WithModifiedResult replaces the tool result text when set.
 	WithModifiedResult(result string) PostToolOutput
@@ -59,6 +60,8 @@ type postToolOutput struct {
 	modifiedResult    string
 	additionalContext string
 }
+
+func (postToolOutput) isCopilotOutput() {}
 
 func (postToolOutput) isPostToolOutput() {}
 

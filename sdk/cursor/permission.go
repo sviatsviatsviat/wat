@@ -19,6 +19,7 @@ const (
 // PermissionOutput is the response for permission-gating events.
 // Construct via PermissionResults builders and With* methods. A nil value is a no-op.
 type PermissionOutput interface {
+	Output
 	isPermissionOutput()
 	// WithUserMessage sets a user-facing message.
 	WithUserMessage(msg string) PermissionOutput
@@ -34,6 +35,8 @@ type permissionOutput struct {
 	agentMessage string
 	updatedInput map[string]any
 }
+
+func (permissionOutput) isCursorOutput() {}
 
 func (permissionOutput) isPermissionOutput() {}
 

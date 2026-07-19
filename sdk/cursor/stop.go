@@ -24,12 +24,15 @@ func (Stop) EventName() string { return EventStop }
 // StopOutput is the response for stop and subagentStop events.
 // Construct via StopResults builders. A nil value is a no-op.
 type StopOutput interface {
+	Output
 	isStopOutput()
 }
 
 type stopOutput struct {
 	followUpMessage string
 }
+
+func (stopOutput) isCursorOutput() {}
 
 func (stopOutput) isStopOutput() {}
 

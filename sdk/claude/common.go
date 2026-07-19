@@ -62,6 +62,7 @@ func (c common) WithTerminalSequence(seq string) common {
 // CommonOutput is a shared-fields-only response for events that only accept those fields.
 // Construct via Results builders and With* methods. A nil value is a no-op.
 type CommonOutput interface {
+	Output
 	isCommonOutput()
 	// WithAdditionalContext injects model context.
 	WithAdditionalContext(text string) CommonOutput
@@ -81,6 +82,8 @@ type commonOutput struct {
 	common
 	additionalContext string
 }
+
+func (commonOutput) isClaudeOutput() {}
 
 func (commonOutput) isCommonOutput() {}
 

@@ -24,6 +24,7 @@ func (BeforeSubmitPrompt) EventName() string { return EventBeforeSubmitPrompt }
 // BeforeSubmitPromptOutput is the response for beforeSubmitPrompt events.
 // Construct via BeforeSubmitPromptResults builders and With* methods. A nil value is a no-op.
 type BeforeSubmitPromptOutput interface {
+	Output
 	isBeforeSubmitPromptOutput()
 	// WithContinue sets whether prompt submission should continue.
 	WithContinue(v bool) BeforeSubmitPromptOutput
@@ -35,6 +36,8 @@ type beforeSubmitPromptOutput struct {
 	cont        *bool
 	userMessage string
 }
+
+func (beforeSubmitPromptOutput) isCursorOutput() {}
 
 func (beforeSubmitPromptOutput) isBeforeSubmitPromptOutput() {}
 

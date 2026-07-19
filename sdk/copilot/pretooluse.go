@@ -54,6 +54,7 @@ func (e PreToolUse) ShellCommand() string {
 // PreToolOutput is the response for PreToolUse events.
 // Construct via PreToolResults builders and With* methods. A nil value is a no-op.
 type PreToolOutput interface {
+	Output
 	isPreToolOutput()
 	// WithModifiedArgs replaces tool arguments when set.
 	WithModifiedArgs(args map[string]any) PreToolOutput
@@ -64,6 +65,8 @@ type preToolOutput struct {
 	reason       string
 	modifiedArgs map[string]any
 }
+
+func (preToolOutput) isCopilotOutput() {}
 
 func (preToolOutput) isPreToolOutput() {}
 

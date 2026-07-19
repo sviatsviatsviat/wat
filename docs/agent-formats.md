@@ -17,7 +17,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `registry.go` | Event-name constants, alias tables |
 | `envelope.go` | Shared payload fields (embedded on each event; access via promoted fields) |
 | `exit.go` | Handler/encode exit-code constants |
-| `encode.go` | `Encode` router (wire mapping) |
+| `encode.go` | Unexported encode router (wire mapping) |
 | `register.go` | Dialect codec, `RegisterDialect` init, handler registration helpers |
 | `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
@@ -41,7 +41,7 @@ Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission
 
 - **Event count** — Claude exposes ~30 events; Copilot exposes 13; Cursor exposes 21.
 - **Wire format** — Claude, Copilot, and Cursor payloads include `hook_event_name`; Copilot uses PascalCase event names with snake_case fields.
-- **Encode contract** — Copilot and Cursor `Encode` return `([]byte, exitCode, error)`; Claude `Encode` returns `([]byte, error)` with blocking in JSON fields.
+- **Encode contract** — Copilot and Cursor encode to `([]byte, exitCode, error)`; Claude encodes to `([]byte, error)` with blocking in JSON fields. Encoding is package-internal in all three SDKs.
 - **Side effects** — Claude `SessionStartOutput.Env` writes `CLAUDE_ENV_FILE`; Copilot and Cursor pass `env` in stdout JSON.
 - **Config schema** — Claude `settings.json` (`Settings`) vs Copilot/Cursor `hooks.json` (`File`).
 
@@ -265,7 +265,7 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 | Constant | Value | When |
 |---|---|---|
 | `copilot.HandlerErrorExit` | `1` | Runner should use when a handler returns an error (fail-closed on PreToolUse; fail-open elsewhere) |
-| `copilot.WarnExit` | `2` | `Encode` returns this for documented `postToolUseFailure` context paths |
+| `copilot.WarnExit` | `2` | Encode returns this for documented `postToolUseFailure` context paths |
 
 ## Cursor inbound mapping
 
@@ -327,7 +327,7 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 | Constant | Value | When |
 |---|---|---|
 | `cursor.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `cursor.PermissionDenyExit` | `2` | `Encode` returns this for permission-gating deny |
+| `cursor.PermissionDenyExit` | `2` | Encode returns this for permission-gating deny |
 
 ## Related code
 
@@ -338,5 +338,5 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Tests: [`internal/hookkit/toolname_test.go`](../internal/hookkit/toolname_test.go); [`sdk/agnostic/tools`](../sdk/agnostic/tools/) (`input_test.go`)
 - Port kind/event registries: [`cmd/wat/internal/portconfig/`](../cmd/wat/internal/portconfig/) (`claude/`, `copilot/`, `cursor/`)
 - Serve / fan-out: [`sdk/agnostic/runner_test.go`](../sdk/agnostic/runner_test.go)
-- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, `Encode`, `On*` registration into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
+- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, package-internal encode, `On*` registration into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
 - Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)

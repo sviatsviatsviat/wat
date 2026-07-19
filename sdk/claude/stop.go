@@ -28,6 +28,7 @@ func init() {
 // Construct via StopResults builders and With* methods.
 // A nil value is a no-op.
 type StopOutput interface {
+	Output
 	isStopOutput()
 	// WithAdditionalContext is non-error feedback that continues the conversation.
 	WithAdditionalContext(text string) StopOutput
@@ -49,6 +50,8 @@ type stopOutput struct {
 	reason            string
 	additionalContext string
 }
+
+func (stopOutput) isClaudeOutput() {}
 
 func (stopOutput) isStopOutput() {}
 func (o stopOutput) isZero() bool {

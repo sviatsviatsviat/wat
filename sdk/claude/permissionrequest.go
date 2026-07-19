@@ -35,6 +35,7 @@ func init() {
 // Construct via PermissionRequestResults builders and With* methods.
 // A nil value is a no-op.
 type PermissionRequestOutput interface {
+	Output
 	isPermissionRequestOutput()
 	// WithUpdatedInput replaces tool arguments when set.
 	WithUpdatedInput(input map[string]any) PermissionRequestOutput
@@ -62,6 +63,8 @@ type permissionRequestOutput struct {
 	interrupt         bool
 	additionalContext string
 }
+
+func (permissionRequestOutput) isClaudeOutput() {}
 
 func (permissionRequestOutput) isPermissionRequestOutput() {}
 func (o permissionRequestOutput) isZero() bool {

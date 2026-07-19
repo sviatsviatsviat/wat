@@ -53,12 +53,15 @@ func (e PostToolUseFailure) ErrorMessage() string {
 // PostToolFailureOutput is the response for PostToolUseFailure events.
 // Construct via PostToolFailureResults builders. A nil value is a no-op.
 type PostToolFailureOutput interface {
+	Output
 	isPostToolFailureOutput()
 }
 
 type postToolFailureOutput struct {
 	context string
 }
+
+func (postToolFailureOutput) isCopilotOutput() {}
 
 func (postToolFailureOutput) isPostToolFailureOutput() {}
 
