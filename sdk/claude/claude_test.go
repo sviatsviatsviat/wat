@@ -1,12 +1,28 @@
 package claude_test
 
 import (
+	"bytes"
+	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
+
+const preToolUsePayload = `{
+  "session_id": "abc123",
+  "transcript_path": "/tmp/t.jsonl",
+  "cwd": "/home/user/proj",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_use_id": "tu_1",
+  "tool_input": {"command": "rm -rf /tmp/build", "description": "clean"}
+}`
 
 func TestDecode_PreToolUse(t *testing.T) {
 	ev, err := claude.DecodeForTest([]byte(preToolUsePayload))
@@ -115,4 +131,157 @@ func TestDecode_InvalidJSON(t *testing.T) {
 			t.Fatalf("error = %v", err)
 		}
 	})
+}
+
+func TestEncode_PreToolDeny(t *testing.T) {
+	out, err := claude.Encode("PreToolUse", claude.PreToolUseResultsForTest().Deny("destructive command"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"permissionDecision":"deny"`) {
+		t.Fatalf("bad output: %s", out)
+	}
+}
+
+func TestEncode_UserPromptBlock(t *testing.T) {
+	out, err := claude.Encode("UserPromptSubmit", claude.UserPromptSubmitResultsForTest().Block("blocked prompt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "blocked prompt") {
+		t.Fatalf("bad output: %s", out)
+	}
+}
+
+func TestEncode_StopBlock(t *testing.T) {
+	out, err := claude.Encode("Stop", claude.StopResultsForTest().FollowUp("run the tests"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "run the tests") {
+		t.Fatalf("bad output: %s", out)
+	}
+}
+
+func TestEncode_SessionStartEnv(t *testing.T) {
+	dir := t.TempDir()
+	envPath := filepath.Join(dir, "env.sh")
+	var written []byte
+	out, err := claude.Encode("SessionStart", claude.SessionStartResultsForTest().Noop().WithEnv(map[string]string{"FOO": "bar", "BAZ": "qux"}),
+		claude.WithGetenv(func(key string) string {
+			if key == "CLAUDE_ENV_FILE" {
+				return envPath
+			}
+			return ""
+		}),
+		claude.WithAppendFile(func(path string, data []byte) error {
+			written = append(written, data...)
+			return os.WriteFile(path, written, 0o644)
+		}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out != nil {
+		t.Fatalf("env-only result should produce no stdout, got %q", out)
+	}
+	got := string(written)
+	for _, line := range []string{`export FOO='bar'`, `export BAZ='qux'`} {
+		if !strings.Contains(got, line) {
+			t.Fatalf("env file = %q, want lines containing %s", got, line)
+		}
+	}
+}
+
+func TestEncode_ZeroOutput(t *testing.T) {
+	out, err := claude.Encode("PreToolUse", nil)
+	if err != nil || out != nil {
+		t.Fatalf("zero output should be silent, got %q err=%v", out, err)
+	}
+}
+
+func TestEncode_EventOutputMismatch(t *testing.T) {
+	_, err := claude.Encode(claude.EventPostToolUse, claude.PreToolUseResultsForTest().Allow())
+	if err == nil {
+		t.Fatal("expected incompatible event/output error")
+	}
+}
+
+func TestEncode_PointerOutput(t *testing.T) {
+	deny := claude.PreToolUseResultsForTest().Deny("blocked")
+	out, err := claude.Encode("PreToolUse", &deny)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"permissionDecision":"deny"`) {
+		t.Fatalf("bad output: %s", out)
+	}
+
+	var typedNil *claude.PreToolUseOutput
+	out, err = claude.Encode("PreToolUse", typedNil)
+	if err != nil || out != nil {
+		t.Fatalf("nil pointer output should be silent, got %q err=%v", out, err)
+	}
+}
+
+func TestEncode_PermissionRequestInterrupt(t *testing.T) {
+	out, err := claude.Encode("PermissionRequest", claude.PermissionRequestResultsForTest().Deny("policy").WithInterrupt(true))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(out), `"continue":false`) {
+		t.Fatalf("interrupt must not set top-level continue: %s", out)
+	}
+	if !strings.Contains(string(out), `"interrupt":true`) {
+		t.Fatalf("bad output: %s", out)
+	}
+}
+
+func TestWriteEnvFile_InvalidKey(t *testing.T) {
+	err := claude.WriteEnvFile(
+		map[string]string{"FOO\nBAR": "value"},
+		func(string) string { return "/tmp/env.sh" },
+		nil,
+	)
+	if err == nil {
+		t.Fatal("expected error for invalid env key")
+	}
+}
+
+func TestServe_PreToolDeny(t *testing.T) {
+	run.Reset()
+	t.Cleanup(run.Reset)
+	claude.OnPreToolUse(func(ctx context.Context, hook run.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		return r.Deny("destructive command"), nil
+	})
+
+	var stdout bytes.Buffer
+	code := run.Serve(context.Background(), strings.NewReader(preToolUsePayload), &stdout, &bytes.Buffer{})
+	if code != 0 {
+		t.Fatalf("exit = %d", code)
+	}
+	if !strings.Contains(stdout.String(), `"permissionDecision":"deny"`) {
+		t.Fatalf("stdout = %s", stdout.Bytes())
+	}
+}
+
+func TestServe_FailPolicy(t *testing.T) {
+	run.Reset()
+	t.Cleanup(run.Reset)
+	claude.OnPreToolUse(func(ctx context.Context, hook run.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		return nil, context.Canceled
+	})
+
+	code := run.Serve(context.Background(), strings.NewReader(preToolUsePayload), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailOpen))
+	if code != claude.HandlerErrorExit {
+		t.Fatalf("FailOpen exit = %d, want %d", code, claude.HandlerErrorExit)
+	}
+	run.Reset()
+	claude.OnPreToolUse(func(ctx context.Context, hook run.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+		return nil, context.Canceled
+	})
+	code = run.Serve(context.Background(), strings.NewReader(preToolUsePayload), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailBlock))
+	if code != claude.FailBlockExit {
+		t.Fatalf("FailBlock exit = %d, want %d", code, claude.FailBlockExit)
+	}
 }
