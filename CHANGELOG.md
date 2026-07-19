@@ -31,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Shared `run.Event` (`EventName()` only; defined in `internal/hookkit`) and `run.Hook` for typed handler context; `run.Codec.Decode` returns `Event`
 - `claude.Handler.TimeoutSeconds` for hook config timeout lookup
 - `claude.HandlerErrorExit` and `copilot.HandlerErrorExit` for handler-error exit codes
-- `claude.FailBlockExit` for fail-closed blocking when `WithFailPolicy(FailBlock)` is active
 - Decoder registry parity tests in `claude` and `copilot` (`sdk/claude/envelope_test.go`, `sdk/copilot/envelope_test.go`)
 - Typed decode failures in `copilot` and `cursor` wrap `ErrDecodePayload` for stable `errors.Is` checks
 - `claude.ErrEventNameRequired` when `hook_event_name` is absent (aligned with Copilot and Cursor)

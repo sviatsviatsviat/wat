@@ -48,7 +48,7 @@ func registerHandler[E run.Event, O any](fn func(context.Context, E) (O, error))
 		}
 		result, err := fn(ctx, typed)
 		if err != nil {
-			return nil, handlerErrorExit(ctx, name), err
+			return nil, HandlerErrorExit, err
 		}
 		if isZeroOutput(result) {
 			return nil, 0, nil
@@ -72,16 +72,8 @@ func registerObserveHandler[E run.Event](fn func(context.Context, run.Hook[E]) e
 			return nil, HandlerErrorExit, fmt.Errorf("claude: handler for %s received %T", name, event)
 		}
 		if err := fn(ctx, run.NewHook(run.InvocationFrom(ctx), typed)); err != nil {
-			return nil, handlerErrorExit(ctx, name), err
+			return nil, HandlerErrorExit, err
 		}
 		return nil, 0, nil
 	})
-}
-
-func handlerErrorExit(ctx context.Context, _ string) int {
-	rc := claudeRunConfig(run.ConfigFrom(ctx))
-	if rc.policy == FailBlock {
-		return FailBlockExit
-	}
-	return HandlerErrorExit
 }

@@ -265,23 +265,15 @@ func TestServe_PreToolDeny(t *testing.T) {
 	}
 }
 
-func TestServe_FailPolicy(t *testing.T) {
+func TestServe_HandlerErrorExit(t *testing.T) {
 	run.Reset()
 	t.Cleanup(run.Reset)
 	claude.OnPreToolUse(func(ctx context.Context, hook run.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		return nil, context.Canceled
 	})
 
-	code := run.Serve(context.Background(), strings.NewReader(preToolUsePayload), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailOpen))
+	code := run.Serve(context.Background(), strings.NewReader(preToolUsePayload), &bytes.Buffer{}, &bytes.Buffer{})
 	if code != claude.HandlerErrorExit {
-		t.Fatalf("FailOpen exit = %d, want %d", code, claude.HandlerErrorExit)
-	}
-	run.Reset()
-	claude.OnPreToolUse(func(ctx context.Context, hook run.Hook[claude.PreToolUse], _ claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
-		return nil, context.Canceled
-	})
-	code = run.Serve(context.Background(), strings.NewReader(preToolUsePayload), &bytes.Buffer{}, &bytes.Buffer{}, claude.WithFailPolicy(claude.FailBlock))
-	if code != claude.FailBlockExit {
-		t.Fatalf("FailBlock exit = %d, want %d", code, claude.FailBlockExit)
+		t.Fatalf("exit = %d, want %d", code, claude.HandlerErrorExit)
 	}
 }

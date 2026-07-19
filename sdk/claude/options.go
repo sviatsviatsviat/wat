@@ -6,28 +6,16 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// FailPolicy selects exit behavior when a handler returns an error.
-type FailPolicy int
-
-const (
-	// FailOpen exits with code 1 on handler errors (default).
-	FailOpen FailPolicy = iota
-	// FailBlock exits with code 2 on handler errors.
-	FailBlock
-)
-
 // Option configures Encode side effects.
 type Option func(*runtimeConfig)
 
 type runtimeConfig struct {
-	policy     FailPolicy
 	getenv     func(string) string
 	appendFile func(path string, data []byte) error
 }
 
 func defaultRuntimeConfig() runtimeConfig {
 	return runtimeConfig{
-		policy: FailOpen,
 		getenv: os.Getenv,
 	}
 }
@@ -58,14 +46,6 @@ func claudeRunConfig(cfg *run.Config) *runtimeConfig {
 	rc := defaultRuntimeConfig()
 	cfg.SetDialectConfig(Dialect, &rc)
 	return &rc
-}
-
-// WithFailPolicy sets handler error exit behavior for claude handlers.
-func WithFailPolicy(p FailPolicy) run.Option {
-	return func(c *run.Config) {
-		rc := claudeRunConfig(c)
-		rc.policy = p
-	}
 }
 
 // WithGetenv injects environment lookup for CLAUDE_ENV_FILE Encode side effects.

@@ -5,7 +5,7 @@
 // Handlers build responses with hook-scoped *Results builders (and With* for
 // advanced fields). A nil return is a silent no-op. Encode returns JSON
 // only (no process exit code). Blocking is expressed via output fields; handler
-// errors exit 1 by default or 2 with WithFailPolicy(FailBlock).
+// errors exit 1.
 //
 // See ExampleOnPreToolUse in example_test.go for a minimal handler.
 package claude

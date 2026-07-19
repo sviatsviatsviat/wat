@@ -209,8 +209,7 @@ Agent-native encode surfaces (use `sdk/claude` directly):
 
 | Constant | Value | When |
 |---|---|---|
-| `claude.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `claude.FailBlockExit` | `2` | Runner should use when `WithFailPolicy(FailBlock)` is active |
+| `claude.HandlerErrorExit` | `1` | Runner should use when a handler returns an error |
 
 ## Copilot inbound mapping
 
