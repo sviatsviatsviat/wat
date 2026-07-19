@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterSessionEnd registers fn on the Copilot SessionEnd chain.
-func RegisterSessionEnd(fn model.SessionEndHandler) {
+func RegisterSessionEnd(r *run.Registry, fn model.SessionEndHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnSessionEnd(func(ctx context.Context, hook run.Hook[sdkcopilot.SessionEnd]) error {
+	sdkcopilot.UseHooks(r).SessionEnd(func(ctx context.Context, hook run.Hook[sdkcopilot.SessionEnd]) error {
 		return fn(ctx, model.NewSessionEndHook(hook.Invocation(), mapSessionEnd(hook.Event)))
 	})
 }

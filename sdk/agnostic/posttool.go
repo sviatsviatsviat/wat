@@ -23,17 +23,12 @@ type PostToolResults = model.PostToolResults
 type PostToolHandler = model.PostToolHandler
 
 // OnPostTool registers a handler for PostTool events across all agents.
-func OnPostTool(fn PostToolHandler) *chain {
-	if fn == nil {
-		return &chain{}
-	}
-	claude.RegisterPostTool(fn)
-	copilot.RegisterPostTool(fn)
-	cursor.RegisterPostTool(fn)
-	return &chain{}
-}
-
-// OnPostTool registers another PostTool handler on the chain.
 func (c *chain) OnPostTool(fn PostToolHandler) *chain {
-	return OnPostTool(fn)
+	if fn == nil {
+		return c
+	}
+	claude.RegisterPostTool(c.reg, fn)
+	copilot.RegisterPostTool(c.reg, fn)
+	cursor.RegisterPostTool(c.reg, fn)
+	return c
 }

@@ -53,17 +53,12 @@ func (postToolUseFailureResults) Context(text string) PostToolUseOutput {
 	return postToolUseOutput{additionalContext: text}
 }
 
-// OnPostToolUseFailure registers a PostToolUseFailure handler.
-func OnPostToolUseFailure(fn func(context.Context, run.Hook[PostToolUseFailure], PostToolUseFailureResults) (PostToolUseOutput, error)) *chain {
-	return (&chain{}).PostToolUseFailure(fn)
-}
-
-// PostToolUseFailure registers another PostToolUseFailure handler on the chain.
+// PostToolUseFailure registers a PostToolUseFailure handler on the chain.
 func (c *chain) PostToolUseFailure(fn func(context.Context, run.Hook[PostToolUseFailure], PostToolUseFailureResults) (PostToolUseOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PostToolUseFailure) (PostToolUseOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev PostToolUseFailure) (PostToolUseOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolUseFailureResults{})
 	})
 	return c

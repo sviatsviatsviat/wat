@@ -20,13 +20,8 @@ func init() {
 	codec.Register(EventWorkspaceOpen, hookkit.EventDecoder[WorkspaceOpen](codec))
 }
 
-// OnWorkspaceOpen registers an observe-only workspaceOpen handler.
-func OnWorkspaceOpen(fn func(context.Context, run.Hook[WorkspaceOpen]) error) *chain {
-	return (&chain{}).WorkspaceOpen(fn)
-}
-
-// WorkspaceOpen registers another WorkspaceOpen handler on the chain.
+// WorkspaceOpen registers a WorkspaceOpen handler on the chain.
 func (c *chain) WorkspaceOpen(fn func(context.Context, run.Hook[WorkspaceOpen]) error) *chain {
-	registerObserveHandler(fn)
+	registerObserveHandler(c.reg, fn)
 	return c
 }

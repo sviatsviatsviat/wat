@@ -107,17 +107,12 @@ func (o worktreeCreateOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnWorktreeCreate registers a WorktreeCreate handler.
-func OnWorktreeCreate(fn func(context.Context, run.Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
-	return (&chain{}).WorktreeCreate(fn)
-}
-
-// WorktreeCreate registers another WorktreeCreate handler on the chain.
+// WorktreeCreate registers a WorktreeCreate handler on the chain.
 func (c *chain) WorktreeCreate(fn func(context.Context, run.Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev WorktreeCreate) (WorktreeCreateOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev WorktreeCreate) (WorktreeCreateOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), worktreeCreateResults{})
 	})
 	return c

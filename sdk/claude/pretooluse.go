@@ -177,17 +177,12 @@ func (o preToolUseOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnPreToolUse registers a PreToolUse handler.
-func OnPreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *chain {
-	return (&chain{}).PreToolUse(fn)
-}
-
-// PreToolUse registers another PreToolUse handler on the chain.
+// PreToolUse registers a PreToolUse handler on the chain.
 func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PreToolUse) (PreToolUseOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev PreToolUse) (PreToolUseOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), preToolUseResults{})
 	})
 	return c

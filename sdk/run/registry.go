@@ -6,7 +6,7 @@ import (
 )
 
 // Producer handles one hook invocation: run logic on an already-decoded event
-// and encode native JSON. Serve decodes the payload once before calling producers.
+// and encode native JSON. Main decodes the payload once before calling producers.
 type Producer func(ctx context.Context, event Event) (output []byte, exit int, err error)
 
 // Codec peeks event names and decodes payloads for one agent dialect.
@@ -47,20 +47,10 @@ func NewRegistry() *Registry {
 	}
 }
 
-// Reset clears handlers on the default registry but preserves registered dialects.
-// It is intended for tests.
-func Reset() {
-	defaultRegistry.resetHandlers()
-}
-
-// RegisterDialect registers dialect ops. Duplicate names panic.
-func RegisterDialect(name string, ops DialectOps) {
-	defaultRegistry.RegisterDialect(name, ops)
-}
-
-// RegisterHandler appends a handler for dialect and native event name.
-func RegisterHandler(dialect, eventName string, p Producer) {
-	defaultRegistry.RegisterHandler(dialect, eventName, p)
+// GetDefaultRegistry returns the process-wide registry used by Main when
+// callers register via UseHooks with no registry argument.
+func GetDefaultRegistry() *Registry {
+	return defaultRegistry
 }
 
 // RegisterDialect registers dialect ops on r. Duplicate names panic.
@@ -72,6 +62,23 @@ func (r *Registry) RegisterDialect(name string, ops DialectOps) {
 	defer r.mu.Unlock()
 	if _, exists := r.dialects[name]; exists {
 		panic("run: duplicate dialect " + name)
+	}
+	r.dialectOrder = append(r.dialectOrder, name)
+	r.dialects[name] = ops
+	if r.handlers[name] == nil {
+		r.handlers[name] = make(map[string][]Producer)
+	}
+}
+
+// EnsureDialect registers dialect ops on r if name is not already present.
+func (r *Registry) EnsureDialect(name string, ops DialectOps) {
+	if name == "" {
+		panic("run: EnsureDialect: empty name")
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.dialects[name]; exists {
+		return
 	}
 	r.dialectOrder = append(r.dialectOrder, name)
 	r.dialects[name] = ops
@@ -104,14 +111,6 @@ func (r *Registry) dialectOps(name string) (DialectOps, bool) {
 	defer r.mu.RUnlock()
 	ops, ok := r.dialects[name]
 	return ops, ok
-}
-
-func (r *Registry) resetHandlers() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for name := range r.handlers {
-		r.handlers[name] = make(map[string][]Producer)
-	}
 }
 
 func (r *Registry) detectDialect(raw []byte, getenv func(string) string, forced string) (string, bool) {

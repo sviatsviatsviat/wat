@@ -159,17 +159,12 @@ func (o postToolUseOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnPostToolUse registers a PostToolUse handler.
-func OnPostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
-	return (&chain{}).PostToolUse(fn)
-}
-
-// PostToolUse registers another PostToolUse handler on the chain.
+// PostToolUse registers a PostToolUse handler on the chain.
 func (c *chain) PostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PostToolUse) (PostToolUseOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev PostToolUse) (PostToolUseOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolUseResults{})
 	})
 	return c

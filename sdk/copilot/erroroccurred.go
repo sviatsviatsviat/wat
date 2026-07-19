@@ -48,13 +48,8 @@ func init() {
 	codec.Register(EventErrorOccurred, hookkit.EventDecoder[ErrorOccurred](codec))
 }
 
-// OnErrorOccurred registers an observe-only ErrorOccurred handler.
-func OnErrorOccurred(fn func(context.Context, run.Hook[ErrorOccurred]) error) *chain {
-	return (&chain{}).ErrorOccurred(fn)
-}
-
-// ErrorOccurred registers another ErrorOccurred handler on the chain.
+// ErrorOccurred registers a ErrorOccurred handler on the chain.
 func (c *chain) ErrorOccurred(fn func(context.Context, run.Hook[ErrorOccurred]) error) *chain {
-	registerObserveHandler(fn)
+	registerObserveHandler(c.reg, fn)
 	return c
 }

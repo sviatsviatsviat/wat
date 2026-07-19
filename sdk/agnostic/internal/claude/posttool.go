@@ -11,11 +11,11 @@ import (
 )
 
 // RegisterPostTool registers fn on the Claude PostToolUse chain.
-func RegisterPostTool(fn model.PostToolHandler) {
+func RegisterPostTool(r *run.Registry, fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.OnPostToolUse(func(ctx context.Context, hook run.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
+	sdkclaude.UseHooks(r).PostToolUse(func(ctx context.Context, hook run.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
 		out, err := fn(ctx, model.NewPostToolHook(hook.Invocation(), mapPostToolUse(hook.Event)), newPostToolResults(native))
 		if err != nil || out == nil {
 			return nil, err

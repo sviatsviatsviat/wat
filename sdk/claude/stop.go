@@ -134,17 +134,12 @@ func (o stopOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnStop registers a Stop handler.
-func OnStop(fn func(context.Context, run.Hook[Stop], StopResults) (StopOutput, error)) *chain {
-	return (&chain{}).Stop(fn)
-}
-
-// Stop registers another Stop handler on the chain.
+// Stop registers a Stop handler on the chain.
 func (c *chain) Stop(fn func(context.Context, run.Hook[Stop], StopResults) (StopOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev Stop) (StopOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev Stop) (StopOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{})
 	})
 	return c

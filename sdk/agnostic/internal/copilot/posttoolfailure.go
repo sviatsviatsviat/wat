@@ -11,11 +11,11 @@ import (
 )
 
 // RegisterPostToolFailure registers fn on the Copilot PostToolUseFailure chain.
-func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
+func RegisterPostToolFailure(r *run.Registry, fn model.PostToolFailureHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnPostToolUseFailure(func(ctx context.Context, hook run.Hook[sdkcopilot.PostToolUseFailure], native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
+	sdkcopilot.UseHooks(r).PostToolUseFailure(func(ctx context.Context, hook run.Hook[sdkcopilot.PostToolUseFailure], native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
 		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event)), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err

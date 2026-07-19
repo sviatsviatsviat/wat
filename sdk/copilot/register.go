@@ -11,12 +11,25 @@ import (
 
 var codec = hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired)
 
+var (
+	defaultReg   = run.GetDefaultRegistry()
+	defaultChain = newChain(defaultReg)
+)
+
 func init() {
-	run.RegisterDialect(Dialect, run.DialectOps{
+	ensureDialect(defaultReg)
+}
+
+func dialectOps() run.DialectOps {
+	return run.DialectOps{
 		Detect: detectPayload,
 		Codec:  codec,
 		Merge:  MergeOutputs,
-	})
+	}
+}
+
+func ensureDialect(r *run.Registry) {
+	r.EnsureDialect(Dialect, dialectOps())
 }
 
 func detectPayload(raw []byte, getenv func(string) string) bool {
@@ -31,14 +44,14 @@ func detectPayload(raw []byte, getenv func(string) string) bool {
 	return has("hook_event_name") && has("timestamp")
 }
 
-func registerHandler[E run.Event, O Output](fn func(context.Context, E) (O, error)) {
+func registerHandler[E run.Event, O Output](r *run.Registry, fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler(Dialect, name, func(ctx context.Context, event run.Event) ([]byte, int, error) {
+	r.RegisterHandler(Dialect, name, func(ctx context.Context, event run.Event) ([]byte, int, error) {
 		typed, ok := event.(E)
 		if !ok {
 			return nil, HandlerErrorExit, fmt.Errorf("copilot: handler for %s received %T", name, event)
@@ -54,14 +67,14 @@ func registerHandler[E run.Event, O Output](fn func(context.Context, E) (O, erro
 	})
 }
 
-func registerObserveHandler[E run.Event](fn func(context.Context, run.Hook[E]) error) {
+func registerObserveHandler[E run.Event](r *run.Registry, fn func(context.Context, run.Hook[E]) error) {
 	if fn == nil {
 		return
 	}
 	var zero E
 	name := zero.EventName()
 
-	run.RegisterHandler(Dialect, name, func(ctx context.Context, event run.Event) ([]byte, int, error) {
+	r.RegisterHandler(Dialect, name, func(ctx context.Context, event run.Event) ([]byte, int, error) {
 		typed, ok := event.(E)
 		if !ok {
 			return nil, HandlerErrorExit, fmt.Errorf("copilot: handler for %s received %T", name, event)

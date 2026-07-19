@@ -40,17 +40,12 @@ func (preCompactResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// OnPreCompact registers a PreCompact handler.
-func OnPreCompact(fn func(context.Context, run.Hook[PreCompact], PreCompactResults) (CommonOutput, error)) *chain {
-	return (&chain{}).PreCompact(fn)
-}
-
-// PreCompact registers another PreCompact handler on the chain.
+// PreCompact registers a PreCompact handler on the chain.
 func (c *chain) PreCompact(fn func(context.Context, run.Hook[PreCompact], PreCompactResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PreCompact) (CommonOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev PreCompact) (CommonOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), preCompactResults{})
 	})
 	return c

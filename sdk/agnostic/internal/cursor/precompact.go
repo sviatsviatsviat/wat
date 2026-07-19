@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterPreCompact registers fn on the Cursor PreCompact chain.
-func RegisterPreCompact(fn model.PreCompactHandler) {
+func RegisterPreCompact(r *run.Registry, fn model.PreCompactHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnPreCompact(func(ctx context.Context, hook run.Hook[sdkcursor.PreCompact], _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
+	sdkcursor.UseHooks(r).PreCompact(func(ctx context.Context, hook run.Hook[sdkcursor.PreCompact], _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
 		return nil, fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event)))
 	})
 }

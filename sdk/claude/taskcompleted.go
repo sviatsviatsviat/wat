@@ -39,17 +39,12 @@ func (taskCompletedResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// OnTaskCompleted registers a TaskCompleted handler.
-func OnTaskCompleted(fn func(context.Context, run.Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
-	return (&chain{}).TaskCompleted(fn)
-}
-
-// TaskCompleted registers another TaskCompleted handler on the chain.
+// TaskCompleted registers a TaskCompleted handler on the chain.
 func (c *chain) TaskCompleted(fn func(context.Context, run.Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev TaskCompleted) (CommonOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev TaskCompleted) (CommonOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), taskCompletedResults{})
 	})
 	return c

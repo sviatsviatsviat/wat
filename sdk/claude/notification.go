@@ -40,17 +40,12 @@ func (notificationResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// OnNotification registers a Notification handler.
-func OnNotification(fn func(context.Context, run.Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
-	return (&chain{}).Notification(fn)
-}
-
-// Notification registers another Notification handler on the chain.
+// Notification registers a Notification handler on the chain.
 func (c *chain) Notification(fn func(context.Context, run.Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev Notification) (CommonOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev Notification) (CommonOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), notificationResults{})
 	})
 	return c

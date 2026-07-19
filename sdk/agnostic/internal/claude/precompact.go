@@ -9,11 +9,11 @@ import (
 )
 
 // RegisterPreCompact registers fn on the Claude PreCompact chain.
-func RegisterPreCompact(fn model.PreCompactHandler) {
+func RegisterPreCompact(r *run.Registry, fn model.PreCompactHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.OnPreCompact(func(ctx context.Context, hook run.Hook[sdkclaude.PreCompact], _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
+	sdkclaude.UseHooks(r).PreCompact(func(ctx context.Context, hook run.Hook[sdkclaude.PreCompact], _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
 		return nil, fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event)))
 	})
 }

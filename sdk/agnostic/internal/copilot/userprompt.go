@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterUserPrompt registers fn on the Copilot UserPromptSubmitted chain.
-func RegisterUserPrompt(fn model.UserPromptHandler) {
+func RegisterUserPrompt(r *run.Registry, fn model.UserPromptHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnUserPromptSubmitted(func(ctx context.Context, hook run.Hook[sdkcopilot.UserPromptSubmitted]) error {
+	sdkcopilot.UseHooks(r).UserPromptSubmitted(func(ctx context.Context, hook run.Hook[sdkcopilot.UserPromptSubmitted]) error {
 		return fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmitted(hook.Event)))
 	})
 }

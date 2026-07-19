@@ -105,17 +105,12 @@ func init() {
 	codec.Register(EventBeforeSubmitPrompt, hookkit.EventDecoder[BeforeSubmitPrompt](codec))
 }
 
-// OnBeforeSubmitPrompt registers a beforeSubmitPrompt handler.
-func OnBeforeSubmitPrompt(fn func(context.Context, run.Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *chain {
-	return (&chain{}).BeforeSubmitPrompt(fn)
-}
-
-// BeforeSubmitPrompt registers another BeforeSubmitPrompt handler on the chain.
+// BeforeSubmitPrompt registers a BeforeSubmitPrompt handler on the chain.
 func (c *chain) BeforeSubmitPrompt(fn func(context.Context, run.Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev BeforeSubmitPrompt) (BeforeSubmitPromptOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev BeforeSubmitPrompt) (BeforeSubmitPromptOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), beforeSubmitPromptResults{})
 	})
 	return c

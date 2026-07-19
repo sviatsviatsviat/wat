@@ -140,17 +140,12 @@ func (o elicitationOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnElicitation registers an Elicitation handler.
-func OnElicitation(fn func(context.Context, run.Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
-	return (&chain{}).Elicitation(fn)
-}
-
-// Elicitation registers another Elicitation handler on the chain.
+// Elicitation registers a Elicitation handler on the chain.
 func (c *chain) Elicitation(fn func(context.Context, run.Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev Elicitation) (ElicitationOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev Elicitation) (ElicitationOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), elicitationResults{})
 	})
 	return c

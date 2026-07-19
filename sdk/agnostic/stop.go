@@ -25,35 +25,25 @@ type StopHandler = model.StopHandler
 // OnStop registers a handler for Stop events across all agents.
 // On Copilot, this receives agent-scoped Stop payloads only; subagent-scoped
 // Stop (agent_name / agent_display_name set) goes to OnSubagentStop.
-func OnStop(fn StopHandler) *chain {
+func (c *chain) OnStop(fn StopHandler) *chain {
 	if fn == nil {
-		return &chain{}
+		return c
 	}
-	claude.RegisterStop(fn)
-	copilot.RegisterStop(fn)
-	cursor.RegisterStop(fn)
-	return &chain{}
+	claude.RegisterStop(c.reg, fn)
+	copilot.RegisterStop(c.reg, fn)
+	cursor.RegisterStop(c.reg, fn)
+	return c
 }
 
 // OnSubagentStop registers a handler for SubagentStop events across all agents.
 // On Copilot, this also receives wire Stop payloads scoped to a subagent
 // (agent_name / agent_display_name set).
-func OnSubagentStop(fn StopHandler) *chain {
-	if fn == nil {
-		return &chain{}
-	}
-	claude.RegisterSubagentStop(fn)
-	copilot.RegisterSubagentStop(fn)
-	cursor.RegisterSubagentStop(fn)
-	return &chain{}
-}
-
-// OnStop registers another Stop handler on the chain.
-func (c *chain) OnStop(fn StopHandler) *chain {
-	return OnStop(fn)
-}
-
-// OnSubagentStop registers another SubagentStop handler on the chain.
 func (c *chain) OnSubagentStop(fn StopHandler) *chain {
-	return OnSubagentStop(fn)
+	if fn == nil {
+		return c
+	}
+	claude.RegisterSubagentStop(c.reg, fn)
+	copilot.RegisterSubagentStop(c.reg, fn)
+	cursor.RegisterSubagentStop(c.reg, fn)
+	return c
 }

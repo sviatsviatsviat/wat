@@ -46,17 +46,12 @@ func (userPromptExpansionResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// OnUserPromptExpansion registers a UserPromptExpansion handler.
-func OnUserPromptExpansion(fn func(context.Context, run.Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
-	return (&chain{}).UserPromptExpansion(fn)
-}
-
-// UserPromptExpansion registers another UserPromptExpansion handler on the chain.
+// UserPromptExpansion registers a UserPromptExpansion handler on the chain.
 func (c *chain) UserPromptExpansion(fn func(context.Context, run.Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev UserPromptExpansion) (CommonOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev UserPromptExpansion) (CommonOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), userPromptExpansionResults{})
 	})
 	return c

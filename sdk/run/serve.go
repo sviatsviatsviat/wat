@@ -7,16 +7,11 @@ import (
 	"os"
 )
 
-// Serve reads a hook payload from in, decodes it once, dispatches registered
-// handlers on the default registry, writes merged stdout to out, diagnostics
-// to errw, and returns the process exit code.
-func Serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Writer, opts ...Option) int {
-	return defaultRegistry.serve(ctx, in, out, errw, applyOptions(opts...))
-}
-
-// Main runs Serve with os.Stdin, os.Stdout, and os.Stderr, then os.Exit.
+// Main runs one hook dispatch cycle on os.Stdin / os.Stdout / os.Stderr using
+// the default registry, then os.Exit with the resulting code.
 func Main(opts ...Option) {
-	os.Exit(Serve(context.Background(), os.Stdin, os.Stdout, os.Stderr, opts...))
+	cfg := applyOptions(opts...)
+	os.Exit(GetDefaultRegistry().serve(context.Background(), os.Stdin, os.Stdout, os.Stderr, cfg))
 }
 
 func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Writer, cfg *Config) int {

@@ -57,17 +57,12 @@ func init() {
 	codec.Register(EventBeforeTabFileRead, hookkit.EventDecoder[BeforeTabFileRead](codec))
 }
 
-// OnBeforeTabFileRead registers a beforeTabFileRead handler.
-func OnBeforeTabFileRead(fn func(context.Context, run.Hook[BeforeTabFileRead], BeforeTabFileReadResults) (PermissionOutput, error)) *chain {
-	return (&chain{}).BeforeTabFileRead(fn)
-}
-
-// BeforeTabFileRead registers another BeforeTabFileRead handler on the chain.
+// BeforeTabFileRead registers a BeforeTabFileRead handler on the chain.
 func (c *chain) BeforeTabFileRead(fn func(context.Context, run.Hook[BeforeTabFileRead], BeforeTabFileReadResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev BeforeTabFileRead) (PermissionOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev BeforeTabFileRead) (PermissionOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), beforeTabFileReadResults{})
 	})
 	return c

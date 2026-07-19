@@ -13,11 +13,11 @@ import (
 )
 
 // RegisterPreTool registers fn on Cursor PreToolUse, BeforeShellExecution, and BeforeMCPExecution chains.
-func RegisterPreTool(fn model.PreToolHandler) {
+func RegisterPreTool(r *run.Registry, fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnPreToolUse(func(ctx context.Context, hook run.Hook[sdkcursor.PreToolUse], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
+	sdkcursor.UseHooks(r).PreToolUse(func(ctx context.Context, hook run.Hook[sdkcursor.PreToolUse], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 		return callPreTool(ctx, hook.Invocation(), mapPreToolUse(hook.Event), newPermissionResults(native), fn)
 	}).
 		BeforeShellExecution(func(ctx context.Context, hook run.Hook[sdkcursor.BeforeShellExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
@@ -29,11 +29,11 @@ func RegisterPreTool(fn model.PreToolHandler) {
 }
 
 // RegisterBeforeReadFile registers fn on the Cursor BeforeReadFile chain.
-func RegisterBeforeReadFile(fn model.PreToolHandler) {
+func RegisterBeforeReadFile(r *run.Registry, fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnBeforeReadFile(func(ctx context.Context, hook run.Hook[sdkcursor.BeforeReadFile], native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
+	sdkcursor.UseHooks(r).BeforeReadFile(func(ctx context.Context, hook run.Hook[sdkcursor.BeforeReadFile], native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
 		return callPreTool(ctx, hook.Invocation(), mapBeforeReadFile(hook.Event), newBeforeReadResults(native), fn)
 	})
 }

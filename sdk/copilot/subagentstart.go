@@ -86,17 +86,12 @@ func init() {
 	codec.Register(EventSubagentStart, hookkit.EventDecoder[SubagentStart](codec))
 }
 
-// OnSubagentStart registers a SubagentStart handler.
-func OnSubagentStart(fn func(context.Context, run.Hook[SubagentStart], SubagentStartResults) (SubagentStartOutput, error)) *chain {
-	return (&chain{}).SubagentStart(fn)
-}
-
-// SubagentStart registers another SubagentStart handler on the chain.
+// SubagentStart registers a SubagentStart handler on the chain.
 func (c *chain) SubagentStart(fn func(context.Context, run.Hook[SubagentStart], SubagentStartResults) (SubagentStartOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev SubagentStart) (SubagentStartOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev SubagentStart) (SubagentStartOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), subagentStartResults{})
 	})
 	return c

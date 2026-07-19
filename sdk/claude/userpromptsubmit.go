@@ -164,17 +164,12 @@ func (o userPromptSubmitOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnUserPromptSubmit registers a UserPromptSubmit handler.
-func OnUserPromptSubmit(fn func(context.Context, run.Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
-	return (&chain{}).UserPromptSubmit(fn)
-}
-
-// UserPromptSubmit registers another UserPromptSubmit handler on the chain.
+// UserPromptSubmit registers a UserPromptSubmit handler on the chain.
 func (c *chain) UserPromptSubmit(fn func(context.Context, run.Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev UserPromptSubmit) (UserPromptSubmitOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev UserPromptSubmit) (UserPromptSubmitOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), userPromptSubmitResults{})
 	})
 	return c

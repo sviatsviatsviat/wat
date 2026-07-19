@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// Option configures Serve and Main.
+// Option configures Main.
 type Option func(*Config)
 
 // Config holds resolved serve-time settings passed to handlers via context.

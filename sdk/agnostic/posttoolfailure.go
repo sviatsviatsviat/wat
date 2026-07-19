@@ -23,17 +23,12 @@ type PostToolFailureResults = model.PostToolFailureResults
 type PostToolFailureHandler = model.PostToolFailureHandler
 
 // OnPostToolFailure registers a handler for PostToolFailure events across all agents.
-func OnPostToolFailure(fn PostToolFailureHandler) *chain {
-	if fn == nil {
-		return &chain{}
-	}
-	claude.RegisterPostToolFailure(fn)
-	copilot.RegisterPostToolFailure(fn)
-	cursor.RegisterPostToolFailure(fn)
-	return &chain{}
-}
-
-// OnPostToolFailure registers another PostToolFailure handler on the chain.
 func (c *chain) OnPostToolFailure(fn PostToolFailureHandler) *chain {
-	return OnPostToolFailure(fn)
+	if fn == nil {
+		return c
+	}
+	claude.RegisterPostToolFailure(c.reg, fn)
+	copilot.RegisterPostToolFailure(c.reg, fn)
+	cursor.RegisterPostToolFailure(c.reg, fn)
+	return c
 }

@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterSubagentStart registers fn on the Claude SubagentStart chain.
-func RegisterSubagentStart(fn model.SubagentStartHandler) {
+func RegisterSubagentStart(r *run.Registry, fn model.SubagentStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.OnSubagentStart(func(ctx context.Context, hook run.Hook[sdkclaude.SubagentStart], _ sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
+	sdkclaude.UseHooks(r).SubagentStart(func(ctx context.Context, hook run.Hook[sdkclaude.SubagentStart], _ sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
 		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event)))
 	})
 }

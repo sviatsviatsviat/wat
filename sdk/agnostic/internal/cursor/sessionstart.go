@@ -11,11 +11,11 @@ import (
 )
 
 // RegisterSessionStart registers fn on the Cursor SessionStart chain.
-func RegisterSessionStart(fn model.SessionStartHandler) {
+func RegisterSessionStart(r *run.Registry, fn model.SessionStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnSessionStart(func(ctx context.Context, hook run.Hook[sdkcursor.SessionStart], native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
+	sdkcursor.UseHooks(r).SessionStart(func(ctx context.Context, hook run.Hook[sdkcursor.SessionStart], native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
 		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event)), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err

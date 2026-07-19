@@ -22,13 +22,8 @@ func init() {
 	codec.Register(EventUserPromptSubmitted, hookkit.EventDecoder[UserPromptSubmitted](codec))
 }
 
-// OnUserPromptSubmitted registers an observe-only userPromptSubmitted handler.
-func OnUserPromptSubmitted(fn func(context.Context, run.Hook[UserPromptSubmitted]) error) *chain {
-	return (&chain{}).UserPromptSubmitted(fn)
-}
-
-// UserPromptSubmitted registers another UserPromptSubmitted handler on the chain.
+// UserPromptSubmitted registers a UserPromptSubmitted handler on the chain.
 func (c *chain) UserPromptSubmitted(fn func(context.Context, run.Hook[UserPromptSubmitted]) error) *chain {
-	registerObserveHandler(fn)
+	registerObserveHandler(c.reg, fn)
 	return c
 }

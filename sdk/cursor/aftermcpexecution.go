@@ -43,17 +43,12 @@ func init() {
 	})
 }
 
-// OnAfterMCPExecution registers an afterMCPExecution handler.
-func OnAfterMCPExecution(fn func(context.Context, run.Hook[AfterMCPExecution], PostToolResults) (PostToolOutput, error)) *chain {
-	return (&chain{}).AfterMCPExecution(fn)
-}
-
-// AfterMCPExecution registers another AfterMCPExecution handler on the chain.
+// AfterMCPExecution registers a AfterMCPExecution handler on the chain.
 func (c *chain) AfterMCPExecution(fn func(context.Context, run.Hook[AfterMCPExecution], PostToolResults) (PostToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev AfterMCPExecution) (PostToolOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev AfterMCPExecution) (PostToolOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
 	})
 	return c

@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterSessionEnd registers fn on the Cursor SessionEnd chain.
-func RegisterSessionEnd(fn model.SessionEndHandler) {
+func RegisterSessionEnd(r *run.Registry, fn model.SessionEndHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnSessionEnd(func(ctx context.Context, hook run.Hook[sdkcursor.SessionEnd]) error {
+	sdkcursor.UseHooks(r).SessionEnd(func(ctx context.Context, hook run.Hook[sdkcursor.SessionEnd]) error {
 		return fn(ctx, model.NewSessionEndHook(hook.Invocation(), mapSessionEnd(hook.Event)))
 	})
 }

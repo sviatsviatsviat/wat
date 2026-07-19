@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterPreCompact registers fn on the Copilot PreCompact chain.
-func RegisterPreCompact(fn model.PreCompactHandler) {
+func RegisterPreCompact(r *run.Registry, fn model.PreCompactHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnPreCompact(func(ctx context.Context, hook run.Hook[sdkcopilot.PreCompact]) error {
+	sdkcopilot.UseHooks(r).PreCompact(func(ctx context.Context, hook run.Hook[sdkcopilot.PreCompact]) error {
 		return fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event)))
 	})
 }

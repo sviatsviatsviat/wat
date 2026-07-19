@@ -102,17 +102,12 @@ func init() {
 	codec.Register(EventSessionStart, hookkit.EventDecoder[SessionStart](codec))
 }
 
-// OnSessionStart registers a sessionStart handler.
-func OnSessionStart(fn func(context.Context, run.Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
-	return (&chain{}).SessionStart(fn)
-}
-
-// SessionStart registers another SessionStart handler on the chain.
+// SessionStart registers a SessionStart handler on the chain.
 func (c *chain) SessionStart(fn func(context.Context, run.Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), sessionStartResults{})
 	})
 	return c

@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterSubagentStart registers fn on the Copilot SubagentStart chain.
-func RegisterSubagentStart(fn model.SubagentStartHandler) {
+func RegisterSubagentStart(r *run.Registry, fn model.SubagentStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnSubagentStart(func(ctx context.Context, hook run.Hook[sdkcopilot.SubagentStart], _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
+	sdkcopilot.UseHooks(r).SubagentStart(func(ctx context.Context, hook run.Hook[sdkcopilot.SubagentStart], _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
 		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event)))
 	})
 }

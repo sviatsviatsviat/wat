@@ -22,13 +22,8 @@ func init() {
 	codec.Register(EventAfterAgentThought, hookkit.EventDecoder[AfterAgentThought](codec))
 }
 
-// OnAfterAgentThought registers an observe-only afterAgentThought handler.
-func OnAfterAgentThought(fn func(context.Context, run.Hook[AfterAgentThought]) error) *chain {
-	return (&chain{}).AfterAgentThought(fn)
-}
-
-// AfterAgentThought registers another AfterAgentThought handler on the chain.
+// AfterAgentThought registers a AfterAgentThought handler on the chain.
 func (c *chain) AfterAgentThought(fn func(context.Context, run.Hook[AfterAgentThought]) error) *chain {
-	registerObserveHandler(fn)
+	registerObserveHandler(c.reg, fn)
 	return c
 }

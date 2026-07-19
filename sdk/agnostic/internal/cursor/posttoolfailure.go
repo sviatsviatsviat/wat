@@ -11,11 +11,11 @@ import (
 )
 
 // RegisterPostToolFailure registers fn on the Cursor PostToolUseFailure chain.
-func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
+func RegisterPostToolFailure(r *run.Registry, fn model.PostToolFailureHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnPostToolUseFailure(func(ctx context.Context, hook run.Hook[sdkcursor.PostToolUseFailure], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+	sdkcursor.UseHooks(r).PostToolUseFailure(func(ctx context.Context, hook run.Hook[sdkcursor.PostToolUseFailure], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event)), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err

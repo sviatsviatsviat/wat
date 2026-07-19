@@ -22,13 +22,8 @@ func init() {
 	codec.Register(EventSessionEnd, hookkit.EventDecoder[SessionEnd](codec))
 }
 
-// OnSessionEnd registers an observe-only SessionEnd handler.
-func OnSessionEnd(fn func(context.Context, run.Hook[SessionEnd]) error) *chain {
-	return (&chain{}).SessionEnd(fn)
-}
-
-// SessionEnd registers another SessionEnd handler on the chain.
+// SessionEnd registers a SessionEnd handler on the chain.
 func (c *chain) SessionEnd(fn func(context.Context, run.Hook[SessionEnd]) error) *chain {
-	registerObserveHandler(fn)
+	registerObserveHandler(c.reg, fn)
 	return c
 }

@@ -36,17 +36,12 @@ func init() {
 	codec.Register(EventAfterShellExecution, hookkit.EventDecoder[AfterShellExecution](codec))
 }
 
-// OnAfterShellExecution registers an afterShellExecution handler.
-func OnAfterShellExecution(fn func(context.Context, run.Hook[AfterShellExecution], PostToolResults) (PostToolOutput, error)) *chain {
-	return (&chain{}).AfterShellExecution(fn)
-}
-
-// AfterShellExecution registers another AfterShellExecution handler on the chain.
+// AfterShellExecution registers a AfterShellExecution handler on the chain.
 func (c *chain) AfterShellExecution(fn func(context.Context, run.Hook[AfterShellExecution], PostToolResults) (PostToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev AfterShellExecution) (PostToolOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev AfterShellExecution) (PostToolOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
 	})
 	return c

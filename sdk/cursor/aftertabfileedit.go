@@ -24,13 +24,8 @@ func init() {
 	codec.Register(EventAfterTabFileEdit, hookkit.EventDecoder[AfterTabFileEdit](codec))
 }
 
-// OnAfterTabFileEdit registers an observe-only afterTabFileEdit handler.
-func OnAfterTabFileEdit(fn func(context.Context, run.Hook[AfterTabFileEdit]) error) *chain {
-	return (&chain{}).AfterTabFileEdit(fn)
-}
-
-// AfterTabFileEdit registers another AfterTabFileEdit handler on the chain.
+// AfterTabFileEdit registers a AfterTabFileEdit handler on the chain.
 func (c *chain) AfterTabFileEdit(fn func(context.Context, run.Hook[AfterTabFileEdit]) error) *chain {
-	registerObserveHandler(fn)
+	registerObserveHandler(c.reg, fn)
 	return c
 }

@@ -120,17 +120,12 @@ func (o permissionDeniedOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnPermissionDenied registers a PermissionDenied handler.
-func OnPermissionDenied(fn func(context.Context, run.Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
-	return (&chain{}).PermissionDenied(fn)
-}
-
-// PermissionDenied registers another PermissionDenied handler on the chain.
+// PermissionDenied registers a PermissionDenied handler on the chain.
 func (c *chain) PermissionDenied(fn func(context.Context, run.Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PermissionDenied) (PermissionDeniedOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev PermissionDenied) (PermissionDeniedOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionDeniedResults{})
 	})
 	return c

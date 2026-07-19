@@ -45,17 +45,12 @@ func init() {
 	})
 }
 
-// OnPostToolUse registers a postToolUse handler.
-func OnPostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolResults) (PostToolOutput, error)) *chain {
-	return (&chain{}).PostToolUse(fn)
-}
-
-// PostToolUse registers another PostToolUse handler on the chain.
+// PostToolUse registers a PostToolUse handler on the chain.
 func (c *chain) PostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolResults) (PostToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PostToolUse) (PostToolOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev PostToolUse) (PostToolOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
 	})
 	return c

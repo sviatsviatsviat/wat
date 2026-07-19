@@ -147,17 +147,12 @@ func init() {
 	})
 }
 
-// OnPreToolUse registers a PreToolUse handler.
-func OnPreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *chain {
-	return (&chain{}).PreToolUse(fn)
-}
-
-// PreToolUse registers another PreToolUse handler on the chain.
+// PreToolUse registers a PreToolUse handler on the chain.
 func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PreToolUse) (PreToolOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev PreToolUse) (PreToolOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), preToolResults{})
 	})
 	return c

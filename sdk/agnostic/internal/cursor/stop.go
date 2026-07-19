@@ -10,21 +10,21 @@ import (
 )
 
 // RegisterStop registers fn on the Cursor Stop chain.
-func RegisterStop(fn model.StopHandler) {
+func RegisterStop(r *run.Registry, fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnStop(func(ctx context.Context, hook run.Hook[sdkcursor.Stop], native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
+	sdkcursor.UseHooks(r).Stop(func(ctx context.Context, hook run.Hook[sdkcursor.Stop], native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapStop(hook.Event), native, fn)
 	})
 }
 
 // RegisterSubagentStop registers fn on the Cursor SubagentStop chain.
-func RegisterSubagentStop(fn model.StopHandler) {
+func RegisterSubagentStop(r *run.Registry, fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnSubagentStop(func(ctx context.Context, hook run.Hook[sdkcursor.SubagentStop], native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
+	sdkcursor.UseHooks(r).SubagentStop(func(ctx context.Context, hook run.Hook[sdkcursor.SubagentStop], native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event), native, fn)
 	})
 }

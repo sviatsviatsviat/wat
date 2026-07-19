@@ -128,7 +128,7 @@ import (
 )
 
 func main() {
-	agnostic.OnPreTool(func(ctx context.Context, hook agnostic.PreToolHook, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
+	agnostic.UseHooks().OnPreTool(func(ctx context.Context, hook agnostic.PreToolHook, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
 		// Guard: block force pushes, escalate other git pushes to the user.
 		// Fires on PreToolUse (Claude/Copilot) and on preToolUse /
 		// beforeShellExecution (Cursor); hook.Tool.Shell is the extracted command.

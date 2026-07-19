@@ -39,17 +39,12 @@ func (taskCreatedResults) Context(text string) CommonOutput {
 	return commonOutput{additionalContext: text}
 }
 
-// OnTaskCreated registers a TaskCreated handler.
-func OnTaskCreated(fn func(context.Context, run.Hook[TaskCreated], TaskCreatedResults) (CommonOutput, error)) *chain {
-	return (&chain{}).TaskCreated(fn)
-}
-
-// TaskCreated registers another TaskCreated handler on the chain.
+// TaskCreated registers a TaskCreated handler on the chain.
 func (c *chain) TaskCreated(fn func(context.Context, run.Hook[TaskCreated], TaskCreatedResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev TaskCreated) (CommonOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev TaskCreated) (CommonOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), taskCreatedResults{})
 	})
 	return c

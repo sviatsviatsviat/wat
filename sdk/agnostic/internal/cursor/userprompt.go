@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterUserPrompt registers fn on the Cursor BeforeSubmitPrompt chain.
-func RegisterUserPrompt(fn model.UserPromptHandler) {
+func RegisterUserPrompt(r *run.Registry, fn model.UserPromptHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnBeforeSubmitPrompt(func(ctx context.Context, hook run.Hook[sdkcursor.BeforeSubmitPrompt], _ sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
+	sdkcursor.UseHooks(r).BeforeSubmitPrompt(func(ctx context.Context, hook run.Hook[sdkcursor.BeforeSubmitPrompt], _ sdkcursor.BeforeSubmitPromptResults) (sdkcursor.BeforeSubmitPromptOutput, error) {
 		return nil, fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapBeforeSubmitPrompt(hook.Event)))
 	})
 }

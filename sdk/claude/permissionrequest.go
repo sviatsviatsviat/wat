@@ -167,17 +167,12 @@ func (o permissionRequestOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnPermissionRequest registers a PermissionRequest handler.
-func OnPermissionRequest(fn func(context.Context, run.Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
-	return (&chain{}).PermissionRequest(fn)
-}
-
-// PermissionRequest registers another PermissionRequest handler on the chain.
+// PermissionRequest registers a PermissionRequest handler on the chain.
 func (c *chain) PermissionRequest(fn func(context.Context, run.Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionRequestResults{})
 	})
 	return c

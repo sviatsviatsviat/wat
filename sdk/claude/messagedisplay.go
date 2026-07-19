@@ -118,17 +118,12 @@ func (o messageDisplayOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-// OnMessageDisplay registers a MessageDisplay handler.
-func OnMessageDisplay(fn func(context.Context, run.Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
-	return (&chain{}).MessageDisplay(fn)
-}
-
-// MessageDisplay registers another MessageDisplay handler on the chain.
+// MessageDisplay registers a MessageDisplay handler on the chain.
 func (c *chain) MessageDisplay(fn func(context.Context, run.Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
-	registerHandler(func(ctx context.Context, ev MessageDisplay) (MessageDisplayOutput, error) {
+	registerHandler(c.reg, func(ctx context.Context, ev MessageDisplay) (MessageDisplayOutput, error) {
 		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), messageDisplayResults{})
 	})
 	return c
