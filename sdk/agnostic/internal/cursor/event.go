@@ -6,11 +6,19 @@ import (
 )
 
 func envelope(env sdkcursor.Envelope, name string) model.Envelope {
+	session := env.ConversationID
+	if session == "" {
+		session = env.SessionID
+	}
+	transcript := ""
+	if env.TranscriptPath != nil {
+		transcript = *env.TranscriptPath
+	}
 	return model.Envelope{
 		Agent:          sdkcursor.Dialect,
 		Name:           name,
-		Session:        env.Session(),
+		Session:        session,
 		Cwd:            env.Cwd,
-		TranscriptPath: env.Transcript(),
+		TranscriptPath: transcript,
 	}
 }

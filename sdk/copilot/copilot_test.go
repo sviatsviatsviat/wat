@@ -37,7 +37,7 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 		t.Fatal(err)
 	}
 	pre, ok := ev.(copilot.PreToolUse)
-	if !ok || pre.Session() != "s1" || pre.Cwd != "/w" {
+	if !ok || pre.SessionID != "s1" || pre.Cwd != "/w" {
 		t.Fatalf("bad event: %+v", ev)
 	}
 	if pre.NativeToolName() != "bash" || pre.ShellCommand() != "rm -rf /" {
@@ -109,8 +109,8 @@ func TestDecode_VSCodeStop(t *testing.T) {
 	if stop.Reason() != "end_turn" {
 		t.Fatalf("Reason=%q", stop.Reason())
 	}
-	if stop.Transcript() != "/tmp/t" {
-		t.Fatalf("Transcript=%q", stop.Transcript())
+	if stop.TranscriptPath != "/tmp/t" {
+		t.Fatalf("TranscriptPath=%q", stop.TranscriptPath)
 	}
 }
 

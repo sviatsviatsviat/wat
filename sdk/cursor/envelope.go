@@ -31,19 +31,3 @@ type Envelope struct {
 	// SessionID is a fallback session identifier when conversation_id is absent.
 	SessionID string `json:"session_id"`
 }
-
-// Session returns the session identifier from conversation_id or session_id.
-func (e Envelope) Session() string {
-	if e.ConversationID != "" {
-		return e.ConversationID
-	}
-	return e.SessionID
-}
-
-// Transcript returns the transcript path when set.
-func (e Envelope) Transcript() string {
-	if e.TranscriptPath == nil {
-		return ""
-	}
-	return *e.TranscriptPath
-}

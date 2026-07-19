@@ -9,8 +9,8 @@ func envelope(env sdkcopilot.Envelope, name string) model.Envelope {
 	return model.Envelope{
 		Agent:          sdkcopilot.Dialect,
 		Name:           name,
-		Session:        env.Session(),
+		Session:        env.SessionID,
 		Cwd:            env.Cwd,
-		TranscriptPath: env.Transcript(),
+		TranscriptPath: env.TranscriptPath,
 	}
 }

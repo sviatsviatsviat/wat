@@ -30,13 +30,3 @@ type Envelope struct {
 	// TranscriptPath is the conversation transcript path.
 	TranscriptPath string `json:"transcript_path"`
 }
-
-// Session returns the session identifier.
-func (e Envelope) Session() string {
-	return e.SessionID
-}
-
-// Transcript returns the transcript path.
-func (e Envelope) Transcript() string {
-	return e.TranscriptPath
-}

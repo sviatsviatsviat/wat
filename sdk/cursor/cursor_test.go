@@ -54,7 +54,7 @@ func TestDecodeEncode_BeforeShellDeny(t *testing.T) {
 	if !ok {
 		t.Fatalf("want BeforeShellExecution, got %T", ev)
 	}
-	if shell.Command != "git push --force" || shell.Session() != "c1" {
+	if shell.Command != "git push --force" || shell.ConversationID != "c1" {
 		t.Fatalf("bad event: %+v", shell)
 	}
 
