@@ -2,9 +2,6 @@ package agnostic
 
 import "github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 
-// Event is the unified, agent-independent view of a hook invocation.
-type Event = model.Event
-
 // ToolCall describes the tool invocation a pre/post tool event refers to.
 type ToolCall = model.ToolCall
 

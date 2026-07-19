@@ -32,7 +32,7 @@ func (d Decision) String() string {
 // Result is a portable decision/context projection used by Merge helpers and tests.
 //
 // Runtime hook handlers return sealed kind-specific types (PreToolResult,
-// PostToolResult, …), not this struct. Result is distinct from Event.Result,
+// PostToolResult, …), not this struct. Result is distinct from ToolResult,
 // which carries incoming post-tool payload data on decoded events.
 type Result struct {
 	// Decision is the gate verdict for PreTool events.

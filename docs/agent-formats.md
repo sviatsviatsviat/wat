@@ -29,9 +29,9 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 |----------|------|
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool`, adapters, …) |
 | `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |
-| `event.go` / `result.go` | Shared `Event`, `Kind`, result types; `Event.Agent` is a string |
+| `toolcall.go` / `result.go` | Shared leaf types (`ToolCall`, `ToolResult`) and portable result projection |
 | `internal/model/<kind>.go` | Leaf definitions behind root aliases (`*Event`, `*Hook`, `*Handler`, `*Result`); same kind filenames as the package root |
-| `internal/model/event.go` / `envelope.go` | Shared `Kind`, monolithic `Event`, leaf payloads, and `Envelope` |
+| `internal/model/toolcall.go` / `leaf.go` / `envelope.go` | Shared leaf payloads (`ToolCall`, `Subagent`, …) and `Envelope` |
 | `tools/` | Canonical tool names and typed `Input` with `AsBash`, `AsWrite`, … |
 
 Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
@@ -91,7 +91,7 @@ Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"cla
 
 Typed registration methods (`OnPreTool`, `OnPostTool`, `OnStop`, and others) accept only **portable** event kinds — those present on Claude Code, GitHub Copilot, and Cursor. Each kind has its own result type (`PreToolResult`, `PostToolResult`, `StopResult`, …) so hook authors can only set fields every agent can encode. Use `sdk/claude`, `sdk/copilot`, or `sdk/cursor` directly for agent-only capabilities.
 
-Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) take per-kind observe handlers that return only `error` — no hook response. Each handler receives a hook wrapper (typed event + `run.Invocation`) instead of a bare `*Event`.
+Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) take per-kind observe handlers that return only `error` — no hook response. Each handler receives a hook wrapper (typed event + `run.Invocation`).
 
 ### Handler signatures
 
@@ -101,8 +101,6 @@ All four SDKs use the same handler shapes. Result-producing handlers take `(ctx,
 |---|---|---|
 | Result | `(ctx, hook PreToolHook, r PreToolResults) (PreToolResult, error)` — hook embeds **`PreToolEvent`** (normalized) | `(ctx, hook Hook[PreToolUse], r PreToolUseResults) (PreToolUseOutput, error)` — hook carries **native typed event** via `hook.Event` |
 | Observe | `(ctx, hook SessionEndHook) error` — hook embeds **`SessionEndEvent`** | `(ctx, hook Hook[SessionEnd]) error` — hook carries native typed event via `hook.Event` |
-
-**Not in handler signatures:** bare `*Event` (agnostic) or cross-kind event blobs. Exported `agnostic.Event` remains for codecs and `wat test` summaries.
 
 ### Hook-scoped result builders
 
