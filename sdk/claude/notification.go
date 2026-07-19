@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -19,7 +21,7 @@ type Notification struct {
 func (Notification) EventName() string { return EventNotification }
 
 func init() {
-	registerDecoder(EventNotification, decodeAs[Notification])
+	codec.Register(EventNotification, hookkit.EventDecoder[Notification](codec))
 }
 
 // NotificationResults is the hook-scoped response builder supplied to On* handlers by registration.
@@ -39,17 +41,17 @@ func (notificationResults) Context(text string) CommonOutput {
 }
 
 // OnNotification registers a Notification handler.
-func OnNotification(fn func(context.Context, Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
+func OnNotification(fn func(context.Context, run.Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
 	return (&chain{}).Notification(fn)
 }
 
 // Notification registers another Notification handler on the chain.
-func (c *chain) Notification(fn func(context.Context, Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
+func (c *chain) Notification(fn func(context.Context, run.Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev Notification) (CommonOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), notificationResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), notificationResults{})
 	})
 	return c
 }

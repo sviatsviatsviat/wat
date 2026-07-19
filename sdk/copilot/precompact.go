@@ -2,6 +2,10 @@ package copilot
 
 import (
 	"context"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PreCompact is the PreCompact hook event.
@@ -22,16 +26,16 @@ func (e PreCompact) Instructions() string {
 }
 
 func init() {
-	registerDecoder(EventPreCompact, decodeAs[PreCompact])
+	codec.Register(EventPreCompact, hookkit.EventDecoder[PreCompact](codec))
 }
 
 // OnPreCompact registers an observe-only PreCompact handler.
-func OnPreCompact(fn func(context.Context, Hook[PreCompact]) error) *chain {
+func OnPreCompact(fn func(context.Context, run.Hook[PreCompact]) error) *chain {
 	return (&chain{}).PreCompact(fn)
 }
 
 // PreCompact registers another PreCompact handler on the chain.
-func (c *chain) PreCompact(fn func(context.Context, Hook[PreCompact]) error) *chain {
+func (c *chain) PreCompact(fn func(context.Context, run.Hook[PreCompact]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

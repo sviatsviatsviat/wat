@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
@@ -13,7 +15,7 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.OnSessionStart(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SessionStart], native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
+	sdkclaude.OnSessionStart(func(ctx context.Context, hook run.Hook[sdkclaude.SessionStart], native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
 		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event)), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err
@@ -28,7 +30,7 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 
 func mapSessionStart(e sdkclaude.SessionStart) *model.SessionStartEvent {
 	return &model.SessionStartEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Life:     &model.Lifecycle{Source: e.Source, Model: e.Model},
 	}
 }

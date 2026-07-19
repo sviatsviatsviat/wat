@@ -2,6 +2,10 @@ package cursor
 
 import (
 	"context"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // AfterAgentThought is the afterAgentThought hook event.
@@ -15,16 +19,16 @@ type AfterAgentThought struct {
 func (AfterAgentThought) EventName() string { return EventAfterAgentThought }
 
 func init() {
-	registerDecoder(EventAfterAgentThought, decodeAs[AfterAgentThought])
+	codec.Register(EventAfterAgentThought, hookkit.EventDecoder[AfterAgentThought](codec))
 }
 
 // OnAfterAgentThought registers an observe-only afterAgentThought handler.
-func OnAfterAgentThought(fn func(context.Context, Hook[AfterAgentThought]) error) *chain {
+func OnAfterAgentThought(fn func(context.Context, run.Hook[AfterAgentThought]) error) *chain {
 	return (&chain{}).AfterAgentThought(fn)
 }
 
 // AfterAgentThought registers another AfterAgentThought handler on the chain.
-func (c *chain) AfterAgentThought(fn func(context.Context, Hook[AfterAgentThought]) error) *chain {
+func (c *chain) AfterAgentThought(fn func(context.Context, run.Hook[AfterAgentThought]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

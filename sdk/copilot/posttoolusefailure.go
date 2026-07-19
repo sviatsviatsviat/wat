@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -99,25 +101,25 @@ func (o postToolFailureOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventPostToolUseFailure, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PostToolUseFailure, raw []byte) {
+	codec.Register(EventPostToolUseFailure, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PostToolUseFailure, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})
 }
 
 // OnPostToolUseFailure registers a PostToolUseFailure handler.
-func OnPostToolUseFailure(fn func(context.Context, Hook[PostToolUseFailure], PostToolFailureResults) (PostToolFailureOutput, error)) *chain {
+func OnPostToolUseFailure(fn func(context.Context, run.Hook[PostToolUseFailure], PostToolFailureResults) (PostToolFailureOutput, error)) *chain {
 	return (&chain{}).PostToolUseFailure(fn)
 }
 
 // PostToolUseFailure registers another PostToolUseFailure handler on the chain.
-func (c *chain) PostToolUseFailure(fn func(context.Context, Hook[PostToolUseFailure], PostToolFailureResults) (PostToolFailureOutput, error)) *chain {
+func (c *chain) PostToolUseFailure(fn func(context.Context, run.Hook[PostToolUseFailure], PostToolFailureResults) (PostToolFailureOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PostToolUseFailure) (PostToolFailureOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolFailureResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolFailureResults{})
 	})
 	return c
 }

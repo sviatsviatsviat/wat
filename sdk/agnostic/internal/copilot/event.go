@@ -5,11 +5,10 @@ import (
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
-func envelope(native sdkcopilot.Event) model.Envelope {
-	env := sdkcopilot.EnvelopeOf(native)
+func envelope(env sdkcopilot.Envelope, name string) model.Envelope {
 	return model.Envelope{
 		Agent:          sdkcopilot.Dialect,
-		Name:           native.EventName(),
+		Name:           name,
 		Session:        env.Session(),
 		Cwd:            env.Cwd,
 		TranscriptPath: env.Transcript(),

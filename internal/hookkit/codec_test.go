@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+type namedEvent string
+
+func (e namedEvent) EventName() string { return string(e) }
+
 func TestCodec(t *testing.T) {
 	t.Parallel()
 	empty := errors.New("empty")
@@ -13,15 +17,15 @@ func TestCodec(t *testing.T) {
 	nameRequired := errors.New("name required")
 
 	c := NewCodec("test", empty, decodeErr, nameRequired)
-	c.Register("Known", func(raw []byte) (any, error) {
-		return string(raw), nil
+	c.Register("Known", func(raw []byte) (Event, error) {
+		return namedEvent("Known"), nil
 	})
 
 	got, err := c.Decode([]byte(`{"hook_event_name":"Known"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != `{"hook_event_name":"Known"}` {
+	if got.EventName() != "Known" {
 		t.Fatalf("got = %v", got)
 	}
 
@@ -52,7 +56,7 @@ func TestCodec_IsolatedRegistries(t *testing.T) {
 
 	a := NewCodec("a", empty, decodeErr, nameRequired)
 	b := NewCodec("b", empty, decodeErr, nameRequired)
-	a.Register("X", func([]byte) (any, error) { return "a", nil })
+	a.Register("X", func([]byte) (Event, error) { return namedEvent("a"), nil })
 
 	_, err := b.Decode([]byte(`{"hook_event_name":"X"}`))
 	if err == nil {

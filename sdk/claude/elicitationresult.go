@@ -2,6 +2,8 @@ package claude
 
 import (
 	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // ElicitationResult is the ElicitationResult hook event.
@@ -19,5 +21,5 @@ type ElicitationResult struct {
 func (ElicitationResult) EventName() string { return EventElicitationResult }
 
 func init() {
-	registerDecoder(EventElicitationResult, decodeAs[ElicitationResult])
+	codec.Register(EventElicitationResult, hookkit.EventDecoder[ElicitationResult](codec))
 }

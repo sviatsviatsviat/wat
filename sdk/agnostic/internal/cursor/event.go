@@ -5,11 +5,10 @@ import (
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
-func envelope(native sdkcursor.Event) model.Envelope {
-	env := sdkcursor.EnvelopeOf(native)
+func envelope(env sdkcursor.Envelope, name string) model.Envelope {
 	return model.Envelope{
 		Agent:          sdkcursor.Dialect,
-		Name:           native.EventName(),
+		Name:           name,
 		Session:        env.Session(),
 		Cwd:            env.Cwd,
 		TranscriptPath: env.Transcript(),

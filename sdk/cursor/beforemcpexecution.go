@@ -3,6 +3,8 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/cursor/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -24,25 +26,25 @@ type BeforeMCPExecution struct {
 func (BeforeMCPExecution) EventName() string { return EventBeforeMCPExecution }
 
 func init() {
-	registerDecoder(EventBeforeMCPExecution, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *BeforeMCPExecution, raw []byte) {
+	codec.Register(EventBeforeMCPExecution, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *BeforeMCPExecution, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})
 }
 
 // OnBeforeMCPExecution registers a beforeMCPExecution handler.
-func OnBeforeMCPExecution(fn func(context.Context, Hook[BeforeMCPExecution], PermissionResults) (PermissionOutput, error)) *chain {
+func OnBeforeMCPExecution(fn func(context.Context, run.Hook[BeforeMCPExecution], PermissionResults) (PermissionOutput, error)) *chain {
 	return (&chain{}).BeforeMCPExecution(fn)
 }
 
 // BeforeMCPExecution registers another BeforeMCPExecution handler on the chain.
-func (c *chain) BeforeMCPExecution(fn func(context.Context, Hook[BeforeMCPExecution], PermissionResults) (PermissionOutput, error)) *chain {
+func (c *chain) BeforeMCPExecution(fn func(context.Context, run.Hook[BeforeMCPExecution], PermissionResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev BeforeMCPExecution) (PermissionOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionResults{})
 	})
 	return c
 }

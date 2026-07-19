@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // ConfigChange is the ConfigChange hook event.
 type ConfigChange struct {
 	Envelope
@@ -11,5 +13,5 @@ type ConfigChange struct {
 func (ConfigChange) EventName() string { return EventConfigChange }
 
 func init() {
-	registerDecoder(EventConfigChange, decodeAs[ConfigChange])
+	codec.Register(EventConfigChange, hookkit.EventDecoder[ConfigChange](codec))
 }

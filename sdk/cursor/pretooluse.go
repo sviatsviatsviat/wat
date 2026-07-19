@@ -31,25 +31,25 @@ func (e PreToolUse) ShellCommand() string {
 }
 
 func init() {
-	registerDecoder(EventPreToolUse, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PreToolUse, raw []byte) {
+	codec.Register(EventPreToolUse, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PreToolUse, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})
 }
 
 // OnPreToolUse registers a preToolUse handler.
-func OnPreToolUse(fn func(context.Context, Hook[PreToolUse], PermissionResults) (PermissionOutput, error)) *chain {
+func OnPreToolUse(fn func(context.Context, run.Hook[PreToolUse], PermissionResults) (PermissionOutput, error)) *chain {
 	return (&chain{}).PreToolUse(fn)
 }
 
 // PreToolUse registers another PreToolUse handler on the chain.
-func (c *chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PermissionResults) (PermissionOutput, error)) *chain {
+func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], PermissionResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PreToolUse) (PermissionOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionResults{})
 	})
 	return c
 }

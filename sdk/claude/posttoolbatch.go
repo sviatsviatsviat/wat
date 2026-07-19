@@ -5,6 +5,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PostToolBatchCall is one tool invocation entry in a PostToolBatch event.
@@ -30,8 +31,8 @@ type PostToolBatch struct {
 func (PostToolBatch) EventName() string { return EventPostToolBatch }
 
 func init() {
-	registerDecoder(EventPostToolBatch, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, bindPostToolBatchToolInputs)
+	codec.Register(EventPostToolBatch, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, bindPostToolBatchToolInputs)
 	})
 }
 

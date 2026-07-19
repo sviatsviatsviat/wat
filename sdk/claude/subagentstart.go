@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -15,7 +17,7 @@ type SubagentStart struct {
 func (SubagentStart) EventName() string { return EventSubagentStart }
 
 func init() {
-	registerDecoder(EventSubagentStart, decodeAs[SubagentStart])
+	codec.Register(EventSubagentStart, hookkit.EventDecoder[SubagentStart](codec))
 }
 
 // SubagentStartResults is the hook-scoped response builder supplied to On* handlers by registration.
@@ -35,17 +37,17 @@ func (subagentStartResults) Context(text string) CommonOutput {
 }
 
 // OnSubagentStart registers a SubagentStart handler.
-func OnSubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (CommonOutput, error)) *chain {
+func OnSubagentStart(fn func(context.Context, run.Hook[SubagentStart], SubagentStartResults) (CommonOutput, error)) *chain {
 	return (&chain{}).SubagentStart(fn)
 }
 
 // SubagentStart registers another SubagentStart handler on the chain.
-func (c *chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (CommonOutput, error)) *chain {
+func (c *chain) SubagentStart(fn func(context.Context, run.Hook[SubagentStart], SubagentStartResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev SubagentStart) (CommonOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), subagentStartResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), subagentStartResults{})
 	})
 	return c
 }

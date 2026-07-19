@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
@@ -13,7 +15,7 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnSessionStart(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.SessionStart], native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
+	sdkcursor.OnSessionStart(func(ctx context.Context, hook run.Hook[sdkcursor.SessionStart], native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
 		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event)), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err
@@ -28,7 +30,7 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 
 func mapSessionStart(e sdkcursor.SessionStart) *model.SessionStartEvent {
 	return &model.SessionStartEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Life:     &model.Lifecycle{Model: e.Model, Background: e.IsBackgroundAgent},
 	}
 }

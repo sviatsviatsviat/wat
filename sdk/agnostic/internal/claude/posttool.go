@@ -7,6 +7,7 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterPostTool registers fn on the Claude PostToolUse chain.
@@ -14,7 +15,7 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.OnPostToolUse(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
+	sdkclaude.OnPostToolUse(func(ctx context.Context, hook run.Hook[sdkclaude.PostToolUse], native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
 		out, err := fn(ctx, model.NewPostToolHook(hook.Invocation(), mapPostToolUse(hook.Event)), newPostToolResults(native))
 		if err != nil || out == nil {
 			return nil, err
@@ -29,7 +30,7 @@ func RegisterPostTool(fn model.PostToolHandler) {
 
 func mapPostToolUse(e sdkclaude.PostToolUse) *model.PostToolEvent {
 	return &model.PostToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
 		Result:   &model.ToolResult{Raw: hookkit.CloneRaw(e.ToolResponse), Text: hookkit.RawToText(e.ToolResponse)},
 	}

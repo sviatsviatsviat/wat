@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
+
+var codec = hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired)
 
 func init() {
 	run.RegisterDialect(Dialect, run.DialectOps{
@@ -31,7 +34,7 @@ func detectPayload(raw []byte, getenv func(string) string) bool {
 	return false
 }
 
-func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
+func registerHandler[E run.Event, O any](fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return
 	}
@@ -54,7 +57,7 @@ func registerHandler[E Event, O any](fn func(context.Context, E) (O, error)) {
 	})
 }
 
-func registerObserveHandler[E Event](fn func(context.Context, Hook[E]) error) {
+func registerObserveHandler[E run.Event](fn func(context.Context, run.Hook[E]) error) {
 	if fn == nil {
 		return
 	}
@@ -66,7 +69,7 @@ func registerObserveHandler[E Event](fn func(context.Context, Hook[E]) error) {
 		if !ok {
 			return nil, HandlerErrorExit, fmt.Errorf("cursor: handler for %s received %T", name, event)
 		}
-		if err := fn(ctx, NewHook(run.InvocationFrom(ctx), typed)); err != nil {
+		if err := fn(ctx, run.NewHook(run.InvocationFrom(ctx), typed)); err != nil {
 			return nil, HandlerErrorExit, err
 		}
 		return nil, 0, nil

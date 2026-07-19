@@ -8,7 +8,7 @@ import (
 )
 
 func ExampleOnPreToolUse() {
-	claude.OnPreToolUse(func(ctx context.Context, hook claude.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
+	claude.OnPreToolUse(func(ctx context.Context, hook run.Hook[claude.PreToolUse], r claude.PreToolUseResults) (claude.PreToolUseOutput, error) {
 		if _, ok := hook.Event.ToolInput.AsBash(); ok {
 			return r.Deny("blocked"), nil
 		}

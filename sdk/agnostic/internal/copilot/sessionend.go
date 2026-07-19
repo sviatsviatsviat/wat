@@ -3,6 +3,8 @@ package copilot
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
@@ -12,14 +14,14 @@ func RegisterSessionEnd(fn model.SessionEndHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnSessionEnd(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SessionEnd]) error {
+	sdkcopilot.OnSessionEnd(func(ctx context.Context, hook run.Hook[sdkcopilot.SessionEnd]) error {
 		return fn(ctx, model.NewSessionEndHook(hook.Invocation(), mapSessionEnd(hook.Event)))
 	})
 }
 
 func mapSessionEnd(e sdkcopilot.SessionEnd) *model.SessionEndEvent {
 	return &model.SessionEndEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Life:     &model.Lifecycle{Reason: e.Reason},
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -18,7 +20,7 @@ type TaskCompleted struct {
 func (TaskCompleted) EventName() string { return EventTaskCompleted }
 
 func init() {
-	registerDecoder(EventTaskCompleted, decodeAs[TaskCompleted])
+	codec.Register(EventTaskCompleted, hookkit.EventDecoder[TaskCompleted](codec))
 }
 
 // TaskCompletedResults is the hook-scoped response builder supplied to On* handlers by registration.
@@ -38,17 +40,17 @@ func (taskCompletedResults) Context(text string) CommonOutput {
 }
 
 // OnTaskCompleted registers a TaskCompleted handler.
-func OnTaskCompleted(fn func(context.Context, Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
+func OnTaskCompleted(fn func(context.Context, run.Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
 	return (&chain{}).TaskCompleted(fn)
 }
 
 // TaskCompleted registers another TaskCompleted handler on the chain.
-func (c *chain) TaskCompleted(fn func(context.Context, Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
+func (c *chain) TaskCompleted(fn func(context.Context, run.Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev TaskCompleted) (CommonOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), taskCompletedResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), taskCompletedResults{})
 	})
 	return c
 }

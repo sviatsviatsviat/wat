@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // InstructionsLoaded is the InstructionsLoaded hook event.
 type InstructionsLoaded struct {
 	Envelope
@@ -21,5 +23,5 @@ type InstructionsLoaded struct {
 func (InstructionsLoaded) EventName() string { return EventInstructionsLoaded }
 
 func init() {
-	registerDecoder(EventInstructionsLoaded, decodeAs[InstructionsLoaded])
+	codec.Register(EventInstructionsLoaded, hookkit.EventDecoder[InstructionsLoaded](codec))
 }

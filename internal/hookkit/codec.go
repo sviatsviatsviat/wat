@@ -2,8 +2,13 @@ package hookkit
 
 import "fmt"
 
+// Event is implemented by every decoded per-agent hook event.
+type Event interface {
+	EventName() string
+}
+
 // Decoder parses raw JSON into a decoded event value.
-type Decoder func(raw []byte) (any, error)
+type Decoder func(raw []byte) (Event, error)
 
 // Codec owns a per-agent decoder registry and dialect-scoped error sentinels.
 // Each agent SDK should hold its own Codec instance; registries must not be shared
@@ -39,7 +44,7 @@ func (c *Codec) EventName(raw []byte) (string, error) {
 // Decode peeks hook_event_name, looks up a registered decoder, and runs it.
 // It returns an error if name is non-empty but not registered (Serve must not
 // decode when no handlers exist for the event).
-func (c *Codec) Decode(raw []byte) (any, error) {
+func (c *Codec) Decode(raw []byte) (Event, error) {
 	name, err := c.EventName(raw)
 	if err != nil {
 		return nil, err

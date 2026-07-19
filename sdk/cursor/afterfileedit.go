@@ -3,6 +3,8 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -19,21 +21,21 @@ type AfterFileEdit struct {
 func (AfterFileEdit) EventName() string { return EventAfterFileEdit }
 
 func init() {
-	registerDecoder(EventAfterFileEdit, decodeAs[AfterFileEdit])
+	codec.Register(EventAfterFileEdit, hookkit.EventDecoder[AfterFileEdit](codec))
 }
 
 // OnAfterFileEdit registers an afterFileEdit handler.
-func OnAfterFileEdit(fn func(context.Context, Hook[AfterFileEdit], PostToolResults) (PostToolOutput, error)) *chain {
+func OnAfterFileEdit(fn func(context.Context, run.Hook[AfterFileEdit], PostToolResults) (PostToolOutput, error)) *chain {
 	return (&chain{}).AfterFileEdit(fn)
 }
 
 // AfterFileEdit registers another AfterFileEdit handler on the chain.
-func (c *chain) AfterFileEdit(fn func(context.Context, Hook[AfterFileEdit], PostToolResults) (PostToolOutput, error)) *chain {
+func (c *chain) AfterFileEdit(fn func(context.Context, run.Hook[AfterFileEdit], PostToolResults) (PostToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev AfterFileEdit) (PostToolOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
 	})
 	return c
 }

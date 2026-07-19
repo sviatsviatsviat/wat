@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // PostCompact is the PostCompact hook event.
 type PostCompact struct {
 	Envelope
@@ -11,5 +13,5 @@ type PostCompact struct {
 func (PostCompact) EventName() string { return EventPostCompact }
 
 func init() {
-	registerDecoder(EventPostCompact, decodeAs[PostCompact])
+	codec.Register(EventPostCompact, hookkit.EventDecoder[PostCompact](codec))
 }

@@ -3,6 +3,8 @@ package copilot
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -44,21 +46,21 @@ func (e AgentStop) Reason() string {
 }
 
 func init() {
-	registerDecoder(EventAgentStop, decodeAs[AgentStop])
+	codec.Register(EventAgentStop, hookkit.EventDecoder[AgentStop](codec))
 }
 
 // OnAgentStop registers an AgentStop handler.
-func OnAgentStop(fn func(context.Context, Hook[AgentStop], StopResults) (StopOutput, error)) *chain {
+func OnAgentStop(fn func(context.Context, run.Hook[AgentStop], StopResults) (StopOutput, error)) *chain {
 	return (&chain{}).AgentStop(fn)
 }
 
 // AgentStop registers another AgentStop handler on the chain.
-func (c *chain) AgentStop(fn func(context.Context, Hook[AgentStop], StopResults) (StopOutput, error)) *chain {
+func (c *chain) AgentStop(fn func(context.Context, run.Hook[AgentStop], StopResults) (StopOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev AgentStop) (StopOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), stopResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{})
 	})
 	return c
 }

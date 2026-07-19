@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -22,8 +24,8 @@ type PreToolUse struct {
 func (PreToolUse) EventName() string { return EventPreToolUse }
 
 func init() {
-	registerDecoder(EventPreToolUse, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PreToolUse, raw []byte) {
+	codec.Register(EventPreToolUse, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PreToolUse, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})
@@ -173,17 +175,17 @@ func (o preToolUseOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnPreToolUse registers a PreToolUse handler.
-func OnPreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *chain {
+func OnPreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *chain {
 	return (&chain{}).PreToolUse(fn)
 }
 
 // PreToolUse registers another PreToolUse handler on the chain.
-func (c *chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *chain {
+func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PreToolUse) (PreToolUseOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), preToolUseResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), preToolUseResults{})
 	})
 	return c
 }

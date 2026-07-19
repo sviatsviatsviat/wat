@@ -72,9 +72,3 @@ func (e Envelope) Session() string {
 func (e Envelope) Transcript() string {
 	return e.TranscriptPath
 }
-
-// envelope returns a copy of the envelope for Event satisfaction.
-// Named envelope (not Envelope) so it does not collide with the embedded field.
-func (e Envelope) envelope() Envelope {
-	return e
-}

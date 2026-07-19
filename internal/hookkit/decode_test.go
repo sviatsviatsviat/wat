@@ -2,6 +2,7 @@ package hookkit
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 )
 
@@ -23,5 +24,32 @@ func TestDecodeAsAndThen(t *testing.T) {
 	_, err = DecodeAsAndThen[ev]([]byte(`{`), nil)
 	if err == nil {
 		t.Fatal("expected unmarshal error")
+	}
+}
+
+type wireEvent struct {
+	HookEventName string `json:"hook_event_name"`
+}
+
+func (e wireEvent) EventName() string { return e.HookEventName }
+
+func TestEventDecoder(t *testing.T) {
+	t.Parallel()
+	decodeErr := errors.New("decode")
+	c := NewCodec("test", errors.New("empty"), decodeErr, errors.New("name"))
+	c.Register("X", EventDecoder[wireEvent](c))
+
+	ev, err := c.Decode([]byte(`{"hook_event_name":"X"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, ok := ev.(wireEvent)
+	if !ok || got.HookEventName != "X" {
+		t.Fatalf("got = %#v", ev)
+	}
+
+	_, err = DecodeEvent[wireEvent](c, []byte(`{`), nil)
+	if err == nil || !errors.Is(err, decodeErr) {
+		t.Fatalf("err = %v", err)
 	}
 }

@@ -1,34 +1,34 @@
 package copilot
 
-import "testing"
+import (
+	"testing"
 
-func TestEventEnvelopeAccess(t *testing.T) {
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
+func TestEventNames(t *testing.T) {
 	cases := []struct {
-		ev       Event
+		ev       run.Event
 		wantName string
 	}{
-		{SessionStart{Envelope: Envelope{HookEventName: EventSessionStart}}, EventSessionStart},
-		{SessionEnd{Envelope: Envelope{HookEventName: EventSessionEnd}}, EventSessionEnd},
-		{UserPromptSubmitted{Envelope: Envelope{HookEventName: EventUserPromptSubmitted}}, EventUserPromptSubmitted},
-		{PreToolUse{Envelope: Envelope{HookEventName: EventPreToolUse}}, EventPreToolUse},
-		{PostToolUse{Envelope: Envelope{HookEventName: EventPostToolUse}}, EventPostToolUse},
-		{PostToolUseFailure{Envelope: Envelope{HookEventName: EventPostToolUseFailure}}, EventPostToolUseFailure},
-		{PermissionRequest{Envelope: Envelope{HookEventName: EventPermissionRequest}}, EventPermissionRequest},
-		{SubagentStart{Envelope: Envelope{HookEventName: EventSubagentStart}}, EventSubagentStart},
-		{SubagentStop{Envelope: Envelope{HookEventName: EventSubagentStop}}, EventSubagentStop},
-		{AgentStop{Envelope: Envelope{HookEventName: EventAgentStop}}, EventAgentStop},
-		{PreCompact{Envelope: Envelope{HookEventName: EventPreCompact}}, EventPreCompact},
-		{Notification{Envelope: Envelope{HookEventName: EventNotification}}, EventNotification},
-		{ErrorOccurred{Envelope: Envelope{HookEventName: EventErrorOccurred}}, EventErrorOccurred},
+		{SessionStart{}, EventSessionStart},
+		{SessionEnd{}, EventSessionEnd},
+		{UserPromptSubmitted{}, EventUserPromptSubmitted},
+		{PreToolUse{}, EventPreToolUse},
+		{PostToolUse{}, EventPostToolUse},
+		{PostToolUseFailure{}, EventPostToolUseFailure},
+		{PermissionRequest{}, EventPermissionRequest},
+		{SubagentStart{}, EventSubagentStart},
+		{SubagentStop{}, EventSubagentStop},
+		{AgentStop{}, EventAgentStop},
+		{PreCompact{}, EventPreCompact},
+		{Notification{}, EventNotification},
+		{ErrorOccurred{}, EventErrorOccurred},
 	}
 	for _, tc := range cases {
-		t.Run(tc.ev.EventName(), func(t *testing.T) {
-			env := EnvelopeOf(tc.ev)
-			if env.HookEventName != tc.ev.EventName() {
-				t.Fatalf("HookEventName = %q, want %q", env.HookEventName, tc.ev.EventName())
-			}
-			if env.HookEventName != tc.wantName {
-				t.Fatalf("HookEventName = %q, want %q", env.HookEventName, tc.wantName)
+		t.Run(tc.wantName, func(t *testing.T) {
+			if got := tc.ev.EventName(); got != tc.wantName {
+				t.Fatalf("EventName() = %q, want %q", got, tc.wantName)
 			}
 		})
 	}

@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -24,8 +26,8 @@ type PermissionDenied struct {
 func (PermissionDenied) EventName() string { return EventPermissionDenied }
 
 func init() {
-	registerDecoder(EventPermissionDenied, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PermissionDenied, raw []byte) {
+	codec.Register(EventPermissionDenied, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PermissionDenied, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})
@@ -116,17 +118,17 @@ func (o permissionDeniedOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnPermissionDenied registers a PermissionDenied handler.
-func OnPermissionDenied(fn func(context.Context, Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
+func OnPermissionDenied(fn func(context.Context, run.Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
 	return (&chain{}).PermissionDenied(fn)
 }
 
 // PermissionDenied registers another PermissionDenied handler on the chain.
-func (c *chain) PermissionDenied(fn func(context.Context, Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
+func (c *chain) PermissionDenied(fn func(context.Context, run.Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PermissionDenied) (PermissionDeniedOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionDeniedResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionDeniedResults{})
 	})
 	return c
 }

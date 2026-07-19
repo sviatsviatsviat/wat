@@ -14,7 +14,7 @@ func RegisterStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.OnStop(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.Stop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
+	sdkclaude.OnStop(func(ctx context.Context, hook run.Hook[sdkclaude.Stop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapStop(hook.Event), native, fn)
 	})
 }
@@ -24,7 +24,7 @@ func RegisterSubagentStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.OnSubagentStop(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.SubagentStop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
+	sdkclaude.OnSubagentStop(func(ctx context.Context, hook run.Hook[sdkclaude.SubagentStop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event), native, fn)
 	})
 }
@@ -43,14 +43,14 @@ func callStop(ctx context.Context, inv run.Invocation, ev *model.StopEvent, nati
 
 func mapStop(e sdkclaude.Stop) *model.StopEvent {
 	return &model.StopEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Turn:     &model.TurnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage},
 	}
 }
 
 func mapSubagentStop(e sdkclaude.SubagentStop) *model.StopEvent {
 	return &model.StopEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Subagent: &model.Subagent{ID: e.AgentID, Type: e.AgentType, Summary: e.LastAssistantMessage},
 		Turn:     &model.TurnEnd{StopHookActive: e.StopHookActive, LastAssistantMessage: e.LastAssistantMessage},
 	}

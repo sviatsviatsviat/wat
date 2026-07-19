@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
@@ -13,7 +15,7 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnPostToolUseFailure(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUseFailure], native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
+	sdkcopilot.OnPostToolUseFailure(func(ctx context.Context, hook run.Hook[sdkcopilot.PostToolUseFailure], native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
 		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event)), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err
@@ -28,7 +30,7 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 
 func mapPostToolUseFailure(e sdkcopilot.PostToolUseFailure) *model.PostToolFailureEvent {
 	ev := &model.PostToolFailureEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.NativeToolName(), e.Input().Raw(), ""),
 	}
 	if msg := e.ErrorMessage(); msg != "" {

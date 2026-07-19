@@ -3,6 +3,8 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -54,21 +56,21 @@ func (r subagentStartResults) Ask(agentMessage string) PermissionOutput {
 func (r subagentStartResults) Noop() PermissionOutput { return r.noop() }
 
 func init() {
-	registerDecoder(EventSubagentStart, decodeAs[SubagentStart])
+	codec.Register(EventSubagentStart, hookkit.EventDecoder[SubagentStart](codec))
 }
 
 // OnSubagentStart registers a subagentStart handler.
-func OnSubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (PermissionOutput, error)) *chain {
+func OnSubagentStart(fn func(context.Context, run.Hook[SubagentStart], SubagentStartResults) (PermissionOutput, error)) *chain {
 	return (&chain{}).SubagentStart(fn)
 }
 
 // SubagentStart registers another SubagentStart handler on the chain.
-func (c *chain) SubagentStart(fn func(context.Context, Hook[SubagentStart], SubagentStartResults) (PermissionOutput, error)) *chain {
+func (c *chain) SubagentStart(fn func(context.Context, run.Hook[SubagentStart], SubagentStartResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev SubagentStart) (PermissionOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), subagentStartResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), subagentStartResults{})
 	})
 	return c
 }

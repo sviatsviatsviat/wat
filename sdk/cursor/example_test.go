@@ -8,7 +8,7 @@ import (
 )
 
 func ExampleOnBeforeShellExecution() {
-	cursor.OnBeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
+	cursor.OnBeforeShellExecution(func(ctx context.Context, hook run.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		if hook.Event.Command == "rm -rf /" {
 			return r.Deny("blocked"), nil
 		}

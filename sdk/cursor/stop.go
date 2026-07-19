@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -73,21 +75,21 @@ func (o stopOutput) encode(eventName string) ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventStop, decodeAs[Stop])
+	codec.Register(EventStop, hookkit.EventDecoder[Stop](codec))
 }
 
 // OnStop registers a stop handler.
-func OnStop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *chain {
+func OnStop(fn func(context.Context, run.Hook[Stop], StopResults) (StopOutput, error)) *chain {
 	return (&chain{}).Stop(fn)
 }
 
 // Stop registers another Stop handler on the chain.
-func (c *chain) Stop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *chain {
+func (c *chain) Stop(fn func(context.Context, run.Hook[Stop], StopResults) (StopOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev Stop) (StopOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), stopResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{})
 	})
 	return c
 }

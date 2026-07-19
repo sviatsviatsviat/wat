@@ -1,9 +1,13 @@
 package cursor
 
-import "testing"
+import (
+	"testing"
 
-func TestEventEnvelopeAccess(t *testing.T) {
-	cases := []Event{
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
+func TestEventNames(t *testing.T) {
+	cases := []run.Event{
 		SessionStart{},
 		SessionEnd{},
 		BeforeSubmitPrompt{},
@@ -28,7 +32,9 @@ func TestEventEnvelopeAccess(t *testing.T) {
 	}
 	for _, ev := range cases {
 		t.Run(ev.EventName(), func(t *testing.T) {
-			_ = EnvelopeOf(ev)
+			if ev.EventName() == "" {
+				t.Fatal("EventName() empty")
+			}
 		})
 	}
 }

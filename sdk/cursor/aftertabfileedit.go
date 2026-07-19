@@ -2,6 +2,10 @@ package cursor
 
 import (
 	"context"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // AfterTabFileEdit is the afterTabFileEdit hook event.
@@ -17,16 +21,16 @@ type AfterTabFileEdit struct {
 func (AfterTabFileEdit) EventName() string { return EventAfterTabFileEdit }
 
 func init() {
-	registerDecoder(EventAfterTabFileEdit, decodeAs[AfterTabFileEdit])
+	codec.Register(EventAfterTabFileEdit, hookkit.EventDecoder[AfterTabFileEdit](codec))
 }
 
 // OnAfterTabFileEdit registers an observe-only afterTabFileEdit handler.
-func OnAfterTabFileEdit(fn func(context.Context, Hook[AfterTabFileEdit]) error) *chain {
+func OnAfterTabFileEdit(fn func(context.Context, run.Hook[AfterTabFileEdit]) error) *chain {
 	return (&chain{}).AfterTabFileEdit(fn)
 }
 
 // AfterTabFileEdit registers another AfterTabFileEdit handler on the chain.
-func (c *chain) AfterTabFileEdit(fn func(context.Context, Hook[AfterTabFileEdit]) error) *chain {
+func (c *chain) AfterTabFileEdit(fn func(context.Context, run.Hook[AfterTabFileEdit]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

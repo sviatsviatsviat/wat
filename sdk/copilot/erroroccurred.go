@@ -3,6 +3,10 @@ package copilot
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // ErrorOccurred is the ErrorOccurred hook event.
@@ -41,16 +45,16 @@ func (e ErrorOccurred) Detail() (ErrorDetail, bool) {
 }
 
 func init() {
-	registerDecoder(EventErrorOccurred, decodeAs[ErrorOccurred])
+	codec.Register(EventErrorOccurred, hookkit.EventDecoder[ErrorOccurred](codec))
 }
 
 // OnErrorOccurred registers an observe-only ErrorOccurred handler.
-func OnErrorOccurred(fn func(context.Context, Hook[ErrorOccurred]) error) *chain {
+func OnErrorOccurred(fn func(context.Context, run.Hook[ErrorOccurred]) error) *chain {
 	return (&chain{}).ErrorOccurred(fn)
 }
 
 // ErrorOccurred registers another ErrorOccurred handler on the chain.
-func (c *chain) ErrorOccurred(fn func(context.Context, Hook[ErrorOccurred]) error) *chain {
+func (c *chain) ErrorOccurred(fn func(context.Context, run.Hook[ErrorOccurred]) error) *chain {
 	registerObserveHandler(fn)
 	return c
 }

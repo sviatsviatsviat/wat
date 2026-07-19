@@ -13,15 +13,19 @@ type testCodec struct {
 	decodeCalls *atomic.Int32
 }
 
+type testEvent string
+
+func (e testEvent) EventName() string { return string(e) }
+
 func (c testCodec) EventName([]byte) (string, error) {
 	return c.eventName, nil
 }
 
-func (c testCodec) Decode(raw []byte) (any, error) {
+func (c testCodec) Decode(raw []byte) (Event, error) {
 	if c.decodeCalls != nil {
 		c.decodeCalls.Add(1)
 	}
-	return string(raw), nil
+	return testEvent(raw), nil
 }
 
 func TestServe_DecodesOnce(t *testing.T) {
@@ -35,7 +39,7 @@ func TestServe_DecodesOnce(t *testing.T) {
 	for range 3 {
 		r.RegisterHandler("testdialect", "TestEvent", func(_ context.Context, event any) ([]byte, int, error) {
 			handlerCalls.Add(1)
-			if event != `{"ok":true}` {
+			if event != testEvent(`{"ok":true}`) {
 				t.Errorf("event = %#v", event)
 			}
 			return nil, 0, nil

@@ -5,11 +5,10 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func envelope(native sdkclaude.Event) model.Envelope {
-	env := sdkclaude.EnvelopeOf(native)
+func envelope(env sdkclaude.Envelope, name string) model.Envelope {
 	return model.Envelope{
 		Agent:          sdkclaude.Dialect,
-		Name:           native.EventName(),
+		Name:           name,
 		Session:        env.SessionID,
 		Cwd:            env.Cwd,
 		TranscriptPath: env.TranscriptPath,

@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -15,7 +17,7 @@ type WorktreeCreate struct {
 func (WorktreeCreate) EventName() string { return EventWorktreeCreate }
 
 func init() {
-	registerDecoder(EventWorktreeCreate, decodeAs[WorktreeCreate])
+	codec.Register(EventWorktreeCreate, hookkit.EventDecoder[WorktreeCreate](codec))
 }
 
 // WorktreeCreateOutput is the response for WorktreeCreate events.
@@ -103,17 +105,17 @@ func (o worktreeCreateOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnWorktreeCreate registers a WorktreeCreate handler.
-func OnWorktreeCreate(fn func(context.Context, Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
+func OnWorktreeCreate(fn func(context.Context, run.Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
 	return (&chain{}).WorktreeCreate(fn)
 }
 
 // WorktreeCreate registers another WorktreeCreate handler on the chain.
-func (c *chain) WorktreeCreate(fn func(context.Context, Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
+func (c *chain) WorktreeCreate(fn func(context.Context, run.Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev WorktreeCreate) (WorktreeCreateOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), worktreeCreateResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), worktreeCreateResults{})
 	})
 	return c
 }

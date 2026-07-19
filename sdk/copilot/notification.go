@@ -3,6 +3,8 @@ package copilot
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -68,21 +70,21 @@ func (o notificationOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventNotification, decodeAs[Notification])
+	codec.Register(EventNotification, hookkit.EventDecoder[Notification](codec))
 }
 
 // OnNotification registers a Notification handler.
-func OnNotification(fn func(context.Context, Hook[Notification], NotificationResults) (NotificationOutput, error)) *chain {
+func OnNotification(fn func(context.Context, run.Hook[Notification], NotificationResults) (NotificationOutput, error)) *chain {
 	return (&chain{}).Notification(fn)
 }
 
 // Notification registers another Notification handler on the chain.
-func (c *chain) Notification(fn func(context.Context, Hook[Notification], NotificationResults) (NotificationOutput, error)) *chain {
+func (c *chain) Notification(fn func(context.Context, run.Hook[Notification], NotificationResults) (NotificationOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev Notification) (NotificationOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), notificationResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), notificationResults{})
 	})
 	return c
 }

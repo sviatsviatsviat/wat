@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
@@ -12,14 +14,14 @@ func RegisterUserPrompt(fn model.UserPromptHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.OnUserPromptSubmit(func(ctx context.Context, hook sdkclaude.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
+	sdkclaude.OnUserPromptSubmit(func(ctx context.Context, hook run.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
 		return nil, fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmit(hook.Event)))
 	})
 }
 
 func mapUserPromptSubmit(e sdkclaude.UserPromptSubmit) *model.UserPromptEvent {
 	return &model.UserPromptEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Prompt:   e.Prompt,
 	}
 }

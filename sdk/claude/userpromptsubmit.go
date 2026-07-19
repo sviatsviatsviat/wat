@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -17,7 +19,7 @@ type UserPromptSubmit struct {
 func (UserPromptSubmit) EventName() string { return EventUserPromptSubmit }
 
 func init() {
-	registerDecoder(EventUserPromptSubmit, decodeAs[UserPromptSubmit])
+	codec.Register(EventUserPromptSubmit, hookkit.EventDecoder[UserPromptSubmit](codec))
 }
 
 // UserPromptSubmitOutput is the response for UserPromptSubmit events.
@@ -160,17 +162,17 @@ func (o userPromptSubmitOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnUserPromptSubmit registers a UserPromptSubmit handler.
-func OnUserPromptSubmit(fn func(context.Context, Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
+func OnUserPromptSubmit(fn func(context.Context, run.Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
 	return (&chain{}).UserPromptSubmit(fn)
 }
 
 // UserPromptSubmit registers another UserPromptSubmit handler on the chain.
-func (c *chain) UserPromptSubmit(fn func(context.Context, Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
+func (c *chain) UserPromptSubmit(fn func(context.Context, run.Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev UserPromptSubmit) (UserPromptSubmitOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), userPromptSubmitResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), userPromptSubmitResults{})
 	})
 	return c
 }

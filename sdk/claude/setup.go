@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // Setup is the Setup hook event.
 type Setup struct {
 	Envelope
@@ -11,5 +13,5 @@ type Setup struct {
 func (Setup) EventName() string { return EventSetup }
 
 func init() {
-	registerDecoder(EventSetup, decodeAs[Setup])
+	codec.Register(EventSetup, hookkit.EventDecoder[Setup](codec))
 }

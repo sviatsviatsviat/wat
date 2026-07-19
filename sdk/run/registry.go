@@ -15,7 +15,7 @@ type Codec interface {
 	// It should be a cheap discriminant peek, not a full typed decode.
 	EventName(raw []byte) (string, error)
 	// Decode parses raw into a dialect-specific event value for handler dispatch.
-	Decode(raw []byte) (event any, err error)
+	Decode(raw []byte) (event Event, err error)
 }
 
 // DialectOps supplies dialect-specific detection, codec, and output merge.

@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // StopFailure is the StopFailure hook event.
 type StopFailure struct {
 	Envelope
@@ -13,5 +15,5 @@ type StopFailure struct {
 func (StopFailure) EventName() string { return EventStopFailure }
 
 func init() {
-	registerDecoder(EventStopFailure, decodeAs[StopFailure])
+	codec.Register(EventStopFailure, hookkit.EventDecoder[StopFailure](codec))
 }

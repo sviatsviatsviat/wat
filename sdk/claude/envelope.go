@@ -67,9 +67,3 @@ type Envelope struct {
 	// AgentType is the subagent type inside subagent events.
 	AgentType string `json:"agent_type,omitempty"`
 }
-
-// envelope returns a copy of the envelope for Event satisfaction.
-// Named envelope (not Envelope) so it does not collide with the embedded field.
-func (e Envelope) envelope() Envelope {
-	return e
-}

@@ -9,7 +9,7 @@ import (
 )
 
 func TestDecode_PreToolUse(t *testing.T) {
-	ev, err := claude.Decode([]byte(preToolUsePayload))
+	ev, err := claude.DecodeForTest([]byte(preToolUsePayload))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestDecode_Matrix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := claude.Decode([]byte(tt.raw))
+			ev, err := claude.DecodeForTest([]byte(tt.raw))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestDecode_Matrix(t *testing.T) {
 }
 
 func TestDecode_UnknownEvent(t *testing.T) {
-	_, err := claude.Decode([]byte(`{"session_id":"s1","hook_event_name":"FutureEvent","cwd":"/w"}`))
+	_, err := claude.DecodeForTest([]byte(`{"session_id":"s1","hook_event_name":"FutureEvent","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -79,7 +79,7 @@ func TestDecode_UnknownEvent(t *testing.T) {
 }
 
 func TestDecode_RequiresHookEventName(t *testing.T) {
-	_, err := claude.Decode([]byte(`{"session_id":"s1","cwd":"/w"}`))
+	_, err := claude.DecodeForTest([]byte(`{"session_id":"s1","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -90,7 +90,7 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 
 func TestDecode_InvalidJSON(t *testing.T) {
 	t.Run("envelope", func(t *testing.T) {
-		_, err := claude.Decode([]byte("not json"))
+		_, err := claude.DecodeForTest([]byte("not json"))
 		if err == nil {
 			t.Fatal("expected error")
 		}
@@ -104,7 +104,7 @@ func TestDecode_InvalidJSON(t *testing.T) {
 
 	t.Run("typed event", func(t *testing.T) {
 		raw := []byte(`{"session_id":"s1","hook_event_name":"PreToolUse","cwd":"/w","tool_name":123}`)
-		_, err := claude.Decode(raw)
+		_, err := claude.DecodeForTest(raw)
 		if err == nil {
 			t.Fatal("expected error")
 		}

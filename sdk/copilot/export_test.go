@@ -1,5 +1,7 @@
 package copilot
 
+import "github.com/sviatsviatsviat/wat/sdk/run"
+
 // Test-only Results accessors for external tests (copilot_test).
 
 func PreToolResultsForTest() PreToolResults { return preToolResults{} }
@@ -22,14 +24,7 @@ func SubagentStartResultsForTest() SubagentStartResults { return subagentStartRe
 
 func NotificationResultsForTest() NotificationResults { return notificationResults{} }
 
-// Decode is a test-only alias for codec.Decode (available to copilot_test).
-func Decode(raw []byte) (Event, error) {
-	ev, err := codec.Decode(raw)
-	if err != nil {
-		return nil, err
-	}
-	if ev == nil {
-		return nil, nil
-	}
-	return ev.(Event), nil
+// DecodeForTest is a test-only alias for codec.Decode (available to copilot_test).
+func DecodeForTest(raw []byte) (run.Event, error) {
+	return codec.Decode(raw)
 }

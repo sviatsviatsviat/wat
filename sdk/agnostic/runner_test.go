@@ -254,7 +254,7 @@ func TestServe_AgnosticAndClaudeMerge(t *testing.T) {
 	OnPostTool(func(ctx context.Context, hook PostToolHook, r PostToolResults) (PostToolResult, error) {
 		return r.Context("from-agnostic"), nil
 	})
-	claude.OnPostToolUse(func(ctx context.Context, hook claude.Hook[claude.PostToolUse], r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
+	claude.OnPostToolUse(func(ctx context.Context, hook run.Hook[claude.PostToolUse], r claude.PostToolUseResults) (claude.PostToolUseOutput, error) {
 		return r.Context("from-claude"), nil
 	})
 

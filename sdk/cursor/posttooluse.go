@@ -3,6 +3,8 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/cursor/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -36,25 +38,25 @@ func (e PostToolUse) DurationMillis() int64 {
 }
 
 func init() {
-	registerDecoder(EventPostToolUse, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PostToolUse, raw []byte) {
+	codec.Register(EventPostToolUse, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PostToolUse, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})
 }
 
 // OnPostToolUse registers a postToolUse handler.
-func OnPostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolResults) (PostToolOutput, error)) *chain {
+func OnPostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolResults) (PostToolOutput, error)) *chain {
 	return (&chain{}).PostToolUse(fn)
 }
 
 // PostToolUse registers another PostToolUse handler on the chain.
-func (c *chain) PostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolResults) (PostToolOutput, error)) *chain {
+func (c *chain) PostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolResults) (PostToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PostToolUse) (PostToolOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
 	})
 	return c
 }

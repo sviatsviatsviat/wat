@@ -46,7 +46,7 @@ const cursorAfterFileEdit = `{
 }`
 
 func TestDecodeEncode_BeforeShellDeny(t *testing.T) {
-	ev, err := cursor.Decode([]byte(cursorShell))
+	ev, err := cursor.DecodeForTest([]byte(cursorShell))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestDecodeEncode_BeforeShellDeny(t *testing.T) {
 }
 
 func TestDecodeEncode_StopFollowUp(t *testing.T) {
-	ev, err := cursor.Decode([]byte(cursorStop))
+	ev, err := cursor.DecodeForTest([]byte(cursorStop))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestDecodeEncode_StopFollowUp(t *testing.T) {
 }
 
 func TestDecode_AfterFileEdit(t *testing.T) {
-	ev, err := cursor.Decode([]byte(cursorAfterFileEdit))
+	ev, err := cursor.DecodeForTest([]byte(cursorAfterFileEdit))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ func TestDecode_AfterFileEdit(t *testing.T) {
 
 func TestDecode_RequiresHookEventName(t *testing.T) {
 	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
-	_, err := cursor.Decode([]byte(raw))
+	_, err := cursor.DecodeForTest([]byte(raw))
 	if err == nil {
 		t.Fatal("expected error without hook_event_name")
 	}
@@ -125,7 +125,7 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 }
 
 func TestDecode_UnknownEvent(t *testing.T) {
-	_, err := cursor.Decode([]byte(`{"hook_event_name":"FutureEvent","conversation_id":"c1","cwd":"/w"}`))
+	_, err := cursor.DecodeForTest([]byte(`{"hook_event_name":"FutureEvent","conversation_id":"c1","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -136,7 +136,7 @@ func TestDecode_UnknownEvent(t *testing.T) {
 
 func TestDecode_InvalidTypedEvent(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":123}`)
-	_, err := cursor.Decode(raw)
+	_, err := cursor.DecodeForTest(raw)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -150,13 +150,13 @@ func TestDecode_Matrix(t *testing.T) {
 		name     string
 		raw      string
 		wantType any
-		check    func(t *testing.T, ev cursor.Event)
+		check    func(t *testing.T, ev run.Event)
 	}{
 		{
 			name:     "sessionStart",
 			raw:      `{"hook_event_name":"sessionStart","conversation_id":"c1","model":"gpt","is_background_agent":true,"cwd":"/w"}`,
 			wantType: cursor.SessionStart{},
-			check: func(t *testing.T, ev cursor.Event) {
+			check: func(t *testing.T, ev run.Event) {
 				e := ev.(cursor.SessionStart)
 				if e.Model != "gpt" || !e.IsBackgroundAgent {
 					t.Fatalf("event=%+v", e)
@@ -167,7 +167,7 @@ func TestDecode_Matrix(t *testing.T) {
 			name:     "sessionEnd",
 			raw:      `{"hook_event_name":"sessionEnd","conversation_id":"c1","reason":"complete","is_background_agent":false}`,
 			wantType: cursor.SessionEnd{},
-			check: func(t *testing.T, ev cursor.Event) {
+			check: func(t *testing.T, ev run.Event) {
 				e := ev.(cursor.SessionEnd)
 				if e.Reason != "complete" {
 					t.Fatalf("event=%+v", e)
@@ -178,7 +178,7 @@ func TestDecode_Matrix(t *testing.T) {
 			name:     "beforeSubmitPrompt",
 			raw:      `{"hook_event_name":"beforeSubmitPrompt","conversation_id":"c1","prompt":"hello"}`,
 			wantType: cursor.BeforeSubmitPrompt{},
-			check: func(t *testing.T, ev cursor.Event) {
+			check: func(t *testing.T, ev run.Event) {
 				if ev.(cursor.BeforeSubmitPrompt).Prompt != "hello" {
 					t.Fatal("bad prompt")
 				}
@@ -188,7 +188,7 @@ func TestDecode_Matrix(t *testing.T) {
 			name:     "preToolUse shell",
 			raw:      `{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`,
 			wantType: cursor.PreToolUse{},
-			check: func(t *testing.T, ev cursor.Event) {
+			check: func(t *testing.T, ev run.Event) {
 				e := ev.(cursor.PreToolUse)
 				if e.ShellCommand() != "ls" {
 					t.Fatalf("ShellCommand=%q", e.ShellCommand())
@@ -199,7 +199,7 @@ func TestDecode_Matrix(t *testing.T) {
 			name:     "postToolUse",
 			raw:      `{"hook_event_name":"postToolUse","conversation_id":"c1","tool_name":"Read","tool_output":"contents","duration":100}`,
 			wantType: cursor.PostToolUse{},
-			check: func(t *testing.T, ev cursor.Event) {
+			check: func(t *testing.T, ev run.Event) {
 				e := ev.(cursor.PostToolUse)
 				if e.ToolOutput != "contents" || e.DurationMillis() != 100 {
 					t.Fatalf("event=%+v", e)
@@ -210,7 +210,7 @@ func TestDecode_Matrix(t *testing.T) {
 			name:     "postToolUseFailure",
 			raw:      `{"hook_event_name":"postToolUseFailure","conversation_id":"c1","tool_name":"Shell","error_message":"timeout","failure_type":"timeout","duration_ms":50}`,
 			wantType: cursor.PostToolUseFailure{},
-			check: func(t *testing.T, ev cursor.Event) {
+			check: func(t *testing.T, ev run.Event) {
 				e := ev.(cursor.PostToolUseFailure)
 				if e.ErrorMessage != "timeout" || e.FailureType != "timeout" {
 					t.Fatalf("event=%+v", e)
@@ -226,7 +226,7 @@ func TestDecode_Matrix(t *testing.T) {
 			name:     "afterShellExecution",
 			raw:      `{"hook_event_name":"afterShellExecution","conversation_id":"c1","command":"ls","output":"a\nb","duration":10}`,
 			wantType: cursor.AfterShellExecution{},
-			check: func(t *testing.T, ev cursor.Event) {
+			check: func(t *testing.T, ev run.Event) {
 				e := ev.(cursor.AfterShellExecution)
 				if e.Command != "ls" || e.Output != "a\nb" {
 					t.Fatalf("event=%+v", e)
@@ -237,7 +237,7 @@ func TestDecode_Matrix(t *testing.T) {
 			name:     "beforeMCPExecution",
 			raw:      `{"hook_event_name":"beforeMCPExecution","conversation_id":"c1","tool_name":"MCP:browser_navigate","tool_input":"{}","url":"https://mcp.example/mcp"}`,
 			wantType: cursor.BeforeMCPExecution{},
-			check: func(t *testing.T, ev cursor.Event) {
+			check: func(t *testing.T, ev run.Event) {
 				e := ev.(cursor.BeforeMCPExecution)
 				if e.URL != "https://mcp.example/mcp" {
 					t.Fatalf("URL=%q", e.URL)
@@ -307,7 +307,7 @@ func TestDecode_Matrix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ev, err := cursor.Decode([]byte(tt.raw))
+			ev, err := cursor.DecodeForTest([]byte(tt.raw))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -442,7 +442,7 @@ func TestEncode_PermissionUpdatedInputEmptyEventName(t *testing.T) {
 
 func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 	run.Reset()
-	cursor.OnBeforeShellExecution(func(ctx context.Context, hook cursor.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
+	cursor.OnBeforeShellExecution(func(ctx context.Context, hook run.Hook[cursor.BeforeShellExecution], r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		return r.Deny("blocked"), nil
 	})
 	var stdout bytes.Buffer
@@ -456,7 +456,7 @@ func TestMux_Serve_BeforeShellDeny(t *testing.T) {
 }
 
 func TestToolInput_AsShell(t *testing.T) {
-	ev, err := cursor.Decode([]byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`))
+	ev, err := cursor.DecodeForTest([]byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`))
 	if err != nil {
 		t.Fatal(err)
 	}

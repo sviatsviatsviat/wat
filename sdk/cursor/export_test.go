@@ -1,5 +1,7 @@
 package cursor
 
+import "github.com/sviatsviatsviat/wat/sdk/run"
+
 // Test-only Results accessors for external tests (cursor_test).
 // Production code must use On*-injected Results; these are not part of the public API surface in non-test builds.
 
@@ -17,14 +19,7 @@ func BeforeSubmitPromptResultsForTest() BeforeSubmitPromptResults {
 
 func PreCompactResultsForTest() PreCompactResults { return preCompactResults{} }
 
-// Decode is a test-only alias for codec.Decode (available to cursor_test).
-func Decode(raw []byte) (Event, error) {
-	ev, err := codec.Decode(raw)
-	if err != nil {
-		return nil, err
-	}
-	if ev == nil {
-		return nil, nil
-	}
-	return ev.(Event), nil
+// DecodeForTest is a test-only alias for codec.Decode (available to cursor_test).
+func DecodeForTest(raw []byte) (run.Event, error) {
+	return codec.Decode(raw)
 }

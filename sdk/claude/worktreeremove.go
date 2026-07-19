@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // WorktreeRemove is the WorktreeRemove hook event.
 type WorktreeRemove struct {
 	Envelope
@@ -11,5 +13,5 @@ type WorktreeRemove struct {
 func (WorktreeRemove) EventName() string { return EventWorktreeRemove }
 
 func init() {
-	registerDecoder(EventWorktreeRemove, decodeAs[WorktreeRemove])
+	codec.Register(EventWorktreeRemove, hookkit.EventDecoder[WorktreeRemove](codec))
 }

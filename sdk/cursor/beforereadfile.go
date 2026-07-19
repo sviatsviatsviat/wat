@@ -3,6 +3,8 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -54,21 +56,21 @@ func (r beforeReadFileResults) Ask(agentMessage string) PermissionOutput {
 func (r beforeReadFileResults) Noop() PermissionOutput { return r.noop() }
 
 func init() {
-	registerDecoder(EventBeforeReadFile, decodeAs[BeforeReadFile])
+	codec.Register(EventBeforeReadFile, hookkit.EventDecoder[BeforeReadFile](codec))
 }
 
 // OnBeforeReadFile registers a beforeReadFile handler.
-func OnBeforeReadFile(fn func(context.Context, Hook[BeforeReadFile], BeforeReadFileResults) (PermissionOutput, error)) *chain {
+func OnBeforeReadFile(fn func(context.Context, run.Hook[BeforeReadFile], BeforeReadFileResults) (PermissionOutput, error)) *chain {
 	return (&chain{}).BeforeReadFile(fn)
 }
 
 // BeforeReadFile registers another BeforeReadFile handler on the chain.
-func (c *chain) BeforeReadFile(fn func(context.Context, Hook[BeforeReadFile], BeforeReadFileResults) (PermissionOutput, error)) *chain {
+func (c *chain) BeforeReadFile(fn func(context.Context, run.Hook[BeforeReadFile], BeforeReadFileResults) (PermissionOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev BeforeReadFile) (PermissionOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), beforeReadFileResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), beforeReadFileResults{})
 	})
 	return c
 }

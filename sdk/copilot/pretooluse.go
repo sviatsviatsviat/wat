@@ -137,25 +137,25 @@ func (o preToolOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventPreToolUse, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PreToolUse, raw []byte) {
+	codec.Register(EventPreToolUse, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PreToolUse, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})
 }
 
 // OnPreToolUse registers a PreToolUse handler.
-func OnPreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *chain {
+func OnPreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *chain {
 	return (&chain{}).PreToolUse(fn)
 }
 
 // PreToolUse registers another PreToolUse handler on the chain.
-func (c *chain) PreToolUse(fn func(context.Context, Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *chain {
+func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolResults) (PreToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PreToolUse) (PreToolOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), preToolResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), preToolResults{})
 	})
 	return c
 }

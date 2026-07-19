@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // FileChanged is the FileChanged hook event.
 type FileChanged struct {
 	Envelope
@@ -11,5 +13,5 @@ type FileChanged struct {
 func (FileChanged) EventName() string { return EventFileChanged }
 
 func init() {
-	registerDecoder(EventFileChanged, decodeAs[FileChanged])
+	codec.Register(EventFileChanged, hookkit.EventDecoder[FileChanged](codec))
 }

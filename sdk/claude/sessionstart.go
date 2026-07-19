@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -21,7 +23,7 @@ type SessionStart struct {
 func (SessionStart) EventName() string { return EventSessionStart }
 
 func init() {
-	registerDecoder(EventSessionStart, decodeAs[SessionStart])
+	codec.Register(EventSessionStart, hookkit.EventDecoder[SessionStart](codec))
 }
 
 // SessionStartOutput is the response for SessionStart events.
@@ -189,17 +191,17 @@ func (o sessionStartOutput) writeSessionEnv(cfg runtimeConfig) error {
 }
 
 // OnSessionStart registers a SessionStart handler.
-func OnSessionStart(fn func(context.Context, Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
+func OnSessionStart(fn func(context.Context, run.Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
 	return (&chain{}).SessionStart(fn)
 }
 
 // SessionStart registers another SessionStart handler on the chain.
-func (c *chain) SessionStart(fn func(context.Context, Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
+func (c *chain) SessionStart(fn func(context.Context, run.Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), sessionStartResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), sessionStartResults{})
 	})
 	return c
 }

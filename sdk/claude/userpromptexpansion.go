@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -25,7 +27,7 @@ type UserPromptExpansion struct {
 func (UserPromptExpansion) EventName() string { return EventUserPromptExpansion }
 
 func init() {
-	registerDecoder(EventUserPromptExpansion, decodeAs[UserPromptExpansion])
+	codec.Register(EventUserPromptExpansion, hookkit.EventDecoder[UserPromptExpansion](codec))
 }
 
 // UserPromptExpansionResults is the hook-scoped response builder supplied to On* handlers by registration.
@@ -45,17 +47,17 @@ func (userPromptExpansionResults) Context(text string) CommonOutput {
 }
 
 // OnUserPromptExpansion registers a UserPromptExpansion handler.
-func OnUserPromptExpansion(fn func(context.Context, Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
+func OnUserPromptExpansion(fn func(context.Context, run.Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
 	return (&chain{}).UserPromptExpansion(fn)
 }
 
 // UserPromptExpansion registers another UserPromptExpansion handler on the chain.
-func (c *chain) UserPromptExpansion(fn func(context.Context, Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
+func (c *chain) UserPromptExpansion(fn func(context.Context, run.Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev UserPromptExpansion) (CommonOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), userPromptExpansionResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), userPromptExpansionResults{})
 	})
 	return c
 }

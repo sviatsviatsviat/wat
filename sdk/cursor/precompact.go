@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -71,21 +73,21 @@ func (o preCompactOutput) encode(eventName string) ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventPreCompact, decodeAs[PreCompact])
+	codec.Register(EventPreCompact, hookkit.EventDecoder[PreCompact](codec))
 }
 
 // OnPreCompact registers a preCompact handler.
-func OnPreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (PreCompactOutput, error)) *chain {
+func OnPreCompact(fn func(context.Context, run.Hook[PreCompact], PreCompactResults) (PreCompactOutput, error)) *chain {
 	return (&chain{}).PreCompact(fn)
 }
 
 // PreCompact registers another PreCompact handler on the chain.
-func (c *chain) PreCompact(fn func(context.Context, Hook[PreCompact], PreCompactResults) (PreCompactOutput, error)) *chain {
+func (c *chain) PreCompact(fn func(context.Context, run.Hook[PreCompact], PreCompactResults) (PreCompactOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PreCompact) (PreCompactOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), preCompactResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), preCompactResults{})
 	})
 	return c
 }

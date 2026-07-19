@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -19,7 +21,7 @@ type Stop struct {
 func (Stop) EventName() string { return EventStop }
 
 func init() {
-	registerDecoder(EventStop, decodeAs[Stop])
+	codec.Register(EventStop, hookkit.EventDecoder[Stop](codec))
 }
 
 // StopOutput is the response for Stop and SubagentStop events.
@@ -130,17 +132,17 @@ func (o stopOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnStop registers a Stop handler.
-func OnStop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *chain {
+func OnStop(fn func(context.Context, run.Hook[Stop], StopResults) (StopOutput, error)) *chain {
 	return (&chain{}).Stop(fn)
 }
 
 // Stop registers another Stop handler on the chain.
-func (c *chain) Stop(fn func(context.Context, Hook[Stop], StopResults) (StopOutput, error)) *chain {
+func (c *chain) Stop(fn func(context.Context, run.Hook[Stop], StopResults) (StopOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev Stop) (StopOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), stopResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{})
 	})
 	return c
 }

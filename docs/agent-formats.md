@@ -8,20 +8,17 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 `claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `On*` registration fans adapter handlers onto each agent SDK via package-level `On*` helpers, wrapping native events and Results builders.
 
-Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed `On*` registration helper and chain method for that event. Shared decode helpers live in `internal/hookkit`.
+Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed `On*` registration helper and chain method for that event. Shared decode helpers live in `internal/hookkit`. The shared `Event` interface (`EventName()` only) is defined in `hookkit` and re-exported as `run.Event`; per-agent SDKs do not define their own `Event` type. Typed handler context is `run.Hook`.
 
 | Location | Role |
 |----------|------|
 | `doc.go` | Package overview |
 | `<event>.go` | Event struct, output, results, `On*` helper + chain method, decode registration, encode for one hook |
 | `registry.go` | Event-name constants, alias tables |
-| `event.go` | `Event` interface (`EventName`, envelope access) |
-| `envelope.go` | Shared payload fields |
-| `decode.go` | internal decode, `EnvelopeOf`, per-SDK decoder registry |
+| `envelope.go` | Shared payload fields (embedded on each event; access via promoted fields) |
 | `encode.go` | `Encode` router (wire mapping) |
-| `register.go` | Handler registration (`registerHandler`, dialect init) |
+| `register.go` | Dialect codec, `RegisterDialect` init, handler registration helpers |
 | `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |
-| `hook.go` | Hook wrappers embedding typed event + `run.Invocation` |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
 | `tools/` | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |

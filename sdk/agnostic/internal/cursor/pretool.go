@@ -17,13 +17,13 @@ func RegisterPreTool(fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnPreToolUse(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PreToolUse], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
+	sdkcursor.OnPreToolUse(func(ctx context.Context, hook run.Hook[sdkcursor.PreToolUse], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 		return callPreTool(ctx, hook.Invocation(), mapPreToolUse(hook.Event), newPermissionResults(native), fn)
 	}).
-		BeforeShellExecution(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeShellExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
+		BeforeShellExecution(func(ctx context.Context, hook run.Hook[sdkcursor.BeforeShellExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 			return callPreTool(ctx, hook.Invocation(), mapBeforeShellExecution(hook.Event), newPermissionResults(native), fn)
 		}).
-		BeforeMCPExecution(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeMCPExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
+		BeforeMCPExecution(func(ctx context.Context, hook run.Hook[sdkcursor.BeforeMCPExecution], native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 			return callPreTool(ctx, hook.Invocation(), mapBeforeMCPExecution(hook.Event), newPermissionResults(native), fn)
 		})
 }
@@ -33,7 +33,7 @@ func RegisterBeforeReadFile(fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnBeforeReadFile(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.BeforeReadFile], native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
+	sdkcursor.OnBeforeReadFile(func(ctx context.Context, hook run.Hook[sdkcursor.BeforeReadFile], native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
 		return callPreTool(ctx, hook.Invocation(), mapBeforeReadFile(hook.Event), newBeforeReadResults(native), fn)
 	})
 }
@@ -52,7 +52,7 @@ func callPreTool(ctx context.Context, inv run.Invocation, ev *model.PreToolEvent
 
 func mapPreToolUse(e sdkcursor.PreToolUse) *model.PreToolEvent {
 	ev := &model.PreToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
 	}
 	if shell := e.ShellCommand(); shell != "" {
@@ -63,7 +63,7 @@ func mapPreToolUse(e sdkcursor.PreToolUse) *model.PreToolEvent {
 
 func mapBeforeShellExecution(e sdkcursor.BeforeShellExecution) *model.PreToolEvent {
 	return &model.PreToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     &model.ToolCall{Name: tools.ToolBash, Native: e.EventName(), Shell: e.Command},
 	}
 }
@@ -72,7 +72,7 @@ func mapBeforeMCPExecution(e sdkcursor.BeforeMCPExecution) *model.PreToolEvent {
 	nameNorm, _ := hookkit.NormalizeToolName(e.ToolName)
 	toolInput := tools.NewInput(nameNorm, e.ToolName, e.ToolInput.Raw())
 	return &model.PreToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool: &model.ToolCall{
 			Name:   nameNorm,
 			Native: e.ToolName,
@@ -85,7 +85,7 @@ func mapBeforeMCPExecution(e sdkcursor.BeforeMCPExecution) *model.PreToolEvent {
 func mapBeforeReadFile(e sdkcursor.BeforeReadFile) *model.PreToolEvent {
 	name := e.EventName()
 	ev := &model.PreToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     &model.ToolCall{Name: tools.ToolRead, Native: name},
 	}
 	input, err := json.Marshal(map[string]any{

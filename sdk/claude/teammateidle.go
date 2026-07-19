@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // TeammateIdle is the TeammateIdle hook event.
 type TeammateIdle struct {
 	Envelope
@@ -13,5 +15,5 @@ type TeammateIdle struct {
 func (TeammateIdle) EventName() string { return EventTeammateIdle }
 
 func init() {
-	registerDecoder(EventTeammateIdle, decodeAs[TeammateIdle])
+	codec.Register(EventTeammateIdle, hookkit.EventDecoder[TeammateIdle](codec))
 }

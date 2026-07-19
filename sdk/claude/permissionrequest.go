@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -22,8 +24,8 @@ type PermissionRequest struct {
 func (PermissionRequest) EventName() string { return EventPermissionRequest }
 
 func init() {
-	registerDecoder(EventPermissionRequest, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PermissionRequest, raw []byte) {
+	codec.Register(EventPermissionRequest, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PermissionRequest, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})
@@ -163,17 +165,17 @@ func (o permissionRequestOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnPermissionRequest registers a PermissionRequest handler.
-func OnPermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
+func OnPermissionRequest(fn func(context.Context, run.Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
 	return (&chain{}).PermissionRequest(fn)
 }
 
 // PermissionRequest registers another PermissionRequest handler on the chain.
-func (c *chain) PermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
+func (c *chain) PermissionRequest(fn func(context.Context, run.Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionRequestResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionRequestResults{})
 	})
 	return c
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -14,7 +16,7 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnPostToolUse(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.PostToolUse], native sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
+	sdkcopilot.OnPostToolUse(func(ctx context.Context, hook run.Hook[sdkcopilot.PostToolUse], native sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
 		out, err := fn(ctx, model.NewPostToolHook(hook.Invocation(), mapPostToolUse(hook.Event)), newPostToolResults(native))
 		if err != nil || out == nil {
 			return nil, err
@@ -29,7 +31,7 @@ func RegisterPostTool(fn model.PostToolHandler) {
 
 func mapPostToolUse(e sdkcopilot.PostToolUse) *model.PostToolEvent {
 	return &model.PostToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.NativeToolName(), e.Input().Raw(), ""),
 		Result:   &model.ToolResult{Raw: hookkit.CloneRaw(e.ResultRaw()), Text: e.ResultText()},
 	}

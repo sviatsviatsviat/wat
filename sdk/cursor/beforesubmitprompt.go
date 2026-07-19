@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -97,21 +99,21 @@ func (o beforeSubmitPromptOutput) encode(eventName string) ([]byte, int, error) 
 }
 
 func init() {
-	registerDecoder(EventBeforeSubmitPrompt, decodeAs[BeforeSubmitPrompt])
+	codec.Register(EventBeforeSubmitPrompt, hookkit.EventDecoder[BeforeSubmitPrompt](codec))
 }
 
 // OnBeforeSubmitPrompt registers a beforeSubmitPrompt handler.
-func OnBeforeSubmitPrompt(fn func(context.Context, Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *chain {
+func OnBeforeSubmitPrompt(fn func(context.Context, run.Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *chain {
 	return (&chain{}).BeforeSubmitPrompt(fn)
 }
 
 // BeforeSubmitPrompt registers another BeforeSubmitPrompt handler on the chain.
-func (c *chain) BeforeSubmitPrompt(fn func(context.Context, Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *chain {
+func (c *chain) BeforeSubmitPrompt(fn func(context.Context, run.Hook[BeforeSubmitPrompt], BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev BeforeSubmitPrompt) (BeforeSubmitPromptOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), beforeSubmitPromptResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), beforeSubmitPromptResults{})
 	})
 	return c
 }

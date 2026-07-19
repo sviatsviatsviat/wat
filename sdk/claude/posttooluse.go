@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/claude/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -27,8 +29,8 @@ type PostToolUse struct {
 func (PostToolUse) EventName() string { return EventPostToolUse }
 
 func init() {
-	registerDecoder(EventPostToolUse, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PostToolUse, raw []byte) {
+	codec.Register(EventPostToolUse, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PostToolUse, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})
@@ -155,17 +157,17 @@ func (o postToolUseOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnPostToolUse registers a PostToolUse handler.
-func OnPostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
+func OnPostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
 	return (&chain{}).PostToolUse(fn)
 }
 
 // PostToolUse registers another PostToolUse handler on the chain.
-func (c *chain) PostToolUse(fn func(context.Context, Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
+func (c *chain) PostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PostToolUse) (PostToolUseOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolUseResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolUseResults{})
 	})
 	return c
 }

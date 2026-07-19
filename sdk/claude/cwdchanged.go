@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/internal/hookkit"
+
 // CwdChanged is the CwdChanged hook event.
 type CwdChanged struct {
 	Envelope
@@ -13,5 +15,5 @@ type CwdChanged struct {
 func (CwdChanged) EventName() string { return EventCwdChanged }
 
 func init() {
-	registerDecoder(EventCwdChanged, decodeAs[CwdChanged])
+	codec.Register(EventCwdChanged, hookkit.EventDecoder[CwdChanged](codec))
 }

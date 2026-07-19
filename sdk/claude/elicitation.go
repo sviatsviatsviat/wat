@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -22,7 +24,7 @@ type Elicitation struct {
 func (Elicitation) EventName() string { return EventElicitation }
 
 func init() {
-	registerDecoder(EventElicitation, decodeAs[Elicitation])
+	codec.Register(EventElicitation, hookkit.EventDecoder[Elicitation](codec))
 }
 
 // ElicitationOutput is the response for Elicitation events.
@@ -136,17 +138,17 @@ func (o elicitationOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnElicitation registers an Elicitation handler.
-func OnElicitation(fn func(context.Context, Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
+func OnElicitation(fn func(context.Context, run.Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
 	return (&chain{}).Elicitation(fn)
 }
 
 // Elicitation registers another Elicitation handler on the chain.
-func (c *chain) Elicitation(fn func(context.Context, Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
+func (c *chain) Elicitation(fn func(context.Context, run.Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev Elicitation) (ElicitationOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), elicitationResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), elicitationResults{})
 	})
 	return c
 }

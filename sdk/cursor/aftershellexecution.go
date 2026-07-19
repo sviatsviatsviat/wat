@@ -3,6 +3,8 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -31,21 +33,21 @@ func (e AfterShellExecution) DurationMillis() int64 {
 }
 
 func init() {
-	registerDecoder(EventAfterShellExecution, decodeAs[AfterShellExecution])
+	codec.Register(EventAfterShellExecution, hookkit.EventDecoder[AfterShellExecution](codec))
 }
 
 // OnAfterShellExecution registers an afterShellExecution handler.
-func OnAfterShellExecution(fn func(context.Context, Hook[AfterShellExecution], PostToolResults) (PostToolOutput, error)) *chain {
+func OnAfterShellExecution(fn func(context.Context, run.Hook[AfterShellExecution], PostToolResults) (PostToolOutput, error)) *chain {
 	return (&chain{}).AfterShellExecution(fn)
 }
 
 // AfterShellExecution registers another AfterShellExecution handler on the chain.
-func (c *chain) AfterShellExecution(fn func(context.Context, Hook[AfterShellExecution], PostToolResults) (PostToolOutput, error)) *chain {
+func (c *chain) AfterShellExecution(fn func(context.Context, run.Hook[AfterShellExecution], PostToolResults) (PostToolOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev AfterShellExecution) (PostToolOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
 	})
 	return c
 }

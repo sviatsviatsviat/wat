@@ -3,6 +3,8 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -25,7 +27,7 @@ type MessageDisplay struct {
 func (MessageDisplay) EventName() string { return EventMessageDisplay }
 
 func init() {
-	registerDecoder(EventMessageDisplay, decodeAs[MessageDisplay])
+	codec.Register(EventMessageDisplay, hookkit.EventDecoder[MessageDisplay](codec))
 }
 
 // MessageDisplayOutput is the response for MessageDisplay events.
@@ -114,17 +116,17 @@ func (o messageDisplayOutput) encodeInto(top, hso map[string]any) {
 }
 
 // OnMessageDisplay registers a MessageDisplay handler.
-func OnMessageDisplay(fn func(context.Context, Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
+func OnMessageDisplay(fn func(context.Context, run.Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
 	return (&chain{}).MessageDisplay(fn)
 }
 
 // MessageDisplay registers another MessageDisplay handler on the chain.
-func (c *chain) MessageDisplay(fn func(context.Context, Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
+func (c *chain) MessageDisplay(fn func(context.Context, run.Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev MessageDisplay) (MessageDisplayOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), messageDisplayResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), messageDisplayResults{})
 	})
 	return c
 }

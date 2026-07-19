@@ -15,7 +15,7 @@ func RegisterStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnAgentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+	sdkcopilot.OnAgentStop(func(ctx context.Context, hook run.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 		if hook.Event.IsSubagent() {
 			return nil, nil
 		}
@@ -29,10 +29,10 @@ func RegisterSubagentStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.OnSubagentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.SubagentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+	sdkcopilot.OnSubagentStop(func(ctx context.Context, hook run.Hook[sdkcopilot.SubagentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event), native, fn)
 	})
-	sdkcopilot.OnAgentStop(func(ctx context.Context, hook sdkcopilot.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+	sdkcopilot.OnAgentStop(func(ctx context.Context, hook run.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 		if !hook.Event.IsSubagent() {
 			return nil, nil
 		}
@@ -54,7 +54,7 @@ func callStop(ctx context.Context, inv run.Invocation, ev *model.StopEvent, nati
 
 func mapAgentStop(e sdkcopilot.AgentStop) *model.StopEvent {
 	return &model.StopEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Turn:     &model.TurnEnd{Status: e.Reason()},
 	}
 }
@@ -65,7 +65,7 @@ func mapAgentStopAsSubagent(e sdkcopilot.AgentStop) *model.StopEvent {
 		typ = e.DisplayName()
 	}
 	return &model.StopEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Subagent: &model.Subagent{
 			Type:   typ,
 			Status: e.Reason(),
@@ -76,7 +76,7 @@ func mapAgentStopAsSubagent(e sdkcopilot.AgentStop) *model.StopEvent {
 
 func mapSubagentStop(e sdkcopilot.SubagentStop) *model.StopEvent {
 	return &model.StopEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Subagent: &model.Subagent{
 			Type:   e.Name(),
 			Status: e.Reason(),

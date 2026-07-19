@@ -133,25 +133,25 @@ func (o permissionRequestOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventPermissionRequest, func(raw []byte) (Event, error) {
-		return decodeAsAndThen(raw, func(e *PermissionRequest, raw []byte) {
+	codec.Register(EventPermissionRequest, func(raw []byte) (run.Event, error) {
+		return hookkit.DecodeEvent(codec, raw, func(e *PermissionRequest, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})
 }
 
 // OnPermissionRequest registers a PermissionRequest handler.
-func OnPermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
+func OnPermissionRequest(fn func(context.Context, run.Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
 	return (&chain{}).PermissionRequest(fn)
 }
 
 // PermissionRequest registers another PermissionRequest handler on the chain.
-func (c *chain) PermissionRequest(fn func(context.Context, Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
+func (c *chain) PermissionRequest(fn func(context.Context, run.Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
 	if fn == nil {
 		return c
 	}
 	registerHandler(func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
-		return fn(ctx, NewHook(run.InvocationFrom(ctx), ev), permissionRequestResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionRequestResults{})
 	})
 	return c
 }

@@ -18,16 +18,16 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.OnPostToolUse(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.PostToolUse], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+	sdkcursor.OnPostToolUse(func(ctx context.Context, hook run.Hook[sdkcursor.PostToolUse], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 		return callPostTool(ctx, hook.Invocation(), mapPostToolUse(hook.Event), native, fn)
 	}).
-		AfterShellExecution(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterShellExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+		AfterShellExecution(func(ctx context.Context, hook run.Hook[sdkcursor.AfterShellExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 			return callPostTool(ctx, hook.Invocation(), mapAfterShellExecution(hook.Event), native, fn)
 		}).
-		AfterMCPExecution(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterMCPExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+		AfterMCPExecution(func(ctx context.Context, hook run.Hook[sdkcursor.AfterMCPExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 			return callPostTool(ctx, hook.Invocation(), mapAfterMCPExecution(hook.Event), native, fn)
 		}).
-		AfterFileEdit(func(ctx context.Context, hook sdkcursor.Hook[sdkcursor.AfterFileEdit], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+		AfterFileEdit(func(ctx context.Context, hook run.Hook[sdkcursor.AfterFileEdit], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 			return callPostTool(ctx, hook.Invocation(), mapAfterFileEdit(hook.Event), native, fn)
 		})
 }
@@ -46,7 +46,7 @@ func callPostTool(ctx context.Context, inv run.Invocation, ev *model.PostToolEve
 
 func mapPostToolUse(e sdkcursor.PostToolUse) *model.PostToolEvent {
 	return &model.PostToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
 		Result:   &model.ToolResult{Text: e.ToolOutput, DurationMs: e.DurationMillis()},
 	}
@@ -54,7 +54,7 @@ func mapPostToolUse(e sdkcursor.PostToolUse) *model.PostToolEvent {
 
 func mapAfterShellExecution(e sdkcursor.AfterShellExecution) *model.PostToolEvent {
 	return &model.PostToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     &model.ToolCall{Name: tools.ToolBash, Native: e.EventName(), Shell: e.Command},
 		Result:   &model.ToolResult{Text: e.Output, DurationMs: e.DurationMillis()},
 	}
@@ -65,7 +65,7 @@ func mapAfterMCPExecution(e sdkcursor.AfterMCPExecution) *model.PostToolEvent {
 	toolInput := tools.NewInput(nameNorm, e.ToolName, e.ToolInput.Raw())
 	name := e.EventName()
 	return &model.PostToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool: &model.ToolCall{
 			Name:   nameNorm,
 			Native: name,
@@ -79,7 +79,7 @@ func mapAfterMCPExecution(e sdkcursor.AfterMCPExecution) *model.PostToolEvent {
 func mapAfterFileEdit(e sdkcursor.AfterFileEdit) *model.PostToolEvent {
 	name := e.EventName()
 	ev := &model.PostToolEvent{
-		Envelope: envelope(e),
+		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     &model.ToolCall{Name: tools.ToolEdit, Native: name},
 	}
 	input, err := json.Marshal(map[string]any{
