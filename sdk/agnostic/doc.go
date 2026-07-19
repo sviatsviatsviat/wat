@@ -2,8 +2,8 @@
 // GitHub Copilot, and Cursor. It defines typed events and hook-response result
 // types, and On* registration that fans out adapter handlers onto each agent
 // SDK via On* helpers. Canonical tool names and typed tool-input helpers live in
-// sdk/agnostic/tools. Envelope.Agent is a plain string matching each per-agent
-// SDK Dialect constant (claude.Dialect, …).
+// sdk/agnostic/tools. The Agent field on each normalized event is a plain string
+// matching each per-agent SDK Dialect constant (claude.Dialect, …).
 //
 // Inbound native→unified mapping and host result wrappers live in
 // sdk/agnostic/internal/{claude,cursor,copilot} with shared types and result
