@@ -16,6 +16,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `<event>.go` | Event struct, output, results, `On*` helper + chain method, decode registration, encode for one hook |
 | `registry.go` | Event-name constants, alias tables |
 | `envelope.go` | Shared payload fields (embedded on each event; access via promoted fields) |
+| `exit.go` | Handler/encode exit-code constants |
 | `encode.go` | `Encode` router (wire mapping) |
 | `register.go` | Dialect codec, `RegisterDialect` init, handler registration helpers |
 | `chain.go` | Unexported fluent `chain` handle (obtained only via package-level `On*`) |

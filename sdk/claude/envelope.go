@@ -40,12 +40,6 @@ type Effort struct {
 	Level EffortLevel `json:"level"`
 }
 
-// HandlerErrorExit is exit code 1 for mux processing failures (read/decode/handler/encode/write errors).
-const HandlerErrorExit = 1
-
-// FailBlockExit is exit code 2 for handler errors when WithFailPolicy(FailBlock) is active.
-const FailBlockExit = 2
-
 // Envelope holds fields shared by every Claude Code hook event payload.
 type Envelope struct {
 	// SessionID is the Claude session identifier.
