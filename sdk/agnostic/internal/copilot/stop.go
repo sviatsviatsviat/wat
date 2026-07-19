@@ -60,10 +60,14 @@ func mapAgentStop(e sdkcopilot.AgentStop) *model.StopEvent {
 }
 
 func mapAgentStopAsSubagent(e sdkcopilot.AgentStop) *model.StopEvent {
+	typ := e.Name()
+	if typ == "" {
+		typ = e.DisplayName()
+	}
 	return &model.StopEvent{
 		Envelope: envelope(e),
 		Subagent: &model.Subagent{
-			Type:   e.Name(),
+			Type:   typ,
 			Status: e.Reason(),
 		},
 		Turn: &model.TurnEnd{Status: e.Reason()},

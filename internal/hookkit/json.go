@@ -1,6 +1,9 @@
 package hookkit
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 // CloneBytes copies raw bytes into an independent json.RawMessage.
 func CloneBytes(raw []byte) json.RawMessage {
@@ -16,8 +19,9 @@ func CloneRaw(raw json.RawMessage) json.RawMessage {
 }
 
 // NullToNil returns nil when raw is empty or JSON null; otherwise raw unchanged.
+// Surrounding JSON whitespace around null is ignored.
 func NullToNil(raw json.RawMessage) json.RawMessage {
-	if len(raw) == 0 || string(raw) == "null" {
+	if len(raw) == 0 || strings.TrimSpace(string(raw)) == "null" {
 		return nil
 	}
 	return raw

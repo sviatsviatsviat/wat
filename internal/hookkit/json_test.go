@@ -29,9 +29,16 @@ func TestNullToNil(t *testing.T) {
 	if NullToNil(json.RawMessage("null")) != nil {
 		t.Fatal("JSON null should become nil")
 	}
+	if NullToNil(json.RawMessage("  null\n")) != nil {
+		t.Fatal("whitespace-padded JSON null should become nil")
+	}
 	in := json.RawMessage(`{"a":1}`)
 	if string(NullToNil(in)) != `{"a":1}` {
 		t.Fatalf("NullToNil = %s", NullToNil(in))
+	}
+	padded := json.RawMessage("  {\"a\":1}  ")
+	if string(NullToNil(padded)) != string(padded) {
+		t.Fatalf("non-null raw should be unchanged: %s", NullToNil(padded))
 	}
 }
 

@@ -37,7 +37,7 @@ func (c *Codec) EventName(raw []byte) (string, error) {
 }
 
 // Decode peeks hook_event_name, looks up a registered decoder, and runs it.
-// It panics if name is non-empty but not registered (a design bug: Serve must not
+// It returns an error if name is non-empty but not registered (Serve must not
 // decode when no handlers exist for the event).
 func (c *Codec) Decode(raw []byte) (any, error) {
 	name, err := c.EventName(raw)
@@ -46,7 +46,7 @@ func (c *Codec) Decode(raw []byte) (any, error) {
 	}
 	fn, ok := c.m[name]
 	if !ok {
-		panic(c.dialect + ": decode: unknown hook event " + name)
+		return nil, fmt.Errorf("%s: decode: unknown hook event %s", c.dialect, name)
 	}
 	return fn(raw)
 }

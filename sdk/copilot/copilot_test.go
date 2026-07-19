@@ -70,18 +70,14 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 	}
 }
 
-func TestDecode_UnknownEventPanics(t *testing.T) {
-	defer func() {
-		got := recover()
-		if got == nil {
-			t.Fatal("expected panic")
-		}
-		msg, ok := got.(string)
-		if !ok || !strings.Contains(msg, "unknown hook event") {
-			t.Fatalf("recover = %#v", got)
-		}
-	}()
-	_, _ = copilot.Decode([]byte(`{"hook_event_name":"FutureEvent","session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`))
+func TestDecode_UnknownEvent(t *testing.T) {
+	_, err := copilot.Decode([]byte(`{"hook_event_name":"FutureEvent","session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`))
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "unknown hook event") {
+		t.Fatalf("error = %v", err)
+	}
 }
 
 func TestDecode_InvalidTypedEvent(t *testing.T) {

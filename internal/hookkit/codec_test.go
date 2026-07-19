@@ -35,17 +35,13 @@ func TestCodec(t *testing.T) {
 		t.Fatalf("empty: %v", err)
 	}
 
-	defer func() {
-		r := recover()
-		if r == nil {
-			t.Fatal("expected panic for unknown event")
-		}
-		msg, ok := r.(string)
-		if !ok || !strings.Contains(msg, "unknown hook event") {
-			t.Fatalf("recover = %#v", r)
-		}
-	}()
-	_, _ = c.Decode([]byte(`{"hook_event_name":"Other"}`))
+	_, err = c.Decode([]byte(`{"hook_event_name":"Other"}`))
+	if err == nil {
+		t.Fatal("expected error for unknown event")
+	}
+	if !strings.Contains(err.Error(), "unknown hook event") {
+		t.Fatalf("error = %v", err)
+	}
 }
 
 func TestCodec_IsolatedRegistries(t *testing.T) {
@@ -58,12 +54,13 @@ func TestCodec_IsolatedRegistries(t *testing.T) {
 	b := NewCodec("b", empty, decodeErr, nameRequired)
 	a.Register("X", func([]byte) (any, error) { return "a", nil })
 
-	defer func() {
-		if recover() == nil {
-			t.Fatal("expected panic: b must not see a's decoder")
-		}
-	}()
-	_, _ = b.Decode([]byte(`{"hook_event_name":"X"}`))
+	_, err := b.Decode([]byte(`{"hook_event_name":"X"}`))
+	if err == nil {
+		t.Fatal("expected error: b must not see a's decoder")
+	}
+	if !strings.Contains(err.Error(), "unknown hook event") {
+		t.Fatalf("error = %v", err)
+	}
 }
 
 func TestCodec_WrapDecodeError(t *testing.T) {
