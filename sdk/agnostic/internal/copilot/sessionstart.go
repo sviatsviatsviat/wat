@@ -11,11 +11,11 @@ import (
 )
 
 // RegisterSessionStart registers fn on the Copilot SessionStart chain.
-func RegisterSessionStart(r *run.Registry, fn model.SessionStartHandler) {
+func RegisterSessionStart(registry *run.Registry, fn model.SessionStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks(r).SessionStart(func(ctx context.Context, hook run.Hook[sdkcopilot.SessionStart], native sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
+	sdkcopilot.UseHooks(registry).SessionStart(func(ctx context.Context, hook run.Hook[sdkcopilot.SessionStart], native sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
 		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event)), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err

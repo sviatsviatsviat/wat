@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
-
 	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -121,11 +119,7 @@ func (o postToolOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	codec.Register(EventPostToolUse, func(raw []byte) (run.Event, error) {
-		return hookkit.DecodeEvent(codec, raw, func(e *PostToolUse, raw []byte) {
-			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
-		})
-	})
+	registerToolInputEvent(EventPostToolUse, func(e *PostToolUse) *tools.Input { return &e.ToolInput })
 }
 
 // PostToolUse registers a PostToolUse handler on the chain.

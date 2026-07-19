@@ -3,6 +3,7 @@ package cursor
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -324,52 +325,7 @@ func TestDecode_Matrix(t *testing.T) {
 }
 
 func reflectTypeName(v any) string {
-	switch v.(type) {
-	case SessionStart:
-		return "SessionStart"
-	case SessionEnd:
-		return "SessionEnd"
-	case BeforeSubmitPrompt:
-		return "BeforeSubmitPrompt"
-	case PreToolUse:
-		return "PreToolUse"
-	case PostToolUse:
-		return "PostToolUse"
-	case PostToolUseFailure:
-		return "PostToolUseFailure"
-	case BeforeShellExecution:
-		return "BeforeShellExecution"
-	case AfterShellExecution:
-		return "AfterShellExecution"
-	case BeforeMCPExecution:
-		return "BeforeMCPExecution"
-	case AfterMCPExecution:
-		return "AfterMCPExecution"
-	case BeforeReadFile:
-		return "BeforeReadFile"
-	case AfterFileEdit:
-		return "AfterFileEdit"
-	case SubagentStart:
-		return "SubagentStart"
-	case SubagentStop:
-		return "SubagentStop"
-	case Stop:
-		return "Stop"
-	case PreCompact:
-		return "PreCompact"
-	case AfterAgentResponse:
-		return "AfterAgentResponse"
-	case AfterAgentThought:
-		return "AfterAgentThought"
-	case BeforeTabFileRead:
-		return "BeforeTabFileRead"
-	case AfterTabFileEdit:
-		return "AfterTabFileEdit"
-	case WorkspaceOpen:
-		return "WorkspaceOpen"
-	default:
-		return "unknown"
-	}
+	return reflect.TypeOf(v).Name()
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {

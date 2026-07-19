@@ -140,11 +140,7 @@ func (o preToolOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	codec.Register(EventPreToolUse, func(raw []byte) (run.Event, error) {
-		return hookkit.DecodeEvent(codec, raw, func(e *PreToolUse, raw []byte) {
-			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
-		})
-	})
+	registerToolInputEvent(EventPreToolUse, func(e *PreToolUse) *tools.Input { return &e.ToolInput })
 }
 
 // PreToolUse registers a PreToolUse handler on the chain.

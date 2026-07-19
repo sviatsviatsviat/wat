@@ -213,7 +213,7 @@ Agent-native encode surfaces (use `sdk/claude` directly):
 
 ## Copilot inbound mapping
 
-Portable `On*` handlers fan out onto `sdk/copilot` via package-level `On*` helpers with unexported inbound mapping in `sdk/agnostic` (PascalCase `hook_event_name`, snake_case fields). Native decode stays in `sdk/copilot`.
+Portable `UseHooks().On*` handlers fan out onto `sdk/copilot` via `UseHooks(r)` with unexported inbound mapping in `sdk/agnostic` (PascalCase `hook_event_name`, snake_case fields). Native decode stays in `sdk/copilot`.
 
 ### Wire format
 
@@ -269,7 +269,7 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 
 ## Cursor inbound mapping
 
-Portable `On*` handlers fan out onto `sdk/cursor` via package-level `On*` helpers with unexported inbound mapping in `sdk/agnostic`. Native decode stays in `sdk/cursor`.
+Portable `UseHooks().On*` handlers fan out onto `sdk/cursor` via `UseHooks(r)` with unexported inbound mapping in `sdk/agnostic`. Native decode stays in `sdk/cursor`.
 
 Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`.
 
