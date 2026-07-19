@@ -156,8 +156,8 @@ func TestServe_HandlerErrorCopilotPreTool(t *testing.T) {
 		new(bytes.Buffer),
 		&stderr,
 	)
-	if code != copilot.PreToolErrorExit {
-		t.Fatalf("exit = %d, want %d", code, copilot.PreToolErrorExit)
+	if code != copilot.HandlerErrorExit {
+		t.Fatalf("exit = %d, want %d", code, copilot.HandlerErrorExit)
 	}
 	if !strings.Contains(stderr.String(), "boom") {
 		t.Fatalf("stderr = %q", stderr.String())

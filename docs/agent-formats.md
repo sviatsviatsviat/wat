@@ -264,8 +264,7 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 
 | Constant | Value | When |
 |---|---|---|
-| `copilot.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `copilot.PreToolErrorExit` | `1` | Same value; use when a `PreToolUse` handler returns an error (fail-closed deny) |
+| `copilot.HandlerErrorExit` | `1` | Runner should use when a handler returns an error (fail-closed on PreToolUse; fail-open elsewhere) |
 | `copilot.WarnExit` | `2` | `Encode` returns this for documented `postToolUseFailure` context paths |
 
 ## Cursor inbound mapping

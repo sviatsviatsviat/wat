@@ -45,7 +45,7 @@ func registerHandler[E run.Event, O any](fn func(context.Context, E) (O, error))
 		}
 		result, err := fn(ctx, typed)
 		if err != nil {
-			return nil, handlerErrorExit(name), err
+			return nil, HandlerErrorExit, err
 		}
 		if isZeroOutput(result) {
 			return nil, 0, nil
@@ -67,15 +67,8 @@ func registerObserveHandler[E run.Event](fn func(context.Context, run.Hook[E]) e
 			return nil, HandlerErrorExit, fmt.Errorf("copilot: handler for %s received %T", name, event)
 		}
 		if err := fn(ctx, run.NewHook(run.InvocationFrom(ctx), typed)); err != nil {
-			return nil, handlerErrorExit(name), err
+			return nil, HandlerErrorExit, err
 		}
 		return nil, 0, nil
 	})
-}
-
-func handlerErrorExit(eventName string) int {
-	if eventName == EventPreToolUse {
-		return PreToolErrorExit
-	}
-	return HandlerErrorExit
 }

@@ -449,8 +449,8 @@ func TestMux_Serve_PreToolHandlerError(t *testing.T) {
 	})
 	var stdout bytes.Buffer
 	code := run.Serve(context.Background(), strings.NewReader(copilotPreToolUse), &stdout, &bytes.Buffer{})
-	if code != copilot.PreToolErrorExit {
-		t.Fatalf("exit = %d, want %d", code, copilot.PreToolErrorExit)
+	if code != copilot.HandlerErrorExit {
+		t.Fatalf("exit = %d, want %d", code, copilot.HandlerErrorExit)
 	}
 }
 
