@@ -68,21 +68,27 @@ func TestDecode_Matrix(t *testing.T) {
 	}
 }
 
-func TestDecode_UnknownEvent(t *testing.T) {
-	raw := []byte(`{"session_id":"s1","hook_event_name":"FutureEvent","cwd":"/w"}`)
-	ev, err := claude.Decode(raw)
-	if err != nil {
-		t.Fatal(err)
+func TestDecode_UnknownEventPanics(t *testing.T) {
+	defer func() {
+		got := recover()
+		if got == nil {
+			t.Fatal("expected panic")
+		}
+		msg, ok := got.(string)
+		if !ok || !strings.Contains(msg, "unknown hook event") {
+			t.Fatalf("recover = %#v", got)
+		}
+	}()
+	_, _ = claude.Decode([]byte(`{"session_id":"s1","hook_event_name":"FutureEvent","cwd":"/w"}`))
+}
+
+func TestDecode_RequiresHookEventName(t *testing.T) {
+	_, err := claude.Decode([]byte(`{"session_id":"s1","cwd":"/w"}`))
+	if err == nil {
+		t.Fatal("expected error")
 	}
-	re, ok := ev.(claude.RawEvent)
-	if !ok {
-		t.Fatalf("want RawEvent, got %T", ev)
-	}
-	if re.EventName() != "FutureEvent" {
-		t.Fatalf("EventName = %q, want FutureEvent", re.EventName())
-	}
-	if re.SessionID != "s1" || re.Cwd != "/w" {
-		t.Fatalf("envelope not decoded: %+v", re.Envelope)
+	if !errors.Is(err, claude.ErrEventNameRequired) {
+		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
 	}
 }
 

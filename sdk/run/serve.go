@@ -37,12 +37,12 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 	}
 
 	ops, ok := r.dialectOps(dialect)
-	if !ok || ops.EventName == nil {
+	if !ok || ops.Codec == nil {
 		_, _ = fmt.Fprintf(errw, "run: %s: missing dialect ops\n", dialect)
 		return 1
 	}
 
-	eventName, err := ops.EventName(raw)
+	eventName, err := ops.Codec.EventName(raw)
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "run: %s: decode: %v\n", dialect, err)
 		return 1
@@ -53,11 +53,7 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 		return 0
 	}
 
-	if ops.Decode == nil {
-		_, _ = fmt.Fprintf(errw, "run: %s: missing Decode\n", dialect)
-		return 1
-	}
-	event, err := ops.Decode(raw)
+	event, err := ops.Codec.Decode(raw)
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "run: %s: decode: %v\n", dialect, err)
 		return 1

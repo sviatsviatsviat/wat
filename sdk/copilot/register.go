@@ -10,10 +10,9 @@ import (
 
 func init() {
 	run.RegisterDialect(Dialect, run.DialectOps{
-		Detect:    detectPayload,
-		EventName: eventNameFromRaw,
-		Decode:    decode,
-		Merge:     MergeOutputs,
+		Detect: detectPayload,
+		Codec:  codec,
+		Merge:  MergeOutputs,
 	})
 }
 

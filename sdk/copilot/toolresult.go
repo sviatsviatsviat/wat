@@ -22,19 +22,3 @@ type ErrorDetail struct {
 	// Stack is the error stack trace when provided.
 	Stack string `json:"stack"`
 }
-
-// RawEvent holds an unknown or future hook event decoded from the shared envelope only.
-type RawEvent struct {
-	Envelope
-}
-
-// EventName returns the canonical or received hook event name.
-func (e RawEvent) EventName() string {
-	if e.canonical != "" {
-		return e.canonical
-	}
-	if e.receivedName != "" {
-		return e.receivedName
-	}
-	return "unknown"
-}

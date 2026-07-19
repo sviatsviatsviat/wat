@@ -8,18 +8,28 @@ import (
 	"testing"
 )
 
+type testCodec struct {
+	eventName   string
+	decodeCalls *atomic.Int32
+}
+
+func (c testCodec) EventName([]byte) (string, error) {
+	return c.eventName, nil
+}
+
+func (c testCodec) Decode(raw []byte) (any, error) {
+	if c.decodeCalls != nil {
+		c.decodeCalls.Add(1)
+	}
+	return string(raw), nil
+}
+
 func TestServe_DecodesOnce(t *testing.T) {
 	r := NewRegistry()
 	var decodeCalls atomic.Int32
 	r.RegisterDialect("testdialect", DialectOps{
 		Detect: func([]byte, func(string) string) bool { return true },
-		EventName: func([]byte) (string, error) {
-			return "TestEvent", nil
-		},
-		Decode: func(raw []byte) (any, error) {
-			decodeCalls.Add(1)
-			return string(raw), nil
-		},
+		Codec:  testCodec{eventName: "TestEvent", decodeCalls: &decodeCalls},
 	})
 	var handlerCalls atomic.Int32
 	for range 3 {
@@ -49,13 +59,7 @@ func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 	var decodeCalls atomic.Int32
 	r.RegisterDialect("empty", DialectOps{
 		Detect: func([]byte, func(string) string) bool { return true },
-		EventName: func([]byte) (string, error) {
-			return "NoHandlers", nil
-		},
-		Decode: func([]byte) (any, error) {
-			decodeCalls.Add(1)
-			return nil, nil
-		},
+		Codec:  testCodec{eventName: "NoHandlers", decodeCalls: &decodeCalls},
 	})
 	code := r.serve(context.Background(), strings.NewReader(`{}`), &bytes.Buffer{}, &bytes.Buffer{}, applyOptions())
 	if code != 0 {

@@ -61,9 +61,6 @@ type Envelope struct {
 	Cwd string `json:"cwd"`
 	// TranscriptPath is the conversation transcript path.
 	TranscriptPath string `json:"transcript_path"`
-
-	receivedName string `json:"-"`
-	canonical    string `json:"-"`
 }
 
 // Session returns the session identifier.
@@ -74,16 +71,6 @@ func (e Envelope) Session() string {
 // Transcript returns the transcript path.
 func (e Envelope) Transcript() string {
 	return e.TranscriptPath
-}
-
-// ReceivedName returns the hook event name as received on the wire.
-func (e Envelope) ReceivedName() string {
-	return e.receivedName
-}
-
-func (e *Envelope) setEnvelopeMeta(received, canonical string) {
-	e.receivedName = received
-	e.canonical = canonical
 }
 
 // envelope returns a copy of the envelope for Event satisfaction.

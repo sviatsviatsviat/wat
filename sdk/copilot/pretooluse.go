@@ -137,8 +137,8 @@ func (o preToolOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventPreToolUse, func(raw []byte, received, canonical string) (Event, error) {
-		return decodeAsAndThen(raw, received, canonical, func(e *PreToolUse, raw []byte) {
+	registerDecoder(EventPreToolUse, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *PreToolUse, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})

@@ -133,8 +133,8 @@ func (o permissionRequestOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventPermissionRequest, func(raw []byte, received, canonical string) (Event, error) {
-		return decodeAsAndThen(raw, received, canonical, func(e *PermissionRequest, raw []byte) {
+	registerDecoder(EventPermissionRequest, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *PermissionRequest, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})

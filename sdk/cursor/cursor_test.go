@@ -124,6 +124,20 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 	}
 }
 
+func TestDecode_UnknownEventPanics(t *testing.T) {
+	defer func() {
+		got := recover()
+		if got == nil {
+			t.Fatal("expected panic")
+		}
+		msg, ok := got.(string)
+		if !ok || !strings.Contains(msg, "unknown hook event") {
+			t.Fatalf("recover = %#v", got)
+		}
+	}()
+	_, _ = cursor.Decode([]byte(`{"hook_event_name":"FutureEvent","conversation_id":"c1","cwd":"/w"}`))
+}
+
 func TestDecode_InvalidTypedEvent(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":123}`)
 	_, err := cursor.Decode(raw)

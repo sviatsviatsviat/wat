@@ -371,6 +371,47 @@ func TestServe_StopFollowUp(t *testing.T) {
 	}
 }
 
+func TestServe_CopilotSubagentStopViaScopedStop(t *testing.T) {
+	resetTest(t)
+	var sawStop, sawSubagent bool
+	OnStop(func(ctx context.Context, hook StopHook, r StopResults) (StopResult, error) {
+		sawStop = true
+		return r.FollowUp("keep-agent"), nil
+	})
+	OnSubagentStop(func(ctx context.Context, hook StopHook, r StopResults) (StopResult, error) {
+		if hook.Subagent == nil || hook.Subagent.Type != "task" {
+			t.Fatalf("Subagent = %+v", hook.Subagent)
+		}
+		sawSubagent = true
+		return r.FollowUp("keep-subagent"), nil
+	})
+	payload := `{
+  "hook_event_name": "Stop",
+  "session_id": "s2",
+  "timestamp": "2026-07-12T10:00:00Z",
+  "cwd": "/w",
+  "agent_name": "task",
+  "stop_reason": "end_turn"
+}`
+	var stdout, stderr bytes.Buffer
+	code := run.Serve(context.Background(), strings.NewReader(payload), &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d; stderr = %q", code, stderr.String())
+	}
+	if sawStop {
+		t.Fatal("OnStop should not run for subagent-scoped Stop")
+	}
+	if !sawSubagent {
+		t.Fatal("OnSubagentStop did not run")
+	}
+	if !strings.Contains(stdout.String(), "keep-subagent") {
+		t.Fatalf("stdout = %s", stdout.Bytes())
+	}
+	if strings.Contains(stdout.String(), "keep-agent") {
+		t.Fatalf("stdout should not include keep-agent: %s", stdout.Bytes())
+	}
+}
+
 func TestServe_SessionStartContext(t *testing.T) {
 	resetTest(t)
 	OnSessionStart(func(ctx context.Context, hook SessionStartHook, r SessionStartResults) (SessionStartResult, error) {

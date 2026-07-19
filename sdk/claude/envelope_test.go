@@ -34,7 +34,6 @@ func TestEventEnvelopeAccess(t *testing.T) {
 		PostCompact{},
 		Elicitation{},
 		ElicitationResult{},
-		RawEvent{},
 	}
 	for _, ev := range cases {
 		t.Run(ev.EventName(), func(t *testing.T) {

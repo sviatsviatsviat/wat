@@ -70,6 +70,20 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 	}
 }
 
+func TestDecode_UnknownEventPanics(t *testing.T) {
+	defer func() {
+		got := recover()
+		if got == nil {
+			t.Fatal("expected panic")
+		}
+		msg, ok := got.(string)
+		if !ok || !strings.Contains(msg, "unknown hook event") {
+			t.Fatalf("recover = %#v", got)
+		}
+	}()
+	_, _ = copilot.Decode([]byte(`{"hook_event_name":"FutureEvent","session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`))
+}
+
 func TestDecode_InvalidTypedEvent(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"PreToolUse","session_id":"s1","cwd":"/w","tool_name":123}`)
 	_, err := copilot.Decode(raw)
@@ -93,8 +107,8 @@ func TestDecode_VSCodeStop(t *testing.T) {
 	if stop.EventName() != copilot.EventAgentStop {
 		t.Fatalf("EventName=%q", stop.EventName())
 	}
-	if stop.ReceivedName() != "Stop" {
-		t.Fatalf("ReceivedName=%q", stop.ReceivedName())
+	if stop.HookEventName != "Stop" {
+		t.Fatalf("HookEventName=%q", stop.HookEventName)
 	}
 	if stop.Reason() != "end_turn" {
 		t.Fatalf("Reason=%q", stop.Reason())
@@ -234,12 +248,34 @@ func TestDecode_Matrix(t *testing.T) {
 			},
 		},
 		{
+			name:      "subagentStop explicit",
+			raw:       `{"hook_event_name":"SubagentStop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"task","agent_display_name":"Task","stop_reason":"end_turn"}`,
+			eventName: copilot.EventSubagentStop,
+			check: func(t *testing.T, ev copilot.Event) {
+				e, ok := ev.(copilot.SubagentStop)
+				if !ok || e.Name() != "task" || e.Reason() != "end_turn" {
+					t.Fatalf("SubagentStop=%+v", ev)
+				}
+			},
+		},
+		{
 			name:      "agentStop",
 			raw:       `{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","stop_reason":"end_turn"}`,
 			eventName: copilot.EventAgentStop,
 			check: func(t *testing.T, ev copilot.Event) {
 				e, ok := ev.(copilot.AgentStop)
-				if !ok || e.Reason() != "end_turn" {
+				if !ok || e.Reason() != "end_turn" || e.IsSubagent() {
+					t.Fatalf("AgentStop=%+v", ev)
+				}
+			},
+		},
+		{
+			name:      "agentStop with agent scope",
+			raw:       `{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"task","stop_reason":"end_turn"}`,
+			eventName: copilot.EventAgentStop,
+			check: func(t *testing.T, ev copilot.Event) {
+				e, ok := ev.(copilot.AgentStop)
+				if !ok || !e.IsSubagent() || e.Name() != "task" {
 					t.Fatalf("AgentStop=%+v", ev)
 				}
 			},
@@ -493,15 +529,18 @@ func TestDecode_VSCodeStopWithAgentScope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stop, ok := ev.(copilot.SubagentStop)
+	stop, ok := ev.(copilot.AgentStop)
 	if !ok {
-		t.Fatalf("got %T, want SubagentStop", ev)
+		t.Fatalf("got %T, want AgentStop", ev)
 	}
-	if stop.EventName() != copilot.EventSubagentStop {
+	if stop.EventName() != copilot.EventAgentStop {
 		t.Fatalf("EventName=%q", stop.EventName())
 	}
-	if stop.ReceivedName() != "Stop" {
-		t.Fatalf("ReceivedName=%q", stop.ReceivedName())
+	if !stop.IsSubagent() || stop.Name() != "task" {
+		t.Fatalf("IsSubagent/Name = %v %q", stop.IsSubagent(), stop.Name())
+	}
+	if stop.HookEventName != "Stop" {
+		t.Fatalf("HookEventName=%q", stop.HookEventName)
 	}
 }
 

@@ -34,8 +34,8 @@ func (e AfterMCPExecution) DurationMillis() int64 {
 }
 
 func init() {
-	registerDecoder(EventAfterMCPExecution, func(raw []byte, received, canonical string) (Event, error) {
-		return decodeAsAndThen(raw, received, canonical, func(e *AfterMCPExecution, raw []byte) {
+	registerDecoder(EventAfterMCPExecution, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *AfterMCPExecution, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})

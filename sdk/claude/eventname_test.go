@@ -6,18 +6,18 @@ import (
 )
 
 func TestEventNameFromRaw(t *testing.T) {
-	name, err := eventNameFromRaw([]byte(`{"hook_event_name":"PreToolUse","session_id":"s"}`))
+	name, err := codec.EventName([]byte(`{"hook_event_name":"PreToolUse","session_id":"s"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if name != "PreToolUse" {
 		t.Fatalf("name = %q", name)
 	}
-	_, err = eventNameFromRaw([]byte(`{"session_id":"s"}`))
+	_, err = codec.EventName([]byte(`{"session_id":"s"}`))
 	if err == nil {
 		t.Fatal("expected error without hook_event_name")
 	}
-	if !errors.Is(err, ErrEmptyPayload) && err.Error() == "" {
-		t.Fatalf("err = %v", err)
+	if !errors.Is(err, ErrEventNameRequired) {
+		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
 	}
 }

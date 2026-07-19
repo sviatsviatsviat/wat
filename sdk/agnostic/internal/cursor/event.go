@@ -7,22 +7,11 @@ import (
 
 func envelope(native sdkcursor.Event) model.Envelope {
 	env := sdkcursor.EnvelopeOf(native)
-	name := native.EventName()
-	if received := env.ReceivedName(); received != "" {
-		name = received
-	}
 	return model.Envelope{
 		Agent:          sdkcursor.Dialect,
-		Name:           name,
+		Name:           native.EventName(),
 		Session:        env.Session(),
 		Cwd:            env.Cwd,
 		TranscriptPath: env.Transcript(),
 	}
-}
-
-func receivedName(native sdkcursor.Event) string {
-	if name := sdkcursor.EnvelopeOf(native).ReceivedName(); name != "" {
-		return name
-	}
-	return native.EventName()
 }

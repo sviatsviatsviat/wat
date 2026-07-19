@@ -24,8 +24,8 @@ type BeforeMCPExecution struct {
 func (BeforeMCPExecution) EventName() string { return EventBeforeMCPExecution }
 
 func init() {
-	registerDecoder(EventBeforeMCPExecution, func(raw []byte, received, canonical string) (Event, error) {
-		return decodeAsAndThen(raw, received, canonical, func(e *BeforeMCPExecution, raw []byte) {
+	registerDecoder(EventBeforeMCPExecution, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *BeforeMCPExecution, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})

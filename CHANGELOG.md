@@ -33,3 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `claude.FailBlockExit` for fail-closed blocking when `WithFailPolicy(FailBlock)` is active
 - Decoder registry parity tests in `claude` and `copilot` (`envelope_meta_test.go`)
 - Typed decode failures in `copilot` and `cursor` wrap `ErrDecodePayload` for stable `errors.Is` checks
+- `claude.ErrEventNameRequired` when `hook_event_name` is absent (aligned with Copilot and Cursor)
+- Copilot wire `Stop` always decodes as `AgentStop` (optional `agent_name` / `agent_display_name` via `IsSubagent`); portable `OnStop` skips subagent-scoped `Stop`, and portable `OnSubagentStop` receives those payloads
+- Per-agent decode panics if `hook_event_name` is not a registered typed event (Serve never decodes unknown names when no handlers are registered)

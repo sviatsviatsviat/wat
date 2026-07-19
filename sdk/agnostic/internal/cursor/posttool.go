@@ -55,7 +55,7 @@ func mapPostToolUse(e sdkcursor.PostToolUse) *model.PostToolEvent {
 func mapAfterShellExecution(e sdkcursor.AfterShellExecution) *model.PostToolEvent {
 	return &model.PostToolEvent{
 		Envelope: envelope(e),
-		Tool:     &model.ToolCall{Name: tools.ToolBash, Native: receivedName(e), Shell: e.Command},
+		Tool:     &model.ToolCall{Name: tools.ToolBash, Native: e.EventName(), Shell: e.Command},
 		Result:   &model.ToolResult{Text: e.Output, DurationMs: e.DurationMillis()},
 	}
 }
@@ -63,7 +63,7 @@ func mapAfterShellExecution(e sdkcursor.AfterShellExecution) *model.PostToolEven
 func mapAfterMCPExecution(e sdkcursor.AfterMCPExecution) *model.PostToolEvent {
 	nameNorm, _ := hookkit.NormalizeToolName(e.ToolName)
 	toolInput := tools.NewInput(nameNorm, e.ToolName, e.ToolInput.Raw())
-	name := receivedName(e)
+	name := e.EventName()
 	return &model.PostToolEvent{
 		Envelope: envelope(e),
 		Tool: &model.ToolCall{
@@ -77,7 +77,7 @@ func mapAfterMCPExecution(e sdkcursor.AfterMCPExecution) *model.PostToolEvent {
 }
 
 func mapAfterFileEdit(e sdkcursor.AfterFileEdit) *model.PostToolEvent {
-	name := receivedName(e)
+	name := e.EventName()
 	ev := &model.PostToolEvent{
 		Envelope: envelope(e),
 		Tool:     &model.ToolCall{Name: tools.ToolEdit, Native: name},

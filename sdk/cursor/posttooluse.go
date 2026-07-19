@@ -36,8 +36,8 @@ func (e PostToolUse) DurationMillis() int64 {
 }
 
 func init() {
-	registerDecoder(EventPostToolUse, func(raw []byte, received, canonical string) (Event, error) {
-		return decodeAsAndThen(raw, received, canonical, func(e *PostToolUse, raw []byte) {
+	registerDecoder(EventPostToolUse, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *PostToolUse, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})

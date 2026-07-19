@@ -17,14 +17,9 @@ func TestEventEnvelopeAccess(t *testing.T) {
 		PreCompact{},
 		Notification{},
 		ErrorOccurred{},
-		RawEvent{},
 	}
 	for _, ev := range cases {
-		name := ev.EventName()
-		if name == "" {
-			name = "RawEvent"
-		}
-		t.Run(name, func(t *testing.T) {
+		t.Run(ev.EventName(), func(t *testing.T) {
 			_ = EnvelopeOf(ev)
 		})
 	}

@@ -103,11 +103,6 @@ func resolveFixture(agentFlag, _ string, payload []byte) (fixtureInfo, error) {
 	if event == "" {
 		return fixtureInfo{}, fmt.Errorf("decode: hook_event_name is required")
 	}
-	if agentDialect == sdkcopilot.Dialect {
-		if canonical, ok := sdkcopilot.ResolveCanonical(payload, event); ok {
-			event = canonical
-		}
-	}
 	switch agentDialect {
 	case sdkclaude.Dialect, sdkcopilot.Dialect, sdkcursor.Dialect:
 	default:

@@ -6,7 +6,9 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// SubagentStop is the SubagentStop hook event.
+// SubagentStop is the SubagentStop hook event when the host emits
+// hook_event_name "SubagentStop". VS Code-style Stop payloads that include
+// agent_name decode as AgentStop instead; use AgentStop.IsSubagent there.
 type SubagentStop struct {
 	Envelope
 	// AgentName is the agent name.

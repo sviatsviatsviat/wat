@@ -99,8 +99,8 @@ func (o postToolFailureOutput) encode() ([]byte, int, error) {
 }
 
 func init() {
-	registerDecoder(EventPostToolUseFailure, func(raw []byte, received, canonical string) (Event, error) {
-		return decodeAsAndThen(raw, received, canonical, func(e *PostToolUseFailure, raw []byte) {
+	registerDecoder(EventPostToolUseFailure, func(raw []byte) (Event, error) {
+		return decodeAsAndThen(raw, func(e *PostToolUseFailure, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), raw, "tool_input")
 		})
 	})

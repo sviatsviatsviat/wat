@@ -22,9 +22,9 @@ func SubagentStartResultsForTest() SubagentStartResults { return subagentStartRe
 
 func NotificationResultsForTest() NotificationResults { return notificationResults{} }
 
-// Decode is a test-only alias for decode (available to copilot_test).
+// Decode is a test-only alias for codec.Decode (available to copilot_test).
 func Decode(raw []byte) (Event, error) {
-	ev, err := decode(raw)
+	ev, err := codec.Decode(raw)
 	if err != nil {
 		return nil, err
 	}

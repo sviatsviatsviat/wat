@@ -64,7 +64,7 @@ func mapPreToolUse(e sdkcursor.PreToolUse) *model.PreToolEvent {
 func mapBeforeShellExecution(e sdkcursor.BeforeShellExecution) *model.PreToolEvent {
 	return &model.PreToolEvent{
 		Envelope: envelope(e),
-		Tool:     &model.ToolCall{Name: tools.ToolBash, Native: receivedName(e), Shell: e.Command},
+		Tool:     &model.ToolCall{Name: tools.ToolBash, Native: e.EventName(), Shell: e.Command},
 	}
 }
 
@@ -83,7 +83,7 @@ func mapBeforeMCPExecution(e sdkcursor.BeforeMCPExecution) *model.PreToolEvent {
 }
 
 func mapBeforeReadFile(e sdkcursor.BeforeReadFile) *model.PreToolEvent {
-	name := receivedName(e)
+	name := e.EventName()
 	ev := &model.PreToolEvent{
 		Envelope: envelope(e),
 		Tool:     &model.ToolCall{Name: tools.ToolRead, Native: name},

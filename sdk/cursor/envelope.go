@@ -30,9 +30,6 @@ type Envelope struct {
 	Cwd string `json:"cwd"`
 	// SessionID is a fallback session identifier when conversation_id is absent.
 	SessionID string `json:"session_id"`
-
-	receivedName string `json:"-"`
-	canonical    string `json:"-"`
 }
 
 // Session returns the session identifier from conversation_id or session_id.
@@ -49,16 +46,6 @@ func (e Envelope) Transcript() string {
 		return ""
 	}
 	return *e.TranscriptPath
-}
-
-// ReceivedName returns the hook event name as received on the wire.
-func (e Envelope) ReceivedName() string {
-	return e.receivedName
-}
-
-func (e *Envelope) setEnvelopeMeta(received, canonical string) {
-	e.receivedName = received
-	e.canonical = canonical
 }
 
 // envelope returns a copy of the envelope for Event satisfaction.

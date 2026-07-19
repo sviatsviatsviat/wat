@@ -7,13 +7,9 @@ import (
 
 func envelope(native sdkcopilot.Event) model.Envelope {
 	env := sdkcopilot.EnvelopeOf(native)
-	name := native.EventName()
-	if received := env.ReceivedName(); received != "" {
-		name = received
-	}
 	return model.Envelope{
 		Agent:          sdkcopilot.Dialect,
-		Name:           name,
+		Name:           native.EventName(),
 		Session:        env.Session(),
 		Cwd:            env.Cwd,
 		TranscriptPath: env.Transcript(),

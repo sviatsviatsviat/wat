@@ -23,6 +23,8 @@ type StopResults = model.StopResults
 type StopHandler = model.StopHandler
 
 // OnStop registers a handler for Stop events across all agents.
+// On Copilot, this receives agent-scoped Stop payloads only; subagent-scoped
+// Stop (agent_name / agent_display_name set) goes to OnSubagentStop.
 func OnStop(fn StopHandler) *chain {
 	if fn == nil {
 		return &chain{}
@@ -34,6 +36,8 @@ func OnStop(fn StopHandler) *chain {
 }
 
 // OnSubagentStop registers a handler for SubagentStop events across all agents.
+// On Copilot, this also receives wire Stop payloads scoped to a subagent
+// (agent_name / agent_display_name set).
 func OnSubagentStop(fn StopHandler) *chain {
 	if fn == nil {
 		return &chain{}

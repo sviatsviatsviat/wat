@@ -1,6 +1,9 @@
 package hookkit
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestPeekHookEventName(t *testing.T) {
 	t.Parallel()
@@ -21,5 +24,35 @@ func TestPeekHookEventName(t *testing.T) {
 	_, err = PeekHookEventName([]byte(`{`))
 	if err == nil {
 		t.Fatal("expected JSON error")
+	}
+}
+
+func TestRequireHookEventName(t *testing.T) {
+	t.Parallel()
+	empty := errors.New("empty")
+	decodeErr := errors.New("decode")
+	nameRequired := errors.New("name required")
+
+	got, err := RequireHookEventName([]byte(`{"hook_event_name":"Stop"}`), empty, decodeErr, nameRequired)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "Stop" {
+		t.Fatalf("got = %q", got)
+	}
+
+	_, err = RequireHookEventName(nil, empty, decodeErr, nameRequired)
+	if !errors.Is(err, empty) {
+		t.Fatalf("empty: %v", err)
+	}
+
+	_, err = RequireHookEventName([]byte(`{"cwd":"/w"}`), empty, decodeErr, nameRequired)
+	if !errors.Is(err, nameRequired) {
+		t.Fatalf("name required: %v", err)
+	}
+
+	_, err = RequireHookEventName([]byte(`{`), empty, decodeErr, nameRequired)
+	if !errors.Is(err, decodeErr) {
+		t.Fatalf("decode: %v", err)
 	}
 }

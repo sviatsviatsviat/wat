@@ -34,7 +34,8 @@ var knownEvents = map[string]struct{}{
 	EventErrorOccurred:       {},
 }
 
-// CanonicalEventName normalizes a wire event name to the canonical form.
+// CanonicalEventName reports whether name is a known Copilot hook event name.
+// Known names are returned unchanged; unknown non-empty names return false.
 func CanonicalEventName(name string) (string, bool) {
 	if name == "" {
 		return "", false
@@ -43,33 +44,6 @@ func CanonicalEventName(name string) (string, bool) {
 		return name, true
 	}
 	return name, false
-}
-
-// ResolveCanonical maps a received event name to a canonical decoder key using
-// payload scope when wire names are ambiguous.
-func ResolveCanonical(raw []byte, received string) (string, bool) {
-	if received == "Stop" {
-		return resolveCanonical(received, payloadHasSubagentScope(raw))
-	}
-	return CanonicalEventName(received)
-}
-
-func resolveCanonical(received string, hasSubagentScope bool) (string, bool) {
-	if received == "Stop" {
-		if hasSubagentScope {
-			return EventSubagentStop, true
-		}
-		return EventAgentStop, true
-	}
-	return CanonicalEventName(received)
-}
-
-func payloadHasSubagentScope(raw []byte) bool {
-	peek, err := peekPayload(raw)
-	if err != nil {
-		return false
-	}
-	return peek.hasSubagentScope()
 }
 
 // EventAliasMap returns a copy of known event name to itself (identity map).

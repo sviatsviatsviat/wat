@@ -224,6 +224,8 @@ Portable `On*` handlers fan out onto `sdk/copilot` via package-level `On*` helpe
 
 Payloads require `hook_event_name` (for example `PreToolUse`, `Stop`). Shared fields use snake_case (`session_id`, `tool_name`, `tool_input`, …). Timestamps are RFC3339 strings.
 
+Wire `Stop` always decodes as `AgentStop`. When the host scopes the stop to a subagent, `agent_name` / `agent_display_name` are set on that payload (`AgentStop.IsSubagent`); there is no decode-time remap to `SubagentStop`. Explicit `hook_event_name: "SubagentStop"` still decodes as `SubagentStop`. Portable `OnStop` receives only agent-scoped `Stop`; portable `OnSubagentStop` receives explicit `SubagentStop` and subagent-scoped `Stop`.
+
 ### Event name mapping
 
 | Copilot event | `Kind` |

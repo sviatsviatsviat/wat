@@ -9,15 +9,21 @@ import (
 // and encode native JSON. Serve decodes the payload once before calling producers.
 type Producer func(ctx context.Context, event any) (output []byte, exit int, err error)
 
-// DialectOps supplies dialect-specific detection, event naming, decode, and output merge.
+// Codec peeks event names and decodes payloads for one agent dialect.
+type Codec interface {
+	// EventName returns the native event name for raw.
+	// It should be a cheap discriminant peek, not a full typed decode.
+	EventName(raw []byte) (string, error)
+	// Decode parses raw into a dialect-specific event value for handler dispatch.
+	Decode(raw []byte) (event any, err error)
+}
+
+// DialectOps supplies dialect-specific detection, codec, and output merge.
 type DialectOps struct {
 	// Detect reports whether raw matches this dialect.
 	Detect func(raw []byte, getenv func(string) string) bool
-	// EventName returns the native event name for raw.
-	// It should be a cheap discriminant peek, not a full typed decode.
-	EventName func(raw []byte) (string, error)
-	// Decode parses raw into a dialect-specific event value for handler dispatch.
-	Decode func(raw []byte) (event any, err error)
+	// Codec peeks event names and decodes typed events for this dialect.
+	Codec Codec
 	// Merge combines native JSON outputs from multiple handlers for one event.
 	Merge func(outputs [][]byte) ([]byte, error)
 }

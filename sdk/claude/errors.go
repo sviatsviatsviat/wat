@@ -10,4 +10,6 @@ var (
 	ErrEmptyPayload = errors.New("claude: empty payload")
 	// ErrDecodePayload indicates JSON parsing of the hook payload failed.
 	ErrDecodePayload = errors.New("claude: decode payload")
+	// ErrEventNameRequired indicates the payload omitted hook_event_name.
+	ErrEventNameRequired = errors.New("claude: decode: event name required (hook_event_name is required)")
 )
