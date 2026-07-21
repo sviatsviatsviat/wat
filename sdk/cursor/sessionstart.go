@@ -22,7 +22,7 @@ func (SessionStart) EventName() string { return EventSessionStart }
 // SessionStartOutput is the response for sessionStart events.
 // Construct via SessionStartResults builders and With* methods. A nil value is a no-op.
 type SessionStartOutput interface {
-	Output
+	run.Output
 	isSessionStartOutput()
 	// WithEnv sets environment variables for the session.
 	WithEnv(env map[string]string) SessionStartOutput
@@ -77,14 +77,8 @@ func (sessionStartResults) Noop() SessionStartOutput {
 	return sessionStartOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (sessionStartOutput) AllowedEvents() []string {
-	return []string{EventSessionStart}
-}
-
 // Encode renders this output as Cursor stdout JSON.
-func (o sessionStartOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o sessionStartOutput) Encode() ([]byte, int, error) {
 	out := map[string]any{}
 	if len(o.env) > 0 {
 		out["env"] = o.env

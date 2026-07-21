@@ -22,7 +22,7 @@ func (PreCompact) EventName() string { return EventPreCompact }
 // PreCompactOutput is the response for preCompact events.
 // Construct via PreCompactResults builders. A nil value is a no-op.
 type PreCompactOutput interface {
-	Output
+	run.Output
 	isPreCompactOutput()
 }
 
@@ -60,14 +60,8 @@ func (preCompactResults) Noop() PreCompactOutput {
 	return preCompactOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (preCompactOutput) AllowedEvents() []string {
-	return []string{EventPreCompact}
-}
-
 // Encode renders this output as Cursor stdout JSON.
-func (o preCompactOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o preCompactOutput) Encode() ([]byte, int, error) {
 	if o.userMessage == "" {
 		return nil, 0, nil
 	}

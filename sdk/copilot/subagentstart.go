@@ -35,7 +35,7 @@ func (e SubagentStart) DisplayName() string {
 // SubagentStartOutput is the response for SubagentStart events.
 // Construct via SubagentStartResults builders. A nil value is a no-op.
 type SubagentStartOutput interface {
-	Output
+	run.Output
 	isSubagentStartOutput()
 }
 
@@ -73,14 +73,8 @@ func (subagentStartResults) Noop() SubagentStartOutput {
 	return subagentStartOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (subagentStartOutput) AllowedEvents() []string {
-	return []string{EventSubagentStart}
-}
-
 // Encode renders this output as Copilot stdout JSON.
-func (o subagentStartOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o subagentStartOutput) Encode() ([]byte, int, error) {
 	return encodeAdditionalContext(o.additionalContext)
 }
 

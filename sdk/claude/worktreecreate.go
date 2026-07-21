@@ -24,7 +24,7 @@ func init() {
 // Construct via WorktreeCreateResults builders and With* methods.
 // A nil value is a no-op.
 type WorktreeCreateOutput interface {
-	Output
+	run.Output
 	isWorktreeCreateOutput()
 	// WithContinue sets whether Claude should continue the session.
 	WithContinue(v bool) WorktreeCreateOutput
@@ -96,11 +96,6 @@ func (worktreeCreateResults) Path(path string) WorktreeCreateOutput {
 	return worktreeCreateOutput{worktreePath: path}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (worktreeCreateOutput) AllowedEvents() []string {
-	return []string{EventWorktreeCreate}
-}
-
 func (o worktreeCreateOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.worktreePath != "" {
@@ -109,8 +104,8 @@ func (o worktreeCreateOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o worktreeCreateOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o worktreeCreateOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(EventWorktreeCreate, o.encodeInto)
 }
 
 // WorktreeCreate registers a WorktreeCreate handler on the chain.

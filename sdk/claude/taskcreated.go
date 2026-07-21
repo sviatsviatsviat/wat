@@ -36,7 +36,7 @@ func (taskCreatedResults) isTaskCreatedResults() {}
 
 // Context returns a context-injection-only TaskCreated result.
 func (taskCreatedResults) Context(text string) CommonOutput {
-	return commonOutput{additionalContext: text}
+	return commonOutput{eventName: EventTaskCreated, additionalContext: text}
 }
 
 // TaskCreated registers a TaskCreated handler on the chain.

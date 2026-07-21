@@ -34,7 +34,7 @@ func init() {
 // PreToolUseOutput is the response for PreToolUse events.
 // Construct via PreToolUseResults builders and With* methods. A nil value is a no-op.
 type PreToolUseOutput interface {
-	Output
+	run.Output
 	isPreToolUseOutput()
 	// WithUpdatedInput replaces tool arguments when set.
 	WithUpdatedInput(input map[string]any) PreToolUseOutput
@@ -154,11 +154,6 @@ func (preToolUseResults) Noop() PreToolUseOutput {
 	return preToolUseOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (preToolUseOutput) AllowedEvents() []string {
-	return []string{EventPreToolUse}
-}
-
 func (o preToolUseOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.decision != "" {
@@ -178,8 +173,8 @@ func (o preToolUseOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o preToolUseOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o preToolUseOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(EventPreToolUse, o.encodeInto)
 }
 
 // PreToolUse registers a PreToolUse handler on the chain.

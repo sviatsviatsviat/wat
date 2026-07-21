@@ -24,7 +24,7 @@ func (Stop) EventName() string { return EventStop }
 // StopOutput is the response for stop and subagentStop events.
 // Construct via StopResults builders. A nil value is a no-op.
 type StopOutput interface {
-	Output
+	run.Output
 	isStopOutput()
 }
 
@@ -62,14 +62,8 @@ func (stopResults) Noop() StopOutput {
 	return stopOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (stopOutput) AllowedEvents() []string {
-	return []string{EventStop, EventSubagentStop}
-}
-
 // Encode renders this output as Cursor stdout JSON.
-func (o stopOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o stopOutput) Encode() ([]byte, int, error) {
 	if o.followUpMessage == "" {
 		return nil, 0, nil
 	}

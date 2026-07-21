@@ -43,7 +43,7 @@ func (userPromptExpansionResults) isUserPromptExpansionResults() {}
 
 // Context returns a context-injection-only UserPromptExpansion result.
 func (userPromptExpansionResults) Context(text string) CommonOutput {
-	return commonOutput{additionalContext: text}
+	return commonOutput{eventName: EventUserPromptExpansion, additionalContext: text}
 }
 
 // UserPromptExpansion registers a UserPromptExpansion handler on the chain.

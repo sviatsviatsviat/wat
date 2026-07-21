@@ -42,7 +42,7 @@ func (e PermissionRequest) ShellCommand() string {
 // PermissionRequestOutput is the response for PermissionRequest events.
 // Construct via PermissionRequestResults builders and With* methods. A nil value is a no-op.
 type PermissionRequestOutput interface {
-	Output
+	run.Output
 	isPermissionRequestOutput()
 	// WithInterrupt stops the session when true.
 	WithInterrupt(v bool) PermissionRequestOutput
@@ -105,14 +105,8 @@ func (permissionRequestResults) Noop() PermissionRequestOutput {
 	return permissionRequestOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (permissionRequestOutput) AllowedEvents() []string {
-	return []string{EventPermissionRequest}
-}
-
 // Encode renders this output as Copilot stdout JSON.
-func (o permissionRequestOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o permissionRequestOutput) Encode() ([]byte, int, error) {
 	if o.behavior == "" && o.message == "" && !o.interrupt {
 		return nil, 0, nil
 	}

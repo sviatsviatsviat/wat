@@ -25,7 +25,7 @@ func (Notification) EventName() string { return EventNotification }
 // NotificationOutput is the response for notification events.
 // Construct via NotificationResults builders. A nil value is a no-op.
 type NotificationOutput interface {
-	Output
+	run.Output
 	isNotificationOutput()
 }
 
@@ -63,14 +63,8 @@ func (notificationResults) Noop() NotificationOutput {
 	return notificationOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (notificationOutput) AllowedEvents() []string {
-	return []string{EventNotification}
-}
-
 // Encode renders this output as Copilot stdout JSON.
-func (o notificationOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o notificationOutput) Encode() ([]byte, int, error) {
 	return encodeAdditionalContext(o.additionalContext)
 }
 

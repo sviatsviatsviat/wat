@@ -34,7 +34,7 @@ func init() {
 // Construct via MessageDisplayResults builders and With* methods.
 // A nil value is a no-op.
 type MessageDisplayOutput interface {
-	Output
+	run.Output
 	isMessageDisplayOutput()
 	// WithContinue sets whether Claude should continue the session.
 	WithContinue(v bool) MessageDisplayOutput
@@ -107,11 +107,6 @@ func (messageDisplayResults) Override(content string) MessageDisplayOutput {
 	return messageDisplayOutput{displayContent: &c}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (messageDisplayOutput) AllowedEvents() []string {
-	return []string{EventMessageDisplay}
-}
-
 func (o messageDisplayOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.displayContent != nil {
@@ -120,8 +115,8 @@ func (o messageDisplayOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o messageDisplayOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o messageDisplayOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(EventMessageDisplay, o.encodeInto)
 }
 
 // MessageDisplay registers a MessageDisplay handler on the chain.

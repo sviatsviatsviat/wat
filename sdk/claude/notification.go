@@ -37,7 +37,7 @@ func (notificationResults) isNotificationResults() {}
 
 // Context returns a context-injection-only Notification result.
 func (notificationResults) Context(text string) CommonOutput {
-	return commonOutput{additionalContext: text}
+	return commonOutput{eventName: EventNotification, additionalContext: text}
 }
 
 // Notification registers a Notification handler on the chain.

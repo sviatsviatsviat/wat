@@ -40,7 +40,7 @@ func init() {
 // Construct via PostToolUseResults / PostToolUseFailureResults builders and With* methods.
 // A nil value is a no-op.
 type PostToolUseOutput interface {
-	Output
+	run.Output
 	isPostToolUseOutput()
 	// WithUpdatedToolOutput replaces the tool result when set.
 	WithUpdatedToolOutput(output any) PostToolUseOutput
@@ -60,6 +60,7 @@ type PostToolUseOutput interface {
 
 type postToolUseOutput struct {
 	common
+	eventName         string
 	block             bool
 	reason            string
 	additionalContext string
@@ -131,17 +132,12 @@ func (postToolUseResults) isPostToolUseResults() {}
 
 // Context returns a context-injection-only PostToolUse result.
 func (postToolUseResults) Context(text string) PostToolUseOutput {
-	return postToolUseOutput{additionalContext: text}
+	return postToolUseOutput{eventName: EventPostToolUse, additionalContext: text}
 }
 
 // Block returns a block result with an agent-facing reason.
 func (postToolUseResults) Block(reason string) PostToolUseOutput {
-	return postToolUseOutput{block: true, reason: reason}
-}
-
-// AllowedEvents returns the native event names this output may encode for.
-func (postToolUseOutput) AllowedEvents() []string {
-	return []string{EventPostToolUse, EventPostToolUseFailure}
+	return postToolUseOutput{eventName: EventPostToolUse, block: true, reason: reason}
 }
 
 func (o postToolUseOutput) encodeInto(top, hso map[string]any) {
@@ -161,8 +157,8 @@ func (o postToolUseOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o postToolUseOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o postToolUseOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(o.eventName, o.encodeInto)
 }
 
 // PostToolUse registers a PostToolUse handler on the chain.

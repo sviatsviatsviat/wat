@@ -29,7 +29,7 @@ func (e SessionStart) InitialPrompt() string {
 // SessionStartOutput is the response for SessionStart events.
 // Construct via SessionStartResults builders. A nil value is a no-op.
 type SessionStartOutput interface {
-	Output
+	run.Output
 	isSessionStartOutput()
 }
 
@@ -67,14 +67,8 @@ func (sessionStartResults) Noop() SessionStartOutput {
 	return sessionStartOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (sessionStartOutput) AllowedEvents() []string {
-	return []string{EventSessionStart}
-}
-
 // Encode renders this output as Copilot stdout JSON.
-func (o sessionStartOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o sessionStartOutput) Encode() ([]byte, int, error) {
 	return encodeAdditionalContext(o.additionalContext)
 }
 

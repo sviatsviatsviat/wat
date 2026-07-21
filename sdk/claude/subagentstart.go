@@ -33,7 +33,7 @@ func (subagentStartResults) isSubagentStartResults() {}
 
 // Context returns a context-injection-only SubagentStart result.
 func (subagentStartResults) Context(text string) CommonOutput {
-	return commonOutput{additionalContext: text}
+	return commonOutput{eventName: EventSubagentStart, additionalContext: text}
 }
 
 // SubagentStart registers a SubagentStart handler on the chain.

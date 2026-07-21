@@ -37,7 +37,7 @@ func init() {
 // Construct via PermissionDeniedResults builders and With* methods.
 // A nil value is a no-op.
 type PermissionDeniedOutput interface {
-	Output
+	run.Output
 	isPermissionDeniedOutput()
 	// WithContinue sets whether Claude should continue the session.
 	WithContinue(v bool) PermissionDeniedOutput
@@ -109,11 +109,6 @@ func (permissionDeniedResults) Retry() PermissionDeniedOutput {
 	return permissionDeniedOutput{retry: true}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (permissionDeniedOutput) AllowedEvents() []string {
-	return []string{EventPermissionDenied}
-}
-
 func (o permissionDeniedOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.retry {
@@ -122,8 +117,8 @@ func (o permissionDeniedOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o permissionDeniedOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o permissionDeniedOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(EventPermissionDenied, o.encodeInto)
 }
 
 // PermissionDenied registers a PermissionDenied handler on the chain.

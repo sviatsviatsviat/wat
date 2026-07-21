@@ -24,7 +24,7 @@ func (BeforeSubmitPrompt) EventName() string { return EventBeforeSubmitPrompt }
 // BeforeSubmitPromptOutput is the response for beforeSubmitPrompt events.
 // Construct via BeforeSubmitPromptResults builders and With* methods. A nil value is a no-op.
 type BeforeSubmitPromptOutput interface {
-	Output
+	run.Output
 	isBeforeSubmitPromptOutput()
 	// WithContinue sets whether prompt submission should continue.
 	WithContinue(v bool) BeforeSubmitPromptOutput
@@ -80,14 +80,8 @@ func (beforeSubmitPromptResults) Noop() BeforeSubmitPromptOutput {
 	return beforeSubmitPromptOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (beforeSubmitPromptOutput) AllowedEvents() []string {
-	return []string{EventBeforeSubmitPrompt}
-}
-
 // Encode renders this output as Cursor stdout JSON.
-func (o beforeSubmitPromptOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o beforeSubmitPromptOutput) Encode() ([]byte, int, error) {
 	out := map[string]any{}
 	if o.cont != nil {
 		out["continue"] = *o.cont

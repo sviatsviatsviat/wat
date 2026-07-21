@@ -50,7 +50,7 @@ func (postToolUseFailureResults) isPostToolUseFailureResults() {}
 
 // Context returns recovery guidance for PostToolUseFailure events.
 func (postToolUseFailureResults) Context(text string) PostToolUseOutput {
-	return postToolUseOutput{additionalContext: text}
+	return postToolUseOutput{eventName: EventPostToolUseFailure, additionalContext: text}
 }
 
 // PostToolUseFailure registers a PostToolUseFailure handler on the chain.

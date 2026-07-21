@@ -35,7 +35,7 @@ func init() {
 // Construct via PermissionRequestResults builders and With* methods.
 // A nil value is a no-op.
 type PermissionRequestOutput interface {
-	Output
+	run.Output
 	isPermissionRequestOutput()
 	// WithUpdatedInput replaces tool arguments when set.
 	WithUpdatedInput(input map[string]any) PermissionRequestOutput
@@ -143,11 +143,6 @@ func (permissionRequestResults) Deny(message string) PermissionRequestOutput {
 	return permissionRequestOutput{behavior: "deny", message: message}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (permissionRequestOutput) AllowedEvents() []string {
-	return []string{EventPermissionRequest}
-}
-
 func (o permissionRequestOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.behavior != "" {
@@ -169,8 +164,8 @@ func (o permissionRequestOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o permissionRequestOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o permissionRequestOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(EventPermissionRequest, o.encodeInto)
 }
 
 // PermissionRequest registers a PermissionRequest handler on the chain.

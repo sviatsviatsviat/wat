@@ -28,7 +28,7 @@ func init() {
 // Construct via StopResults builders and With* methods.
 // A nil value is a no-op.
 type StopOutput interface {
-	Output
+	run.Output
 	isStopOutput()
 	// WithAdditionalContext is non-error feedback that continues the conversation.
 	WithAdditionalContext(text string) StopOutput
@@ -46,6 +46,7 @@ type StopOutput interface {
 
 type stopOutput struct {
 	common
+	eventName         string
 	block             bool
 	reason            string
 	additionalContext string
@@ -103,23 +104,20 @@ type StopResults interface {
 	isStopResults()
 }
 
-type stopResults struct{}
+type stopResults struct {
+	eventName string
+}
 
 func (stopResults) isStopResults() {}
 
 // Context returns non-blocking feedback that continues the conversation.
-func (stopResults) Context(text string) StopOutput {
-	return stopOutput{additionalContext: text}
+func (r stopResults) Context(text string) StopOutput {
+	return stopOutput{eventName: r.eventName, additionalContext: text}
 }
 
 // FollowUp blocks completion and feeds reason back to Claude.
-func (stopResults) FollowUp(reason string) StopOutput {
-	return stopOutput{block: true, reason: reason}
-}
-
-// AllowedEvents returns the native event names this output may encode for.
-func (stopOutput) AllowedEvents() []string {
-	return []string{EventStop, EventSubagentStop}
+func (r stopResults) FollowUp(reason string) StopOutput {
+	return stopOutput{eventName: r.eventName, block: true, reason: reason}
 }
 
 func (o stopOutput) encodeInto(top, hso map[string]any) {
@@ -136,8 +134,8 @@ func (o stopOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o stopOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o stopOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(o.eventName, o.encodeInto)
 }
 
 // Stop registers a Stop handler on the chain.
@@ -146,7 +144,7 @@ func (c *chain) Stop(fn func(context.Context, run.Hook[Stop], StopResults) (Stop
 		return c
 	}
 	registerHandler(c.reg, func(ctx context.Context, ev Stop) (StopOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{eventName: EventStop})
 	})
 	return c
 }

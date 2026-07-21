@@ -26,7 +26,7 @@ func init() {
 // Construct via UserPromptSubmitResults builders and With* methods.
 // A nil value is a no-op.
 type UserPromptSubmitOutput interface {
-	Output
+	run.Output
 	isUserPromptSubmitOutput()
 	// WithAdditionalContext injects model context.
 	WithAdditionalContext(text string) UserPromptSubmitOutput
@@ -141,11 +141,6 @@ func (userPromptSubmitResults) Noop() UserPromptSubmitOutput {
 	return userPromptSubmitOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (userPromptSubmitOutput) AllowedEvents() []string {
-	return []string{EventUserPromptSubmit}
-}
-
 func (o userPromptSubmitOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.block {
@@ -166,8 +161,8 @@ func (o userPromptSubmitOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o userPromptSubmitOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o userPromptSubmitOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(EventUserPromptSubmit, o.encodeInto)
 }
 
 // UserPromptSubmit registers a UserPromptSubmit handler on the chain.

@@ -51,7 +51,7 @@ func (e PostToolUseFailure) ErrorMessage() string {
 // PostToolFailureOutput is the response for PostToolUseFailure events.
 // Construct via PostToolFailureResults builders. A nil value is a no-op.
 type PostToolFailureOutput interface {
-	Output
+	run.Output
 	isPostToolFailureOutput()
 }
 
@@ -89,14 +89,8 @@ func (postToolFailureResults) Noop() PostToolFailureOutput {
 	return postToolFailureOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (postToolFailureOutput) AllowedEvents() []string {
-	return []string{EventPostToolUseFailure}
-}
-
 // Encode renders this output as Copilot stdout JSON.
-func (o postToolFailureOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o postToolFailureOutput) Encode() ([]byte, int, error) {
 	if o.context == "" {
 		return nil, 0, nil
 	}

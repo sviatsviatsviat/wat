@@ -2,6 +2,8 @@ package cursor
 
 import (
 	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PermissionDecision is a permission verdict label on permission-gating events.
@@ -19,7 +21,7 @@ const (
 // PermissionOutput is the response for permission-gating events.
 // Construct via PermissionResults builders and With* methods. A nil value is a no-op.
 type PermissionOutput interface {
-	Output
+	run.Output
 	isPermissionOutput()
 	// WithUserMessage sets a user-facing message.
 	WithUserMessage(msg string) PermissionOutput
@@ -116,20 +118,8 @@ func (permissionGateResults) noop() PermissionOutput {
 	return permissionOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (permissionOutput) AllowedEvents() []string {
-	return []string{
-		EventPreToolUse,
-		EventBeforeShellExecution,
-		EventBeforeMCPExecution,
-		EventBeforeReadFile,
-		EventSubagentStart,
-		EventBeforeTabFileRead,
-	}
-}
-
 // Encode renders this output as Cursor stdout JSON.
-func (o permissionOutput) Encode(eventName string) ([]byte, int, error) {
+func (o permissionOutput) Encode() ([]byte, int, error) {
 	out := map[string]any{}
 	if o.decision != "" {
 		out["permission"] = string(o.decision)
@@ -140,7 +130,7 @@ func (o permissionOutput) Encode(eventName string) ([]byte, int, error) {
 	if o.agentMessage != "" {
 		out["agent_message"] = o.agentMessage
 	}
-	if o.updatedInput != nil && (eventName == "" || eventName == EventPreToolUse) {
+	if o.updatedInput != nil {
 		out["updated_input"] = o.updatedInput
 	}
 	if len(out) == 0 {

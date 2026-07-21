@@ -36,7 +36,7 @@ func (taskCompletedResults) isTaskCompletedResults() {}
 
 // Context returns a context-injection-only TaskCompleted result.
 func (taskCompletedResults) Context(text string) CommonOutput {
-	return commonOutput{additionalContext: text}
+	return commonOutput{eventName: EventTaskCompleted, additionalContext: text}
 }
 
 // TaskCompleted registers a TaskCompleted handler on the chain.

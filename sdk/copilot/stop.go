@@ -2,12 +2,14 @@ package copilot
 
 import (
 	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // StopOutput is the response for agentStop and subagentStop events.
 // Construct via StopResults builders. A nil value is a no-op.
 type StopOutput interface {
-	Output
+	run.Output
 	isStopOutput()
 }
 
@@ -45,14 +47,8 @@ func (stopResults) Noop() StopOutput {
 	return stopOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (stopOutput) AllowedEvents() []string {
-	return []string{EventAgentStop, EventSubagentStop}
-}
-
 // Encode renders this output as Copilot stdout JSON.
-func (o stopOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o stopOutput) Encode() ([]byte, int, error) {
 	if o.reason == "" {
 		return nil, 0, nil
 	}

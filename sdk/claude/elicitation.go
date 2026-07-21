@@ -31,7 +31,7 @@ func init() {
 // Construct via ElicitationResults builders and With* methods.
 // A nil value is a no-op.
 type ElicitationOutput interface {
-	Output
+	run.Output
 	isElicitationOutput()
 	// WithContent sets the elicitation response content.
 	WithContent(content map[string]any) ElicitationOutput
@@ -126,11 +126,6 @@ func (elicitationResults) Cancel() ElicitationOutput {
 	return elicitationOutput{action: "cancel"}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (elicitationOutput) AllowedEvents() []string {
-	return []string{EventElicitation}
-}
-
 func (o elicitationOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.action != "" {
@@ -142,8 +137,8 @@ func (o elicitationOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o elicitationOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o elicitationOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(EventElicitation, o.encodeInto)
 }
 
 // Elicitation registers a Elicitation handler on the chain.

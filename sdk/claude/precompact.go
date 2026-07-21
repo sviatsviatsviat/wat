@@ -37,7 +37,7 @@ func (preCompactResults) isPreCompactResults() {}
 
 // Context returns a context-injection-only PreCompact result.
 func (preCompactResults) Context(text string) CommonOutput {
-	return commonOutput{additionalContext: text}
+	return commonOutput{eventName: EventPreCompact, additionalContext: text}
 }
 
 // PreCompact registers a PreCompact handler on the chain.

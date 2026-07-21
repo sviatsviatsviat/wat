@@ -30,7 +30,7 @@ func init() {
 // Construct via SessionStartResults builders and With* methods.
 // A nil value is a no-op.
 type SessionStartOutput interface {
-	Output
+	run.Output
 	isSessionStartOutput()
 	// WithInitialUserMessage sets the initial user message.
 	WithInitialUserMessage(msg string) SessionStartOutput
@@ -163,11 +163,6 @@ func (sessionStartResults) Noop() SessionStartOutput {
 	return sessionStartOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (sessionStartOutput) AllowedEvents() []string {
-	return []string{EventSessionStart}
-}
-
 func (o sessionStartOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.additionalContext != "" {
@@ -189,11 +184,11 @@ func (o sessionStartOutput) encodeInto(top, hso map[string]any) {
 
 // Encode renders this output as Claude Code stdout JSON.
 // WithEnv appends export lines to CLAUDE_ENV_FILE when that env var is set.
-func (o sessionStartOutput) Encode(eventName string) ([]byte, int, error) {
+func (o sessionStartOutput) Encode() ([]byte, int, error) {
 	if err := writeEnvFile(o.env, nil, nil); err != nil {
 		return nil, SuccessExit, err
 	}
-	return marshalHookOutput(eventName, o.encodeInto)
+	return marshalHookOutput(EventSessionStart, o.encodeInto)
 }
 
 // SessionStart registers a SessionStart handler on the chain.

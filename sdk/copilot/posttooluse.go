@@ -48,7 +48,7 @@ func (e PostToolUse) ResultRaw() json.RawMessage {
 // PostToolOutput is the response for PostToolUse events.
 // Construct via PostToolResults builders and With* methods. A nil value is a no-op.
 type PostToolOutput interface {
-	Output
+	run.Output
 	isPostToolOutput()
 	// WithModifiedResult replaces the tool result text when set.
 	WithModifiedResult(result string) PostToolOutput
@@ -95,14 +95,8 @@ func (postToolResults) Noop() PostToolOutput {
 	return postToolOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (postToolOutput) AllowedEvents() []string {
-	return []string{EventPostToolUse}
-}
-
 // Encode renders this output as Copilot stdout JSON.
-func (o postToolOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o postToolOutput) Encode() ([]byte, int, error) {
 	out := map[string]any{}
 	if o.modifiedResult != "" {
 		out["modified_result"] = map[string]any{

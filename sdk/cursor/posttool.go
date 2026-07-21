@@ -2,12 +2,14 @@ package cursor
 
 import (
 	"encoding/json"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PostToolOutput is the response for post-tool events.
 // Construct via PostToolResults builders and With* methods. A nil value is a no-op.
 type PostToolOutput interface {
-	Output
+	run.Output
 	isPostToolOutput()
 	// WithUpdatedMCPOutput replaces MCP tool output when set.
 	WithUpdatedMCPOutput(output any) PostToolOutput
@@ -62,20 +64,8 @@ func (postToolResults) Noop() PostToolOutput {
 	return postToolOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (postToolOutput) AllowedEvents() []string {
-	return []string{
-		EventPostToolUse,
-		EventPostToolUseFailure,
-		EventAfterMCPExecution,
-		EventAfterShellExecution,
-		EventAfterFileEdit,
-	}
-}
-
 // Encode renders this output as Cursor stdout JSON.
-func (o postToolOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o postToolOutput) Encode() ([]byte, int, error) {
 	out := map[string]any{}
 	if o.updatedMCPOutput != nil {
 		out["updated_mcp_tool_output"] = o.updatedMCPOutput

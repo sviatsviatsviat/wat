@@ -32,7 +32,7 @@ func (c *chain) SubagentStop(fn func(context.Context, run.Hook[SubagentStop], St
 		return c
 	}
 	registerHandler(c.reg, func(ctx context.Context, ev SubagentStop) (StopOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{})
+		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{eventName: EventSubagentStop})
 	})
 	return c
 }

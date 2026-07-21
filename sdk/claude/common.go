@@ -1,5 +1,7 @@
 package claude
 
+import "github.com/sviatsviatsviat/wat/sdk/run"
+
 // PermissionDecision is a pre-tool permission verdict label.
 type PermissionDecision string
 
@@ -63,7 +65,7 @@ func (c common) WithTerminalSequence(seq string) common {
 // CommonOutput is a shared-fields-only response for events that only accept those fields.
 // Construct via Results builders and With* methods. A nil value is a no-op.
 type CommonOutput interface {
-	Output
+	run.Output
 	isCommonOutput()
 	// WithAdditionalContext injects model context.
 	WithAdditionalContext(text string) CommonOutput
@@ -81,6 +83,7 @@ type CommonOutput interface {
 
 type commonOutput struct {
 	common
+	eventName         string
 	additionalContext string
 }
 
@@ -145,30 +148,6 @@ func applyCommon(top map[string]any, c common) {
 	}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (commonOutput) AllowedEvents() []string {
-	return []string{
-		EventSetup,
-		EventSessionEnd,
-		EventUserPromptExpansion,
-		EventPostToolBatch,
-		EventSubagentStart,
-		EventTaskCreated,
-		EventTaskCompleted,
-		EventStopFailure,
-		EventTeammateIdle,
-		EventNotification,
-		EventInstructionsLoaded,
-		EventConfigChange,
-		EventCwdChanged,
-		EventFileChanged,
-		EventWorktreeRemove,
-		EventPreCompact,
-		EventPostCompact,
-		EventElicitationResult,
-	}
-}
-
 func (o commonOutput) encodeInto(top, hso map[string]any) {
 	applyCommon(top, o.common)
 	if o.additionalContext != "" {
@@ -177,6 +156,6 @@ func (o commonOutput) encodeInto(top, hso map[string]any) {
 }
 
 // Encode renders this output as Claude Code stdout JSON.
-func (o commonOutput) Encode(eventName string) ([]byte, int, error) {
-	return marshalHookOutput(eventName, o.encodeInto)
+func (o commonOutput) Encode() ([]byte, int, error) {
+	return marshalHookOutput(o.eventName, o.encodeInto)
 }

@@ -16,7 +16,7 @@ func TestCodec(t *testing.T) {
 	decodeErr := errors.New("decode")
 	nameRequired := errors.New("name required")
 
-	c := NewCodec("test", empty, decodeErr, nameRequired, nil)
+	c := NewCodec("test", empty, decodeErr, nameRequired)
 	c.Register("Known", func(raw []byte) (Event, error) {
 		return namedEvent("Known"), nil
 	})
@@ -54,8 +54,8 @@ func TestCodec_IsolatedRegistries(t *testing.T) {
 	decodeErr := errors.New("decode")
 	nameRequired := errors.New("name required")
 
-	a := NewCodec("a", empty, decodeErr, nameRequired, nil)
-	b := NewCodec("b", empty, decodeErr, nameRequired, nil)
+	a := NewCodec("a", empty, decodeErr, nameRequired)
+	b := NewCodec("b", empty, decodeErr, nameRequired)
 	a.Register("X", func([]byte) (Event, error) { return namedEvent("a"), nil })
 
 	_, err := b.Decode([]byte(`{"hook_event_name":"X"}`))
@@ -70,7 +70,7 @@ func TestCodec_IsolatedRegistries(t *testing.T) {
 func TestCodec_WrapDecodeError(t *testing.T) {
 	t.Parallel()
 	decodeErr := errors.New("decode payload")
-	c := NewCodec("claude", errors.New("empty"), decodeErr, errors.New("name"), nil)
+	c := NewCodec("claude", errors.New("empty"), decodeErr, errors.New("name"))
 	err := c.WrapDecodeError(struct{}{}, errors.New("bad json"))
 	if !errors.Is(err, decodeErr) {
 		t.Fatalf("errors.Is = false: %v", err)

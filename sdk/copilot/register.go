@@ -9,7 +9,7 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-var codec = hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired, newEncoder())
+var codec = hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired)
 
 var (
 	defaultReg   = run.GetDefaultRegistry()
@@ -44,7 +44,7 @@ func detectPayload(raw []byte, getenv func(string) string) bool {
 	return has("hook_event_name") && has("timestamp")
 }
 
-func registerHandler[E run.Event, O Output](r *run.Registry, fn func(context.Context, E) (O, error)) {
+func registerHandler[E run.Event, O run.Output](r *run.Registry, fn func(context.Context, E) (O, error)) {
 	if fn == nil {
 		return
 	}
@@ -60,7 +60,7 @@ func registerHandler[E run.Event, O Output](r *run.Registry, fn func(context.Con
 		if err != nil {
 			return nil, HandlerErrorExit, err
 		}
-		return codec.Encode(name, Output(result))
+		return codec.Encode(result)
 	})
 }
 

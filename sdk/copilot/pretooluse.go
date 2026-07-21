@@ -54,7 +54,7 @@ func (e PreToolUse) ShellCommand() string {
 // PreToolOutput is the response for PreToolUse events.
 // Construct via PreToolResults builders and With* methods. A nil value is a no-op.
 type PreToolOutput interface {
-	Output
+	run.Output
 	isPreToolOutput()
 	// WithModifiedArgs replaces tool arguments when set.
 	WithModifiedArgs(args map[string]any) PreToolOutput
@@ -116,14 +116,8 @@ func (preToolResults) Noop() PreToolOutput {
 	return preToolOutput{}
 }
 
-// AllowedEvents returns the native event names this output may encode for.
-func (preToolOutput) AllowedEvents() []string {
-	return []string{EventPreToolUse}
-}
-
 // Encode renders this output as Copilot stdout JSON.
-func (o preToolOutput) Encode(eventName string) ([]byte, int, error) {
-	_ = eventName
+func (o preToolOutput) Encode() ([]byte, int, error) {
 	out := map[string]any{}
 	if o.decision != "" {
 		out["permission_decision"] = string(o.decision)
