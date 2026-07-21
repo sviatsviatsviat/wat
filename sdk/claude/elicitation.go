@@ -148,10 +148,7 @@ func (o elicitationOutput) Merge(other run.Output) (run.Output, []string, error)
 		return nil, nil, hookkit.ErrMergeType(o, other)
 	}
 	mergedCommon, warnings := o.common.Merge(b.common)
-	action, w := hookkit.TakeLastString("action", o.action, b.action)
-	if w != "" {
-		warnings = append(warnings, w)
-	}
+	action, _ := hookkit.MergeRankedString(o.action, "", b.action, "", hookkit.ElicitationActionRankString)
 	content, w := hookkit.TakeLastMap("content", o.content, b.content)
 	if w != "" {
 		warnings = append(warnings, w)
@@ -165,7 +162,7 @@ func (o elicitationOutput) Merge(other run.Output) (run.Output, []string, error)
 
 // Stop reports whether remaining handlers should be skipped.
 func (o elicitationOutput) Stop() bool {
-	return o.common.Stop()
+	return o.common.Stop() || o.action == "decline" || o.action == "cancel"
 }
 
 // Elicitation registers a Elicitation handler on the chain.

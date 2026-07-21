@@ -3,6 +3,7 @@ package hookkit
 import (
 	"fmt"
 	"maps"
+	"strings"
 )
 
 // OverwriteWarning returns a last-wins overwrite warning for field.
@@ -60,6 +61,36 @@ func TakeLastSlice[T any](field string, dst, src []T) (val []T, warning string) 
 	return cloned, ""
 }
 
+// CloneJSONValue returns a shallow clone of map/slice JSON payloads.
+// Other values are returned as-is. Nil stays nil.
+func CloneJSONValue(v any) any {
+	if v == nil {
+		return nil
+	}
+	switch x := v.(type) {
+	case map[string]any:
+		return maps.Clone(x)
+	case []any:
+		return append([]any(nil), x...)
+	default:
+		return v
+	}
+}
+
+// TakeLastAny keeps a clone of src when non-nil, else dst. When both are
+// non-nil, returns a clone of src and an overwrite warning for field.
+// Map and slice payloads are cloned; other values are kept as-is.
+func TakeLastAny(field string, dst, src any) (val any, warning string) {
+	if src == nil {
+		return dst, ""
+	}
+	cloned := CloneJSONValue(src)
+	if dst != nil {
+		return cloned, OverwriteWarning(field)
+	}
+	return cloned, ""
+}
+
 // MergeRankedString merges a ranked string decision and its paired detail.
 // rank should return higher values for stricter decisions. When the incoming
 // rank is lower, dst is unchanged. When the incoming rank is higher without a
@@ -71,15 +102,12 @@ func MergeRankedString(dstDecision, dstDetail, srcDecision, srcDetail string, ra
 	oldRank := rank(dstDecision)
 	newRank := rank(srcDecision)
 	decision = srcDecision
-	if srcDetail != "" && newRank > 0 {
+	if srcDetail != "" {
 		detail = srcDetail
 	} else if newRank > oldRank {
 		detail = ""
 	} else {
 		detail = dstDetail
-		if srcDetail != "" {
-			detail = srcDetail
-		}
 	}
 	return decision, detail
 }
@@ -92,6 +120,18 @@ func PermissionRankString(s string) int {
 // BlockDecisionRankString returns 1 for block decisions, else 0.
 func BlockDecisionRankString(s string) int {
 	return BlockDecisionRank(s)
+}
+
+// ElicitationActionRankString returns decline/cancel > accept > unknown.
+func ElicitationActionRankString(s string) int {
+	switch strings.ToLower(s) {
+	case "decline", "cancel":
+		return 2
+	case "accept":
+		return 1
+	default:
+		return 0
+	}
 }
 
 // JoinContextStrings concatenates additional-context strings with a blank line separator.

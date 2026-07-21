@@ -77,7 +77,7 @@ func (o postToolUseOutput) IsZero() bool {
 
 // WithUpdatedToolOutput replaces the tool result when set.
 func (o postToolUseOutput) WithUpdatedToolOutput(output any) PostToolUseOutput {
-	o.updatedToolOutput = output
+	o.updatedToolOutput = hookkit.CloneJSONValue(output)
 	return o
 }
 
@@ -176,12 +176,9 @@ func (o postToolUseOutput) Merge(other run.Output) (run.Output, []string, error)
 		bDec = "block"
 	}
 	dec, reason := hookkit.MergeRankedString(oDec, o.reason, bDec, b.reason, hookkit.BlockDecisionRankString)
-	updatedToolOutput := o.updatedToolOutput
-	if b.updatedToolOutput != nil {
-		if o.updatedToolOutput != nil {
-			warnings = append(warnings, hookkit.OverwriteWarning("updatedToolOutput"))
-		}
-		updatedToolOutput = b.updatedToolOutput
+	updatedToolOutput, w := hookkit.TakeLastAny("updatedToolOutput", o.updatedToolOutput, b.updatedToolOutput)
+	if w != "" {
+		warnings = append(warnings, w)
 	}
 	eventName := o.eventName
 	if eventName == "" {

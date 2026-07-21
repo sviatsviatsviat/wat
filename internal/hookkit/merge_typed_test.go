@@ -2,6 +2,7 @@ package hookkit
 
 import (
 	"maps"
+	"slices"
 	"testing"
 )
 
@@ -45,6 +46,40 @@ func TestTakeLastMap(t *testing.T) {
 	}
 }
 
+func TestTakeLastSlice(t *testing.T) {
+	dst := []string{"a"}
+	src := []string{"b", "c"}
+	got, w := TakeLastSlice("watchPaths", dst, src)
+	if w != OverwriteWarning("watchPaths") || len(got) != 2 || got[0] != "b" {
+		t.Fatalf("got=%v warn=%q", got, w)
+	}
+	got[0] = "mutated"
+	if src[0] != "b" {
+		t.Fatalf("src aliased")
+	}
+	got, w = TakeLastSlice("watchPaths", dst, nil)
+	if w != "" || !slices.Equal(got, dst) {
+		t.Fatalf("nil src: got=%v warn=%q", got, w)
+	}
+}
+
+func TestTakeLastAny(t *testing.T) {
+	dst := map[string]any{"a": 1}
+	src := map[string]any{"b": 2}
+	got, w := TakeLastAny("updatedToolOutput", dst, src)
+	if w == "" {
+		t.Fatal("expected overwrite warning")
+	}
+	m, ok := got.(map[string]any)
+	if !ok || m["b"] != 2 {
+		t.Fatalf("got=%v", got)
+	}
+	m["b"] = 99
+	if src["b"] != 2 {
+		t.Fatal("src aliased")
+	}
+}
+
 func TestMergeRankedString(t *testing.T) {
 	d, r := MergeRankedString("allow", "ok", "deny", "blocked", PermissionRankString)
 	if d != "deny" || r != "blocked" {
@@ -57,6 +92,26 @@ func TestMergeRankedString(t *testing.T) {
 	d, r = MergeRankedString("allow", "ok", "deny", "", PermissionRankString)
 	if d != "deny" || r != "" {
 		t.Fatalf("clear reason: %q %q", d, r)
+	}
+}
+
+func TestPermissionRankString(t *testing.T) {
+	if PermissionRankString("deny") <= PermissionRankString("ask") ||
+		PermissionRankString("ask") <= PermissionRankString("allow") {
+		t.Fatal("expected deny > ask > allow")
+	}
+}
+
+func TestBlockDecisionRankString(t *testing.T) {
+	if BlockDecisionRankString("block") != 1 || BlockDecisionRankString("") != 0 {
+		t.Fatal("expected block=1, other=0")
+	}
+}
+
+func TestElicitationActionRankString(t *testing.T) {
+	if ElicitationActionRankString("decline") <= ElicitationActionRankString("accept") ||
+		ElicitationActionRankString("cancel") <= ElicitationActionRankString("accept") {
+		t.Fatal("expected decline/cancel > accept")
 	}
 }
 
