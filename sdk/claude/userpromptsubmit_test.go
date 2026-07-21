@@ -6,9 +6,12 @@ import (
 )
 
 func TestEncode_UserPromptBlock(t *testing.T) {
-	out, _, err := userPromptSubmitResults{}.Block("blocked prompt").Encode()
+	out, code, err := userPromptSubmitResults{}.Block("blocked prompt").Encode()
 	if err != nil {
 		t.Fatal(err)
+	}
+	if code != SuccessExit {
+		t.Fatalf("exit = %d, want %d", code, SuccessExit)
 	}
 	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "blocked prompt") {
 		t.Fatalf("bad output: %s", out)

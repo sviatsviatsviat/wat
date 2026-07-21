@@ -33,5 +33,8 @@ func TestEncode_SessionStartEnv(t *testing.T) {
 }
 
 func TestDecode_SessionStart(t *testing.T) {
-	mustDecode[SessionStart](t, `{"session_id":"s","hook_event_name":"SessionStart","source":"startup","model":"claude-3"}`, EventSessionStart)
+	ev := mustDecode[SessionStart](t, `{"session_id":"s","hook_event_name":"SessionStart","source":"startup","model":"claude-3"}`, EventSessionStart)
+	if ev.Source != "startup" || ev.Model != "claude-3" {
+		t.Fatalf("session start fields = %+v", ev)
+	}
 }
