@@ -3,6 +3,7 @@ package copilot
 import (
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -58,4 +59,23 @@ func (o stopOutput) Encode() ([]byte, int, error) {
 	}
 	b, err := json.Marshal(out)
 	return b, 0, err
+}
+
+// Merge combines other into the receiver. other must be a stopOutput.
+func (o stopOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(stopOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	reason, warn := hookkit.TakeLastString("reason", o.reason, b.reason)
+	var warnings []string
+	if warn != "" {
+		warnings = append(warnings, warn)
+	}
+	return stopOutput{reason: reason}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o stopOutput) Stop() bool {
+	return o.reason != ""
 }

@@ -1,8 +1,11 @@
 package cursor
 
 import (
+	"maps"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestEncode_ZeroOutput(t *testing.T) {
@@ -19,5 +22,53 @@ func TestEncode_PermissionUpdatedInput(t *testing.T) {
 	}
 	if !strings.Contains(string(out), `"updated_input"`) {
 		t.Fatalf("bad output: %s", out)
+	}
+}
+
+func TestMerge_Permission_denyBeatsAllowAndStops(t *testing.T) {
+	a := permissionResults{}.Allow().WithUserMessage("ok")
+	b := permissionResults{}.Deny("blocked")
+	merged, warnings, err := a.Merge(b.(run.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 0 {
+		t.Fatalf("warnings = %v", warnings)
+	}
+	out := merged.(permissionOutput)
+	if out.decision != DecisionDeny || out.agentMessage != "blocked" {
+		t.Fatalf("got %#v", out)
+	}
+	if !merged.Stop() {
+		t.Fatal("deny should stop")
+	}
+}
+
+func TestMerge_Permission_updatedInputOverwriteWarns(t *testing.T) {
+	first := map[string]any{"command": "a"}
+	second := map[string]any{"command": "b"}
+	orig := maps.Clone(first)
+	a := permissionResults{}.Allow().WithUpdatedInput(first)
+	b := permissionResults{}.Allow().WithUpdatedInput(second)
+	merged, warnings, err := a.Merge(b.(run.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 1 || warnings[0] != "updatedInput: overwritten by later handler" {
+		t.Fatalf("warnings = %v", warnings)
+	}
+	out := merged.(permissionOutput)
+	if out.updatedInput["command"] != "b" {
+		t.Fatalf("updatedInput = %v", out.updatedInput)
+	}
+	if !maps.Equal(first, orig) {
+		t.Fatalf("caller map mutated")
+	}
+}
+
+func TestMerge_Permission_askDoesNotStop(t *testing.T) {
+	out := permissionResults{}.Ask("confirm")
+	if out.(permissionOutput).Stop() {
+		t.Fatal("ask should not stop")
 	}
 }

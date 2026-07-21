@@ -4,8 +4,8 @@
 // default from GetDefaultRegistry, or a caller-supplied *Registry) using
 // Registry.RegisterHandler / RegisterObserveHandler with Handler and
 // ObserveHandler constructors; Main reads stdin, peeks the event name, decodes
-// the payload once, dispatches all matching handlers with that event, merges
-// their native JSON outputs, and exits with the appropriate code.
+// the payload once, dispatches matching handlers, folds typed Output values via
+// Merge/Stop, encodes once, and exits with the appropriate code.
 //
 // WithDialect forces a dialect instead of auto-detection. WithGetenv injects
 // environment lookup for dialect resolution and encode side effects. Payloads

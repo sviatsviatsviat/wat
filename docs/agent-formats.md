@@ -145,7 +145,18 @@ Observe-only handlers accept decoded events but produce no hook stdout JSON.
 | `SessionStart` | `SessionStartResult` | `Context` |
 | `SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart` | — | observe-only (no result) |
 
-Each result-producing handler receives a hook-scoped builder interface (`PreToolResults`, `PostToolResults`, `StopResults`, and others) as its third parameter. See **Hook-scoped result builders** above. Multiple handlers for the same kind merge at the native JSON layer.
+Each result-producing handler receives a hook-scoped builder interface (`PreToolResults`, `PostToolResults`, `StopResults`, and others) as its third parameter. See **Hook-scoped result builders** above.
+
+### Multi-handler fold
+
+When multiple handlers are registered for the same native event, `sdk/run` folds their typed `Output` values in registration order:
+
+1. Each handler returns a typed output (or nil / zero for no opinion).
+2. Non-zero outputs combine via `Output.Merge` (event-owned rules: ranked deny > ask > allow, joined `additionalContext`, last-wins replace fields).
+3. If `Output.Stop` is true (hard deny/block, or sticky `continue: false`), later handlers are skipped. **Ask does not stop.**
+4. The final accumulator is `Encode`d once to stdout.
+
+Replace-field conflicts (`updatedInput`, env maps, and similar last-wins fields) keep the later value and print a warning to stderr (`run: <dialect>: merge: <field>: overwritten by later handler`). Ranked decisions and joined context do not warn.
 
 ### Agent-only capabilities
 

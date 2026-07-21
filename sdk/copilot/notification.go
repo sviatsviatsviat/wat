@@ -68,6 +68,22 @@ func (o notificationOutput) Encode() ([]byte, int, error) {
 	return encodeAdditionalContext(o.additionalContext)
 }
 
+// Merge combines other into the receiver. other must be a notificationOutput.
+func (o notificationOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(notificationOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	return notificationOutput{
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, nil, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o notificationOutput) Stop() bool {
+	return false
+}
+
 func init() {
 	codec.Register(EventNotification, hookkit.EventDecoder[Notification](codec))
 }

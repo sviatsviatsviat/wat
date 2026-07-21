@@ -141,6 +141,33 @@ func (o elicitationOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(EventElicitation, o.encodeInto)
 }
 
+// Merge combines other into this Elicitation output.
+func (o elicitationOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(elicitationOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	action, w := hookkit.TakeLastString("action", o.action, b.action)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	content, w := hookkit.TakeLastMap("content", o.content, b.content)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return elicitationOutput{
+		common:  mergedCommon,
+		action:  action,
+		content: content,
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o elicitationOutput) Stop() bool {
+	return o.common.Stop()
+}
+
 // Elicitation registers a Elicitation handler on the chain.
 func (c *chain) Elicitation(fn func(context.Context, run.Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
 	if fn == nil {

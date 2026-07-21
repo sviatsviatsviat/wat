@@ -1,7 +1,13 @@
 package hookkit
 
-// Output is a hook response. Concrete per-agent types implement IsZero and Encode.
+// Output is a hook response. Concrete per-agent types implement IsZero, Encode,
+// Merge, and Stop.
 type Output interface {
 	IsZero() bool
 	Encode() (stdout []byte, exit int, err error)
+	// Merge combines other into the receiver. other must be the same concrete type.
+	// warnings lists non-fatal issues (e.g. last-wins overwrite of updatedInput).
+	Merge(other Output) (merged Output, warnings []string, err error)
+	// Stop reports whether remaining handlers should be skipped.
+	Stop() bool
 }

@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestEncode_SessionStartEnv(t *testing.T) {
@@ -36,5 +38,24 @@ func TestDecode_SessionStart(t *testing.T) {
 	ev := mustDecode[SessionStart](t, `{"session_id":"s","hook_event_name":"SessionStart","source":"startup","model":"claude-3"}`, EventSessionStart)
 	if ev.Source != "startup" || ev.Model != "claude-3" {
 		t.Fatalf("session start fields = %+v", ev)
+	}
+}
+
+func TestMerge_SessionStart_contextJoins(t *testing.T) {
+	a := sessionStartResults{}.Context("one")
+	b := sessionStartResults{}.Context("two")
+	merged, warnings, err := a.Merge(b.(run.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 0 {
+		t.Fatalf("warnings = %v", warnings)
+	}
+	out := merged.(sessionStartOutput)
+	if out.additionalContext != "one\n\ntwo" {
+		t.Fatalf("context = %q", out.additionalContext)
+	}
+	if merged.Stop() {
+		t.Fatal("context merge should not stop")
 	}
 }

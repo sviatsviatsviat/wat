@@ -138,6 +138,39 @@ func (o stopOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(o.eventName, o.encodeInto)
 }
 
+// Merge combines other into this Stop output.
+func (o stopOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(stopOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	oDec, bDec := "", ""
+	if o.block {
+		oDec = "block"
+	}
+	if b.block {
+		bDec = "block"
+	}
+	dec, reason := hookkit.MergeRankedString(oDec, o.reason, bDec, b.reason, hookkit.BlockDecisionRankString)
+	eventName := o.eventName
+	if eventName == "" {
+		eventName = b.eventName
+	}
+	return stopOutput{
+		common:            mergedCommon,
+		eventName:         eventName,
+		block:             dec == "block",
+		reason:            reason,
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o stopOutput) Stop() bool {
+	return o.common.Stop() || o.block
+}
+
 // Stop registers a Stop handler on the chain.
 func (c *chain) Stop(fn func(context.Context, run.Hook[Stop], StopResults) (StopOutput, error)) *chain {
 	if fn == nil {

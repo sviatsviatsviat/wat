@@ -96,6 +96,31 @@ func (o beforeSubmitPromptOutput) Encode() ([]byte, int, error) {
 	return b, 0, err
 }
 
+// Merge combines other into this beforeSubmitPrompt output.
+func (o beforeSubmitPromptOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(beforeSubmitPromptOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	var warnings []string
+	cont := o.cont
+	if cont != nil && !*cont {
+		// continue:false is sticky
+	} else if b.cont != nil {
+		cont = b.cont
+	}
+	userMessage, w := hookkit.TakeLastString("userMessage", o.userMessage, b.userMessage)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return beforeSubmitPromptOutput{cont: cont, userMessage: userMessage}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o beforeSubmitPromptOutput) Stop() bool {
+	return o.cont != nil && !*o.cont
+}
+
 func init() {
 	codec.Register(EventBeforeSubmitPrompt, hookkit.EventDecoder[BeforeSubmitPrompt](codec))
 }

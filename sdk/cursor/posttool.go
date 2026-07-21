@@ -3,6 +3,8 @@ package cursor
 import (
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -78,4 +80,29 @@ func (o postToolOutput) Encode() ([]byte, int, error) {
 	}
 	b, err := json.Marshal(out)
 	return b, 0, err
+}
+
+// Merge combines other into this post-tool output.
+func (o postToolOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(postToolOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	var warnings []string
+	updatedMCPOutput := o.updatedMCPOutput
+	if b.updatedMCPOutput != nil {
+		if o.updatedMCPOutput != nil {
+			warnings = append(warnings, hookkit.OverwriteWarning("updatedMCPOutput"))
+		}
+		updatedMCPOutput = b.updatedMCPOutput
+	}
+	return postToolOutput{
+		updatedMCPOutput:  updatedMCPOutput,
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o postToolOutput) Stop() bool {
+	return false
 }

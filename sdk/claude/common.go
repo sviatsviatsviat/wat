@@ -1,6 +1,10 @@
 package claude
 
-import "github.com/sviatsviatsviat/wat/sdk/run"
+import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
 
 // PermissionDecision is a pre-tool permission verdict label.
 type PermissionDecision string
@@ -60,6 +64,65 @@ func (c common) WithSystemMessage(msg string) common {
 func (c common) WithTerminalSequence(seq string) common {
 	c.terminalSequence = seq
 	return c
+}
+
+// Merge combines other into this shared fields set.
+func (c common) Merge(other common) (common, []string) {
+	var warnings []string
+	out := c
+
+	// continue:false is sticky; otherwise last non-nil wins.
+	if c.cont != nil && !*c.cont {
+		out.cont = c.cont
+		if other.cont != nil && !*other.cont {
+			sr, w := hookkit.TakeLastString("stopReason", c.stopReason, other.stopReason)
+			out.stopReason = sr
+			if w != "" {
+				warnings = append(warnings, w)
+			}
+		} else {
+			out.stopReason = c.stopReason
+		}
+	} else if other.cont != nil {
+		if c.cont != nil {
+			warnings = append(warnings, hookkit.OverwriteWarning("continue"))
+		}
+		out.cont = other.cont
+		if !*other.cont {
+			out.stopReason = other.stopReason
+		} else {
+			sr, w := hookkit.TakeLastString("stopReason", c.stopReason, other.stopReason)
+			out.stopReason = sr
+			if w != "" {
+				warnings = append(warnings, w)
+			}
+		}
+	} else {
+		sr, w := hookkit.TakeLastString("stopReason", c.stopReason, other.stopReason)
+		out.stopReason = sr
+		if w != "" {
+			warnings = append(warnings, w)
+		}
+	}
+
+	out.suppressOutput = c.suppressOutput || other.suppressOutput
+
+	sm, w := hookkit.TakeLastString("systemMessage", c.systemMessage, other.systemMessage)
+	out.systemMessage = sm
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	ts, w := hookkit.TakeLastString("terminalSequence", c.terminalSequence, other.terminalSequence)
+	out.terminalSequence = ts
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return out, warnings
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (c common) Stop() bool {
+	return c.cont != nil && !*c.cont
 }
 
 // CommonOutput is a shared-fields-only response for events that only accept those fields.
@@ -158,4 +221,27 @@ func (o commonOutput) encodeInto(top, hso map[string]any) {
 // Encode renders this output as Claude Code stdout JSON.
 func (o commonOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(o.eventName, o.encodeInto)
+}
+
+// Merge combines other into this CommonOutput.
+func (o commonOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(commonOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	eventName := o.eventName
+	if eventName == "" {
+		eventName = b.eventName
+	}
+	return commonOutput{
+		common:            mergedCommon,
+		eventName:         eventName,
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o commonOutput) Stop() bool {
+	return o.common.Stop()
 }

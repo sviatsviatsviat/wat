@@ -177,6 +177,36 @@ func (o preToolUseOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(EventPreToolUse, o.encodeInto)
 }
 
+// Merge combines other into this PreToolUse output.
+func (o preToolUseOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(preToolUseOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	decision, reason := hookkit.MergeRankedString(
+		string(o.decision), o.reason,
+		string(b.decision), b.reason,
+		hookkit.PermissionRankString,
+	)
+	updatedInput, w := hookkit.TakeLastMap("updatedInput", o.updatedInput, b.updatedInput)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return preToolUseOutput{
+		common:            mergedCommon,
+		decision:          PermissionDecision(decision),
+		reason:            reason,
+		updatedInput:      updatedInput,
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o preToolUseOutput) Stop() bool {
+	return o.common.Stop() || o.decision == DecisionDeny
+}
+
 // PreToolUse registers a PreToolUse handler on the chain.
 func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *chain {
 	if fn == nil {

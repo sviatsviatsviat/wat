@@ -135,6 +135,34 @@ func (o preToolOutput) Encode() ([]byte, int, error) {
 	return b, 0, err
 }
 
+// Merge combines other into the receiver. other must be a preToolOutput.
+func (o preToolOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(preToolOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	decision, reason := hookkit.MergeRankedString(
+		string(o.decision), o.reason,
+		string(b.decision), b.reason,
+		hookkit.PermissionRankString,
+	)
+	modifiedArgs, warn := hookkit.TakeLastMap("modified_args", o.modifiedArgs, b.modifiedArgs)
+	var warnings []string
+	if warn != "" {
+		warnings = append(warnings, warn)
+	}
+	return preToolOutput{
+		decision:     PermissionDecision(decision),
+		reason:       reason,
+		modifiedArgs: modifiedArgs,
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o preToolOutput) Stop() bool {
+	return o.decision == DecisionDeny
+}
+
 func init() {
 	registerToolInputEvent(EventPreToolUse, func(e *PreToolUse) *tools.Input { return &e.ToolInput })
 }

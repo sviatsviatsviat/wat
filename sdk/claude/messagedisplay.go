@@ -119,6 +119,28 @@ func (o messageDisplayOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(EventMessageDisplay, o.encodeInto)
 }
 
+// Merge combines other into this MessageDisplay output.
+func (o messageDisplayOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(messageDisplayOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	displayContent, w := hookkit.TakeLastPtr("displayContent", o.displayContent, b.displayContent)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return messageDisplayOutput{
+		common:         mergedCommon,
+		displayContent: displayContent,
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o messageDisplayOutput) Stop() bool {
+	return o.common.Stop()
+}
+
 // MessageDisplay registers a MessageDisplay handler on the chain.
 func (c *chain) MessageDisplay(fn func(context.Context, run.Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
 	if fn == nil {

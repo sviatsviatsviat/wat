@@ -161,6 +161,47 @@ func (o postToolUseOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(o.eventName, o.encodeInto)
 }
 
+// Merge combines other into this PostToolUse output.
+func (o postToolUseOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(postToolUseOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	oDec, bDec := "", ""
+	if o.block {
+		oDec = "block"
+	}
+	if b.block {
+		bDec = "block"
+	}
+	dec, reason := hookkit.MergeRankedString(oDec, o.reason, bDec, b.reason, hookkit.BlockDecisionRankString)
+	updatedToolOutput := o.updatedToolOutput
+	if b.updatedToolOutput != nil {
+		if o.updatedToolOutput != nil {
+			warnings = append(warnings, hookkit.OverwriteWarning("updatedToolOutput"))
+		}
+		updatedToolOutput = b.updatedToolOutput
+	}
+	eventName := o.eventName
+	if eventName == "" {
+		eventName = b.eventName
+	}
+	return postToolUseOutput{
+		common:            mergedCommon,
+		eventName:         eventName,
+		block:             dec == "block",
+		reason:            reason,
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+		updatedToolOutput: updatedToolOutput,
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o postToolUseOutput) Stop() bool {
+	return o.common.Stop() || o.block
+}
+
 // PostToolUse registers a PostToolUse handler on the chain.
 func (c *chain) PostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
 	if fn == nil {

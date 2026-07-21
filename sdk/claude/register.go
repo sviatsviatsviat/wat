@@ -22,7 +22,6 @@ func dialectOps() run.DialectOps {
 	return run.DialectOps{
 		Detect: detectPayload,
 		Codec:  codec,
-		Merge:  MergeOutputs,
 	}
 }
 

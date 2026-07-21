@@ -3,8 +3,11 @@ package copilot
 import (
 	"bytes"
 	"encoding/json"
+	"maps"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 const copilotPreToolUse = `{
@@ -92,6 +95,47 @@ func TestEncode_ZeroOutput(t *testing.T) {
 	out := preToolResults{}.Noop()
 	if !out.IsZero() {
 		t.Fatal("noop should be zero")
+	}
+}
+
+func TestMerge_PreTool_denyBeatsAllowAndStops(t *testing.T) {
+	a := preToolResults{}.Allow()
+	b := preToolResults{}.Deny("blocked")
+	merged, warnings, err := a.Merge(b.(run.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 0 {
+		t.Fatalf("warnings = %v", warnings)
+	}
+	out := merged.(preToolOutput)
+	if out.decision != DecisionDeny || out.reason != "blocked" {
+		t.Fatalf("got decision=%q reason=%q", out.decision, out.reason)
+	}
+	if !merged.Stop() {
+		t.Fatal("deny should stop")
+	}
+}
+
+func TestMerge_PreTool_modifiedArgsOverwriteWarns(t *testing.T) {
+	first := map[string]any{"cmd": "a"}
+	second := map[string]any{"cmd": "b"}
+	orig := maps.Clone(first)
+	a := preToolResults{}.Allow().WithModifiedArgs(first)
+	b := preToolResults{}.Allow().WithModifiedArgs(second)
+	merged, warnings, err := a.Merge(b.(run.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 1 || warnings[0] != "modified_args: overwritten by later handler" {
+		t.Fatalf("warnings = %v", warnings)
+	}
+	out := merged.(preToolOutput)
+	if out.modifiedArgs["cmd"] != "b" {
+		t.Fatalf("modifiedArgs = %v", out.modifiedArgs)
+	}
+	if !maps.Equal(first, orig) {
+		t.Fatalf("caller map mutated")
 	}
 }
 

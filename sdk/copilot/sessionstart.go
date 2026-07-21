@@ -72,6 +72,22 @@ func (o sessionStartOutput) Encode() ([]byte, int, error) {
 	return encodeAdditionalContext(o.additionalContext)
 }
 
+// Merge combines other into the receiver. other must be a sessionStartOutput.
+func (o sessionStartOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(sessionStartOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	return sessionStartOutput{
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, nil, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o sessionStartOutput) Stop() bool {
+	return false
+}
+
 func encodeAdditionalContext(context string) ([]byte, int, error) {
 	if context == "" {
 		return nil, 0, nil

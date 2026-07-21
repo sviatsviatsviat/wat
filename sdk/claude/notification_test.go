@@ -30,3 +30,15 @@ func TestDecode_Notification(t *testing.T) {
 		t.Fatalf("additionalContext = %v", hso["additionalContext"])
 	}
 }
+
+func TestMerge_Common_continueFalseStops(t *testing.T) {
+	a := notificationResults{}.Context("a")
+	b := notificationResults{}.Context("").WithContinue(false)
+	merged, _, err := a.Merge(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !merged.Stop() {
+		t.Fatal("continue false should stop")
+	}
+}

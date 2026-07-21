@@ -78,6 +78,22 @@ func (o subagentStartOutput) Encode() ([]byte, int, error) {
 	return encodeAdditionalContext(o.additionalContext)
 }
 
+// Merge combines other into the receiver. other must be a subagentStartOutput.
+func (o subagentStartOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(subagentStartOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	return subagentStartOutput{
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, nil, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o subagentStartOutput) Stop() bool {
+	return false
+}
+
 func init() {
 	codec.Register(EventSubagentStart, hookkit.EventDecoder[SubagentStart](codec))
 }

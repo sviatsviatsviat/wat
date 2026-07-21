@@ -72,6 +72,25 @@ func (o stopOutput) Encode() ([]byte, int, error) {
 	return b, 0, err
 }
 
+// Merge combines other into this stop output.
+func (o stopOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(stopOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	var warnings []string
+	followUpMessage, w := hookkit.TakeLastString("followUpMessage", o.followUpMessage, b.followUpMessage)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return stopOutput{followUpMessage: followUpMessage}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o stopOutput) Stop() bool {
+	return false
+}
+
 func init() {
 	codec.Register(EventStop, hookkit.EventDecoder[Stop](codec))
 }

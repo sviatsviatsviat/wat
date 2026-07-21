@@ -93,6 +93,28 @@ func (o sessionStartOutput) Encode() ([]byte, int, error) {
 	return b, 0, err
 }
 
+// Merge combines other into this sessionStart output.
+func (o sessionStartOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(sessionStartOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	var warnings []string
+	env, w := hookkit.TakeLastMap("env", o.env, b.env)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return sessionStartOutput{
+		env:               env,
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o sessionStartOutput) Stop() bool {
+	return false
+}
+
 func init() {
 	codec.Register(EventSessionStart, hookkit.EventDecoder[SessionStart](codec))
 }

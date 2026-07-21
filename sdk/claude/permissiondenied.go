@@ -121,6 +121,24 @@ func (o permissionDeniedOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(EventPermissionDenied, o.encodeInto)
 }
 
+// Merge combines other into this PermissionDenied output.
+func (o permissionDeniedOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(permissionDeniedOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	return permissionDeniedOutput{
+		common: mergedCommon,
+		retry:  o.retry || b.retry,
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o permissionDeniedOutput) Stop() bool {
+	return o.common.Stop()
+}
+
 // PermissionDenied registers a PermissionDenied handler on the chain.
 func (c *chain) PermissionDenied(fn func(context.Context, run.Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
 	if fn == nil {

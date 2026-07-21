@@ -108,6 +108,28 @@ func (o worktreeCreateOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(EventWorktreeCreate, o.encodeInto)
 }
 
+// Merge combines other into this WorktreeCreate output.
+func (o worktreeCreateOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(worktreeCreateOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	worktreePath, w := hookkit.TakeLastString("worktreePath", o.worktreePath, b.worktreePath)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return worktreeCreateOutput{
+		common:       mergedCommon,
+		worktreePath: worktreePath,
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o worktreeCreateOutput) Stop() bool {
+	return o.common.Stop()
+}
+
 // WorktreeCreate registers a WorktreeCreate handler on the chain.
 func (c *chain) WorktreeCreate(fn func(context.Context, run.Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
 	if fn == nil {

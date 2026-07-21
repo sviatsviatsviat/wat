@@ -1,0 +1,105 @@
+package hookkit
+
+import (
+	"fmt"
+	"maps"
+)
+
+// OverwriteWarning returns a last-wins overwrite warning for field.
+func OverwriteWarning(field string) string {
+	return field + ": overwritten by later handler"
+}
+
+// TakeLastPtr keeps src when non-nil, else dst. When both are non-nil, returns
+// src and an overwrite warning for field.
+func TakeLastPtr[T any](field string, dst, src *T) (val *T, warning string) {
+	if src == nil {
+		return dst, ""
+	}
+	if dst != nil {
+		return src, OverwriteWarning(field)
+	}
+	return src, ""
+}
+
+// TakeLastString keeps src when non-empty, else dst. When both are non-empty,
+// returns src and an overwrite warning for field.
+func TakeLastString(field, dst, src string) (val, warning string) {
+	if src == "" {
+		return dst, ""
+	}
+	if dst != "" {
+		return src, OverwriteWarning(field)
+	}
+	return src, ""
+}
+
+// TakeLastMap keeps a clone of src when non-nil, else dst. When both are
+// non-nil, returns a clone of src and an overwrite warning for field.
+func TakeLastMap[K comparable, V any](field string, dst, src map[K]V) (val map[K]V, warning string) {
+	if src == nil {
+		return dst, ""
+	}
+	cloned := maps.Clone(src)
+	if dst != nil {
+		return cloned, OverwriteWarning(field)
+	}
+	return cloned, ""
+}
+
+// TakeLastSlice keeps a clone of src when non-nil, else dst. When both are
+// non-nil, returns a clone of src and an overwrite warning for field.
+func TakeLastSlice[T any](field string, dst, src []T) (val []T, warning string) {
+	if src == nil {
+		return dst, ""
+	}
+	cloned := append([]T(nil), src...)
+	if dst != nil {
+		return cloned, OverwriteWarning(field)
+	}
+	return cloned, ""
+}
+
+// MergeRankedString merges a ranked string decision and its paired detail.
+// rank should return higher values for stricter decisions. When the incoming
+// rank is lower, dst is unchanged. When the incoming rank is higher without a
+// detail, the previous detail is cleared.
+func MergeRankedString(dstDecision, dstDetail, srcDecision, srcDetail string, rank func(string) int) (decision, detail string) {
+	if rank(srcDecision) < rank(dstDecision) {
+		return dstDecision, dstDetail
+	}
+	oldRank := rank(dstDecision)
+	newRank := rank(srcDecision)
+	decision = srcDecision
+	if srcDetail != "" && newRank > 0 {
+		detail = srcDetail
+	} else if newRank > oldRank {
+		detail = ""
+	} else {
+		detail = dstDetail
+		if srcDetail != "" {
+			detail = srcDetail
+		}
+	}
+	return decision, detail
+}
+
+// PermissionRankString returns deny > ask > allow > unknown for permission labels.
+func PermissionRankString(s string) int {
+	return PermissionRank(s)
+}
+
+// BlockDecisionRankString returns 1 for block decisions, else 0.
+func BlockDecisionRankString(s string) int {
+	return BlockDecisionRank(s)
+}
+
+// JoinContextStrings concatenates additional-context strings with a blank line separator.
+func JoinContextStrings(existing, add string) string {
+	return JoinContext(existing, add)
+}
+
+// ErrMergeType returns an error when Merge receives a mismatched concrete type.
+func ErrMergeType(want, got any) error {
+	return fmt.Errorf("merge type mismatch: want %T, got %T", want, got)
+}

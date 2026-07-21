@@ -2,7 +2,6 @@ package copilot
 
 import (
 	"testing"
-
 )
 
 func TestEncode_PostToolFailureContext(t *testing.T) {

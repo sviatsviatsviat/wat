@@ -131,6 +131,37 @@ func (o permissionRequestOutput) Encode() ([]byte, int, error) {
 	return b, exitCode, err
 }
 
+// Merge combines other into the receiver. other must be a permissionRequestOutput.
+func (o permissionRequestOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(permissionRequestOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	behavior, message := hookkit.MergeRankedString(
+		o.behavior, o.message,
+		b.behavior, b.message,
+		hookkit.PermissionRankString,
+	)
+	oHardDeny := o.behavior == "deny" && !o.suppressWarnExit
+	bHardDeny := b.behavior == "deny" && !b.suppressWarnExit
+	suppressWarnExit := false
+	if behavior == "deny" && !oHardDeny && !bHardDeny {
+		suppressWarnExit = o.suppressWarnExit || b.suppressWarnExit
+	}
+	return permissionRequestOutput{
+		behavior:         behavior,
+		message:          message,
+		interrupt:        o.interrupt || b.interrupt,
+		suppressWarnExit: suppressWarnExit,
+	}, nil, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+// Ask (deny with suppressWarnExit) does not stop.
+func (o permissionRequestOutput) Stop() bool {
+	return o.behavior == "deny" && !o.suppressWarnExit
+}
+
 func init() {
 	codec.Register(EventPermissionRequest, func(raw []byte) (run.Event, error) {
 		return hookkit.DecodeEvent(codec, raw, func(e *PermissionRequest, raw []byte) {

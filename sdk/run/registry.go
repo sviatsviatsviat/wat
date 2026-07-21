@@ -13,14 +13,12 @@ type Codec interface {
 	Decode(raw []byte) (event Event, err error)
 }
 
-// DialectOps supplies dialect-specific detection, codec, and output merge.
+// DialectOps supplies dialect-specific detection and codec.
 type DialectOps struct {
 	// Detect reports whether raw matches this dialect.
 	Detect func(raw []byte, getenv func(string) string) bool
 	// Codec peeks event names and decodes typed events for this dialect.
 	Codec Codec
-	// Merge combines native JSON outputs from multiple handlers for one event.
-	Merge func(outputs [][]byte) ([]byte, error)
 }
 
 // Registry holds registered dialects and handlers.

@@ -3,6 +3,8 @@ package cursor
 import (
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -145,4 +147,37 @@ func (o permissionOutput) Encode() ([]byte, int, error) {
 		exitCode = PermissionDenyExit
 	}
 	return b, exitCode, nil
+}
+
+// Merge combines other into this permission output.
+func (o permissionOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(permissionOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	var warnings []string
+	decision, agentMessage := hookkit.MergeRankedString(
+		string(o.decision), o.agentMessage,
+		string(b.decision), b.agentMessage,
+		hookkit.PermissionRankString,
+	)
+	userMessage, w := hookkit.TakeLastString("userMessage", o.userMessage, b.userMessage)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	updatedInput, w := hookkit.TakeLastMap("updatedInput", o.updatedInput, b.updatedInput)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return permissionOutput{
+		decision:     PermissionDecision(decision),
+		userMessage:  userMessage,
+		agentMessage: agentMessage,
+		updatedInput: updatedInput,
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o permissionOutput) Stop() bool {
+	return o.decision == DecisionDeny
 }

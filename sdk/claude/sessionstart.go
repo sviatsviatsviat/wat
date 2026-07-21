@@ -191,6 +191,45 @@ func (o sessionStartOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(EventSessionStart, o.encodeInto)
 }
 
+// Merge combines other into this SessionStart output.
+func (o sessionStartOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(sessionStartOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	initialUserMessage, w := hookkit.TakeLastString("initialUserMessage", o.initialUserMessage, b.initialUserMessage)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	sessionTitle, w := hookkit.TakeLastString("sessionTitle", o.sessionTitle, b.sessionTitle)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	watchPaths, w := hookkit.TakeLastSlice("watchPaths", o.watchPaths, b.watchPaths)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	env, w := hookkit.TakeLastMap("env", o.env, b.env)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return sessionStartOutput{
+		common:             mergedCommon,
+		additionalContext:  hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+		initialUserMessage: initialUserMessage,
+		sessionTitle:       sessionTitle,
+		watchPaths:         watchPaths,
+		reloadSkills:       o.reloadSkills || b.reloadSkills,
+		env:                env,
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o sessionStartOutput) Stop() bool {
+	return o.common.Stop()
+}
+
 // SessionStart registers a SessionStart handler on the chain.
 func (c *chain) SessionStart(fn func(context.Context, run.Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
 	if fn == nil {

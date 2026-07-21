@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/tools"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -95,6 +96,22 @@ func (o postToolFailureOutput) Encode() ([]byte, int, error) {
 		return nil, 0, nil
 	}
 	return []byte(o.context), WarnExit, nil
+}
+
+// Merge combines other into the receiver. other must be a postToolFailureOutput.
+func (o postToolFailureOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(postToolFailureOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	return postToolFailureOutput{
+		context: hookkit.JoinContextStrings(o.context, b.context),
+	}, nil, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o postToolFailureOutput) Stop() bool {
+	return false
 }
 
 func init() {

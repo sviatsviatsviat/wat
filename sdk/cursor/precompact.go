@@ -70,6 +70,25 @@ func (o preCompactOutput) Encode() ([]byte, int, error) {
 	return b, 0, err
 }
 
+// Merge combines other into this preCompact output.
+func (o preCompactOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(preCompactOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	var warnings []string
+	userMessage, w := hookkit.TakeLastString("userMessage", o.userMessage, b.userMessage)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return preCompactOutput{userMessage: userMessage}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o preCompactOutput) Stop() bool {
+	return false
+}
+
 func init() {
 	codec.Register(EventPreCompact, hookkit.EventDecoder[PreCompact](codec))
 }

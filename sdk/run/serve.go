@@ -56,45 +56,45 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 
 	ctx = WithConfig(ctx, cfg)
 
-	var outputs [][]byte
-	exitCode := 0
+	var acc Output
 	for _, h := range handlers {
-		stdout, code, err := h.handle(ctx, event)
+		outVal, err := h.invoke(ctx, event)
 		if err != nil {
 			_, _ = fmt.Fprintln(errw, err.Error())
-			if code != 0 {
-				return code
+			return 1
+		}
+		if outVal == nil || outVal.IsZero() {
+			continue
+		}
+		if acc == nil || acc.IsZero() {
+			acc = outVal
+		} else {
+			merged, warnings, err := acc.Merge(outVal)
+			if err != nil {
+				_, _ = fmt.Fprintf(errw, "run: %s: merge: %v\n", dialect, err)
+				return 1
 			}
-			return 1
+			for _, w := range warnings {
+				_, _ = fmt.Fprintf(errw, "run: %s: merge: %s\n", dialect, w)
+			}
+			acc = merged
 		}
-		if len(stdout) > 0 {
-			outputs = append(outputs, stdout)
-		}
-		if code > exitCode {
-			exitCode = code
+		if acc.Stop() {
+			break
 		}
 	}
 
-	if len(outputs) == 0 {
-		return exitCode
+	if acc == nil || acc.IsZero() {
+		return 0
 	}
 
-	var merged []byte
-	if len(outputs) == 1 {
-		merged = outputs[0]
-	} else if ops.Merge != nil {
-		merged, err = ops.Merge(outputs)
-		if err != nil {
-			_, _ = fmt.Fprintf(errw, "run: %s: merge: %v\n", dialect, err)
-			return 1
-		}
-	} else {
-		_, _ = fmt.Fprintf(errw, "run: %s: no Merge; discarding %d earlier handler output(s), using last\n", dialect, len(outputs)-1)
-		merged = outputs[len(outputs)-1]
+	stdout, exitCode, err := acc.Encode()
+	if err != nil {
+		_, _ = fmt.Fprintf(errw, "run: %s: encode: %v\n", dialect, err)
+		return 1
 	}
-
-	if len(merged) > 0 {
-		if _, err := out.Write(merged); err != nil {
+	if len(stdout) > 0 {
+		if _, err := out.Write(stdout); err != nil {
 			_, _ = fmt.Fprintf(errw, "run: write stdout: %v\n", err)
 			return 1
 		}

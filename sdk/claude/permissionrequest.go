@@ -168,6 +168,37 @@ func (o permissionRequestOutput) Encode() ([]byte, int, error) {
 	return marshalHookOutput(EventPermissionRequest, o.encodeInto)
 }
 
+// Merge combines other into this PermissionRequest output.
+func (o permissionRequestOutput) Merge(other run.Output) (run.Output, []string, error) {
+	b, ok := other.(permissionRequestOutput)
+	if !ok {
+		return nil, nil, hookkit.ErrMergeType(o, other)
+	}
+	mergedCommon, warnings := o.common.Merge(b.common)
+	behavior, message := hookkit.MergeRankedString(
+		o.behavior, o.message,
+		b.behavior, b.message,
+		hookkit.PermissionRankString,
+	)
+	updatedInput, w := hookkit.TakeLastMap("updatedInput", o.updatedInput, b.updatedInput)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
+	return permissionRequestOutput{
+		common:            mergedCommon,
+		behavior:          behavior,
+		updatedInput:      updatedInput,
+		message:           message,
+		interrupt:         o.interrupt || b.interrupt,
+		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+	}, warnings, nil
+}
+
+// Stop reports whether remaining handlers should be skipped.
+func (o permissionRequestOutput) Stop() bool {
+	return o.common.Stop() || o.behavior == "deny"
+}
+
 // PermissionRequest registers a PermissionRequest handler on the chain.
 func (c *chain) PermissionRequest(fn func(context.Context, run.Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
 	if fn == nil {
