@@ -10,7 +10,7 @@ import (
 func TestEncode_SessionStartEnv(t *testing.T) {
 	envPath := filepath.Join(t.TempDir(), "env.sh")
 	t.Setenv("CLAUDE_ENV_FILE", envPath)
-	out, code, err := codec.Encode(sessionStartResults{}.Noop().WithEnv(map[string]string{"FOO": "bar", "BAZ": "qux"}))
+	out, code, err := sessionStartResults{}.Noop().WithEnv(map[string]string{"FOO": "bar", "BAZ": "qux"}).Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

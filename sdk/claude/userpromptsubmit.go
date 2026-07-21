@@ -170,8 +170,8 @@ func (c *chain) UserPromptSubmit(fn func(context.Context, run.Hook[UserPromptSub
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev UserPromptSubmit) (UserPromptSubmitOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), userPromptSubmitResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[UserPromptSubmit]) (UserPromptSubmitOutput, error) {
+		return fn(ctx, hook, userPromptSubmitResults{})
+	}))
 	return c
 }

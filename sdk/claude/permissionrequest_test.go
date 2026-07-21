@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_PermissionRequestInterrupt(t *testing.T) {
-	out, _, err := codec.Encode(permissionRequestResults{}.Deny("policy").WithInterrupt(true))
+	out, _, err := permissionRequestResults{}.Deny("policy").WithInterrupt(true).Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

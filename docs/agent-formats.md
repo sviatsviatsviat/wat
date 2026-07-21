@@ -18,7 +18,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `envelope.go` | Shared payload fields (embedded on each event; access via promoted fields) |
 | `exit.go` | Handler/encode exit-code constants |
 | `encode.go` | Unexported encode router (wire mapping) |
-| `register.go` | Dialect codec, `EnsureDialect` init, handler registration helpers |
+| `register.go` | Dialect codec and `EnsureDialect` init; handlers register via `run.Handler` / `run.ObserveHandler` |
 | `chain.go` | `UseHooks` and unexported fluent `chain` handle bound to a `run.Registry` |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |

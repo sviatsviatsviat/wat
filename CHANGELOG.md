@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- `hookkit.Codec.Encode` skips zero outputs then calls `out.Encode`; Claude stamps `hookEventName` from Results builders (or a fixed event constant per output type); Claude `SessionStart` `WithEnv` writes `CLAUDE_ENV_FILE` inside `sessionStartOutput.Encode`
-- `sdk/run` shared hook handler registry with `GetDefaultRegistry`, `NewRegistry`, `EnsureDialect`, `RegisterHandler`, and `Main`; agnostic and per-agent SDKs register via `UseHooks` (optional registry; default when omitted) with fluent chaining; `Main` peeks the event name then decodes the payload once before dispatching `Producer`s with the decoded event
+- Claude stamps `hookEventName` from Results builders (or a fixed event constant per output type); Claude `SessionStart` `WithEnv` writes `CLAUDE_ENV_FILE` inside `sessionStartOutput.Encode`; `run.Handler` skips zero outputs then calls `out.Encode`
+- `sdk/run` shared hook handler registry with `GetDefaultRegistry`, `NewRegistry`, `EnsureDialect`, `RegisterHandler` / `RegisterObserveHandler`, `Handler` / `ObserveHandler`, and `Main`; agnostic and per-agent SDKs register via `UseHooks` (optional registry; default when omitted) with fluent chaining; `Main` peeks the event name then decodes the payload once before dispatching typed registrations
 - `wat` CLI with subcommands `init`, `install`, `run`, `port`, `test`, and `doctor`; root and per-command help; `--agent`, `--event`, and `--fail-closed` flags on the subcommands that need them
 - `wat doctor` verifies Go toolchain, `.wat/` hook project compile, build cache, and installed hook entries; prints `PASS`/`FAIL`/`WARN` lines with fix suggestions; exits 4 when any check fails (warnings alone exit 0)
 - `wat test --fixture` runs the user's hook script against a fixture JSON payload (file or stdin `-`); requires `--agent`; prints fixture agent/event, hook stdout JSON, decision when present, and exit code; optional `--verbose` for hook stderr; sample fixtures under `testdata/fixtures/`

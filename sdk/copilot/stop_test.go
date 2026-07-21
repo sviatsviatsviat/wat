@@ -38,7 +38,7 @@ func TestDecode_VSCodeStop(t *testing.T) {
 }
 
 func TestEncode_StopFollowUp(t *testing.T) {
-	out, code, err := codec.Encode(stopResults{}.FollowUp("run the tests"))
+	out, code, err := stopResults{}.FollowUp("run the tests").Encode()
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}

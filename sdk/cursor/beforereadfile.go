@@ -64,8 +64,8 @@ func (c *chain) BeforeReadFile(fn func(context.Context, run.Hook[BeforeReadFile]
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev BeforeReadFile) (PermissionOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), beforeReadFileResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[BeforeReadFile]) (PermissionOutput, error) {
+		return fn(ctx, hook, beforeReadFileResults{})
+	}))
 	return c
 }

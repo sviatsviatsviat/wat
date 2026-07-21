@@ -51,8 +51,8 @@ func (c *chain) UserPromptExpansion(fn func(context.Context, run.Hook[UserPrompt
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev UserPromptExpansion) (CommonOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), userPromptExpansionResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[UserPromptExpansion]) (CommonOutput, error) {
+		return fn(ctx, hook, userPromptExpansionResults{})
+	}))
 	return c
 }

@@ -48,8 +48,8 @@ func (c *chain) AfterMCPExecution(fn func(context.Context, run.Hook[AfterMCPExec
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev AfterMCPExecution) (PostToolOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[AfterMCPExecution]) (PostToolOutput, error) {
+		return fn(ctx, hook, postToolResults{})
+	}))
 	return c
 }

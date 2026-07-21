@@ -43,8 +43,8 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 		return 1
 	}
 
-	producers := r.producers(dialect, eventName)
-	if len(producers) == 0 {
+	handlers := r.handlersFor(dialect, eventName)
+	if len(handlers) == 0 {
 		return 0
 	}
 
@@ -58,8 +58,8 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 
 	var outputs [][]byte
 	exitCode := 0
-	for _, p := range producers {
-		stdout, code, err := p(ctx, event)
+	for _, h := range handlers {
+		stdout, code, err := h.handle(ctx, event)
 		if err != nil {
 			_, _ = fmt.Fprintln(errw, err.Error())
 			if code != 0 {

@@ -182,8 +182,8 @@ func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToo
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev PreToolUse) (PreToolUseOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), preToolUseResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[PreToolUse]) (PreToolUseOutput, error) {
+		return fn(ctx, hook, preToolUseResults{})
+	}))
 	return c
 }

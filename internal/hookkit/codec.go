@@ -31,14 +31,6 @@ func NewCodec(dialect string, empty, decode, nameReq error) *Codec {
 	}
 }
 
-// Encode renders out as native stdout JSON. A zero output yields empty stdout and exit 0.
-func (c *Codec) Encode(out Output) ([]byte, int, error) {
-	if out.IsZero() {
-		return nil, 0, nil
-	}
-	return out.Encode()
-}
-
 // Register associates wire event name with fn.
 func (c *Codec) Register(name string, fn Decoder) {
 	c.m[name] = fn

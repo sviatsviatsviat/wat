@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_BeforeSubmitPromptBlock(t *testing.T) {
-	out, code, err := codec.Encode(beforeSubmitPromptResults{}.Block("blocked"))
+	out, code, err := beforeSubmitPromptResults{}.Block("blocked").Encode()
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}

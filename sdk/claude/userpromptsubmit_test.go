@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_UserPromptBlock(t *testing.T) {
-	out, _, err := codec.Encode(userPromptSubmitResults{}.Block("blocked prompt"))
+	out, _, err := userPromptSubmitResults{}.Block("blocked prompt").Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

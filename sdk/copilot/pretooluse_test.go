@@ -29,7 +29,7 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 		t.Fatalf("bad tool: name=%q shell=%q", pre.NativeToolName(), pre.ShellCommand())
 	}
 
-	out, code, err := codec.Encode(preToolResults{}.Deny("destructive command"))
+	out, code, err := preToolResults{}.Deny("destructive command").Encode()
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -79,7 +79,7 @@ func TestDecode_ToolInputNotAliased(t *testing.T) {
 }
 
 func TestEncode_PreToolAllowModifiedArgs(t *testing.T) {
-	out, code, err := codec.Encode(preToolResults{}.Allow().WithModifiedArgs(map[string]any{"command": "echo safe"}))
+	out, code, err := preToolResults{}.Allow().WithModifiedArgs(map[string]any{"command": "echo safe"}).Encode()
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -89,9 +89,9 @@ func TestEncode_PreToolAllowModifiedArgs(t *testing.T) {
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, code, err := codec.Encode(preToolResults{}.Noop())
-	if err != nil || code != 0 || out != nil {
-		t.Fatalf("zero output should be silent, got %q code=%d err=%v", out, code, err)
+	out := preToolResults{}.Noop()
+	if !out.IsZero() {
+		t.Fatal("noop should be zero")
 	}
 }
 

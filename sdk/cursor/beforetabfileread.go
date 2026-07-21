@@ -62,8 +62,8 @@ func (c *chain) BeforeTabFileRead(fn func(context.Context, run.Hook[BeforeTabFil
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev BeforeTabFileRead) (PermissionOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), beforeTabFileReadResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[BeforeTabFileRead]) (PermissionOutput, error) {
+		return fn(ctx, hook, beforeTabFileReadResults{})
+	}))
 	return c
 }

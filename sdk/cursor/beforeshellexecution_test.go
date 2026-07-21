@@ -32,7 +32,7 @@ func TestDecodeEncode_BeforeShellDeny(t *testing.T) {
 		t.Fatalf("bad event: %+v", shell)
 	}
 
-	out, code, err := codec.Encode(permissionResults{}.Deny("force push blocked"))
+	out, code, err := permissionResults{}.Deny("force push blocked").Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

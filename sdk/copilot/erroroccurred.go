@@ -50,6 +50,6 @@ func init() {
 
 // ErrorOccurred registers a ErrorOccurred handler on the chain.
 func (c *chain) ErrorOccurred(fn func(context.Context, run.Hook[ErrorOccurred]) error) *chain {
-	registerObserveHandler(c.reg, fn)
+	c.reg.RegisterObserveHandler(Dialect, run.ObserveHandler(fn))
 	return c
 }

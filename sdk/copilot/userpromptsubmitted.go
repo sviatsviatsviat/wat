@@ -24,6 +24,6 @@ func init() {
 
 // UserPromptSubmitted registers a UserPromptSubmitted handler on the chain.
 func (c *chain) UserPromptSubmitted(fn func(context.Context, run.Hook[UserPromptSubmitted]) error) *chain {
-	registerObserveHandler(c.reg, fn)
+	c.reg.RegisterObserveHandler(Dialect, run.ObserveHandler(fn))
 	return c
 }

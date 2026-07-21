@@ -26,7 +26,7 @@ func TestDecodeEncode_StopFollowUp(t *testing.T) {
 		t.Fatalf("bad stop: %+v", stop)
 	}
 
-	out, code, err := codec.Encode(stopResults{}.FollowUp("retry with fixed creds"))
+	out, code, err := stopResults{}.FollowUp("retry with fixed creds").Encode()
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_PreToolDeny(t *testing.T) {
-	out, code, err := codec.Encode(preToolUseResults{}.Deny("destructive command"))
+	out, code, err := preToolUseResults{}.Deny("destructive command").Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,9 +19,9 @@ func TestEncode_PreToolDeny(t *testing.T) {
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, code, err := codec.Encode(preToolUseResults{}.Noop())
-	if err != nil || out != nil || code != SuccessExit {
-		t.Fatalf("zero output should be silent, got %q code=%d err=%v", out, code, err)
+	out := preToolUseResults{}.Noop()
+	if !out.IsZero() {
+		t.Fatal("noop should be zero")
 	}
 }
 

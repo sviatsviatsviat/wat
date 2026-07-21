@@ -22,6 +22,6 @@ func init() {
 
 // WorkspaceOpen registers a WorkspaceOpen handler on the chain.
 func (c *chain) WorkspaceOpen(fn func(context.Context, run.Hook[WorkspaceOpen]) error) *chain {
-	registerObserveHandler(c.reg, fn)
+	c.reg.RegisterObserveHandler(Dialect, run.ObserveHandler(fn))
 	return c
 }

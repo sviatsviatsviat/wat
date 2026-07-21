@@ -43,8 +43,8 @@ func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], Permis
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev PreToolUse) (PermissionOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[PreToolUse]) (PermissionOutput, error) {
+		return fn(ctx, hook, permissionResults{})
+	}))
 	return c
 }

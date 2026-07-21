@@ -144,8 +144,8 @@ func (c *chain) PermissionRequest(fn func(context.Context, run.Hook[PermissionRe
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev PermissionRequest) (PermissionRequestOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), permissionRequestResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[PermissionRequest]) (PermissionRequestOutput, error) {
+		return fn(ctx, hook, permissionRequestResults{})
+	}))
 	return c
 }

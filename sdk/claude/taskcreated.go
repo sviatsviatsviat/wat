@@ -44,8 +44,8 @@ func (c *chain) TaskCreated(fn func(context.Context, run.Hook[TaskCreated], Task
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev TaskCreated) (CommonOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), taskCreatedResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[TaskCreated]) (CommonOutput, error) {
+		return fn(ctx, hook, taskCreatedResults{})
+	}))
 	return c
 }

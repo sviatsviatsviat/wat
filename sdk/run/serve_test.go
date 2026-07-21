@@ -13,9 +13,17 @@ type testCodec struct {
 	decodeCalls *atomic.Int32
 }
 
-type testEvent string
+type testEvent struct {
+	raw string
+}
 
-func (e testEvent) EventName() string { return string(e) }
+func (testEvent) EventName() string { return "TestEvent" }
+
+type emptyOutput struct{}
+
+func (emptyOutput) IsZero() bool { return true }
+
+func (emptyOutput) Encode() ([]byte, int, error) { return nil, 0, nil }
 
 func (c testCodec) EventName([]byte) (string, error) {
 	return c.eventName, nil
@@ -25,25 +33,25 @@ func (c testCodec) Decode(raw []byte) (Event, error) {
 	if c.decodeCalls != nil {
 		c.decodeCalls.Add(1)
 	}
-	return testEvent(raw), nil
+	return testEvent{raw: string(raw)}, nil
 }
 
 func TestServe_DecodesOnce(t *testing.T) {
 	r := NewRegistry()
 	var decodeCalls atomic.Int32
-	r.RegisterDialect("testdialect", DialectOps{
+	r.registerDialect("testdialect", DialectOps{
 		Detect: func([]byte, func(string) string) bool { return true },
 		Codec:  testCodec{eventName: "TestEvent", decodeCalls: &decodeCalls},
 	})
 	var handlerCalls atomic.Int32
 	for range 3 {
-		r.RegisterHandler("testdialect", "TestEvent", func(_ context.Context, event Event) ([]byte, int, error) {
+		r.RegisterHandler("testdialect", Handler(func(_ context.Context, hook Hook[testEvent]) (emptyOutput, error) {
 			handlerCalls.Add(1)
-			if event != testEvent(`{"ok":true}`) {
-				t.Errorf("event = %#v", event)
+			if hook.Event.raw != `{"ok":true}` {
+				t.Errorf("event = %#v", hook.Event)
 			}
-			return nil, 0, nil
-		})
+			return emptyOutput{}, nil
+		}))
 	}
 
 	code := r.serve(context.Background(), strings.NewReader(`{"ok":true}`), &bytes.Buffer{}, &bytes.Buffer{}, applyOptions())
@@ -61,7 +69,7 @@ func TestServe_DecodesOnce(t *testing.T) {
 func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 	r := NewRegistry()
 	var decodeCalls atomic.Int32
-	r.RegisterDialect("empty", DialectOps{
+	r.registerDialect("empty", DialectOps{
 		Detect: func([]byte, func(string) string) bool { return true },
 		Codec:  testCodec{eventName: "NoHandlers", decodeCalls: &decodeCalls},
 	})

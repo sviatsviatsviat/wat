@@ -58,8 +58,8 @@ func (c *chain) PostToolUseFailure(fn func(context.Context, run.Hook[PostToolUse
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev PostToolUseFailure) (PostToolUseOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), postToolUseFailureResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[PostToolUseFailure]) (PostToolUseOutput, error) {
+		return fn(ctx, hook, postToolUseFailureResults{})
+	}))
 	return c
 }

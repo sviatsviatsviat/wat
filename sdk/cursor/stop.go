@@ -81,8 +81,8 @@ func (c *chain) Stop(fn func(context.Context, run.Hook[Stop], StopResults) (Stop
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev Stop) (StopOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[Stop]) (StopOutput, error) {
+		return fn(ctx, hook, stopResults{})
+	}))
 	return c
 }

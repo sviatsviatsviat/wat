@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
-	out, code, err := codec.Encode(permissionRequestResults{}.Deny("blocked").WithInterrupt(true))
+	out, code, err := permissionRequestResults{}.Deny("blocked").WithInterrupt(true).Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,7 +19,7 @@ func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
 }
 
 func TestEncode_PermissionRequestAsk(t *testing.T) {
-	out, code, err := codec.Encode(permissionRequestResults{}.Ask("needs user confirmation"))
+	out, code, err := permissionRequestResults{}.Ask("needs user confirmation").Encode()
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}

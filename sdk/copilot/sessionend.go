@@ -24,6 +24,6 @@ func init() {
 
 // SessionEnd registers a SessionEnd handler on the chain.
 func (c *chain) SessionEnd(fn func(context.Context, run.Hook[SessionEnd]) error) *chain {
-	registerObserveHandler(c.reg, fn)
+	c.reg.RegisterObserveHandler(Dialect, run.ObserveHandler(fn))
 	return c
 }

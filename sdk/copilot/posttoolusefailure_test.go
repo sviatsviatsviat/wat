@@ -1,9 +1,12 @@
 package copilot
 
-import "testing"
+import (
+	"testing"
+
+)
 
 func TestEncode_PostToolFailureContext(t *testing.T) {
-	out, code, err := codec.Encode(postToolFailureResults{}.Context("retry with smaller input"))
+	out, code, err := postToolFailureResults{}.Context("retry with smaller input").Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

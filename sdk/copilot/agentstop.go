@@ -54,8 +54,8 @@ func (c *chain) AgentStop(fn func(context.Context, run.Hook[AgentStop], StopResu
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev AgentStop) (StopOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[AgentStop]) (StopOutput, error) {
+		return fn(ctx, hook, stopResults{})
+	}))
 	return c
 }

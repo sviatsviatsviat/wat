@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_StopBlock(t *testing.T) {
-	out, _, err := codec.Encode(stopResults{eventName: EventStop}.FollowUp("run the tests"))
+	out, _, err := stopResults{eventName: EventStop}.FollowUp("run the tests").Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

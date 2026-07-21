@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_TabFileReadDeny(t *testing.T) {
-	out, code, err := codec.Encode(permissionResults{}.Deny("no tab reads"))
+	out, code, err := permissionResults{}.Deny("no tab reads").Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

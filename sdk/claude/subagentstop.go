@@ -31,8 +31,8 @@ func (c *chain) SubagentStop(fn func(context.Context, run.Hook[SubagentStop], St
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev SubagentStop) (StopOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), stopResults{eventName: EventSubagentStop})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[SubagentStop]) (StopOutput, error) {
+		return fn(ctx, hook, stopResults{eventName: EventSubagentStop})
+	}))
 	return c
 }

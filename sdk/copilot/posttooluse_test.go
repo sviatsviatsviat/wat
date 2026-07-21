@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_PostToolUpdatedOutput(t *testing.T) {
-	out, code, err := codec.Encode(postToolResults{}.Context("extra guidance").WithModifiedResult("rewritten"))
+	out, code, err := postToolResults{}.Context("extra guidance").WithModifiedResult("rewritten").Encode()
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}

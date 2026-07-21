@@ -24,6 +24,6 @@ func init() {
 
 // AfterAgentResponse registers a AfterAgentResponse handler on the chain.
 func (c *chain) AfterAgentResponse(fn func(context.Context, run.Hook[AfterAgentResponse]) error) *chain {
-	registerObserveHandler(c.reg, fn)
+	c.reg.RegisterObserveHandler(Dialect, run.ObserveHandler(fn))
 	return c
 }

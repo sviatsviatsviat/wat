@@ -102,8 +102,8 @@ func (c *chain) SessionStart(fn func(context.Context, run.Hook[SessionStart], Se
 	if fn == nil {
 		return c
 	}
-	registerHandler(c.reg, func(ctx context.Context, ev SessionStart) (SessionStartOutput, error) {
-		return fn(ctx, run.NewHook(run.InvocationFrom(ctx), ev), sessionStartResults{})
-	})
+	c.reg.RegisterHandler(Dialect, run.Handler(func(ctx context.Context, hook run.Hook[SessionStart]) (SessionStartOutput, error) {
+		return fn(ctx, hook, sessionStartResults{})
+	}))
 	return c
 }

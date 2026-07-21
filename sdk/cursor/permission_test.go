@@ -6,14 +6,14 @@ import (
 )
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, code, err := codec.Encode(permissionResults{}.Noop())
-	if err != nil || code != 0 || out != nil {
-		t.Fatalf("zero result should be silent, got %q code=%d err=%v", out, code, err)
+	out := permissionResults{}.Noop()
+	if !out.IsZero() {
+		t.Fatal("noop should be zero")
 	}
 }
 
 func TestEncode_PermissionUpdatedInput(t *testing.T) {
-	out, code, err := codec.Encode(permissionResults{}.Allow().WithUpdatedInput(map[string]any{"command": "ls"}))
+	out, code, err := permissionResults{}.Allow().WithUpdatedInput(map[string]any{"command": "ls"}).Encode()
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}

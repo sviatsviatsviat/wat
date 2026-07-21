@@ -36,7 +36,7 @@ func (c *Config) SetDialectConfig(name string, cfg any) {
 
 type configKey struct{}
 
-// WithConfig attaches cfg to ctx for handler producers.
+// WithConfig attaches cfg to ctx for hook handlers.
 func WithConfig(ctx context.Context, cfg *Config) context.Context {
 	return context.WithValue(ctx, configKey{}, cfg)
 }

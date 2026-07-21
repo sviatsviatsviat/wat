@@ -6,7 +6,7 @@ import (
 )
 
 func TestEncode_SessionStartContext(t *testing.T) {
-	out, code, err := codec.Encode(sessionStartResults{}.Context("project uses go test ./..."))
+	out, code, err := sessionStartResults{}.Context("project uses go test ./...").Encode()
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}

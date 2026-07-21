@@ -1,13 +1,8 @@
 package run
 
 import (
-	"context"
 	"sync"
 )
-
-// Producer handles one hook invocation: run logic on an already-decoded event
-// and encode native JSON. Main decodes the payload once before calling producers.
-type Producer func(ctx context.Context, event Event) (output []byte, exit int, err error)
 
 // Codec peeks event names and decodes payloads for one agent dialect.
 type Codec interface {
@@ -34,7 +29,7 @@ type Registry struct {
 
 	dialectOrder []string
 	dialects     map[string]DialectOps
-	handlers     map[string]map[string][]Producer
+	handlers     map[string]map[string][]hookRegistration
 }
 
 var defaultRegistry = NewRegistry()
@@ -43,7 +38,7 @@ var defaultRegistry = NewRegistry()
 func NewRegistry() *Registry {
 	return &Registry{
 		dialects: make(map[string]DialectOps),
-		handlers: make(map[string]map[string][]Producer),
+		handlers: make(map[string]map[string][]hookRegistration),
 	}
 }
 
@@ -53,10 +48,10 @@ func GetDefaultRegistry() *Registry {
 	return defaultRegistry
 }
 
-// RegisterDialect registers dialect ops on r. Duplicate names panic.
-func (r *Registry) RegisterDialect(name string, ops DialectOps) {
+// registerDialect registers dialect ops on r. Duplicate names panic.
+func (r *Registry) registerDialect(name string, ops DialectOps) {
 	if name == "" {
-		panic("run: RegisterDialect: empty name")
+		panic("run: registerDialect: empty name")
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -66,7 +61,7 @@ func (r *Registry) RegisterDialect(name string, ops DialectOps) {
 	r.dialectOrder = append(r.dialectOrder, name)
 	r.dialects[name] = ops
 	if r.handlers[name] == nil {
-		r.handlers[name] = make(map[string][]Producer)
+		r.handlers[name] = make(map[string][]hookRegistration)
 	}
 }
 
@@ -83,27 +78,37 @@ func (r *Registry) EnsureDialect(name string, ops DialectOps) {
 	r.dialectOrder = append(r.dialectOrder, name)
 	r.dialects[name] = ops
 	if r.handlers[name] == nil {
-		r.handlers[name] = make(map[string][]Producer)
+		r.handlers[name] = make(map[string][]hookRegistration)
 	}
 }
 
-// RegisterHandler appends a handler for dialect and native event name on r.
-func (r *Registry) RegisterHandler(dialect, eventName string, p Producer) {
-	if p == nil {
+// RegisterHandler appends a typed output-producing hook registration for dialect on r.
+func (r *Registry) RegisterHandler(dialect string, reg hookRegistration) {
+	r.register(dialect, reg)
+}
+
+// RegisterObserveHandler appends a typed observe-only hook registration for dialect on r.
+func (r *Registry) RegisterObserveHandler(dialect string, reg hookRegistration) {
+	r.register(dialect, reg)
+}
+
+func (r *Registry) register(dialect string, reg hookRegistration) {
+	if reg == nil {
 		return
 	}
+	eventName := reg.eventName()
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.handlers[dialect] == nil {
-		r.handlers[dialect] = make(map[string][]Producer)
+		r.handlers[dialect] = make(map[string][]hookRegistration)
 	}
-	r.handlers[dialect][eventName] = append(r.handlers[dialect][eventName], p)
+	r.handlers[dialect][eventName] = append(r.handlers[dialect][eventName], reg)
 }
 
-func (r *Registry) producers(dialect, eventName string) []Producer {
+func (r *Registry) handlersFor(dialect, eventName string) []hookRegistration {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return append([]Producer(nil), r.handlers[dialect][eventName]...)
+	return append([]hookRegistration(nil), r.handlers[dialect][eventName]...)
 }
 
 func (r *Registry) dialectOps(name string) (DialectOps, bool) {

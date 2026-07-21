@@ -6,9 +6,9 @@ import (
 )
 
 func TestEncode_SessionStartEnv(t *testing.T) {
-	out, code, err := codec.Encode(sessionStartResults{}.Noop().
+	out, code, err := sessionStartResults{}.Noop().
 		WithEnv(map[string]string{"K": "V"}).
-		WithAdditionalContext("ctx"))
+		WithAdditionalContext("ctx").Encode()
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
