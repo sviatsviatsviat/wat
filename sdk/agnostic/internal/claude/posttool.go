@@ -62,7 +62,7 @@ type postToolResult struct {
 }
 
 // IsZero reports whether the result carries no instruction.
-func (r postToolResult) IsZero() bool { return sdkclaude.IsZeroOutput(r.native) }
+func (r postToolResult) IsZero() bool { return r.native.IsZero() }
 
 // WithUpdatedOutput replaces tool result text when set.
 func (r postToolResult) WithUpdatedOutput(output string) model.PostToolResult {

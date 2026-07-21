@@ -55,11 +55,10 @@ type permissionRequestOutput struct {
 	suppressWarnExit bool
 }
 
-func (permissionRequestOutput) isCopilotOutput() {}
-
 func (permissionRequestOutput) isPermissionRequestOutput() {}
 
-func (o permissionRequestOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o permissionRequestOutput) IsZero() bool {
 	return o.behavior == "" && o.message == "" && !o.interrupt
 }
 
@@ -106,11 +105,14 @@ func (permissionRequestResults) Noop() PermissionRequestOutput {
 	return permissionRequestOutput{}
 }
 
-func (permissionRequestOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (permissionRequestOutput) AllowedEvents() []string {
 	return []string{EventPermissionRequest}
 }
 
-func (o permissionRequestOutput) encode() ([]byte, int, error) {
+// Encode renders this output as Copilot stdout JSON.
+func (o permissionRequestOutput) Encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	if o.behavior == "" && o.message == "" && !o.interrupt {
 		return nil, 0, nil
 	}

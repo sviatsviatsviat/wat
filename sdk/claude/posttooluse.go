@@ -66,11 +66,11 @@ type postToolUseOutput struct {
 	updatedToolOutput any
 }
 
-func (postToolUseOutput) isClaudeOutput() {}
-
 func (postToolUseOutput) isPostToolUseOutput() {}
-func (o postToolUseOutput) isZero() bool {
-	return o.common.isZero() && !o.block && o.reason == "" &&
+
+// IsZero reports whether this hook response is empty.
+func (o postToolUseOutput) IsZero() bool {
+	return o.common.IsZero() && !o.block && o.reason == "" &&
 		o.additionalContext == "" && o.updatedToolOutput == nil
 }
 
@@ -139,7 +139,8 @@ func (postToolUseResults) Block(reason string) PostToolUseOutput {
 	return postToolUseOutput{block: true, reason: reason}
 }
 
-func (postToolUseOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (postToolUseOutput) AllowedEvents() []string {
 	return []string{EventPostToolUse, EventPostToolUseFailure}
 }
 
@@ -157,6 +158,11 @@ func (o postToolUseOutput) encodeInto(top, hso map[string]any) {
 	if o.additionalContext != "" {
 		hso["additionalContext"] = o.additionalContext
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o postToolUseOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // PostToolUse registers a PostToolUse handler on the chain.

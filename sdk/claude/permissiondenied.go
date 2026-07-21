@@ -56,11 +56,11 @@ type permissionDeniedOutput struct {
 	retry bool
 }
 
-func (permissionDeniedOutput) isClaudeOutput() {}
-
 func (permissionDeniedOutput) isPermissionDeniedOutput() {}
-func (o permissionDeniedOutput) isZero() bool {
-	return o.common.isZero() && !o.retry
+
+// IsZero reports whether this hook response is empty.
+func (o permissionDeniedOutput) IsZero() bool {
+	return o.common.IsZero() && !o.retry
 }
 
 // WithContinue sets whether Claude should continue the session.
@@ -109,7 +109,8 @@ func (permissionDeniedResults) Retry() PermissionDeniedOutput {
 	return permissionDeniedOutput{retry: true}
 }
 
-func (permissionDeniedOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (permissionDeniedOutput) AllowedEvents() []string {
 	return []string{EventPermissionDenied}
 }
 
@@ -118,6 +119,11 @@ func (o permissionDeniedOutput) encodeInto(top, hso map[string]any) {
 	if o.retry {
 		hso["retry"] = true
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o permissionDeniedOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // PermissionDenied registers a PermissionDenied handler on the chain.

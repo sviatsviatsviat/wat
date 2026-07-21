@@ -66,11 +66,10 @@ type preToolOutput struct {
 	modifiedArgs map[string]any
 }
 
-func (preToolOutput) isCopilotOutput() {}
-
 func (preToolOutput) isPreToolOutput() {}
 
-func (o preToolOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o preToolOutput) IsZero() bool {
 	return o.decision == "" && o.reason == "" && o.modifiedArgs == nil
 }
 
@@ -117,11 +116,14 @@ func (preToolResults) Noop() PreToolOutput {
 	return preToolOutput{}
 }
 
-func (preToolOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (preToolOutput) AllowedEvents() []string {
 	return []string{EventPreToolUse}
 }
 
-func (o preToolOutput) encode() ([]byte, int, error) {
+// Encode renders this output as Copilot stdout JSON.
+func (o preToolOutput) Encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	out := map[string]any{}
 	if o.decision != "" {
 		out["permission_decision"] = string(o.decision)

@@ -55,11 +55,11 @@ type userPromptSubmitOutput struct {
 	suppressOriginalPrompt bool
 }
 
-func (userPromptSubmitOutput) isClaudeOutput() {}
-
 func (userPromptSubmitOutput) isUserPromptSubmitOutput() {}
-func (o userPromptSubmitOutput) isZero() bool {
-	return o.common.isZero() && !o.block && o.reason == "" &&
+
+// IsZero reports whether this hook response is empty.
+func (o userPromptSubmitOutput) IsZero() bool {
+	return o.common.IsZero() && !o.block && o.reason == "" &&
 		o.additionalContext == "" && o.sessionTitle == "" && !o.suppressOriginalPrompt
 }
 
@@ -141,7 +141,8 @@ func (userPromptSubmitResults) Noop() UserPromptSubmitOutput {
 	return userPromptSubmitOutput{}
 }
 
-func (userPromptSubmitOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (userPromptSubmitOutput) AllowedEvents() []string {
 	return []string{EventUserPromptSubmit}
 }
 
@@ -162,6 +163,11 @@ func (o userPromptSubmitOutput) encodeInto(top, hso map[string]any) {
 	if o.suppressOriginalPrompt {
 		hso["suppressOriginalPrompt"] = true
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o userPromptSubmitOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // UserPromptSubmit registers a UserPromptSubmit handler on the chain.

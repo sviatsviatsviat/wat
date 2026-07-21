@@ -66,11 +66,11 @@ type sessionStartOutput struct {
 	env                map[string]string
 }
 
-func (sessionStartOutput) isClaudeOutput() {}
-
 func (sessionStartOutput) isSessionStartOutput() {}
-func (o sessionStartOutput) isZero() bool {
-	return o.common.isZero() && o.additionalContext == "" && o.initialUserMessage == "" &&
+
+// IsZero reports whether this hook response is empty.
+func (o sessionStartOutput) IsZero() bool {
+	return o.common.IsZero() && o.additionalContext == "" && o.initialUserMessage == "" &&
 		o.sessionTitle == "" && len(o.watchPaths) == 0 && !o.reloadSkills && len(o.env) == 0
 }
 
@@ -163,7 +163,8 @@ func (sessionStartResults) Noop() SessionStartOutput {
 	return sessionStartOutput{}
 }
 
-func (sessionStartOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (sessionStartOutput) AllowedEvents() []string {
 	return []string{EventSessionStart}
 }
 
@@ -186,11 +187,13 @@ func (o sessionStartOutput) encodeInto(top, hso map[string]any) {
 	}
 }
 
-func (o sessionStartOutput) writeSessionEnv(cfg runtimeConfig) error {
-	if len(o.env) == 0 {
-		return nil
+// Encode renders this output as Claude Code stdout JSON.
+// WithEnv appends export lines to CLAUDE_ENV_FILE when that env var is set.
+func (o sessionStartOutput) Encode(eventName string) ([]byte, int, error) {
+	if err := writeEnvFile(o.env, nil, nil); err != nil {
+		return nil, SuccessExit, err
 	}
-	return WriteEnvFile(o.env, cfg.getenv, cfg.appendFile)
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // SessionStart registers a SessionStart handler on the chain.

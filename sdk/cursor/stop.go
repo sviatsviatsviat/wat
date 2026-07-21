@@ -32,11 +32,10 @@ type stopOutput struct {
 	followUpMessage string
 }
 
-func (stopOutput) isCursorOutput() {}
-
 func (stopOutput) isStopOutput() {}
 
-func (o stopOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o stopOutput) IsZero() bool {
 	return o.followUpMessage == ""
 }
 
@@ -63,11 +62,13 @@ func (stopResults) Noop() StopOutput {
 	return stopOutput{}
 }
 
-func (stopOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (stopOutput) AllowedEvents() []string {
 	return []string{EventStop, EventSubagentStop}
 }
 
-func (o stopOutput) encode(eventName string) ([]byte, int, error) {
+// Encode renders this output as Cursor stdout JSON.
+func (o stopOutput) Encode(eventName string) ([]byte, int, error) {
 	_ = eventName
 	if o.followUpMessage == "" {
 		return nil, 0, nil

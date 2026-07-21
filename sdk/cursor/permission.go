@@ -36,11 +36,10 @@ type permissionOutput struct {
 	updatedInput map[string]any
 }
 
-func (permissionOutput) isCursorOutput() {}
-
 func (permissionOutput) isPermissionOutput() {}
 
-func (o permissionOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o permissionOutput) IsZero() bool {
 	return o.decision == "" && o.userMessage == "" && o.agentMessage == "" && o.updatedInput == nil
 }
 
@@ -117,7 +116,8 @@ func (permissionGateResults) noop() PermissionOutput {
 	return permissionOutput{}
 }
 
-func (permissionOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (permissionOutput) AllowedEvents() []string {
 	return []string{
 		EventPreToolUse,
 		EventBeforeShellExecution,
@@ -128,7 +128,8 @@ func (permissionOutput) allowedEvents() []string {
 	}
 }
 
-func (o permissionOutput) encode(eventName string) ([]byte, int, error) {
+// Encode renders this output as Cursor stdout JSON.
+func (o permissionOutput) Encode(eventName string) ([]byte, int, error) {
 	out := map[string]any{}
 	if o.decision != "" {
 		out["permission"] = string(o.decision)

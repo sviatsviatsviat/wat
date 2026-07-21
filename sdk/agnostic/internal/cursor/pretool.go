@@ -159,7 +159,7 @@ type permissionResult struct {
 }
 
 // IsZero reports whether the result carries no instruction.
-func (r permissionResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
+func (r permissionResult) IsZero() bool { return r.native.IsZero() }
 
 // WithUpdatedInput replaces tool arguments when set.
 func (r permissionResult) WithUpdatedInput(input map[string]any) model.PreToolResult {

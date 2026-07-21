@@ -30,11 +30,10 @@ type preCompactOutput struct {
 	userMessage string
 }
 
-func (preCompactOutput) isCursorOutput() {}
-
 func (preCompactOutput) isPreCompactOutput() {}
 
-func (o preCompactOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o preCompactOutput) IsZero() bool {
 	return o.userMessage == ""
 }
 
@@ -61,11 +60,13 @@ func (preCompactResults) Noop() PreCompactOutput {
 	return preCompactOutput{}
 }
 
-func (preCompactOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (preCompactOutput) AllowedEvents() []string {
 	return []string{EventPreCompact}
 }
 
-func (o preCompactOutput) encode(eventName string) ([]byte, int, error) {
+// Encode renders this output as Cursor stdout JSON.
+func (o preCompactOutput) Encode(eventName string) ([]byte, int, error) {
 	_ = eventName
 	if o.userMessage == "" {
 		return nil, 0, nil

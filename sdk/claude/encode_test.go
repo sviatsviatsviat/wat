@@ -8,9 +8,12 @@ import (
 )
 
 func TestEncode_PreToolDeny(t *testing.T) {
-	out, err := encode("PreToolUse", preToolUseResults{}.Deny("destructive command"))
+	out, code, err := codec.Encode("PreToolUse", preToolUseResults{}.Deny("destructive command"))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if code != SuccessExit {
+		t.Fatalf("exit = %d", code)
 	}
 	if !strings.Contains(string(out), `"permissionDecision":"deny"`) {
 		t.Fatalf("bad output: %s", out)
@@ -18,7 +21,7 @@ func TestEncode_PreToolDeny(t *testing.T) {
 }
 
 func TestEncode_UserPromptBlock(t *testing.T) {
-	out, err := encode("UserPromptSubmit", userPromptSubmitResults{}.Block("blocked prompt"))
+	out, _, err := codec.Encode("UserPromptSubmit", userPromptSubmitResults{}.Block("blocked prompt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +31,7 @@ func TestEncode_UserPromptBlock(t *testing.T) {
 }
 
 func TestEncode_StopBlock(t *testing.T) {
-	out, err := encode("Stop", stopResults{}.FollowUp("run the tests"))
+	out, _, err := codec.Encode("Stop", stopResults{}.FollowUp("run the tests"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,26 +41,21 @@ func TestEncode_StopBlock(t *testing.T) {
 }
 
 func TestEncode_SessionStartEnv(t *testing.T) {
-	dir := t.TempDir()
-	envPath := filepath.Join(dir, "env.sh")
-	var written []byte
-	out, err := encode("SessionStart", sessionStartResults{}.Noop().WithEnv(map[string]string{"FOO": "bar", "BAZ": "qux"}),
-		WithGetenv(func(key string) string {
-			if key == "CLAUDE_ENV_FILE" {
-				return envPath
-			}
-			return ""
-		}),
-		WithAppendFile(func(path string, data []byte) error {
-			written = append(written, data...)
-			return os.WriteFile(path, written, 0o644)
-		}),
-	)
+	envPath := filepath.Join(t.TempDir(), "env.sh")
+	t.Setenv("CLAUDE_ENV_FILE", envPath)
+	out, code, err := codec.Encode("SessionStart", sessionStartResults{}.Noop().WithEnv(map[string]string{"FOO": "bar", "BAZ": "qux"}))
 	if err != nil {
 		t.Fatal(err)
 	}
+	if code != SuccessExit {
+		t.Fatalf("exit = %d", code)
+	}
 	if out != nil {
 		t.Fatalf("env-only result should produce no stdout, got %q", out)
+	}
+	written, err := os.ReadFile(envPath)
+	if err != nil {
+		t.Fatal(err)
 	}
 	got := string(written)
 	for _, line := range []string{`export FOO='bar'`, `export BAZ='qux'`} {
@@ -68,29 +66,21 @@ func TestEncode_SessionStartEnv(t *testing.T) {
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, err := encode("PreToolUse", nil)
-	if err != nil || out != nil {
-		t.Fatalf("zero output should be silent, got %q err=%v", out, err)
+	out, code, err := codec.Encode("PreToolUse", preToolUseResults{}.Noop())
+	if err != nil || out != nil || code != SuccessExit {
+		t.Fatalf("zero output should be silent, got %q code=%d err=%v", out, code, err)
 	}
 }
 
 func TestEncode_EventOutputMismatch(t *testing.T) {
-	_, err := encode(EventPostToolUse, preToolUseResults{}.Allow())
+	_, _, err := codec.Encode(EventPostToolUse, preToolUseResults{}.Allow())
 	if err == nil {
 		t.Fatal("expected incompatible event/output error")
 	}
 }
 
-func TestEncode_NilOutput(t *testing.T) {
-	var typedNil PreToolUseOutput
-	out, err := encode("PreToolUse", typedNil)
-	if err != nil || out != nil {
-		t.Fatalf("nil output should be silent, got %q err=%v", out, err)
-	}
-}
-
 func TestEncode_PermissionRequestInterrupt(t *testing.T) {
-	out, err := encode("PermissionRequest", permissionRequestResults{}.Deny("policy").WithInterrupt(true))
+	out, _, err := codec.Encode("PermissionRequest", permissionRequestResults{}.Deny("policy").WithInterrupt(true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +93,7 @@ func TestEncode_PermissionRequestInterrupt(t *testing.T) {
 }
 
 func TestWriteEnvFile_InvalidKey(t *testing.T) {
-	err := WriteEnvFile(
+	err := writeEnvFile(
 		map[string]string{"FOO\nBAR": "value"},
 		func(string) string { return "/tmp/env.sh" },
 		nil,

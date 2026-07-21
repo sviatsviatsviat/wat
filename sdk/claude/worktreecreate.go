@@ -43,11 +43,11 @@ type worktreeCreateOutput struct {
 	worktreePath string
 }
 
-func (worktreeCreateOutput) isClaudeOutput() {}
-
 func (worktreeCreateOutput) isWorktreeCreateOutput() {}
-func (o worktreeCreateOutput) isZero() bool {
-	return o.common.isZero() && o.worktreePath == ""
+
+// IsZero reports whether this hook response is empty.
+func (o worktreeCreateOutput) IsZero() bool {
+	return o.common.IsZero() && o.worktreePath == ""
 }
 
 // WithContinue sets whether Claude should continue the session.
@@ -96,7 +96,8 @@ func (worktreeCreateResults) Path(path string) WorktreeCreateOutput {
 	return worktreeCreateOutput{worktreePath: path}
 }
 
-func (worktreeCreateOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (worktreeCreateOutput) AllowedEvents() []string {
 	return []string{EventWorktreeCreate}
 }
 
@@ -105,6 +106,11 @@ func (o worktreeCreateOutput) encodeInto(top, hso map[string]any) {
 	if o.worktreePath != "" {
 		hso["worktreePath"] = o.worktreePath
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o worktreeCreateOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // WorktreeCreate registers a WorktreeCreate handler on the chain.

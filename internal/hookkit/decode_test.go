@@ -36,7 +36,7 @@ func (e wireEvent) EventName() string { return e.HookEventName }
 func TestEventDecoder(t *testing.T) {
 	t.Parallel()
 	decodeErr := errors.New("decode")
-	c := NewCodec("test", errors.New("empty"), decodeErr, errors.New("name"))
+	c := NewCodec("test", errors.New("empty"), decodeErr, errors.New("name"), nil)
 	c.Register("X", EventDecoder[wireEvent](c))
 
 	ev, err := c.Decode([]byte(`{"hook_event_name":"X"}`))

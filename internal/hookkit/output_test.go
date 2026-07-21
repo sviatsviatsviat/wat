@@ -2,13 +2,24 @@ package hookkit
 
 import "testing"
 
+type testOutput struct {
+	zero    bool
+	allowed []string
+}
+
+func (o testOutput) IsZero() bool            { return o.zero }
+func (o testOutput) AllowedEvents() []string { return o.allowed }
+func (o testOutput) Encode(string) ([]byte, int, error) {
+	return nil, 0, nil
+}
+
 func TestValidateEncodePair(t *testing.T) {
 	t.Parallel()
-	out := struct{}{}
-	if err := ValidateEncodePair("claude", "preToolUse", out, []string{"preToolUse"}, nil); err != nil {
+	out := testOutput{allowed: []string{"preToolUse"}}
+	if err := ValidateEncodePair("claude", "preToolUse", out, nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := ValidateEncodePair("claude", "stop", out, []string{"preToolUse"}, nil); err == nil {
+	if err := ValidateEncodePair("claude", "stop", out, nil); err == nil {
 		t.Fatal("expected incompatible event error")
 	}
 	canonicalize := func(name string) (string, bool) {
@@ -17,32 +28,8 @@ func TestValidateEncodePair(t *testing.T) {
 		}
 		return name, false
 	}
-	if err := ValidateEncodePair("copilot", "PreToolUse", out, []string{"PreToolUse"}, canonicalize); err != nil {
+	out = testOutput{allowed: []string{"PreToolUse"}}
+	if err := ValidateEncodePair("copilot", "PreToolUse", out, canonicalize); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestNormalizeOutput(t *testing.T) {
-	t.Parallel()
-	type out struct {
-		X int
-	}
-	v := out{X: 1}
-	if got := NormalizeOutput(&v); got.(out).X != 1 {
-		t.Fatal("NormalizeOutput should dereference pointer")
-	}
-	if NormalizeOutput(nil) != nil {
-		t.Fatal("NormalizeOutput(nil) should be nil")
-	}
-}
-
-func TestIsZeroOutput(t *testing.T) {
-	t.Parallel()
-	type zeroable struct{}
-	if !IsZeroOutput(zeroable{}) {
-		t.Fatal("IsZeroOutput should treat empty struct as zero")
-	}
-	if !IsZeroOutput(nil) {
-		t.Fatal("IsZeroOutput(nil) should be true")
 	}
 }

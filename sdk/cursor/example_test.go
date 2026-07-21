@@ -12,7 +12,7 @@ func ExampleUseHooks() {
 		if hook.Event.Command == "rm -rf /" {
 			return r.Deny("blocked"), nil
 		}
-		return nil, nil
+		return r.Noop(), nil
 	})
 	// Hook entrypoint: run.Main()
 	_ = run.Main

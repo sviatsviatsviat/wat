@@ -1,53 +1,25 @@
 package cursor
 
 import (
-	"fmt"
-
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// Output is any Cursor hook response. Only this package implements it.
-type Output interface {
-	isCursorOutput()
+// Output is any Cursor hook response.
+type Output = hookkit.Output
+
+type encoder struct{}
+
+func newEncoder() hookkit.Encoder {
+	return encoder{}
 }
 
-// outputEncoder is implemented by concrete hook outputs for encode.
-type outputEncoder interface {
-	Output
-	isZero() bool
-	allowedEvents() []string
-	encode(eventName string) ([]byte, int, error)
-}
-
-// encode renders a typed output as Cursor stdout JSON and returns the
-// process exit code.
-func encode(eventName string, out Output) ([]byte, int, error) {
-	normalized := hookkit.NormalizeOutput(out)
-	if normalized == nil {
+// Encode validates out and renders Cursor stdout JSON.
+func (encoder) Encode(eventName string, out Output) ([]byte, int, error) {
+	if out.IsZero() {
 		return nil, 0, nil
 	}
-	enc, ok := normalized.(outputEncoder)
-	if !ok {
-		return nil, 0, fmt.Errorf("cursor: encode: unsupported output type %T", normalized)
-	}
-	if enc.isZero() {
-		return nil, 0, nil
-	}
-	if err := hookkit.ValidateEncodePair(Dialect, eventName, normalized, enc.allowedEvents(), nil); err != nil {
+	if err := hookkit.ValidateEncodePair(Dialect, eventName, out, nil); err != nil {
 		return nil, 0, err
 	}
-	return enc.encode(eventName)
+	return out.Encode(eventName)
 }
-
-func isZeroOutput(out Output) bool {
-	if out == nil {
-		return true
-	}
-	if z, ok := out.(interface{ isZero() bool }); ok {
-		return z.isZero()
-	}
-	return hookkit.IsZeroOutput(out)
-}
-
-// IsZeroOutput reports whether out is an empty hook response.
-func IsZeroOutput(out Output) bool { return isZeroOutput(out) }

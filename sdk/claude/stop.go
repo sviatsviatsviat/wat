@@ -51,11 +51,11 @@ type stopOutput struct {
 	additionalContext string
 }
 
-func (stopOutput) isClaudeOutput() {}
-
 func (stopOutput) isStopOutput() {}
-func (o stopOutput) isZero() bool {
-	return o.common.isZero() && !o.block && o.reason == "" && o.additionalContext == ""
+
+// IsZero reports whether this hook response is empty.
+func (o stopOutput) IsZero() bool {
+	return o.common.IsZero() && !o.block && o.reason == "" && o.additionalContext == ""
 }
 
 // WithAdditionalContext is non-error feedback that continues the conversation.
@@ -117,7 +117,8 @@ func (stopResults) FollowUp(reason string) StopOutput {
 	return stopOutput{block: true, reason: reason}
 }
 
-func (stopOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (stopOutput) AllowedEvents() []string {
 	return []string{EventStop, EventSubagentStop}
 }
 
@@ -132,6 +133,11 @@ func (o stopOutput) encodeInto(top, hso map[string]any) {
 	if o.additionalContext != "" {
 		hso["additionalContext"] = o.additionalContext
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o stopOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // Stop registers a Stop handler on the chain.

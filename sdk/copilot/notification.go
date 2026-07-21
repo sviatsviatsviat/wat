@@ -33,11 +33,10 @@ type notificationOutput struct {
 	additionalContext string
 }
 
-func (notificationOutput) isCopilotOutput() {}
-
 func (notificationOutput) isNotificationOutput() {}
 
-func (o notificationOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o notificationOutput) IsZero() bool {
 	return o.additionalContext == ""
 }
 
@@ -64,11 +63,14 @@ func (notificationResults) Noop() NotificationOutput {
 	return notificationOutput{}
 }
 
-func (notificationOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (notificationOutput) AllowedEvents() []string {
 	return []string{EventNotification}
 }
 
-func (o notificationOutput) encode() ([]byte, int, error) {
+// Encode renders this output as Copilot stdout JSON.
+func (o notificationOutput) Encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	return encodeAdditionalContext(o.additionalContext)
 }
 

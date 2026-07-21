@@ -54,7 +54,7 @@ func TestDecodeEncode_BeforeShellDeny(t *testing.T) {
 		t.Fatalf("bad event: %+v", shell)
 	}
 
-	out, code, err := encode(EventBeforeShellExecution, permissionResults{}.Deny("force push blocked"))
+	out, code, err := codec.Encode(EventBeforeShellExecution, permissionResults{}.Deny("force push blocked"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestDecodeEncode_StopFollowUp(t *testing.T) {
 		t.Fatalf("bad stop: %+v", stop)
 	}
 
-	out, code, err := encode(EventStop, stopResults{}.FollowUp("retry with fixed creds"))
+	out, code, err := codec.Encode(EventStop, stopResults{}.FollowUp("retry with fixed creds"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -329,14 +329,14 @@ func reflectTypeName(v any) string {
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, code, err := encode(EventBeforeShellExecution, nil)
+	out, code, err := codec.Encode(EventBeforeShellExecution, permissionResults{}.Noop())
 	if err != nil || code != 0 || out != nil {
 		t.Fatalf("zero result should be silent, got %q code=%d err=%v", out, code, err)
 	}
 }
 
 func TestEncode_BeforeSubmitPromptBlock(t *testing.T) {
-	out, code, err := encode(EventBeforeSubmitPrompt, beforeSubmitPromptResults{}.Block("blocked"))
+	out, code, err := codec.Encode(EventBeforeSubmitPrompt, beforeSubmitPromptResults{}.Block("blocked"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -350,7 +350,7 @@ func TestEncode_BeforeSubmitPromptBlock(t *testing.T) {
 }
 
 func TestEncode_SessionStartEnv(t *testing.T) {
-	out, code, err := encode(EventSessionStart, sessionStartResults{}.Noop().
+	out, code, err := codec.Encode(EventSessionStart, sessionStartResults{}.Noop().
 		WithEnv(map[string]string{"K": "V"}).
 		WithAdditionalContext("ctx"))
 	if err != nil || code != 0 {
@@ -369,7 +369,7 @@ func TestEncode_SessionStartEnv(t *testing.T) {
 }
 
 func TestEncode_TabFileReadDeny(t *testing.T) {
-	out, code, err := encode(EventBeforeTabFileRead, permissionResults{}.Deny("no tab reads"))
+	out, code, err := codec.Encode(EventBeforeTabFileRead, permissionResults{}.Deny("no tab reads"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -382,7 +382,7 @@ func TestEncode_TabFileReadDeny(t *testing.T) {
 }
 
 func TestEncode_PermissionUpdatedInputEmptyEventName(t *testing.T) {
-	out, code, err := encode("", permissionResults{}.Allow().WithUpdatedInput(map[string]any{"command": "ls"}))
+	out, code, err := codec.Encode("", permissionResults{}.Allow().WithUpdatedInput(map[string]any{"command": "ls"}))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}

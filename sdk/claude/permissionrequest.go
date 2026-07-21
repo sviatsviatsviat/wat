@@ -64,11 +64,11 @@ type permissionRequestOutput struct {
 	additionalContext string
 }
 
-func (permissionRequestOutput) isClaudeOutput() {}
-
 func (permissionRequestOutput) isPermissionRequestOutput() {}
-func (o permissionRequestOutput) isZero() bool {
-	return o.common.isZero() && o.behavior == "" && o.updatedInput == nil &&
+
+// IsZero reports whether this hook response is empty.
+func (o permissionRequestOutput) IsZero() bool {
+	return o.common.IsZero() && o.behavior == "" && o.updatedInput == nil &&
 		o.message == "" && !o.interrupt && o.additionalContext == ""
 }
 
@@ -143,7 +143,8 @@ func (permissionRequestResults) Deny(message string) PermissionRequestOutput {
 	return permissionRequestOutput{behavior: "deny", message: message}
 }
 
-func (permissionRequestOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (permissionRequestOutput) AllowedEvents() []string {
 	return []string{EventPermissionRequest}
 }
 
@@ -165,6 +166,11 @@ func (o permissionRequestOutput) encodeInto(top, hso map[string]any) {
 	if o.additionalContext != "" {
 		hso["additionalContext"] = o.additionalContext
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o permissionRequestOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // PermissionRequest registers a PermissionRequest handler on the chain.

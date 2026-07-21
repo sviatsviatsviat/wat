@@ -1,36 +1,19 @@
 package hookkit
 
-import (
-	"fmt"
-	"reflect"
-)
+import "fmt"
 
-// NormalizeOutput dereferences a pointer output value when non-nil.
-func NormalizeOutput(out any) any {
-	if out == nil {
-		return nil
-	}
-	v := reflect.ValueOf(out)
-	if v.Kind() != reflect.Pointer {
-		return out
-	}
-	if v.IsNil() {
-		return nil
-	}
-	return v.Elem().Interface()
+// Output is a hook response. Concrete per-agent types implement IsZero,
+// AllowedEvents, and Encode; package encoders orchestrate validation and
+// dialect-specific side effects before calling Encode.
+type Output interface {
+	IsZero() bool
+	AllowedEvents() []string
+	Encode(eventName string) (stdout []byte, exit int, err error)
 }
 
-// IsZeroOutput reports whether out is zero using reflection only.
-func IsZeroOutput(out any) bool {
-	if out == nil {
-		return true
-	}
-	return reflect.ValueOf(out).IsZero()
-}
-
-// ValidateEncodePair checks that eventName is allowed for the given output type.
+// ValidateEncodePair checks that eventName is allowed for the given output.
 // canonicalize may remap eventName before comparison; pass nil to compare directly.
-func ValidateEncodePair(label, eventName string, out any, allowed []string, canonicalize func(string) (string, bool)) error {
+func ValidateEncodePair(label, eventName string, out Output, canonicalize func(string) (string, bool)) error {
 	if eventName == "" {
 		return nil
 	}
@@ -40,7 +23,7 @@ func ValidateEncodePair(label, eventName string, out any, allowed []string, cano
 			canonical = mapped
 		}
 	}
-	for _, name := range allowed {
+	for _, name := range out.AllowedEvents() {
 		if canonical == name {
 			return nil
 		}

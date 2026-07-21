@@ -60,12 +60,11 @@ type preToolUseOutput struct {
 	additionalContext string
 }
 
-func (preToolUseOutput) isClaudeOutput() {}
-
 func (preToolUseOutput) isPreToolUseOutput() {}
 
-func (o preToolUseOutput) isZero() bool {
-	return o.common.isZero() && o.decision == "" && o.reason == "" &&
+// IsZero reports whether this hook response is empty.
+func (o preToolUseOutput) IsZero() bool {
+	return o.common.IsZero() && o.decision == "" && o.reason == "" &&
 		o.updatedInput == nil && o.additionalContext == ""
 }
 
@@ -155,7 +154,8 @@ func (preToolUseResults) Noop() PreToolUseOutput {
 	return preToolUseOutput{}
 }
 
-func (preToolUseOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (preToolUseOutput) AllowedEvents() []string {
 	return []string{EventPreToolUse}
 }
 
@@ -175,6 +175,11 @@ func (o preToolUseOutput) encodeInto(top, hso map[string]any) {
 	if o.additionalContext != "" {
 		hso["additionalContext"] = o.additionalContext
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o preToolUseOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // PreToolUse registers a PreToolUse handler on the chain.

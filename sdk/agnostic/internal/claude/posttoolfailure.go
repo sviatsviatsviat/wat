@@ -61,4 +61,4 @@ type postToolFailureResult struct {
 }
 
 // IsZero reports whether the result carries no instruction.
-func (r postToolFailureResult) IsZero() bool { return sdkclaude.IsZeroOutput(r.native) }
+func (r postToolFailureResult) IsZero() bool { return r.native.IsZero() }

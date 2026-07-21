@@ -43,11 +43,10 @@ type subagentStartOutput struct {
 	additionalContext string
 }
 
-func (subagentStartOutput) isCopilotOutput() {}
-
 func (subagentStartOutput) isSubagentStartOutput() {}
 
-func (o subagentStartOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o subagentStartOutput) IsZero() bool {
 	return o.additionalContext == ""
 }
 
@@ -74,11 +73,14 @@ func (subagentStartResults) Noop() SubagentStartOutput {
 	return subagentStartOutput{}
 }
 
-func (subagentStartOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (subagentStartOutput) AllowedEvents() []string {
 	return []string{EventSubagentStart}
 }
 
-func (o subagentStartOutput) encode() ([]byte, int, error) {
+// Encode renders this output as Copilot stdout JSON.
+func (o subagentStartOutput) Encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	return encodeAdditionalContext(o.additionalContext)
 }
 

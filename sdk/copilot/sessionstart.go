@@ -37,11 +37,10 @@ type sessionStartOutput struct {
 	additionalContext string
 }
 
-func (sessionStartOutput) isCopilotOutput() {}
-
 func (sessionStartOutput) isSessionStartOutput() {}
 
-func (o sessionStartOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o sessionStartOutput) IsZero() bool {
 	return o.additionalContext == ""
 }
 
@@ -68,11 +67,14 @@ func (sessionStartResults) Noop() SessionStartOutput {
 	return sessionStartOutput{}
 }
 
-func (sessionStartOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (sessionStartOutput) AllowedEvents() []string {
 	return []string{EventSessionStart}
 }
 
-func (o sessionStartOutput) encode() ([]byte, int, error) {
+// Encode renders this output as Copilot stdout JSON.
+func (o sessionStartOutput) Encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	return encodeAdditionalContext(o.additionalContext)
 }
 

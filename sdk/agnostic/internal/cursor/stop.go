@@ -93,4 +93,4 @@ type stopResult struct {
 }
 
 // IsZero reports whether the result carries no instruction.
-func (r stopResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
+func (r stopResult) IsZero() bool { return r.native.IsZero() }

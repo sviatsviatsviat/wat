@@ -59,11 +59,10 @@ type postToolFailureOutput struct {
 	context string
 }
 
-func (postToolFailureOutput) isCopilotOutput() {}
-
 func (postToolFailureOutput) isPostToolFailureOutput() {}
 
-func (o postToolFailureOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o postToolFailureOutput) IsZero() bool {
 	return o.context == ""
 }
 
@@ -90,11 +89,14 @@ func (postToolFailureResults) Noop() PostToolFailureOutput {
 	return postToolFailureOutput{}
 }
 
-func (postToolFailureOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (postToolFailureOutput) AllowedEvents() []string {
 	return []string{EventPostToolUseFailure}
 }
 
-func (o postToolFailureOutput) encode() ([]byte, int, error) {
+// Encode renders this output as Copilot stdout JSON.
+func (o postToolFailureOutput) Encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	if o.context == "" {
 		return nil, 0, nil
 	}

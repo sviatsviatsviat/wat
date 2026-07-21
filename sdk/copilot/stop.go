@@ -15,11 +15,10 @@ type stopOutput struct {
 	reason string
 }
 
-func (stopOutput) isCopilotOutput() {}
-
 func (stopOutput) isStopOutput() {}
 
-func (o stopOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o stopOutput) IsZero() bool {
 	return o.reason == ""
 }
 
@@ -46,11 +45,14 @@ func (stopResults) Noop() StopOutput {
 	return stopOutput{}
 }
 
-func (stopOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (stopOutput) AllowedEvents() []string {
 	return []string{EventAgentStop, EventSubagentStop}
 }
 
-func (o stopOutput) encode() ([]byte, int, error) {
+// Encode renders this output as Copilot stdout JSON.
+func (o stopOutput) Encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	if o.reason == "" {
 		return nil, 0, nil
 	}

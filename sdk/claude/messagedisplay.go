@@ -53,11 +53,11 @@ type messageDisplayOutput struct {
 	displayContent *string
 }
 
-func (messageDisplayOutput) isClaudeOutput() {}
-
 func (messageDisplayOutput) isMessageDisplayOutput() {}
-func (o messageDisplayOutput) isZero() bool {
-	return o.common.isZero() && o.displayContent == nil
+
+// IsZero reports whether this hook response is empty.
+func (o messageDisplayOutput) IsZero() bool {
+	return o.common.IsZero() && o.displayContent == nil
 }
 
 // WithContinue sets whether Claude should continue the session.
@@ -107,7 +107,8 @@ func (messageDisplayResults) Override(content string) MessageDisplayOutput {
 	return messageDisplayOutput{displayContent: &c}
 }
 
-func (messageDisplayOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (messageDisplayOutput) AllowedEvents() []string {
 	return []string{EventMessageDisplay}
 }
 
@@ -116,6 +117,11 @@ func (o messageDisplayOutput) encodeInto(top, hso map[string]any) {
 	if o.displayContent != nil {
 		hso["displayContent"] = *o.displayContent
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o messageDisplayOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // MessageDisplay registers a MessageDisplay handler on the chain.

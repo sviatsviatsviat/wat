@@ -23,7 +23,8 @@ type common struct {
 	terminalSequence string
 }
 
-func (c common) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (c common) IsZero() bool {
 	return c.cont == nil && c.stopReason == "" && !c.suppressOutput &&
 		c.systemMessage == "" && c.terminalSequence == ""
 }
@@ -83,12 +84,11 @@ type commonOutput struct {
 	additionalContext string
 }
 
-func (commonOutput) isClaudeOutput() {}
-
 func (commonOutput) isCommonOutput() {}
 
-func (o commonOutput) isZero() bool {
-	return o.common.isZero() && o.additionalContext == ""
+// IsZero reports whether this hook response is empty.
+func (o commonOutput) IsZero() bool {
+	return o.common.IsZero() && o.additionalContext == ""
 }
 
 // WithAdditionalContext injects model context.
@@ -145,7 +145,8 @@ func applyCommon(top map[string]any, c common) {
 	}
 }
 
-func (commonOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (commonOutput) AllowedEvents() []string {
 	return []string{
 		EventSetup,
 		EventSessionEnd,
@@ -173,4 +174,9 @@ func (o commonOutput) encodeInto(top, hso map[string]any) {
 	if o.additionalContext != "" {
 		hso["additionalContext"] = o.additionalContext
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o commonOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }

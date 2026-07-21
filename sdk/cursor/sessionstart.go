@@ -35,11 +35,10 @@ type sessionStartOutput struct {
 	additionalContext string
 }
 
-func (sessionStartOutput) isCursorOutput() {}
-
 func (sessionStartOutput) isSessionStartOutput() {}
 
-func (o sessionStartOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o sessionStartOutput) IsZero() bool {
 	return len(o.env) == 0 && o.additionalContext == ""
 }
 
@@ -78,11 +77,13 @@ func (sessionStartResults) Noop() SessionStartOutput {
 	return sessionStartOutput{}
 }
 
-func (sessionStartOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (sessionStartOutput) AllowedEvents() []string {
 	return []string{EventSessionStart}
 }
 
-func (o sessionStartOutput) encode(eventName string) ([]byte, int, error) {
+// Encode renders this output as Cursor stdout JSON.
+func (o sessionStartOutput) Encode(eventName string) ([]byte, int, error) {
 	_ = eventName
 	out := map[string]any{}
 	if len(o.env) > 0 {

@@ -7,78 +7,40 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// Output is any Claude Code hook response. Only this package implements it.
-type Output interface {
-	isClaudeOutput()
+// Output is any Claude Code hook response.
+type Output = hookkit.Output
+
+type encoder struct{}
+
+func newEncoder() hookkit.Encoder {
+	return encoder{}
 }
 
-// outputEncoder is implemented by concrete hook outputs for encode.
-type outputEncoder interface {
-	Output
-	isZero() bool
-	allowedEvents() []string
-	encodeInto(top, hso map[string]any)
-}
-
-// encode renders a typed output as Claude Code stdout JSON.
-// eventName is written into hookSpecificOutput.hookEventName.
-// A nil or zero output produces no stdout.
-func encode(eventName string, out Output, opts ...Option) ([]byte, error) {
-	cfg := defaultRuntimeConfig()
-	applyOptions(&cfg, opts...)
+// Encode validates out and renders Claude Code stdout JSON.
+func (encoder) Encode(eventName string, out Output) ([]byte, int, error) {
 	if eventName == "" {
-		return nil, fmt.Errorf("claude: encode: empty event name")
+		return nil, SuccessExit, fmt.Errorf("claude: encode: empty event name")
 	}
-	normalized := hookkit.NormalizeOutput(out)
-	if err := applyEnvSideEffect(eventName, normalized, cfg); err != nil {
-		return nil, err
+	if out.IsZero() {
+		return nil, SuccessExit, nil
 	}
-	if normalized == nil {
-		return nil, nil
+	if err := hookkit.ValidateEncodePair(Dialect, eventName, out, nil); err != nil {
+		return nil, SuccessExit, err
 	}
-	enc, ok := normalized.(outputEncoder)
-	if !ok {
-		return nil, fmt.Errorf("claude: encode: unsupported output type %T", normalized)
-	}
-	if enc.isZero() {
-		return nil, nil
-	}
-	if err := hookkit.ValidateEncodePair(Dialect, eventName, normalized, enc.allowedEvents(), nil); err != nil {
-		return nil, err
-	}
+	return out.Encode(eventName)
+}
 
+// marshalHookOutput builds Claude stdout JSON from top-level and hookSpecificOutput maps.
+func marshalHookOutput(eventName string, fill func(top, hso map[string]any)) ([]byte, int, error) {
 	top, hso := map[string]any{}, map[string]any{}
-	enc.encodeInto(top, hso)
+	fill(top, hso)
 	if len(hso) > 0 {
 		hso["hookEventName"] = eventName
 		top["hookSpecificOutput"] = hso
 	}
 	if len(top) == 0 {
-		return nil, nil
+		return nil, SuccessExit, nil
 	}
-	return json.Marshal(top)
+	b, err := json.Marshal(top)
+	return b, SuccessExit, err
 }
-
-func applyEnvSideEffect(eventName string, out any, cfg runtimeConfig) error {
-	if eventName != EventSessionStart {
-		return nil
-	}
-	w, ok := out.(interface{ writeSessionEnv(runtimeConfig) error })
-	if !ok {
-		return nil
-	}
-	return w.writeSessionEnv(cfg)
-}
-
-func isZeroOutput(out Output) bool {
-	if out == nil {
-		return true
-	}
-	if z, ok := out.(interface{ isZero() bool }); ok {
-		return z.isZero()
-	}
-	return hookkit.IsZeroOutput(out)
-}
-
-// IsZeroOutput reports whether out is an empty hook response.
-func IsZeroOutput(out Output) bool { return isZeroOutput(out) }

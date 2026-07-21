@@ -53,11 +53,11 @@ type elicitationOutput struct {
 	content map[string]any
 }
 
-func (elicitationOutput) isClaudeOutput() {}
-
 func (elicitationOutput) isElicitationOutput() {}
-func (o elicitationOutput) isZero() bool {
-	return o.common.isZero() && o.action == "" && o.content == nil
+
+// IsZero reports whether this hook response is empty.
+func (o elicitationOutput) IsZero() bool {
+	return o.common.IsZero() && o.action == "" && o.content == nil
 }
 
 // WithContent sets the elicitation response content.
@@ -126,7 +126,8 @@ func (elicitationResults) Cancel() ElicitationOutput {
 	return elicitationOutput{action: "cancel"}
 }
 
-func (elicitationOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (elicitationOutput) AllowedEvents() []string {
 	return []string{EventElicitation}
 }
 
@@ -138,6 +139,11 @@ func (o elicitationOutput) encodeInto(top, hso map[string]any) {
 	if o.content != nil {
 		hso["content"] = o.content
 	}
+}
+
+// Encode renders this output as Claude Code stdout JSON.
+func (o elicitationOutput) Encode(eventName string) ([]byte, int, error) {
+	return marshalHookOutput(eventName, o.encodeInto)
 }
 
 // Elicitation registers a Elicitation handler on the chain.

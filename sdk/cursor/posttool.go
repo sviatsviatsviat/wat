@@ -20,11 +20,10 @@ type postToolOutput struct {
 	additionalContext string
 }
 
-func (postToolOutput) isCursorOutput() {}
-
 func (postToolOutput) isPostToolOutput() {}
 
-func (o postToolOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o postToolOutput) IsZero() bool {
 	return o.updatedMCPOutput == nil && o.additionalContext == ""
 }
 
@@ -63,7 +62,8 @@ func (postToolResults) Noop() PostToolOutput {
 	return postToolOutput{}
 }
 
-func (postToolOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (postToolOutput) AllowedEvents() []string {
 	return []string{
 		EventPostToolUse,
 		EventPostToolUseFailure,
@@ -73,7 +73,8 @@ func (postToolOutput) allowedEvents() []string {
 	}
 }
 
-func (o postToolOutput) encode(eventName string) ([]byte, int, error) {
+// Encode renders this output as Cursor stdout JSON.
+func (o postToolOutput) Encode(eventName string) ([]byte, int, error) {
 	_ = eventName
 	out := map[string]any{}
 	if o.updatedMCPOutput != nil {

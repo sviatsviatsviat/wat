@@ -12,7 +12,7 @@ func ExampleUseHooks() {
 		if _, ok := hook.Event.ToolInput.AsBash(); ok {
 			return r.Deny("blocked"), nil
 		}
-		return nil, nil
+		return r.Noop(), nil
 	})
 	// Hook entrypoint: run.Main()
 	_ = run.Main

@@ -40,7 +40,7 @@ func TestDecodeEncode_PreToolDeny(t *testing.T) {
 		t.Fatalf("bad tool: name=%q shell=%q", pre.NativeToolName(), pre.ShellCommand())
 	}
 
-	out, code, err := encode(EventPreToolUse, preToolResults{}.Deny("destructive command"))
+	out, code, err := codec.Encode(EventPreToolUse, preToolResults{}.Deny("destructive command"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -341,7 +341,7 @@ func TestDecode_ToolInputNotAliased(t *testing.T) {
 }
 
 func TestEncode_PreToolAllowModifiedArgs(t *testing.T) {
-	out, code, err := encode(EventPreToolUse, preToolResults{}.Allow().WithModifiedArgs(map[string]any{"command": "echo safe"}))
+	out, code, err := codec.Encode(EventPreToolUse, preToolResults{}.Allow().WithModifiedArgs(map[string]any{"command": "echo safe"}))
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -351,7 +351,7 @@ func TestEncode_PreToolAllowModifiedArgs(t *testing.T) {
 }
 
 func TestEncode_PostToolUpdatedOutput(t *testing.T) {
-	out, code, err := encode(EventPostToolUse, postToolResults{}.Context("extra guidance").WithModifiedResult("rewritten"))
+	out, code, err := codec.Encode(EventPostToolUse, postToolResults{}.Context("extra guidance").WithModifiedResult("rewritten"))
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -362,7 +362,7 @@ func TestEncode_PostToolUpdatedOutput(t *testing.T) {
 }
 
 func TestEncode_StopFollowUp(t *testing.T) {
-	out, code, err := encode(EventAgentStop, stopResults{}.FollowUp("run the tests"))
+	out, code, err := codec.Encode(EventAgentStop, stopResults{}.FollowUp("run the tests"))
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -372,7 +372,7 @@ func TestEncode_StopFollowUp(t *testing.T) {
 }
 
 func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
-	out, code, err := encode(EventPermissionRequest, permissionRequestResults{}.Deny("blocked").WithInterrupt(true))
+	out, code, err := codec.Encode(EventPermissionRequest, permissionRequestResults{}.Deny("blocked").WithInterrupt(true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -385,7 +385,7 @@ func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
 }
 
 func TestEncode_PermissionRequestAsk(t *testing.T) {
-	out, code, err := encode(EventPermissionRequest, permissionRequestResults{}.Ask("needs user confirmation"))
+	out, code, err := codec.Encode(EventPermissionRequest, permissionRequestResults{}.Ask("needs user confirmation"))
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -395,7 +395,7 @@ func TestEncode_PermissionRequestAsk(t *testing.T) {
 }
 
 func TestEncode_PostToolFailureContext(t *testing.T) {
-	out, code, err := encode(EventPostToolUseFailure, postToolFailureResults{}.Context("retry with smaller input"))
+	out, code, err := codec.Encode(EventPostToolUseFailure, postToolFailureResults{}.Context("retry with smaller input"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -408,7 +408,7 @@ func TestEncode_PostToolFailureContext(t *testing.T) {
 }
 
 func TestEncode_SessionStartContext(t *testing.T) {
-	out, code, err := encode(EventSessionStart, sessionStartResults{}.Context("project uses go test ./..."))
+	out, code, err := codec.Encode(EventSessionStart, sessionStartResults{}.Context("project uses go test ./..."))
 	if err != nil || code != 0 {
 		t.Fatal(err, code)
 	}
@@ -418,14 +418,14 @@ func TestEncode_SessionStartContext(t *testing.T) {
 }
 
 func TestEncode_ZeroOutput(t *testing.T) {
-	out, code, err := encode(EventPreToolUse, nil)
+	out, code, err := codec.Encode(EventPreToolUse, preToolResults{}.Noop())
 	if err != nil || code != 0 || out != nil {
 		t.Fatalf("zero output should be silent, got %q code=%d err=%v", out, code, err)
 	}
 }
 
 func TestEncode_EventOutputMismatch(t *testing.T) {
-	_, _, err := encode(EventPostToolUse, preToolResults{}.Allow())
+	_, _, err := codec.Encode(EventPostToolUse, preToolResults{}.Allow())
 	if err == nil {
 		t.Fatal("expected incompatible event/output error")
 	}

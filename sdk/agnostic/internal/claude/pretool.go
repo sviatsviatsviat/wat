@@ -71,7 +71,7 @@ type preToolResult struct {
 }
 
 // IsZero reports whether the result carries no instruction.
-func (r preToolResult) IsZero() bool { return sdkclaude.IsZeroOutput(r.native) }
+func (r preToolResult) IsZero() bool { return r.native.IsZero() }
 
 // WithUpdatedInput replaces tool arguments when set.
 func (r preToolResult) WithUpdatedInput(input map[string]any) model.PreToolResult {

@@ -61,4 +61,4 @@ type sessionStartResult struct {
 }
 
 // IsZero reports whether the result carries no instruction.
-func (r sessionStartResult) IsZero() bool { return sdkcursor.IsZeroOutput(r.native) }
+func (r sessionStartResult) IsZero() bool { return r.native.IsZero() }

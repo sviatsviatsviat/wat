@@ -7,8 +7,8 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// WriteEnvFile appends export lines for env to CLAUDE_ENV_FILE when set.
-func WriteEnvFile(env map[string]string, getenv func(string) string, appendFile func(path string, data []byte) error) error {
+// writeEnvFile appends export lines for env to CLAUDE_ENV_FILE when set.
+func writeEnvFile(env map[string]string, getenv func(string) string, appendFile func(path string, data []byte) error) error {
 	if len(env) == 0 {
 		return nil
 	}
@@ -27,7 +27,7 @@ func WriteEnvFile(env map[string]string, getenv func(string) string, appendFile 
 		if !hookkit.ValidEnvKey(k) {
 			return fmt.Errorf("claude: invalid env key %q", k)
 		}
-		buf = append(buf, []byte(fmt.Sprintf("export %s=%s\n", k, hookkit.ShellSingleQuote(v)))...)
+		buf = fmt.Appendf(buf, "export %s=%s\n", k, hookkit.ShellSingleQuote(v))
 	}
 	return appendFile(path, buf)
 }

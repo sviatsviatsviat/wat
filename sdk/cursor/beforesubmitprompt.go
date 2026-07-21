@@ -37,11 +37,10 @@ type beforeSubmitPromptOutput struct {
 	userMessage string
 }
 
-func (beforeSubmitPromptOutput) isCursorOutput() {}
-
 func (beforeSubmitPromptOutput) isBeforeSubmitPromptOutput() {}
 
-func (o beforeSubmitPromptOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o beforeSubmitPromptOutput) IsZero() bool {
 	return o.cont == nil && o.userMessage == ""
 }
 
@@ -81,11 +80,13 @@ func (beforeSubmitPromptResults) Noop() BeforeSubmitPromptOutput {
 	return beforeSubmitPromptOutput{}
 }
 
-func (beforeSubmitPromptOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (beforeSubmitPromptOutput) AllowedEvents() []string {
 	return []string{EventBeforeSubmitPrompt}
 }
 
-func (o beforeSubmitPromptOutput) encode(eventName string) ([]byte, int, error) {
+// Encode renders this output as Cursor stdout JSON.
+func (o beforeSubmitPromptOutput) Encode(eventName string) ([]byte, int, error) {
 	_ = eventName
 	out := map[string]any{}
 	if o.cont != nil {

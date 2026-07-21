@@ -59,11 +59,10 @@ type postToolOutput struct {
 	additionalContext string
 }
 
-func (postToolOutput) isCopilotOutput() {}
-
 func (postToolOutput) isPostToolOutput() {}
 
-func (o postToolOutput) isZero() bool {
+// IsZero reports whether this hook response is empty.
+func (o postToolOutput) IsZero() bool {
 	return o.modifiedResult == "" && o.additionalContext == ""
 }
 
@@ -96,11 +95,14 @@ func (postToolResults) Noop() PostToolOutput {
 	return postToolOutput{}
 }
 
-func (postToolOutput) allowedEvents() []string {
+// AllowedEvents returns the native event names this output may encode for.
+func (postToolOutput) AllowedEvents() []string {
 	return []string{EventPostToolUse}
 }
 
-func (o postToolOutput) encode() ([]byte, int, error) {
+// Encode renders this output as Copilot stdout JSON.
+func (o postToolOutput) Encode(eventName string) ([]byte, int, error) {
+	_ = eventName
 	out := map[string]any{}
 	if o.modifiedResult != "" {
 		out["modified_result"] = map[string]any{
