@@ -6,4 +6,9 @@
 // under Cursor's default fail-open policy. Hook stdout JSON is encoded
 // internally from Output (sealed; only this package implements it). Payloads
 // must include hook_event_name on the wire.
+//
+// Tool input on PreToolUse and related events is typed as [Input] with AsShell,
+// AsRead, and related accessors (and Tool* name constants) in this package.
+//
+// See ExampleUseHooks in example_test.go for a runnable example.
 package cursor

@@ -350,5 +350,5 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 - Normalization: [`internal/hookkit/toolname.go`](../internal/hookkit/toolname.go) — `NormalizeToolName`; [`sdk/agnostic/tools`](../sdk/agnostic/tools/) — `Input` with `AsBash`, `AsWrite`, and related accessors
 - Tests: [`internal/hookkit/toolname_test.go`](../internal/hookkit/toolname_test.go); [`sdk/agnostic/tools`](../sdk/agnostic/tools/) (`input_test.go`)
 - Port kind/event registries: [`cmd/wat/internal/portconfig/`](../cmd/wat/internal/portconfig/) (`claude/`, `copilot/`, `cursor/`)
-- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, package-internal encode, `UseHooks` registration into [`sdk/run`](../sdk/run/), `sdk/cursor/tools` event-bound tool input (`AsShell`, …)
-- Tests: [`sdk/cursor/cursor_test.go`](../sdk/cursor/cursor_test.go)
+- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, package-internal encode, `UseHooks` registration into [`sdk/run`](../sdk/run/), event-bound tool input on the same package (`Input` with `AsShell`, …)
+- Tests: [`sdk/cursor/decode_test.go`](../sdk/cursor/decode_test.go) and per-hook tests under [`sdk/cursor/internal/hooks/`](../sdk/cursor/internal/hooks/)

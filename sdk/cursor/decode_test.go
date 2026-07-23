@@ -4,27 +4,14 @@ import (
 	"errors"
 	"strings"
 	"testing"
-)
 
-func mustDecode[E any](t *testing.T, raw string) E {
-	t.Helper()
-	ev, err := codec.Decode([]byte(raw))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ev.EventName() == "" {
-		t.Fatal("EventName empty")
-	}
-	typed, ok := ev.(E)
-	if !ok {
-		t.Fatalf("want %T, got %T", *new(E), ev)
-	}
-	return typed
-}
+	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
 
 func TestDecode_RequiresHookEventName(t *testing.T) {
 	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
-	_, err := codec.Decode([]byte(raw))
+	_, err := runtime.Codec.Decode([]byte(raw))
 	if err == nil {
 		t.Fatal("expected error without hook_event_name")
 	}
@@ -37,7 +24,7 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 }
 
 func TestDecode_UnknownEvent(t *testing.T) {
-	_, err := codec.Decode([]byte(`{"hook_event_name":"FutureEvent","conversation_id":"c1","cwd":"/w"}`))
+	_, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"FutureEvent","conversation_id":"c1","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -48,11 +35,44 @@ func TestDecode_UnknownEvent(t *testing.T) {
 
 func TestDecode_InvalidTypedEvent(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":123}`)
-	_, err := codec.Decode(raw)
+	_, err := runtime.Codec.Decode(raw)
 	if err == nil {
 		t.Fatal("expected error")
 	}
 	if !errors.Is(err, ErrDecodePayload) {
 		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
+	}
+}
+
+func TestEventNames(t *testing.T) {
+	cases := []run.Event{
+		SessionStart{},
+		SessionEnd{},
+		BeforeSubmitPrompt{},
+		PreToolUse{},
+		PostToolUse{},
+		PostToolUseFailure{},
+		BeforeShellExecution{},
+		AfterShellExecution{},
+		BeforeMCPExecution{},
+		AfterMCPExecution{},
+		BeforeReadFile{},
+		AfterFileEdit{},
+		SubagentStart{},
+		SubagentStop{},
+		Stop{},
+		PreCompact{},
+		AfterAgentResponse{},
+		AfterAgentThought{},
+		BeforeTabFileRead{},
+		AfterTabFileEdit{},
+		WorkspaceOpen{},
+	}
+	for _, ev := range cases {
+		t.Run(ev.EventName(), func(t *testing.T) {
+			if ev.EventName() == "" {
+				t.Fatal("EventName() empty")
+			}
+		})
 	}
 }
