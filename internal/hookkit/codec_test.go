@@ -48,6 +48,21 @@ func TestCodec(t *testing.T) {
 	}
 }
 
+func TestCodec_RegisterKeepsFirst(t *testing.T) {
+	t.Parallel()
+	c := NewCodec("test", errors.New("empty"), errors.New("decode"), errors.New("name required"))
+	c.Register("Known", func([]byte) (Event, error) { return namedEvent("first"), nil })
+	c.Register("Known", func([]byte) (Event, error) { return namedEvent("second"), nil })
+
+	got, err := c.Decode([]byte(`{"hook_event_name":"Known"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.EventName() != "first" {
+		t.Fatalf("got = %v, want first registration", got)
+	}
+}
+
 func TestCodec_IsolatedRegistries(t *testing.T) {
 	t.Parallel()
 	empty := errors.New("empty")
