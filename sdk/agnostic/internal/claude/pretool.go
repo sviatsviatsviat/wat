@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
 // RegisterPreTool registers fn on the Claude PreToolUse chain.
-func RegisterPreTool(fn model.PreToolHandler) {
+func RegisterPreTool(fn model.PreToolHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkclaude.UseHooks().PreToolUse(func(ctx context.Context, hook sdkclaude.PreToolUse, native sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
+	return sdkclaude.UseHooks().PreToolUse(func(ctx context.Context, hook sdkclaude.PreToolUse, native sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
 		out, err := fn(ctx, *mapPreToolUse(hook), newPreToolResults(native))
 		if err != nil || out == nil {
 			return nil, err

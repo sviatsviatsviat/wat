@@ -14,12 +14,13 @@ type PreCompactEvent = model.PreCompactEvent
 type PreCompactHandler = model.PreCompactHandler
 
 // OnPreCompact registers an observe-only handler for PreCompact events.
-func (c *chain) OnPreCompact(fn PreCompactHandler) *chain {
+func (c *hooks) OnPreCompact(fn PreCompactHandler) *hooks {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterPreCompact(fn)
-	copilot.RegisterPreCompact(fn)
-	cursor.RegisterPreCompact(fn)
-	return c
+	return c.appendParts(
+		claude.RegisterPreCompact(fn),
+		copilot.RegisterPreCompact(fn),
+		cursor.RegisterPreCompact(fn),
+	)
 }

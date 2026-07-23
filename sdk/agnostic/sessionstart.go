@@ -20,12 +20,13 @@ type SessionStartResults = model.SessionStartResults
 type SessionStartHandler = model.SessionStartHandler
 
 // OnSessionStart registers a handler for SessionStart events across all agents.
-func (c *chain) OnSessionStart(fn SessionStartHandler) *chain {
+func (c *hooks) OnSessionStart(fn SessionStartHandler) *hooks {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterSessionStart(fn)
-	copilot.RegisterSessionStart(fn)
-	cursor.RegisterSessionStart(fn)
-	return c
+	return c.appendParts(
+		claude.RegisterSessionStart(fn),
+		copilot.RegisterSessionStart(fn),
+		cursor.RegisterSessionStart(fn),
+	)
 }

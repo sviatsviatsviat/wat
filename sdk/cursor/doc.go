@@ -1,5 +1,6 @@
 // Package cursor is the Cursor hook SDK. Hook authors register typed handlers
-// with UseHooks, then call run.Main from github.com/sviatsviatsviat/wat/sdk/run.
+// with UseHooks, then pass the chain to run.Serve from
+// github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Permission-gating events return exit code 2 on deny. Handler errors exit 1
 // under Cursor's default fail-open policy. Hook stdout JSON is encoded

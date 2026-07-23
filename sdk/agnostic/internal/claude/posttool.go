@@ -7,14 +7,15 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterPostTool registers fn on the Claude PostToolUse chain.
-func RegisterPostTool(fn model.PostToolHandler) {
+func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkclaude.UseHooks().PostToolUse(func(ctx context.Context, hook sdkclaude.PostToolUse, native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
+	return sdkclaude.UseHooks().PostToolUse(func(ctx context.Context, hook sdkclaude.PostToolUse, native sdkclaude.PostToolUseResults) (sdkclaude.PostToolUseOutput, error) {
 		out, err := fn(ctx, *mapPostToolUse(hook), newPostToolResults(native))
 		if err != nil || out == nil {
 			return nil, err

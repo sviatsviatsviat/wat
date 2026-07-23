@@ -1,10 +1,11 @@
 package event
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"maps"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 func TestEncode_ZeroOutput(t *testing.T) {

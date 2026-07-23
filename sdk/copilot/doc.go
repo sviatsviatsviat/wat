@@ -1,5 +1,5 @@
 // Package copilot is the GitHub Copilot hook SDK. Hook authors register
-// typed handlers with UseHooks, then call run.Main from
+// typed handlers with UseHooks, then pass the chain to run.Serve from
 // github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Hook stdout JSON is encoded internally from Output (sealed; only this package
@@ -11,13 +11,14 @@
 //
 // Example:
 //
-//	copilot.UseHooks().PreToolUse(func(ctx context.Context, hook copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
-//	    if hook.NativeToolName() == "bash" {
-//	        return r.Deny("blocked"), nil
-//	    }
-//	    return r.Noop(), nil
-//	})
-//	run.Main()
+//	run.Serve(
+//	    copilot.UseHooks().PreToolUse(func(ctx context.Context, hook copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+//	        if hook.NativeToolName() == "bash" {
+//	            return r.Deny("blocked"), nil
+//	        }
+//	        return r.Noop(), nil
+//	    }),
+//	)
 //
 // See ExampleUseHooks in example_test.go for a runnable example.
 package copilot

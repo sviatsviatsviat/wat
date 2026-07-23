@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
 // RegisterSessionStart registers fn on the Claude SessionStart chain.
-func RegisterSessionStart(fn model.SessionStartHandler) {
+func RegisterSessionStart(fn model.SessionStartHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkclaude.UseHooks().SessionStart(func(ctx context.Context, hook sdkclaude.SessionStart, native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
+	return sdkclaude.UseHooks().SessionStart(func(ctx context.Context, hook sdkclaude.SessionStart, native sdkclaude.SessionStartResults) (sdkclaude.SessionStartOutput, error) {
 		out, err := fn(ctx, *mapSessionStart(hook), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err

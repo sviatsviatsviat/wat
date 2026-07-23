@@ -2,9 +2,10 @@ package beforesubmitprompt
 
 import (
 	"encoding/json"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/hooks/agent/stopevent"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"

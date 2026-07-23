@@ -9,15 +9,16 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterPostTool registers fn on Cursor PostToolUse, AfterShellExecution,
 // AfterMCPExecution, and AfterFileEdit chains.
-func RegisterPostTool(fn model.PostToolHandler) {
+func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().PostToolUse(func(ctx context.Context, hook sdkcursor.PostToolUse, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+	return sdkcursor.UseHooks().PostToolUse(func(ctx context.Context, hook sdkcursor.PostToolUse, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 		return callPostTool(ctx, mapPostToolUse(hook), native, fn)
 	}).
 		AfterShellExecution(func(ctx context.Context, hook sdkcursor.AfterShellExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {

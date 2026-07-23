@@ -3,16 +3,18 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // RegisterSessionEnd registers fn on the Cursor SessionEnd chain.
-func RegisterSessionEnd(fn model.SessionEndHandler) {
+func RegisterSessionEnd(fn model.SessionEndHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().SessionEnd(func(ctx context.Context, hook sdkcursor.SessionEnd) error {
+	return sdkcursor.UseHooks().SessionEnd(func(ctx context.Context, hook sdkcursor.SessionEnd) error {
 		return fn(ctx, *mapSessionEnd(hook))
 	})
 }

@@ -6,7 +6,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 ## Per-agent SDK skeleton
 
-`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `UseHooks` registration fans adapter handlers onto each agent SDK via `UseHooks()`, wrapping native events and Results builders.
+`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `UseHooks` registration builds deferred adapter chains that `run.Serve` merges by dialect.
 
 Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/internal/hooks/<domain>/<event>/` (per-event package with `event.go` / `output.go` / `results.go`), reexported from the `claude` package root; Copilot and Cursor keep one file per native `hook_event_name` at the package root, including the typed chain method for that event. Shared decode helpers live in `internal/hookkit`. The shared `Event` interface (`EventName()` only) is defined in `internal/hookkit`; per-agent SDKs do not define their own `Event` type. Handlers receive the typed event value directly.
 
@@ -15,13 +15,13 @@ Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/
 | `doc.go` | Package overview |
 | `<event>.go` (copilot/cursor) | Event struct, output, results, chain method, decode, encode for one hook |
 | `internal/hooks/<domain>/<event>/` (claude) | Per-event package: `event.go`, `output.go`, `results.go`, `bind.go` |
-| `export_*.go` / `chain.go` (claude) | Public façade: type aliases and `UseHooks` chain methods |
+| `export_*.go` / `hooks.go` (claude) | Public façade: type aliases and `UseHooks` fluent methods |
 | `registry.go` | Event-name constants, alias tables |
 | `envelope.go` | Shared payload fields (embedded on each event; access via promoted fields) |
 | `exit.go` | Handler/encode exit-code constants |
 | `encode.go` | Unexported encode router (wire mapping) |
-| `register.go` | Dialect codec init and process-router registration |
-| `chain.go` | Zero-arg `UseHooks` and unexported fluent `chain` |
+| `internal/runtime/codec.go` | Dialect codec (event decoder registration) |
+| `hooks.go` | Zero-arg `UseHooks` and unexported fluent registrar (deferred; `Contribute` installs via `run.Registry`) |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
 | `tools/` (copilot/cursor) or root `Input` / `Tool*` (claude) | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
@@ -31,7 +31,7 @@ Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/
 | Location | Role |
 |----------|------|
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool` chain method, adapters, …) |
-| `chain.go` | Zero-arg `UseHooks` and unexported fluent `chain` |
+| `hooks.go` | Zero-arg `UseHooks` and unexported fluent registrar (deferred; `Contribute` installs via `run.Registry`) |
 | `toolcall.go` / `result.go` | Shared leaf types (`ToolCall`, `ToolResult`) and portable result projection |
 | `internal/model/<kind>.go` | Leaf definitions behind root aliases (`*Event`, `*Hook`, `*Handler`, `*Result`); same kind filenames as the package root |
 | `internal/model/toolcall.go` / `leaf.go` / `envelope.go` | Shared leaf payloads (`ToolCall`, `Subagent`, …) and `Envelope` |
@@ -176,7 +176,7 @@ Register with the per-agent SDK when you need features outside the portable inte
 
 ### Per-agent UseHooks coverage
 
-Each per-agent SDK exposes zero-arg `UseHooks` and fluent chain methods with one entry per native hook surface (or shared builder where wire encode is identical). Agnostic `UseHooks` is likewise zero-arg. Claude-only long-tail events decode but have no dedicated portable `On*` — handle them with `sdk/claude` chain methods when available.
+Each per-agent SDK exposes zero-arg `UseHooks` and fluent chain methods with one entry per native hook surface (or shared builder where wire encode is identical). Agnostic `UseHooks` is likewise zero-arg. Pass one or more registrations to `run.Serve`; same-dialect hooks merge (handlers append). Claude-only long-tail events decode but have no dedicated portable `On*` — handle them with `sdk/claude` chain methods when available.
 
 | SDK | Chain methods | Notes |
 |---|---|---|

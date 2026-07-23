@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
 // RegisterStop registers fn on the Copilot AgentStop chain for agent-scoped
 // Stop payloads only (not when agent_name / agent_display_name is set).
-func RegisterStop(fn model.StopHandler) {
+func RegisterStop(fn model.StopHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcopilot.UseHooks().AgentStop(func(ctx context.Context, hook sdkcopilot.AgentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+	return sdkcopilot.UseHooks().AgentStop(func(ctx context.Context, hook sdkcopilot.AgentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 		if hook.IsSubagent() {
 			return nil, nil
 		}
@@ -24,14 +26,13 @@ func RegisterStop(fn model.StopHandler) {
 
 // RegisterSubagentStop registers fn for explicit SubagentStop wire events and for
 // Stop payloads scoped to a subagent (agent_name / agent_display_name set).
-func RegisterSubagentStop(fn model.StopHandler) {
+func RegisterSubagentStop(fn model.StopHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcopilot.UseHooks().SubagentStop(func(ctx context.Context, hook sdkcopilot.SubagentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+	return sdkcopilot.UseHooks().SubagentStop(func(ctx context.Context, hook sdkcopilot.SubagentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 		return callStop(ctx, mapSubagentStop(hook), native, fn)
-	})
-	sdkcopilot.UseHooks().AgentStop(func(ctx context.Context, hook sdkcopilot.AgentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+	}).AgentStop(func(ctx context.Context, hook sdkcopilot.AgentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
 		if !hook.IsSubagent() {
 			return nil, nil
 		}

@@ -1,11 +1,12 @@
 package sessionstart
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"

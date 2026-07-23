@@ -3,16 +3,18 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // RegisterPreCompact registers fn on the Cursor PreCompact chain.
-func RegisterPreCompact(fn model.PreCompactHandler) {
+func RegisterPreCompact(fn model.PreCompactHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().PreCompact(func(ctx context.Context, hook sdkcursor.PreCompact, _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
+	return sdkcursor.UseHooks().PreCompact(func(ctx context.Context, hook sdkcursor.PreCompact, _ sdkcursor.PreCompactResults) (sdkcursor.PreCompactOutput, error) {
 		return nil, fn(ctx, *mapPreCompact(hook))
 	})
 }

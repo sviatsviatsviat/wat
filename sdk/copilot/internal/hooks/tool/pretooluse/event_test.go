@@ -3,10 +3,11 @@ package pretooluse
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"maps"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"

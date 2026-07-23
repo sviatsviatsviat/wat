@@ -8,12 +8,13 @@ import (
 )
 
 func ExampleUseHooks() {
-	cursor.UseHooks().BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecution, r cursor.PermissionResults) (cursor.PermissionOutput, error) {
+	hooks := cursor.UseHooks().BeforeShellExecution(func(ctx context.Context, hook cursor.BeforeShellExecution, r cursor.PermissionResults) (cursor.PermissionOutput, error) {
 		if hook.Command == "rm -rf /" {
 			return r.Deny("blocked"), nil
 		}
 		return r.Noop(), nil
 	})
-	// Hook entrypoint: run.Main()
-	_ = run.Main
+	// Hook entrypoint: run.Serve(hooks)
+	_ = hooks
+	_ = run.Serve
 }

@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // RegisterPostToolFailure registers fn on the Cursor PostToolUseFailure chain.
-func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
+func RegisterPostToolFailure(fn model.PostToolFailureHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().PostToolUseFailure(func(ctx context.Context, hook sdkcursor.PostToolUseFailure, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+	return sdkcursor.UseHooks().PostToolUseFailure(func(ctx context.Context, hook sdkcursor.PostToolUseFailure, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 		out, err := fn(ctx, *mapPostToolUseFailure(hook), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err

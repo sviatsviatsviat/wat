@@ -9,14 +9,22 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// Main runs one hook dispatch cycle on os.Stdin / os.Stdout / os.Stderr using
-// the default dialect router, then os.Exit with the resulting code.
-func Main() {
-	code := serve(context.Background(), hookkit.DefaultRouter(), os.Stdin, os.Stdout, os.Stderr)
+// Serve merges hooks into a local dialect router (same dialect name appends
+// handlers), runs one hook dispatch cycle on os.Stdin / os.Stdout / os.Stderr,
+// then os.Exit with the resulting code.
+func Serve(hooks ...Hooks) {
+	r := newRouter()
+	for _, h := range hooks {
+		if h == nil {
+			continue
+		}
+		h.Contribute(r)
+	}
+	code := serve(context.Background(), r, os.Stdin, os.Stdout, os.Stderr)
 	os.Exit(code)
 }
 
-func serve(ctx context.Context, router *hookkit.Router, in io.Reader, out io.Writer, errw io.Writer) int {
+func serve(ctx context.Context, router *router, in io.Reader, out io.Writer, errw io.Writer) int {
 	raw, err := io.ReadAll(in)
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "run: read stdin: %v\n", err)
@@ -27,7 +35,7 @@ func serve(ctx context.Context, router *hookkit.Router, in io.Reader, out io.Wri
 		return 1
 	}
 
-	name, d, ok := router.Detect(raw)
+	name, d, ok := router.detect(raw)
 	if !ok || d == nil || d.Codec() == nil {
 		_, _ = fmt.Fprintln(errw, "run: unknown dialect")
 		return 1

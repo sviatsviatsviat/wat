@@ -4,26 +4,28 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // RegisterStop registers fn on the Cursor Stop chain.
-func RegisterStop(fn model.StopHandler) {
+func RegisterStop(fn model.StopHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().Stop(func(ctx context.Context, hook sdkcursor.Stop, native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
+	return sdkcursor.UseHooks().Stop(func(ctx context.Context, hook sdkcursor.Stop, native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
 		return callStop(ctx, mapStop(hook), native, fn)
 	})
 }
 
 // RegisterSubagentStop registers fn on the Cursor SubagentStop chain.
-func RegisterSubagentStop(fn model.StopHandler) {
+func RegisterSubagentStop(fn model.StopHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().SubagentStop(func(ctx context.Context, hook sdkcursor.SubagentStop, native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
+	return sdkcursor.UseHooks().SubagentStop(func(ctx context.Context, hook sdkcursor.SubagentStop, native sdkcursor.StopResults) (sdkcursor.StopOutput, error) {
 		return callStop(ctx, mapSubagentStop(hook), native, fn)
 	})
 }

@@ -9,14 +9,15 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterPreTool registers fn on Cursor PreToolUse, BeforeShellExecution, and BeforeMCPExecution chains.
-func RegisterPreTool(fn model.PreToolHandler) {
+func RegisterPreTool(fn model.PreToolHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().PreToolUse(func(ctx context.Context, hook sdkcursor.PreToolUse, native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
+	return sdkcursor.UseHooks().PreToolUse(func(ctx context.Context, hook sdkcursor.PreToolUse, native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 		return callPreTool(ctx, mapPreToolUse(hook), newPermissionResults(native), fn)
 	}).
 		BeforeShellExecution(func(ctx context.Context, hook sdkcursor.BeforeShellExecution, native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
@@ -28,11 +29,11 @@ func RegisterPreTool(fn model.PreToolHandler) {
 }
 
 // RegisterBeforeReadFile registers fn on the Cursor BeforeReadFile chain.
-func RegisterBeforeReadFile(fn model.PreToolHandler) {
+func RegisterBeforeReadFile(fn model.PreToolHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().BeforeReadFile(func(ctx context.Context, hook sdkcursor.BeforeReadFile, native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
+	return sdkcursor.UseHooks().BeforeReadFile(func(ctx context.Context, hook sdkcursor.BeforeReadFile, native sdkcursor.BeforeReadFileResults) (sdkcursor.PermissionOutput, error) {
 		return callPreTool(ctx, mapBeforeReadFile(hook), newBeforeReadResults(native), fn)
 	})
 }

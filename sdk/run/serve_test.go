@@ -79,7 +79,7 @@ func (o otherOutput) Merge(other hookkit.Output) (hookkit.Output, []string, erro
 	return nil, nil, fmt.Errorf("merge type mismatch: want otherOutput, got %T", other)
 }
 
-func newTestRouter(name, eventName string, decodeCalls *atomic.Int32) (*hookkit.Router, *hookkit.Dialect) {
+func newTestRouter(name, eventName string, decodeCalls *atomic.Int32) (*router, *hookkit.Dialect) {
 	c := hookkit.NewCodec(name, fmt.Errorf("empty"), fmt.Errorf("decode"), fmt.Errorf("name required"))
 	c.Register(eventName, func(raw []byte) (hookkit.Event, error) {
 		if decodeCalls != nil {
@@ -89,9 +89,8 @@ func newTestRouter(name, eventName string, decodeCalls *atomic.Int32) (*hookkit.
 	})
 	// For EventName peek, hookkit.Codec requires hook_event_name in JSON.
 	// Tests pass payloads with that field or we register a custom path.
-	d := hookkit.NewDialect(c)
-	r := hookkit.NewRouter()
-	r.Ensure(name, func([]byte) bool { return true }, d)
+	r := newRouter()
+	d := r.Ensure(name, func([]byte) bool { return true }, c)
 	return r, d
 }
 

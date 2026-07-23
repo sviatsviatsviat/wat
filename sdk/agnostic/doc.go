@@ -17,7 +17,8 @@
 // Observe-only kinds use OnSessionEnd, OnUserPrompt, OnPreCompact, and
 // OnSubagentStart with per-kind handler types. Register handlers with
 // UseHooks().OnPreTool, UseHooks().OnPostTool, and related chain methods, then
-// call run.Main from github.com/sviatsviatsviat/wat/sdk/run.
+// pass the chain to run.Serve from github.com/sviatsviatsviat/wat/sdk/run.
+// Main merges chains that share a dialect before dispatch.
 //
 // Agent-only capabilities (BlockPrompt, Env, HaltSession, and others) belong in
 // sdk/claude, sdk/copilot, and sdk/cursor.

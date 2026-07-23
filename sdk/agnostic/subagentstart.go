@@ -14,12 +14,13 @@ type SubagentStartEvent = model.SubagentStartEvent
 type SubagentStartHandler = model.SubagentStartHandler
 
 // OnSubagentStart registers an observe-only handler for SubagentStart events.
-func (c *chain) OnSubagentStart(fn SubagentStartHandler) *chain {
+func (c *hooks) OnSubagentStart(fn SubagentStartHandler) *hooks {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterSubagentStart(fn)
-	copilot.RegisterSubagentStart(fn)
-	cursor.RegisterSubagentStart(fn)
-	return c
+	return c.appendParts(
+		claude.RegisterSubagentStart(fn),
+		copilot.RegisterSubagentStart(fn),
+		cursor.RegisterSubagentStart(fn),
+	)
 }

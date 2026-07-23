@@ -4,26 +4,28 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
 // RegisterStop registers fn on the Claude Stop chain.
-func RegisterStop(fn model.StopHandler) {
+func RegisterStop(fn model.StopHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkclaude.UseHooks().Stop(func(ctx context.Context, hook sdkclaude.Stop, native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
+	return sdkclaude.UseHooks().Stop(func(ctx context.Context, hook sdkclaude.Stop, native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
 		return callStop(ctx, mapStop(hook), native, fn)
 	})
 }
 
 // RegisterSubagentStop registers fn on the Claude SubagentStop chain.
-func RegisterSubagentStop(fn model.StopHandler) {
+func RegisterSubagentStop(fn model.StopHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkclaude.UseHooks().SubagentStop(func(ctx context.Context, hook sdkclaude.SubagentStop, native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
+	return sdkclaude.UseHooks().SubagentStop(func(ctx context.Context, hook sdkclaude.SubagentStop, native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
 		return callStop(ctx, mapSubagentStop(hook), native, fn)
 	})
 }

@@ -55,8 +55,8 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 	if !strings.Contains(string(hooksBytes), "agnostic.UseHooks().OnPreTool") {
 		t.Fatalf("hooks.go missing handler registration: %q", string(hooksBytes))
 	}
-	if !strings.Contains(string(hooksBytes), "run.Main") {
-		t.Fatalf("hooks.go missing run.Main: %q", string(hooksBytes))
+	if !strings.Contains(string(hooksBytes), "run.Serve") {
+		t.Fatalf("hooks.go missing run.Serve: %q", string(hooksBytes))
 	}
 	if !strings.Contains(string(hooksBytes), "github.com/sviatsviatsviat/wat/sdk/agnostic") {
 		t.Fatalf("hooks.go missing agnostic import: %q", string(hooksBytes))

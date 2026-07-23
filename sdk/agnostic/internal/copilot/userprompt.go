@@ -3,16 +3,18 @@ package copilot
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
 // RegisterUserPrompt registers fn on the Copilot UserPromptSubmitted chain.
-func RegisterUserPrompt(fn model.UserPromptHandler) {
+func RegisterUserPrompt(fn model.UserPromptHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcopilot.UseHooks().UserPromptSubmitted(func(ctx context.Context, hook sdkcopilot.UserPromptSubmitted) error {
+	return sdkcopilot.UseHooks().UserPromptSubmitted(func(ctx context.Context, hook sdkcopilot.UserPromptSubmitted) error {
 		return fn(ctx, *mapUserPromptSubmitted(hook))
 	})
 }

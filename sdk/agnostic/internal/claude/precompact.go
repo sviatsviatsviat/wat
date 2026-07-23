@@ -3,16 +3,18 @@ package claude
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
 // RegisterPreCompact registers fn on the Claude PreCompact chain.
-func RegisterPreCompact(fn model.PreCompactHandler) {
+func RegisterPreCompact(fn model.PreCompactHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkclaude.UseHooks().PreCompact(func(ctx context.Context, hook sdkclaude.PreCompact, _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
+	return sdkclaude.UseHooks().PreCompact(func(ctx context.Context, hook sdkclaude.PreCompact, _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
 		return nil, fn(ctx, *mapPreCompact(hook))
 	})
 }

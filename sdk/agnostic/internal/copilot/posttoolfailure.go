@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
 // RegisterPostToolFailure registers fn on the Copilot PostToolUseFailure chain.
-func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
+func RegisterPostToolFailure(fn model.PostToolFailureHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcopilot.UseHooks().PostToolUseFailure(func(ctx context.Context, hook sdkcopilot.PostToolUseFailure, native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
+	return sdkcopilot.UseHooks().PostToolUseFailure(func(ctx context.Context, hook sdkcopilot.PostToolUseFailure, native sdkcopilot.PostToolFailureResults) (sdkcopilot.PostToolFailureOutput, error) {
 		out, err := fn(ctx, *mapPostToolUseFailure(hook), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err

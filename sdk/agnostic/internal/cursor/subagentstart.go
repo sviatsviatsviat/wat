@@ -3,16 +3,18 @@ package cursor
 import (
 	"context"
 
+	"github.com/sviatsviatsviat/wat/sdk/run"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // RegisterSubagentStart registers fn on the Cursor SubagentStart chain.
-func RegisterSubagentStart(fn model.SubagentStartHandler) {
+func RegisterSubagentStart(fn model.SubagentStartHandler) run.Hooks {
 	if fn == nil {
-		return
+		return nil
 	}
-	sdkcursor.UseHooks().SubagentStart(func(ctx context.Context, hook sdkcursor.SubagentStart, _ sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
+	return sdkcursor.UseHooks().SubagentStart(func(ctx context.Context, hook sdkcursor.SubagentStart, _ sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
 		return nil, fn(ctx, *mapSubagentStart(hook))
 	})
 }

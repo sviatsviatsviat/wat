@@ -24,5 +24,4 @@ func init() {
 	workspace.Register(c)
 	compact.Register(c)
 	elicit.Register(c)
-	runtime.EnsureRegistered()
 }
