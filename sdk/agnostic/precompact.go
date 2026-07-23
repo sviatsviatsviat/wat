@@ -10,9 +10,6 @@ import (
 // PreCompactEvent is the normalized view of a PreCompact hook invocation.
 type PreCompactEvent = model.PreCompactEvent
 
-// PreCompactHook is the handler context for portable PreCompact events.
-type PreCompactHook = model.PreCompactHook
-
 // PreCompactHandler handles observe-only PreCompact events.
 type PreCompactHandler = model.PreCompactHandler
 

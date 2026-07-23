@@ -10,9 +10,6 @@ import (
 // PostToolFailureEvent is the normalized view of a PostToolFailure hook invocation.
 type PostToolFailureEvent = model.PostToolFailureEvent
 
-// PostToolFailureHook is the handler context for portable PostToolFailure events.
-type PostToolFailureHook = model.PostToolFailureHook
-
 // PostToolFailureResult is the portable hook response for PostToolFailure events.
 type PostToolFailureResult = model.PostToolFailureResult
 

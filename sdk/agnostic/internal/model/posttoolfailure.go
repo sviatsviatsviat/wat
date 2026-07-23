@@ -2,8 +2,6 @@ package model
 
 import (
 	"context"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PostToolFailureEvent is the normalized view of a PostToolFailure hook invocation.
@@ -13,26 +11,8 @@ type PostToolFailureEvent struct {
 	Result *ToolResult
 }
 
-// PostToolFailureHook is the handler context for portable PostToolFailure events.
-type PostToolFailureHook struct {
-	PostToolFailureEvent
-	inv run.Invocation
-}
-
-// NewPostToolFailureHook wraps ev with serve-time invocation settings.
-func NewPostToolFailureHook(inv run.Invocation, ev *PostToolFailureEvent) PostToolFailureHook {
-	h := PostToolFailureHook{inv: inv}
-	if ev != nil {
-		h.PostToolFailureEvent = *ev
-	}
-	return h
-}
-
-// Invocation returns serve-time settings for this hook invocation.
-func (h PostToolFailureHook) Invocation() run.Invocation { return h.inv }
-
 // PostToolFailureHandler handles portable PostToolFailure events.
-type PostToolFailureHandler func(ctx context.Context, hook PostToolFailureHook, results PostToolFailureResults) (PostToolFailureResult, error)
+type PostToolFailureHandler func(ctx context.Context, event PostToolFailureEvent, results PostToolFailureResults) (PostToolFailureResult, error)
 
 // PostToolFailureResult is the portable hook response for PostToolFailure events.
 // Construct only via PostToolFailureResults (Context).

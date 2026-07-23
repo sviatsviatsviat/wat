@@ -1,6 +1,7 @@
 package sessionstart
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func init() {
@@ -66,7 +66,7 @@ func TestDecode(t *testing.T) {
 func TestMerge_contextJoins(t *testing.T) {
 	a := results{}.Context("one")
 	b := results{}.Context("two")
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}

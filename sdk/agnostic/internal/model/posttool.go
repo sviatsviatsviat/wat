@@ -2,8 +2,6 @@ package model
 
 import (
 	"context"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PostToolEvent is the normalized view of a PostTool hook invocation.
@@ -13,26 +11,8 @@ type PostToolEvent struct {
 	Result *ToolResult
 }
 
-// PostToolHook is the handler context for portable PostTool events.
-type PostToolHook struct {
-	PostToolEvent
-	inv run.Invocation
-}
-
-// NewPostToolHook wraps ev with serve-time invocation settings.
-func NewPostToolHook(inv run.Invocation, ev *PostToolEvent) PostToolHook {
-	h := PostToolHook{inv: inv}
-	if ev != nil {
-		h.PostToolEvent = *ev
-	}
-	return h
-}
-
-// Invocation returns serve-time settings for this hook invocation.
-func (h PostToolHook) Invocation() run.Invocation { return h.inv }
-
 // PostToolHandler handles portable PostTool events.
-type PostToolHandler func(ctx context.Context, hook PostToolHook, results PostToolResults) (PostToolResult, error)
+type PostToolHandler func(ctx context.Context, event PostToolEvent, results PostToolResults) (PostToolResult, error)
 
 // PostToolResult is the portable hook response for PostTool events.
 // Construct only via PostToolResults (Context), then With*.

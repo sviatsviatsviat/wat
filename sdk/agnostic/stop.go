@@ -10,9 +10,6 @@ import (
 // StopEvent is the normalized view of Stop and SubagentStop hook invocations.
 type StopEvent = model.StopEvent
 
-// StopHook is the handler context for portable Stop and SubagentStop events.
-type StopHook = model.StopHook
-
 // StopResult is the portable hook response for Stop and SubagentStop events.
 type StopResult = model.StopResult
 

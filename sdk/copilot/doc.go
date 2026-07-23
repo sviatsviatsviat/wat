@@ -11,8 +11,8 @@
 //
 // Example:
 //
-//	copilot.UseHooks().PreToolUse(func(ctx context.Context, hook run.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
-//	    if hook.Event.NativeToolName() == "bash" {
+//	copilot.UseHooks().PreToolUse(func(ctx context.Context, hook copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+//	    if hook.NativeToolName() == "bash" {
 //	        return r.Deny("blocked"), nil
 //	    }
 //	    return r.Noop(), nil

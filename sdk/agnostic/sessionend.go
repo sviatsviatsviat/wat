@@ -10,9 +10,6 @@ import (
 // SessionEndEvent is the normalized view of a SessionEnd hook invocation.
 type SessionEndEvent = model.SessionEndEvent
 
-// SessionEndHook is the handler context for portable SessionEnd events.
-type SessionEndHook = model.SessionEndHook
-
 // SessionEndHandler handles observe-only SessionEnd events.
 type SessionEndHandler = model.SessionEndHandler
 

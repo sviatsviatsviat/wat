@@ -117,11 +117,6 @@ func execHookBinary(binPath string, payload []byte, cfg testConfig, deps runDeps
 	var outBuf, errBuf bytes.Buffer
 	cmd.Stdout = &outBuf
 	cmd.Stderr = &errBuf
-	cmd.Env = append([]string(nil), os.Environ()...)
-	if cfg.agent != "" {
-		cmd.Env = append(cmd.Env, "WAT_AGENT="+cfg.agent)
-	}
-
 	runErr := deps.runCmd(cmd)
 	if runErr != nil {
 		var exitErr *exec.ExitError

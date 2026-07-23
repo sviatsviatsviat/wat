@@ -5,7 +5,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Event is the SessionEnd hook event.
@@ -24,6 +23,6 @@ func Register(c *hookkit.Codec) {
 }
 
 // RegisterHandler registers a SessionEnd observe handler on reg.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, run.Hook[Event]) error) {
+func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
 	hookkit.RegisterObserve(d, fn)
 }

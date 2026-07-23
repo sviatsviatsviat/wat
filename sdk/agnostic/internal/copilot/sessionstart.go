@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
@@ -15,8 +13,8 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks().SessionStart(func(ctx context.Context, hook run.Hook[sdkcopilot.SessionStart], native sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
-		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event)), newSessionStartResults(native))
+	sdkcopilot.UseHooks().SessionStart(func(ctx context.Context, hook sdkcopilot.SessionStart, native sdkcopilot.SessionStartResults) (sdkcopilot.SessionStartOutput, error) {
+		out, err := fn(ctx, *mapSessionStart(hook), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}

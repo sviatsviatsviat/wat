@@ -18,7 +18,7 @@ func TestRegisterWith_invokesWithResults(t *testing.T) {
 
 	var sawResults registerTestResults
 	called := false
-	RegisterWith(d, registerTestResults{}, func(_ context.Context, _ Hook[handlerTestEvent], r registerTestResults) (handlerTestOutput, error) {
+	RegisterWith(d, registerTestResults{}, func(_ context.Context, _ handlerTestEvent, r registerTestResults) (handlerTestOutput, error) {
 		called = true
 		sawResults = r
 		return handlerTestOutput{body: "ok"}, nil
@@ -50,7 +50,7 @@ func TestRegisterObserve_invokes(t *testing.T) {
 	d := testDialect(t)
 
 	called := false
-	RegisterObserve(d, func(_ context.Context, _ Hook[handlerTestEvent]) error {
+	RegisterObserve(d, func(_ context.Context, _ handlerTestEvent) error {
 		called = true
 		return nil
 	})

@@ -3,8 +3,6 @@ package copilot
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
@@ -14,8 +12,8 @@ func RegisterSubagentStart(fn model.SubagentStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks().SubagentStart(func(ctx context.Context, hook run.Hook[sdkcopilot.SubagentStart], _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
-		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event)))
+	sdkcopilot.UseHooks().SubagentStart(func(ctx context.Context, hook sdkcopilot.SubagentStart, _ sdkcopilot.SubagentStartResults) (sdkcopilot.SubagentStartOutput, error) {
+		return nil, fn(ctx, *mapSubagentStart(hook))
 	})
 }
 

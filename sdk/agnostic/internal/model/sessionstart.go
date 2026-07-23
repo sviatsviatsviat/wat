@@ -2,8 +2,6 @@ package model
 
 import (
 	"context"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // SessionStartEvent is the normalized view of a SessionStart hook invocation.
@@ -12,26 +10,8 @@ type SessionStartEvent struct {
 	Life *Lifecycle
 }
 
-// SessionStartHook is the handler context for portable SessionStart events.
-type SessionStartHook struct {
-	SessionStartEvent
-	inv run.Invocation
-}
-
-// NewSessionStartHook wraps ev with serve-time invocation settings.
-func NewSessionStartHook(inv run.Invocation, ev *SessionStartEvent) SessionStartHook {
-	h := SessionStartHook{inv: inv}
-	if ev != nil {
-		h.SessionStartEvent = *ev
-	}
-	return h
-}
-
-// Invocation returns serve-time settings for this hook invocation.
-func (h SessionStartHook) Invocation() run.Invocation { return h.inv }
-
 // SessionStartHandler handles portable SessionStart events.
-type SessionStartHandler func(ctx context.Context, hook SessionStartHook, results SessionStartResults) (SessionStartResult, error)
+type SessionStartHandler func(ctx context.Context, event SessionStartEvent, results SessionStartResults) (SessionStartResult, error)
 
 // SessionStartResult is the portable hook response for SessionStart events.
 // Construct only via SessionStartResults (Context).

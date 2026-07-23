@@ -17,7 +17,7 @@ func EnsureRegistered() {
 	hookkit.DefaultRouter().Ensure(Dialect, detectPayload, DefaultDialect)
 }
 
-func detectPayload(raw []byte, getenv func(string) string) bool {
+func detectPayload(raw []byte) bool {
 	var probe map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &probe); err != nil {
 		return false

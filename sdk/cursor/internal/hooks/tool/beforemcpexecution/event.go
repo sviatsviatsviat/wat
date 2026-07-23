@@ -4,7 +4,6 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/tools"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Event is the beforeMCPExecution hook event.
@@ -25,7 +24,7 @@ func (Event) EventName() string { return event.BeforeMCPExecution }
 
 // Register registers this hook event decoder on c.
 func Register(c *hookkit.Codec) {
-	c.Register(event.BeforeMCPExecution, func(raw []byte) (run.Event, error) {
+	c.Register(event.BeforeMCPExecution, func(raw []byte) (hookkit.Event, error) {
 		return hookkit.DecodeEvent(c, raw, func(e *Event, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})

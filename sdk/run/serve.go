@@ -11,13 +11,12 @@ import (
 
 // Main runs one hook dispatch cycle on os.Stdin / os.Stdout / os.Stderr using
 // the default dialect router, then os.Exit with the resulting code.
-func Main(opts ...Option) {
-	cfg := applyOptions(opts...)
-	code := serve(context.Background(), hookkit.DefaultRouter(), os.Stdin, os.Stdout, os.Stderr, cfg)
+func Main() {
+	code := serve(context.Background(), hookkit.DefaultRouter(), os.Stdin, os.Stdout, os.Stderr)
 	os.Exit(code)
 }
 
-func serve(ctx context.Context, router *hookkit.Router, in io.Reader, out io.Writer, errw io.Writer, cfg *Config) int {
+func serve(ctx context.Context, router *hookkit.Router, in io.Reader, out io.Writer, errw io.Writer) int {
 	raw, err := io.ReadAll(in)
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "run: read stdin: %v\n", err)
@@ -28,7 +27,7 @@ func serve(ctx context.Context, router *hookkit.Router, in io.Reader, out io.Wri
 		return 1
 	}
 
-	name, d, ok := router.Detect(raw, cfg.Getenv, cfg.Dialect)
+	name, d, ok := router.Detect(raw)
 	if !ok || d == nil || d.Codec() == nil {
 		_, _ = fmt.Fprintln(errw, "run: unknown dialect")
 		return 1
@@ -51,9 +50,7 @@ func serve(ctx context.Context, router *hookkit.Router, in io.Reader, out io.Wri
 		return 1
 	}
 
-	ctx = hookkit.WithConfig(ctx, cfg)
-
-	var acc Output
+	var acc hookkit.Output
 	for _, h := range handlers {
 		outVal, err := h.Invoke(ctx, event)
 		if err != nil {

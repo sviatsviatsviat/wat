@@ -8,7 +8,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 `claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `UseHooks` registration fans adapter handlers onto each agent SDK via `UseHooks()`, wrapping native events and Results builders.
 
-Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/internal/hooks/<domain>/<event>/` (per-event package with `event.go` / `output.go` / `results.go`), reexported from the `claude` package root; Copilot and Cursor keep one file per native `hook_event_name` at the package root, including the typed chain method for that event. Shared decode helpers live in `internal/hookkit`. The shared `Event` interface (`EventName()` only) is defined in `hookkit` and re-exported as `run.Event`; per-agent SDKs do not define their own `Event` type. Typed handler context is `run.Hook`.
+Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/internal/hooks/<domain>/<event>/` (per-event package with `event.go` / `output.go` / `results.go`), reexported from the `claude` package root; Copilot and Cursor keep one file per native `hook_event_name` at the package root, including the typed chain method for that event. Shared decode helpers live in `internal/hookkit`. The shared `Event` interface (`EventName()` only) is defined in `internal/hookkit`; per-agent SDKs do not define their own `Event` type. Handlers receive the typed event value directly.
 
 | Location | Role |
 |----------|------|
@@ -88,22 +88,22 @@ See `go doc github.com/sviatsviatsviat/wat/sdk/agnostic` for typed events (`PreT
 
 ## Dialect identification
 
-Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"claude"`, and likewise for copilot/cursor) used for process-router registration and `Envelope.Agent`. CLI and config parse agent names via `cmd/wat/internal/dialect.Parse` (aliases like `claude-code`, `gh`). Hook serve resolves dialect via `run.WithDialect` / `WAT_AGENT`, or by walking each dialect's registered detect function (payload shape and agent env hints such as `CURSOR_VERSION`).
+Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"claude"`, and likewise for copilot/cursor) used for process-router registration and `Envelope.Agent`. CLI and config parse agent names via `cmd/wat/internal/dialect.Parse` (aliases like `claude-code`, `gh`). Hook serve resolves dialect by walking each dialect's registered detect function (payload shape such as `cursor_version` / `conversation_id`, and Cursor also accepts a `CURSOR_VERSION` env hint).
 
 ## Portable agnostic API
 
 Typed registration methods (`OnPreTool`, `OnPostTool`, `OnStop`, and others) accept only **portable** event kinds — those present on Claude Code, GitHub Copilot, and Cursor. Each kind has its own result type (`PreToolResult`, `PostToolResult`, `StopResult`, …) so hook authors can only set fields every agent can encode. Use `sdk/claude`, `sdk/copilot`, or `sdk/cursor` directly for agent-only capabilities.
 
-Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) take per-kind observe handlers that return only `error` — no hook response. Each handler receives a hook wrapper (typed event + `run.Invocation`).
+Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) take per-kind observe handlers that return only `error` — no hook response. Each handler receives the typed event.
 
 ### Handler signatures
 
-All four SDKs use the same handler shapes. Result-producing handlers take `(ctx, hook, results)`; observe-only handlers take `(ctx, hook) error`. Access event fields on the hook (embedded typed event in agnostic; `hook.Event` in per-agent SDKs). Use `hook.Invocation()` for serve-time settings (`Dialect`, `Getenv`, `DialectConfig`).
+All four SDKs use the same handler shapes. Result-producing handlers take `(ctx, event, results)`; observe-only handlers take `(ctx, event) error`.
 
 | Category | agnostic | claude / copilot / cursor |
 |---|---|---|
-| Result | `(ctx, hook PreToolHook, r PreToolResults) (PreToolResult, error)` — hook embeds **`PreToolEvent`** (normalized) | `(ctx, hook Hook[PreToolUse], r PreToolUseResults) (PreToolUseOutput, error)` — hook carries **native typed event** via `hook.Event` |
-| Observe | `(ctx, hook SessionEndHook) error` — hook embeds **`SessionEndEvent`** | `(ctx, hook Hook[SessionEnd]) error` — hook carries native typed event via `hook.Event` |
+| Result | `(ctx, event PreToolEvent, r PreToolResults) (PreToolResult, error)` — **normalized** event | `(ctx, event PreToolUse, r PreToolUseResults) (PreToolUseOutput, error)` — **native** typed event |
+| Observe | `(ctx, event SessionEndEvent) error` — normalized event | `(ctx, event SessionEnd) error` — native typed event |
 
 ### Hook-scoped result builders
 

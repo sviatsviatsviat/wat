@@ -43,7 +43,7 @@ func (o handlerTestOutput) Merge(other Output) (Output, []string, error) {
 func (o handlerTestOutput) Stop() bool { return o.stop }
 
 func TestHandler_invoke(t *testing.T) {
-	reg := Handler(func(_ context.Context, hook Hook[handlerTestEvent]) (handlerTestOutput, error) {
+	reg := Handler(func(_ context.Context, hook handlerTestEvent) (handlerTestOutput, error) {
 		return handlerTestOutput{body: "ok"}, nil
 	})
 	if reg.EventName() != "HandlerTest" {
@@ -60,7 +60,7 @@ func TestHandler_invoke(t *testing.T) {
 }
 
 func TestHandler_typeMismatch(t *testing.T) {
-	reg := Handler(func(context.Context, Hook[handlerTestEvent]) (handlerTestOutput, error) {
+	reg := Handler(func(context.Context, handlerTestEvent) (handlerTestOutput, error) {
 		return handlerTestOutput{}, nil
 	})
 	defer func() {
@@ -78,7 +78,7 @@ type testEvent struct{}
 func (testEvent) EventName() string { return "Other" }
 
 func TestHandler_zeroOutput(t *testing.T) {
-	reg := Handler(func(context.Context, Hook[handlerTestEvent]) (handlerTestOutput, error) {
+	reg := Handler(func(context.Context, handlerTestEvent) (handlerTestOutput, error) {
 		return handlerTestOutput{}, nil
 	})
 	out, err := reg.Invoke(context.Background(), handlerTestEvent{})
@@ -92,7 +92,7 @@ func TestHandler_zeroOutput(t *testing.T) {
 
 func TestObserveHandler_invoke(t *testing.T) {
 	called := false
-	reg := ObserveHandler(func(_ context.Context, hook Hook[handlerTestEvent]) error {
+	reg := ObserveHandler(func(_ context.Context, hook handlerTestEvent) error {
 		called = true
 		return nil
 	})
@@ -104,7 +104,7 @@ func TestObserveHandler_invoke(t *testing.T) {
 
 func TestObserveHandler_error(t *testing.T) {
 	want := errors.New("boom")
-	reg := ObserveHandler(func(context.Context, Hook[handlerTestEvent]) error {
+	reg := ObserveHandler(func(context.Context, handlerTestEvent) error {
 		return want
 	})
 	_, err := reg.Invoke(context.Background(), handlerTestEvent{})

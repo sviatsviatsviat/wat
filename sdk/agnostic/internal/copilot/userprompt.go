@@ -3,8 +3,6 @@ package copilot
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
@@ -14,8 +12,8 @@ func RegisterUserPrompt(fn model.UserPromptHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks().UserPromptSubmitted(func(ctx context.Context, hook run.Hook[sdkcopilot.UserPromptSubmitted]) error {
-		return fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmitted(hook.Event)))
+	sdkcopilot.UseHooks().UserPromptSubmitted(func(ctx context.Context, hook sdkcopilot.UserPromptSubmitted) error {
+		return fn(ctx, *mapUserPromptSubmitted(hook))
 	})
 }
 

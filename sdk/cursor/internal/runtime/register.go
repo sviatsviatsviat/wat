@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
@@ -17,7 +18,11 @@ func EnsureRegistered() {
 	hookkit.DefaultRouter().Ensure(Dialect, detectPayload, DefaultDialect)
 }
 
-func detectPayload(raw []byte, getenv func(string) string) bool {
+func detectPayload(raw []byte) bool {
+	return detectPayloadWith(raw, os.Getenv)
+}
+
+func detectPayloadWith(raw []byte, getenv func(string) string) bool {
 	var probe map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &probe); err != nil {
 		return false

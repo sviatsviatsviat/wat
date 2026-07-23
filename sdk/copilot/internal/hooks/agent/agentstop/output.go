@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Output is the response for agentStop and subagentStop events.
 // Construct via Results builders. A nil value is a no-op.
 type Output interface {
-	run.Output
+	hookkit.Output
 	isOutput()
 }
 
@@ -39,7 +38,7 @@ func (o output) Encode() ([]byte, int, error) {
 }
 
 // Merge combines other into the receiver. other must be an output.
-func (o output) Merge(other run.Output) (run.Output, []string, error) {
+func (o output) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	b, ok := other.(output)
 	if !ok {
 		return nil, nil, hookkit.ErrMergeType(o, other)

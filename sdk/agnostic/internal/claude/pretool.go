@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
@@ -15,8 +13,8 @@ func RegisterPreTool(fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks().PreToolUse(func(ctx context.Context, hook run.Hook[sdkclaude.PreToolUse], native sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
-		out, err := fn(ctx, model.NewPreToolHook(hook.Invocation(), mapPreToolUse(hook.Event)), newPreToolResults(native))
+	sdkclaude.UseHooks().PreToolUse(func(ctx context.Context, hook sdkclaude.PreToolUse, native sdkclaude.PreToolUseResults) (sdkclaude.PreToolUseOutput, error) {
+		out, err := fn(ctx, *mapPreToolUse(hook), newPreToolResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}

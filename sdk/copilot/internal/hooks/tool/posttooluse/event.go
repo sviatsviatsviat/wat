@@ -6,7 +6,6 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/tools"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Event is the PostToolUse hook event.
@@ -48,7 +47,7 @@ func (e Event) ResultRaw() json.RawMessage {
 
 // Register registers this hook event decoder on c.
 func Register(c *hookkit.Codec) {
-	c.Register(event.PostToolUse, func(raw []byte) (run.Event, error) {
+	c.Register(event.PostToolUse, func(raw []byte) (hookkit.Event, error) {
 		return hookkit.DecodeEvent(c, raw, func(e *Event, payload []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, payload, "tool_input")
 		})

@@ -5,10 +5,9 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/tool/posttooluse"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterHandler registers this event handler on d.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, run.Hook[Event], Results) (posttooluse.Output, error)) {
+func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event, Results) (posttooluse.Output, error)) {
 	hookkit.RegisterWith(d, Results(results{}), fn)
 }

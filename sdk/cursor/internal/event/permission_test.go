@@ -1,11 +1,10 @@
 package event
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"maps"
 	"strings"
 	"testing"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestEncode_ZeroOutput(t *testing.T) {
@@ -28,7 +27,7 @@ func TestEncode_PermissionUpdatedInput(t *testing.T) {
 func TestMerge_Permission_denyBeatsAllowAndStops(t *testing.T) {
 	a := permissionResults{}.Allow().WithUserMessage("ok")
 	b := permissionResults{}.Deny("blocked")
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +49,7 @@ func TestMerge_Permission_updatedInputOverwriteWarns(t *testing.T) {
 	orig := maps.Clone(first)
 	a := permissionResults{}.Allow().WithUpdatedInput(first)
 	b := permissionResults{}.Allow().WithUpdatedInput(second)
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}

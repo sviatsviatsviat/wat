@@ -10,9 +10,6 @@ import (
 // PreToolEvent is the normalized view of a PreTool hook invocation.
 type PreToolEvent = model.PreToolEvent
 
-// PreToolHook is the handler context for portable PreTool events.
-type PreToolHook = model.PreToolHook
-
 // PreToolResult is the portable hook response for PreTool events.
 type PreToolResult = model.PreToolResult
 

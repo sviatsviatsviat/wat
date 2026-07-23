@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PostToolOutput is the response for post-tool events.
 // Construct via PostToolResults builders and With* methods. A nil value is a no-op.
 type PostToolOutput interface {
-	run.Output
+	hookkit.Output
 	isPostToolOutput()
 	// WithUpdatedMCPOutput replaces MCP tool output when set.
 	WithUpdatedMCPOutput(output any) PostToolOutput
@@ -83,7 +81,7 @@ func (o postToolOutput) Encode() ([]byte, int, error) {
 }
 
 // Merge combines other into this post-tool output.
-func (o postToolOutput) Merge(other run.Output) (run.Output, []string, error) {
+func (o postToolOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	b, ok := other.(postToolOutput)
 	if !ok {
 		return nil, nil, hookkit.ErrMergeType(o, other)

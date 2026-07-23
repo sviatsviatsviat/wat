@@ -5,7 +5,6 @@
 // typed Output values via Merge/Stop, encodes once, and exits with the
 // appropriate code.
 //
-// WithDialect forces a dialect instead of auto-detection. WithGetenv injects
-// environment lookup for dialect resolution and encode side effects. Payloads
-// must include hook_event_name on the wire.
+// Dialect is auto-detected from the payload (and Cursor may also match via
+// CURSOR_VERSION). Payloads must include hook_event_name on the wire.
 package run

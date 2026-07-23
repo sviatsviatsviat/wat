@@ -2,14 +2,12 @@ package event
 
 import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // CommonOutput is a shared-fields-only response for events that only accept those fields.
 // Construct via Results builders and With* methods. A nil value is a no-op.
 type CommonOutput interface {
-	run.Output
+	hookkit.Output
 	isCommonOutput()
 	// WithAdditionalContext injects model context.
 	WithAdditionalContext(text string) CommonOutput
@@ -92,7 +90,7 @@ func (o commonOutput) Encode() ([]byte, int, error) {
 }
 
 // Merge combines other into this CommonOutput.
-func (o commonOutput) Merge(other run.Output) (run.Output, []string, error) {
+func (o commonOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	b, ok := other.(commonOutput)
 	if !ok {
 		return nil, nil, hookkit.ErrMergeType(o, other)

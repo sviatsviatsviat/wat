@@ -3,8 +3,6 @@ package claude
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
@@ -14,8 +12,8 @@ func RegisterSubagentStart(fn model.SubagentStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks().SubagentStart(func(ctx context.Context, hook run.Hook[sdkclaude.SubagentStart], _ sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
-		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event)))
+	sdkclaude.UseHooks().SubagentStart(func(ctx context.Context, hook sdkclaude.SubagentStart, _ sdkclaude.SubagentStartResults) (sdkclaude.CommonOutput, error) {
+		return nil, fn(ctx, *mapSubagentStart(hook))
 	})
 }
 

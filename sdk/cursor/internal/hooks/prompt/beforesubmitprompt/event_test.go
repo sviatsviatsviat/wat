@@ -2,12 +2,12 @@ package beforesubmitprompt
 
 import (
 	"encoding/json"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/hooks/agent/stopevent"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func mustDecode[E any](t *testing.T, raw string) E {
@@ -51,7 +51,7 @@ func TestMerge_BeforeSubmitPrompt(t *testing.T) {
 	t.Run("continue_false_sticky", func(t *testing.T) {
 		a := results{}.Block("first")
 		b := output{}.WithContinue(true).WithUserMessage("second")
-		merged, warnings, err := a.Merge(b.(run.Output))
+		merged, warnings, err := a.Merge(b.(hookkit.Output))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +70,7 @@ func TestMerge_BeforeSubmitPrompt(t *testing.T) {
 	t.Run("later_continue_true", func(t *testing.T) {
 		a := results{}.Noop()
 		b := output{}.WithContinue(true)
-		merged, warnings, err := a.Merge(b.(run.Output))
+		merged, warnings, err := a.Merge(b.(hookkit.Output))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -87,7 +87,7 @@ func TestMerge_BeforeSubmitPrompt(t *testing.T) {
 	})
 
 	t.Run("type_mismatch", func(t *testing.T) {
-		_, _, err := results{}.Noop().Merge(stopevent.NewResults().Noop().(run.Output))
+		_, _, err := results{}.Noop().Merge(stopevent.NewResults().Noop().(hookkit.Output))
 		if err == nil || !strings.Contains(err.Error(), "merge type mismatch") {
 			t.Fatalf("err = %v", err)
 		}

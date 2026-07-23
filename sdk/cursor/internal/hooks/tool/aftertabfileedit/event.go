@@ -5,7 +5,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Event is the afterTabFileEdit hook event.
@@ -26,6 +25,6 @@ func Register(c *hookkit.Codec) {
 }
 
 // RegisterHandler registers an observe handler on reg.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, run.Hook[Event]) error) {
+func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
 	hookkit.RegisterObserve(d, fn)
 }

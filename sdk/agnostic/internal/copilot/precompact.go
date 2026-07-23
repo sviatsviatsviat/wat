@@ -3,8 +3,6 @@ package copilot
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
@@ -14,8 +12,8 @@ func RegisterPreCompact(fn model.PreCompactHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks().PreCompact(func(ctx context.Context, hook run.Hook[sdkcopilot.PreCompact]) error {
-		return fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event)))
+	sdkcopilot.UseHooks().PreCompact(func(ctx context.Context, hook sdkcopilot.PreCompact) error {
+		return fn(ctx, *mapPreCompact(hook))
 	})
 }
 

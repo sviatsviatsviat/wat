@@ -6,7 +6,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterStop registers fn on the Copilot AgentStop chain for agent-scoped
@@ -15,11 +14,11 @@ func RegisterStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks().AgentStop(func(ctx context.Context, hook run.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
-		if hook.Event.IsSubagent() {
+	sdkcopilot.UseHooks().AgentStop(func(ctx context.Context, hook sdkcopilot.AgentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+		if hook.IsSubagent() {
 			return nil, nil
 		}
-		return callStop(ctx, hook.Invocation(), mapAgentStop(hook.Event), native, fn)
+		return callStop(ctx, mapAgentStop(hook), native, fn)
 	})
 }
 
@@ -29,19 +28,19 @@ func RegisterSubagentStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks().SubagentStop(func(ctx context.Context, hook run.Hook[sdkcopilot.SubagentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
-		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event), native, fn)
+	sdkcopilot.UseHooks().SubagentStop(func(ctx context.Context, hook sdkcopilot.SubagentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+		return callStop(ctx, mapSubagentStop(hook), native, fn)
 	})
-	sdkcopilot.UseHooks().AgentStop(func(ctx context.Context, hook run.Hook[sdkcopilot.AgentStop], native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
-		if !hook.Event.IsSubagent() {
+	sdkcopilot.UseHooks().AgentStop(func(ctx context.Context, hook sdkcopilot.AgentStop, native sdkcopilot.StopResults) (sdkcopilot.StopOutput, error) {
+		if !hook.IsSubagent() {
 			return nil, nil
 		}
-		return callStop(ctx, hook.Invocation(), mapAgentStopAsSubagent(hook.Event), native, fn)
+		return callStop(ctx, mapAgentStopAsSubagent(hook), native, fn)
 	})
 }
 
-func callStop(ctx context.Context, inv run.Invocation, ev *model.StopEvent, native sdkcopilot.StopResults, fn model.StopHandler) (sdkcopilot.StopOutput, error) {
-	out, err := fn(ctx, model.NewStopHook(inv, ev), newStopResults(native))
+func callStop(ctx context.Context, ev *model.StopEvent, native sdkcopilot.StopResults, fn model.StopHandler) (sdkcopilot.StopOutput, error) {
+	out, err := fn(ctx, *ev, newStopResults(native))
 	if err != nil || out == nil {
 		return nil, err
 	}

@@ -10,9 +10,6 @@ import (
 // UserPromptEvent is the normalized view of a UserPrompt hook invocation.
 type UserPromptEvent = model.UserPromptEvent
 
-// UserPromptHook is the handler context for portable UserPrompt events.
-type UserPromptHook = model.UserPromptHook
-
 // UserPromptHandler handles observe-only UserPrompt events.
 type UserPromptHandler = model.UserPromptHandler
 

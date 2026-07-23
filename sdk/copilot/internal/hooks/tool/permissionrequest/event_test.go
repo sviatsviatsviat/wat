@@ -1,12 +1,12 @@
 package permissionrequest
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
@@ -100,7 +100,7 @@ func TestMerge_PermissionRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			merged, warnings, err := tt.a.Merge(tt.b.(run.Output))
+			merged, warnings, err := tt.a.Merge(tt.b.(hookkit.Output))
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -128,7 +128,7 @@ import (
 )
 
 func main() {
-	agnostic.UseHooks().OnPreTool(func(ctx context.Context, hook agnostic.PreToolHook, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
+	agnostic.UseHooks().OnPreTool(func(ctx context.Context, hook agnostic.PreToolEvent, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
 		// Guard: block force pushes, escalate other git pushes to the user.
 		// Fires on PreToolUse (Claude/Copilot) and on preToolUse /
 		// beforeShellExecution (Cursor); hook.Tool.Shell is the extracted command.
@@ -147,7 +147,7 @@ func main() {
 		}
 		return nil, nil // zero = no opinion, default flow
 	}).
-		OnPostTool(func(ctx context.Context, hook agnostic.PostToolHook, r agnostic.PostToolResults) (agnostic.PostToolResult, error) {
+		OnPostTool(func(ctx context.Context, hook agnostic.PostToolEvent, r agnostic.PostToolResults) (agnostic.PostToolResult, error) {
 			// Command: after any file edit, tell the model which test command applies.
 			// → additionalContext / additional_context on each dialect.
 			if hook.Tool == nil {
@@ -158,7 +158,7 @@ func main() {
 			}
 			return nil, nil
 		}).
-		OnStop(func(ctx context.Context, hook agnostic.StopHook, r agnostic.StopResults) (agnostic.StopResult, error) {
+		OnStop(func(ctx context.Context, hook agnostic.StopEvent, r agnostic.StopResults) (agnostic.StopResult, error) {
 			// Stop gate: refuse to finish the turn while the build is red.
 			// → Claude/Copilot: decision:"block"+reason; Cursor: followup_message.
 			// Loop guards differ per agent, so check both before re-blocking.
@@ -171,6 +171,6 @@ func main() {
 			return nil, nil
 		})
 
-	run.Main() // reads WAT_AGENT, dispatches, merges, exits
+	run.Main() // auto-detects dialect, dispatches, merges, exits
 }
 `

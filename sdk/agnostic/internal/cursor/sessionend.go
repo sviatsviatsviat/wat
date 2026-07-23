@@ -3,8 +3,6 @@ package cursor
 import (
 	"context"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
@@ -14,8 +12,8 @@ func RegisterSessionEnd(fn model.SessionEndHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.UseHooks().SessionEnd(func(ctx context.Context, hook run.Hook[sdkcursor.SessionEnd]) error {
-		return fn(ctx, model.NewSessionEndHook(hook.Invocation(), mapSessionEnd(hook.Event)))
+	sdkcursor.UseHooks().SessionEnd(func(ctx context.Context, hook sdkcursor.SessionEnd) error {
+		return fn(ctx, *mapSessionEnd(hook))
 	})
 }
 

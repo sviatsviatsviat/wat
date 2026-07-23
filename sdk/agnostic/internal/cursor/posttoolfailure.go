@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
@@ -15,8 +13,8 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.UseHooks().PostToolUseFailure(func(ctx context.Context, hook run.Hook[sdkcursor.PostToolUseFailure], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event)), newPostToolFailureResults(native))
+	sdkcursor.UseHooks().PostToolUseFailure(func(ctx context.Context, hook sdkcursor.PostToolUseFailure, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+		out, err := fn(ctx, *mapPostToolUseFailure(hook), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}

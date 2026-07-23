@@ -2,8 +2,6 @@ package model
 
 import (
 	"context"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PreToolEvent is the normalized view of a PreTool hook invocation.
@@ -12,26 +10,8 @@ type PreToolEvent struct {
 	Tool *ToolCall
 }
 
-// PreToolHook is the handler context for portable PreTool events.
-type PreToolHook struct {
-	PreToolEvent
-	inv run.Invocation
-}
-
-// NewPreToolHook wraps ev with serve-time invocation settings.
-func NewPreToolHook(inv run.Invocation, ev *PreToolEvent) PreToolHook {
-	h := PreToolHook{inv: inv}
-	if ev != nil {
-		h.PreToolEvent = *ev
-	}
-	return h
-}
-
-// Invocation returns serve-time settings for this hook invocation.
-func (h PreToolHook) Invocation() run.Invocation { return h.inv }
-
 // PreToolHandler handles portable PreTool events.
-type PreToolHandler func(ctx context.Context, hook PreToolHook, results PreToolResults) (PreToolResult, error)
+type PreToolHandler func(ctx context.Context, event PreToolEvent, results PreToolResults) (PreToolResult, error)
 
 // PreToolResult is the portable hook response for PreTool events.
 // Construct only via PreToolResults (Allow/Deny/Ask), then With*.

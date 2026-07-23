@@ -9,7 +9,6 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/tools"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterPostTool registers fn on Cursor PostToolUse, AfterShellExecution,
@@ -18,22 +17,22 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.UseHooks().PostToolUse(func(ctx context.Context, hook run.Hook[sdkcursor.PostToolUse], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		return callPostTool(ctx, hook.Invocation(), mapPostToolUse(hook.Event), native, fn)
+	sdkcursor.UseHooks().PostToolUse(func(ctx context.Context, hook sdkcursor.PostToolUse, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+		return callPostTool(ctx, mapPostToolUse(hook), native, fn)
 	}).
-		AfterShellExecution(func(ctx context.Context, hook run.Hook[sdkcursor.AfterShellExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, hook.Invocation(), mapAfterShellExecution(hook.Event), native, fn)
+		AfterShellExecution(func(ctx context.Context, hook sdkcursor.AfterShellExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+			return callPostTool(ctx, mapAfterShellExecution(hook), native, fn)
 		}).
-		AfterMCPExecution(func(ctx context.Context, hook run.Hook[sdkcursor.AfterMCPExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, hook.Invocation(), mapAfterMCPExecution(hook.Event), native, fn)
+		AfterMCPExecution(func(ctx context.Context, hook sdkcursor.AfterMCPExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+			return callPostTool(ctx, mapAfterMCPExecution(hook), native, fn)
 		}).
-		AfterFileEdit(func(ctx context.Context, hook run.Hook[sdkcursor.AfterFileEdit], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, hook.Invocation(), mapAfterFileEdit(hook.Event), native, fn)
+		AfterFileEdit(func(ctx context.Context, hook sdkcursor.AfterFileEdit, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+			return callPostTool(ctx, mapAfterFileEdit(hook), native, fn)
 		})
 }
 
-func callPostTool(ctx context.Context, inv run.Invocation, ev *model.PostToolEvent, native sdkcursor.PostToolResults, fn model.PostToolHandler) (sdkcursor.PostToolOutput, error) {
-	out, err := fn(ctx, model.NewPostToolHook(inv, ev), newPostToolResults(native))
+func callPostTool(ctx context.Context, ev *model.PostToolEvent, native sdkcursor.PostToolResults, fn model.PostToolHandler) (sdkcursor.PostToolOutput, error) {
+	out, err := fn(ctx, *ev, newPostToolResults(native))
 	if err != nil || out == nil {
 		return nil, err
 	}

@@ -10,9 +10,6 @@ import (
 // SessionStartEvent is the normalized view of a SessionStart hook invocation.
 type SessionStartEvent = model.SessionStartEvent
 
-// SessionStartHook is the handler context for portable SessionStart events.
-type SessionStartHook = model.SessionStartHook
-
 // SessionStartResult is the portable hook response for SessionStart events.
 type SessionStartResult = model.SessionStartResult
 

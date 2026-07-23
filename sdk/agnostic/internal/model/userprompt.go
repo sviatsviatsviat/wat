@@ -2,8 +2,6 @@ package model
 
 import (
 	"context"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // UserPromptEvent is the normalized view of a UserPrompt hook invocation.
@@ -12,23 +10,5 @@ type UserPromptEvent struct {
 	Prompt string
 }
 
-// UserPromptHook is the handler context for portable UserPrompt events.
-type UserPromptHook struct {
-	UserPromptEvent
-	inv run.Invocation
-}
-
-// NewUserPromptHook wraps ev with serve-time invocation settings.
-func NewUserPromptHook(inv run.Invocation, ev *UserPromptEvent) UserPromptHook {
-	h := UserPromptHook{inv: inv}
-	if ev != nil {
-		h.UserPromptEvent = *ev
-	}
-	return h
-}
-
-// Invocation returns serve-time settings for this hook invocation.
-func (h UserPromptHook) Invocation() run.Invocation { return h.inv }
-
 // UserPromptHandler handles observe-only UserPrompt events.
-type UserPromptHandler func(ctx context.Context, hook UserPromptHook) error
+type UserPromptHandler func(ctx context.Context, event UserPromptEvent) error

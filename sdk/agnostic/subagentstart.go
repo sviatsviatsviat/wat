@@ -10,9 +10,6 @@ import (
 // SubagentStartEvent is the normalized view of a SubagentStart hook invocation.
 type SubagentStartEvent = model.SubagentStartEvent
 
-// SubagentStartHook is the handler context for portable SubagentStart events.
-type SubagentStartHook = model.SubagentStartHook
-
 // SubagentStartHandler handles observe-only SubagentStart events.
 type SubagentStartHandler = model.SubagentStartHandler
 

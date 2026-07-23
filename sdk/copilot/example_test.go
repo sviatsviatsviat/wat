@@ -8,8 +8,8 @@ import (
 )
 
 func ExampleUseHooks() {
-	copilot.UseHooks().PreToolUse(func(ctx context.Context, hook run.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
-		if hook.Event.ToolName == "powershell" {
+	copilot.UseHooks().PreToolUse(func(ctx context.Context, hook copilot.PreToolUse, r copilot.PreToolResults) (copilot.PreToolOutput, error) {
+		if hook.ToolName == "powershell" {
 			return r.Deny("blocked"), nil
 		}
 		return r.Noop(), nil

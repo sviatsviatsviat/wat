@@ -4,7 +4,6 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/tools"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Event is the PermissionRequest hook event.
@@ -39,7 +38,7 @@ func (e Event) ShellCommand() string {
 
 // Register registers this hook event decoder on c.
 func Register(c *hookkit.Codec) {
-	c.Register(event.PermissionRequest, func(raw []byte) (run.Event, error) {
+	c.Register(event.PermissionRequest, func(raw []byte) (hookkit.Event, error) {
 		return hookkit.DecodeEvent(c, raw, func(e *Event, payload []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.NativeToolName(), payload, "tool_input")
 		})

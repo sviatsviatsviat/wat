@@ -23,7 +23,6 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/ui/notification"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/workspace/worktreecreate"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // chain supports fluent handler registration on the package default dialect.
@@ -36,115 +35,115 @@ func UseHooks() *chain {
 }
 
 // SessionStart registers a SessionStart handler on the chain.
-func (c *chain) SessionStart(fn func(context.Context, run.Hook[SessionStart], SessionStartResults) (SessionStartOutput, error)) *chain {
+func (c *chain) SessionStart(fn func(context.Context, SessionStart, SessionStartResults) (SessionStartOutput, error)) *chain {
 	sessionstart.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // SessionEnd registers a SessionEnd handler on the chain.
-func (c *chain) SessionEnd(fn func(context.Context, run.Hook[SessionEnd]) error) *chain {
+func (c *chain) SessionEnd(fn func(context.Context, SessionEnd) error) *chain {
 	sessionend.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // UserPromptSubmit registers a UserPromptSubmit handler on the chain.
-func (c *chain) UserPromptSubmit(fn func(context.Context, run.Hook[UserPromptSubmit], UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
+func (c *chain) UserPromptSubmit(fn func(context.Context, UserPromptSubmit, UserPromptSubmitResults) (UserPromptSubmitOutput, error)) *chain {
 	userpromptsubmit.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // UserPromptExpansion registers a UserPromptExpansion handler on the chain.
-func (c *chain) UserPromptExpansion(fn func(context.Context, run.Hook[UserPromptExpansion], UserPromptExpansionResults) (CommonOutput, error)) *chain {
+func (c *chain) UserPromptExpansion(fn func(context.Context, UserPromptExpansion, UserPromptExpansionResults) (CommonOutput, error)) *chain {
 	userpromptexpansion.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // PreToolUse registers a PreToolUse handler on the chain.
-func (c *chain) PreToolUse(fn func(context.Context, run.Hook[PreToolUse], PreToolUseResults) (PreToolUseOutput, error)) *chain {
+func (c *chain) PreToolUse(fn func(context.Context, PreToolUse, PreToolUseResults) (PreToolUseOutput, error)) *chain {
 	pretooluse.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // PostToolUse registers a PostToolUse handler on the chain.
-func (c *chain) PostToolUse(fn func(context.Context, run.Hook[PostToolUse], PostToolUseResults) (PostToolUseOutput, error)) *chain {
+func (c *chain) PostToolUse(fn func(context.Context, PostToolUse, PostToolUseResults) (PostToolUseOutput, error)) *chain {
 	posttooluse.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // PostToolUseFailure registers a PostToolUseFailure handler on the chain.
-func (c *chain) PostToolUseFailure(fn func(context.Context, run.Hook[PostToolUseFailure], PostToolUseFailureResults) (PostToolUseOutput, error)) *chain {
+func (c *chain) PostToolUseFailure(fn func(context.Context, PostToolUseFailure, PostToolUseFailureResults) (PostToolUseOutput, error)) *chain {
 	posttoolusefailure.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // PermissionRequest registers a PermissionRequest handler on the chain.
-func (c *chain) PermissionRequest(fn func(context.Context, run.Hook[PermissionRequest], PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
+func (c *chain) PermissionRequest(fn func(context.Context, PermissionRequest, PermissionRequestResults) (PermissionRequestOutput, error)) *chain {
 	permissionrequest.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // PermissionDenied registers a PermissionDenied handler on the chain.
-func (c *chain) PermissionDenied(fn func(context.Context, run.Hook[PermissionDenied], PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
+func (c *chain) PermissionDenied(fn func(context.Context, PermissionDenied, PermissionDeniedResults) (PermissionDeniedOutput, error)) *chain {
 	permissiondenied.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // SubagentStart registers a SubagentStart handler on the chain.
-func (c *chain) SubagentStart(fn func(context.Context, run.Hook[SubagentStart], SubagentStartResults) (CommonOutput, error)) *chain {
+func (c *chain) SubagentStart(fn func(context.Context, SubagentStart, SubagentStartResults) (CommonOutput, error)) *chain {
 	subagentstart.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // SubagentStop registers a SubagentStop handler on the chain.
-func (c *chain) SubagentStop(fn func(context.Context, run.Hook[SubagentStop], StopResults) (StopOutput, error)) *chain {
+func (c *chain) SubagentStop(fn func(context.Context, SubagentStop, StopResults) (StopOutput, error)) *chain {
 	subagentstop.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // TaskCreated registers a TaskCreated handler on the chain.
-func (c *chain) TaskCreated(fn func(context.Context, run.Hook[TaskCreated], TaskCreatedResults) (CommonOutput, error)) *chain {
+func (c *chain) TaskCreated(fn func(context.Context, TaskCreated, TaskCreatedResults) (CommonOutput, error)) *chain {
 	taskcreated.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // TaskCompleted registers a TaskCompleted handler on the chain.
-func (c *chain) TaskCompleted(fn func(context.Context, run.Hook[TaskCompleted], TaskCompletedResults) (CommonOutput, error)) *chain {
+func (c *chain) TaskCompleted(fn func(context.Context, TaskCompleted, TaskCompletedResults) (CommonOutput, error)) *chain {
 	taskcompleted.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // Stop registers a Stop handler on the chain.
-func (c *chain) Stop(fn func(context.Context, run.Hook[Stop], StopResults) (StopOutput, error)) *chain {
+func (c *chain) Stop(fn func(context.Context, Stop, StopResults) (StopOutput, error)) *chain {
 	stopevent.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // Notification registers a Notification handler on the chain.
-func (c *chain) Notification(fn func(context.Context, run.Hook[Notification], NotificationResults) (CommonOutput, error)) *chain {
+func (c *chain) Notification(fn func(context.Context, Notification, NotificationResults) (CommonOutput, error)) *chain {
 	notification.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // MessageDisplay registers a MessageDisplay handler on the chain.
-func (c *chain) MessageDisplay(fn func(context.Context, run.Hook[MessageDisplay], MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
+func (c *chain) MessageDisplay(fn func(context.Context, MessageDisplay, MessageDisplayResults) (MessageDisplayOutput, error)) *chain {
 	messagedisplay.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // WorktreeCreate registers a WorktreeCreate handler on the chain.
-func (c *chain) WorktreeCreate(fn func(context.Context, run.Hook[WorktreeCreate], WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
+func (c *chain) WorktreeCreate(fn func(context.Context, WorktreeCreate, WorktreeCreateResults) (WorktreeCreateOutput, error)) *chain {
 	worktreecreate.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // PreCompact registers a PreCompact handler on the chain.
-func (c *chain) PreCompact(fn func(context.Context, run.Hook[PreCompact], PreCompactResults) (CommonOutput, error)) *chain {
+func (c *chain) PreCompact(fn func(context.Context, PreCompact, PreCompactResults) (CommonOutput, error)) *chain {
 	precompact.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }
 
 // Elicitation registers an Elicitation handler on the chain.
-func (c *chain) Elicitation(fn func(context.Context, run.Hook[Elicitation], ElicitationResults) (ElicitationOutput, error)) *chain {
+func (c *chain) Elicitation(fn func(context.Context, Elicitation, ElicitationResults) (ElicitationOutput, error)) *chain {
 	elicitation.RegisterHandler(runtime.DefaultDialect, fn)
 	return c
 }

@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestDecode_RequiresHookEventName(t *testing.T) {
@@ -45,7 +46,7 @@ func TestDecode_InvalidTypedEvent(t *testing.T) {
 }
 
 func TestEventNames(t *testing.T) {
-	cases := []run.Event{
+	cases := []hookkit.Event{
 		SessionStart{},
 		SessionEnd{},
 		BeforeSubmitPrompt{},

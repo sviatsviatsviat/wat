@@ -40,18 +40,18 @@ func (d *Dialect) Register(h HookHandler) {
 // RegisterWith appends a handler that receives results when invoked.
 // Pass results as type R (typically the package Results interface), matching fn.
 // A nil fn is a no-op.
-func RegisterWith[E Event, O Output, R any](d *Dialect, results R, fn func(context.Context, Hook[E], R) (O, error)) {
+func RegisterWith[E Event, O Output, R any](d *Dialect, results R, fn func(context.Context, E, R) (O, error)) {
 	if fn == nil {
 		return
 	}
-	d.Register(Handler(func(ctx context.Context, hook Hook[E]) (O, error) {
-		return fn(ctx, hook, results)
+	d.Register(Handler(func(ctx context.Context, event E) (O, error) {
+		return fn(ctx, event, results)
 	}))
 }
 
 // RegisterObserve appends an observe-only handler for event E.
 // A nil fn is a no-op.
-func RegisterObserve[E Event](d *Dialect, fn func(context.Context, Hook[E]) error) {
+func RegisterObserve[E Event](d *Dialect, fn func(context.Context, E) error) {
 	d.Register(ObserveHandler(fn))
 }
 

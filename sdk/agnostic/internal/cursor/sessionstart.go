@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
@@ -15,8 +13,8 @@ func RegisterSessionStart(fn model.SessionStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.UseHooks().SessionStart(func(ctx context.Context, hook run.Hook[sdkcursor.SessionStart], native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
-		out, err := fn(ctx, model.NewSessionStartHook(hook.Invocation(), mapSessionStart(hook.Event)), newSessionStartResults(native))
+	sdkcursor.UseHooks().SessionStart(func(ctx context.Context, hook sdkcursor.SessionStart, native sdkcursor.SessionStartResults) (sdkcursor.SessionStartOutput, error) {
+		out, err := fn(ctx, *mapSessionStart(hook), newSessionStartResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}

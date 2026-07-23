@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
@@ -16,8 +14,8 @@ func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks().PostToolUse(func(ctx context.Context, hook run.Hook[sdkcopilot.PostToolUse], native sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
-		out, err := fn(ctx, model.NewPostToolHook(hook.Invocation(), mapPostToolUse(hook.Event)), newPostToolResults(native))
+	sdkcopilot.UseHooks().PostToolUse(func(ctx context.Context, hook sdkcopilot.PostToolUse, native sdkcopilot.PostToolResults) (sdkcopilot.PostToolOutput, error) {
+		out, err := fn(ctx, *mapPostToolUse(hook), newPostToolResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}

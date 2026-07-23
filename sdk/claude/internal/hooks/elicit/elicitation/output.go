@@ -3,14 +3,13 @@ package elicitation
 import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Output is the response for this hook event.
 // Construct via Results builders and With* methods.
 // A nil value is a no-op.
 type Output interface {
-	run.Output
+	hookkit.Output
 	isOutput()
 	// WithContent sets the elicitation response content.
 	WithContent(content map[string]any) Output
@@ -91,7 +90,7 @@ func (o output) Encode() ([]byte, int, error) {
 }
 
 // Merge combines other into this Elicitation output.
-func (o output) Merge(other run.Output) (run.Output, []string, error) {
+func (o output) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	b, ok := other.(output)
 	if !ok {
 		return nil, nil, hookkit.ErrMergeType(o, other)

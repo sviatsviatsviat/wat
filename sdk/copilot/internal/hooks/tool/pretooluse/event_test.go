@@ -3,13 +3,13 @@ package pretooluse
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"maps"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 const copilotPreToolUse = `{
@@ -103,7 +103,7 @@ func TestEncode_ZeroOutput(t *testing.T) {
 func TestMerge_PreTool_denyBeatsAllowAndStops(t *testing.T) {
 	a := results{}.Allow()
 	b := results{}.Deny("blocked")
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestMerge_PreTool_modifiedArgsOverwriteWarns(t *testing.T) {
 	orig := maps.Clone(first)
 	a := results{}.Allow().WithModifiedArgs(first)
 	b := results{}.Allow().WithModifiedArgs(second)
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,13 +1,13 @@
 package pretooluse
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"maps"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestEncode_PreToolDeny(t *testing.T) {
@@ -55,7 +55,7 @@ func TestDecode_PreToolUse(t *testing.T) {
 func TestMerge_PreToolUse_denyBeatsAllowAndStops(t *testing.T) {
 	a := results{}.Allow().WithAdditionalContext("ctx-a")
 	b := results{}.Deny("nope").WithAdditionalContext("ctx-b")
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +80,7 @@ func TestMerge_PreToolUse_updatedInputOverwriteWarns(t *testing.T) {
 	origFirst := maps.Clone(first)
 	a := results{}.Allow().WithUpdatedInput(first)
 	b := results{}.Allow().WithUpdatedInput(second)
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}

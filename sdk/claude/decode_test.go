@@ -4,8 +4,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestDecode_UnknownEvent(t *testing.T) {
@@ -49,7 +50,7 @@ func TestDecode_InvalidJSON(t *testing.T) {
 }
 
 func TestEventNames(t *testing.T) {
-	cases := []run.Event{
+	cases := []hookkit.Event{
 		SessionStart{},
 		Setup{},
 		SessionEnd{},

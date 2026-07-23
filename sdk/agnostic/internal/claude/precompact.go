@@ -5,7 +5,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterPreCompact registers fn on the Claude PreCompact chain.
@@ -13,8 +12,8 @@ func RegisterPreCompact(fn model.PreCompactHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks().PreCompact(func(ctx context.Context, hook run.Hook[sdkclaude.PreCompact], _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
-		return nil, fn(ctx, model.NewPreCompactHook(hook.Invocation(), mapPreCompact(hook.Event)))
+	sdkclaude.UseHooks().PreCompact(func(ctx context.Context, hook sdkclaude.PreCompact, _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
+		return nil, fn(ctx, *mapPreCompact(hook))
 	})
 }
 

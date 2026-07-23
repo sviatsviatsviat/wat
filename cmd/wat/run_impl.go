@@ -65,12 +65,6 @@ func runHook(cfg runConfig, deps runDeps) int {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if len(cmd.Env) == 0 {
-		cmd.Env = append([]string(nil), os.Environ()...)
-	}
-	if cfg.agent != "" {
-		cmd.Env = append(cmd.Env, "WAT_AGENT="+cfg.agent)
-	}
 
 	if err := deps.runCmd(cmd); err != nil {
 		var exitErr *exec.ExitError

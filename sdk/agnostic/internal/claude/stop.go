@@ -6,7 +6,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterStop registers fn on the Claude Stop chain.
@@ -14,8 +13,8 @@ func RegisterStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks().Stop(func(ctx context.Context, hook run.Hook[sdkclaude.Stop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
-		return callStop(ctx, hook.Invocation(), mapStop(hook.Event), native, fn)
+	sdkclaude.UseHooks().Stop(func(ctx context.Context, hook sdkclaude.Stop, native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
+		return callStop(ctx, mapStop(hook), native, fn)
 	})
 }
 
@@ -24,13 +23,13 @@ func RegisterSubagentStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks().SubagentStop(func(ctx context.Context, hook run.Hook[sdkclaude.SubagentStop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
-		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event), native, fn)
+	sdkclaude.UseHooks().SubagentStop(func(ctx context.Context, hook sdkclaude.SubagentStop, native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
+		return callStop(ctx, mapSubagentStop(hook), native, fn)
 	})
 }
 
-func callStop(ctx context.Context, inv run.Invocation, ev *model.StopEvent, native sdkclaude.StopResults, fn model.StopHandler) (sdkclaude.StopOutput, error) {
-	out, err := fn(ctx, model.NewStopHook(inv, ev), newStopResults(native))
+func callStop(ctx context.Context, ev *model.StopEvent, native sdkclaude.StopResults, fn model.StopHandler) (sdkclaude.StopOutput, error) {
+	out, err := fn(ctx, *ev, newStopResults(native))
 	if err != nil || out == nil {
 		return nil, err
 	}

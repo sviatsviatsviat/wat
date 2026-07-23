@@ -6,7 +6,7 @@ import (
 )
 
 type handler[E Event, O Output] struct {
-	fn func(context.Context, Hook[E]) (O, error)
+	fn func(context.Context, E) (O, error)
 }
 
 // EventName returns the native event name for E.
@@ -21,7 +21,7 @@ func (h handler[E, O]) Invoke(ctx context.Context, event Event) (Output, error) 
 	if !ok {
 		panic(fmt.Sprintf("handler for %s received %T", h.EventName(), event))
 	}
-	result, err := h.fn(ctx, NewHook(InvocationFrom(ctx), typed))
+	result, err := h.fn(ctx, typed)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (h handler[E, O]) Invoke(ctx context.Context, event Event) (Output, error) 
 }
 
 type observeHandler[E Event] struct {
-	fn func(context.Context, Hook[E]) error
+	fn func(context.Context, E) error
 }
 
 // EventName returns the native event name for E.
@@ -44,7 +44,7 @@ func (h observeHandler[E]) Invoke(ctx context.Context, event Event) (Output, err
 	if !ok {
 		panic(fmt.Sprintf("handler for %s received %T", h.EventName(), event))
 	}
-	if err := h.fn(ctx, NewHook(InvocationFrom(ctx), typed)); err != nil {
+	if err := h.fn(ctx, typed); err != nil {
 		return nil, err
 	}
 	return nil, nil
@@ -52,7 +52,7 @@ func (h observeHandler[E]) Invoke(ctx context.Context, event Event) (Output, err
 
 // Handler returns a HookHandler that produces a typed output for event E.
 // A nil fn yields a nil HookHandler (Dialect.Register no-ops).
-func Handler[E Event, O Output](fn func(context.Context, Hook[E]) (O, error)) HookHandler {
+func Handler[E Event, O Output](fn func(context.Context, E) (O, error)) HookHandler {
 	if fn == nil {
 		return nil
 	}
@@ -61,7 +61,7 @@ func Handler[E Event, O Output](fn func(context.Context, Hook[E]) (O, error)) Ho
 
 // ObserveHandler returns a HookHandler that observes event E with no host JSON.
 // A nil fn yields a nil HookHandler (Dialect.Register no-ops).
-func ObserveHandler[E Event](fn func(context.Context, Hook[E]) error) HookHandler {
+func ObserveHandler[E Event](fn func(context.Context, E) error) HookHandler {
 	if fn == nil {
 		return nil
 	}

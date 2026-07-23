@@ -6,7 +6,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // RegisterPostToolFailure registers fn on the Claude PostToolUseFailure chain.
@@ -14,8 +13,8 @@ func RegisterPostToolFailure(fn model.PostToolFailureHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks().PostToolUseFailure(func(ctx context.Context, hook run.Hook[sdkclaude.PostToolUseFailure], native sdkclaude.PostToolUseFailureResults) (sdkclaude.PostToolUseOutput, error) {
-		out, err := fn(ctx, model.NewPostToolFailureHook(hook.Invocation(), mapPostToolUseFailure(hook.Event)), newPostToolFailureResults(native))
+	sdkclaude.UseHooks().PostToolUseFailure(func(ctx context.Context, hook sdkclaude.PostToolUseFailure, native sdkclaude.PostToolUseFailureResults) (sdkclaude.PostToolUseOutput, error) {
+		out, err := fn(ctx, *mapPostToolUseFailure(hook), newPostToolFailureResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}

@@ -10,9 +10,6 @@ import (
 // PostToolEvent is the normalized view of a PostTool hook invocation.
 type PostToolEvent = model.PostToolEvent
 
-// PostToolHook is the handler context for portable PostTool events.
-type PostToolHook = model.PostToolHook
-
 // PostToolResult is the portable hook response for PostTool events.
 type PostToolResult = model.PostToolResult
 

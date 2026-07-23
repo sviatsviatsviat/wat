@@ -2,8 +2,6 @@ package model
 
 import (
 	"context"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // StopEvent is the normalized view of Stop and SubagentStop hook invocations.
@@ -13,26 +11,8 @@ type StopEvent struct {
 	Subagent *Subagent
 }
 
-// StopHook is the handler context for portable Stop and SubagentStop events.
-type StopHook struct {
-	StopEvent
-	inv run.Invocation
-}
-
-// NewStopHook wraps ev with serve-time invocation settings.
-func NewStopHook(inv run.Invocation, ev *StopEvent) StopHook {
-	h := StopHook{inv: inv}
-	if ev != nil {
-		h.StopEvent = *ev
-	}
-	return h
-}
-
-// Invocation returns serve-time settings for this hook invocation.
-func (h StopHook) Invocation() run.Invocation { return h.inv }
-
 // StopHandler handles portable Stop and SubagentStop events.
-type StopHandler func(ctx context.Context, hook StopHook, results StopResults) (StopResult, error)
+type StopHandler func(ctx context.Context, event StopEvent, results StopResults) (StopResult, error)
 
 // StopResult is the portable hook response for Stop and SubagentStop events.
 // Construct only via StopResults (FollowUp).

@@ -4,7 +4,6 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/tools"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Event is the postToolUse hook event.
@@ -37,7 +36,7 @@ func (e Event) DurationMillis() int64 {
 
 // Register registers this hook event decoder on c.
 func Register(c *hookkit.Codec) {
-	c.Register(event.PostToolUse, func(raw []byte) (run.Event, error) {
+	c.Register(event.PostToolUse, func(raw []byte) (hookkit.Event, error) {
 		return hookkit.DecodeEvent(c, raw, func(e *Event, raw []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})

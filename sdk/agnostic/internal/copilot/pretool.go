@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sviatsviatsviat/wat/sdk/run"
-
 	"github.com/sviatsviatsviat/wat/sdk/agnostic/internal/model"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
@@ -15,8 +13,8 @@ func RegisterPreTool(fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks().PreToolUse(func(ctx context.Context, hook run.Hook[sdkcopilot.PreToolUse], native sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
-		out, err := fn(ctx, model.NewPreToolHook(hook.Invocation(), mapPreToolUse(hook.Event)), newPreToolResults(native))
+	sdkcopilot.UseHooks().PreToolUse(func(ctx context.Context, hook sdkcopilot.PreToolUse, native sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
+		out, err := fn(ctx, *mapPreToolUse(hook), newPreToolResults(native))
 		if err != nil || out == nil {
 			return nil, err
 		}

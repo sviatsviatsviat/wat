@@ -2,10 +2,10 @@ package sessionstart
 
 import (
 	"encoding/json"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func mustDecode[E any](t *testing.T, raw string) E {
@@ -53,7 +53,7 @@ func TestDecode_SessionStart(t *testing.T) {
 func TestMerge_SessionStart_contextJoins(t *testing.T) {
 	a := results{}.Context("one")
 	b := results{}.Context("two")
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}

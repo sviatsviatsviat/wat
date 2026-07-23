@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // PermissionDecision is a permission verdict label on permission-gating events.
@@ -23,7 +21,7 @@ const (
 // PermissionOutput is the response for permission-gating events.
 // Construct via PermissionResults builders and With* methods. A nil value is a no-op.
 type PermissionOutput interface {
-	run.Output
+	hookkit.Output
 	isPermissionOutput()
 	// WithUserMessage sets a user-facing message.
 	WithUserMessage(msg string) PermissionOutput
@@ -155,7 +153,7 @@ func (o permissionOutput) Encode() ([]byte, int, error) {
 }
 
 // Merge combines other into this permission output.
-func (o permissionOutput) Merge(other run.Output) (run.Output, []string, error) {
+func (o permissionOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	b, ok := other.(permissionOutput)
 	if !ok {
 		return nil, nil, hookkit.ErrMergeType(o, other)

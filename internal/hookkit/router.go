@@ -1,7 +1,7 @@
 package hookkit
 
 // DetectFunc reports whether raw matches a dialect.
-type DetectFunc func(raw []byte, getenv func(string) string) bool
+type DetectFunc func(raw []byte) bool
 
 type routerEntry struct {
 	detect  DetectFunc
@@ -45,18 +45,11 @@ func (r *Router) Ensure(name string, detect DetectFunc, d *Dialect) *Dialect {
 	return d
 }
 
-// Detect selects a dialect for raw, or forced when non-empty.
-func (r *Router) Detect(raw []byte, getenv func(string) string, forced string) (name string, d *Dialect, ok bool) {
-	if forced != "" {
-		e, ok := r.byName[forced]
-		if !ok {
-			return "", nil, false
-		}
-		return forced, e.dialect, true
-	}
+// Detect selects a dialect for raw by walking registered detect functions.
+func (r *Router) Detect(raw []byte) (name string, d *Dialect, ok bool) {
 	for _, name := range r.order {
 		e := r.byName[name]
-		if e.detect != nil && e.detect(raw, getenv) {
+		if e.detect != nil && e.detect(raw) {
 			return name, e.dialect, true
 		}
 	}

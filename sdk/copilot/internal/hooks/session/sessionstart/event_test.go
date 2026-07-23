@@ -1,11 +1,11 @@
 package sessionstart
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestEncode_SessionStartContext(t *testing.T) {
@@ -32,7 +32,7 @@ func TestDecode_SessionStart(t *testing.T) {
 func TestMerge_SessionStart_contextJoins(t *testing.T) {
 	a := results{}.Context("one")
 	b := results{}.Context("two")
-	merged, warnings, err := a.Merge(b.(run.Output))
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
 	if err != nil {
 		t.Fatal(err)
 	}

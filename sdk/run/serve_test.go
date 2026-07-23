@@ -23,7 +23,7 @@ func (emptyOutput) IsZero() bool { return true }
 
 func (emptyOutput) Encode() ([]byte, int, error) { return nil, 0, nil }
 
-func (emptyOutput) Merge(other Output) (Output, []string, error) {
+func (emptyOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	return emptyOutput{}, nil, nil
 }
 
@@ -45,7 +45,7 @@ func (o foldOutput) Encode() ([]byte, int, error) {
 	return []byte(o.body), o.exitCode, nil
 }
 
-func (o foldOutput) Merge(other Output) (Output, []string, error) {
+func (o foldOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	b, ok := other.(foldOutput)
 	if !ok {
 		return nil, nil, fmt.Errorf("merge type mismatch: want foldOutput, got %T", other)
@@ -75,7 +75,7 @@ type otherOutput struct{ body string }
 func (o otherOutput) IsZero() bool                 { return o.body == "" }
 func (o otherOutput) Encode() ([]byte, int, error) { return []byte(o.body), 0, nil }
 func (o otherOutput) Stop() bool                   { return false }
-func (o otherOutput) Merge(other Output) (Output, []string, error) {
+func (o otherOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	return nil, nil, fmt.Errorf("merge type mismatch: want otherOutput, got %T", other)
 }
 
@@ -91,7 +91,7 @@ func newTestRouter(name, eventName string, decodeCalls *atomic.Int32) (*hookkit.
 	// Tests pass payloads with that field or we register a custom path.
 	d := hookkit.NewDialect(c)
 	r := hookkit.NewRouter()
-	r.Ensure(name, func([]byte, func(string) string) bool { return true }, d)
+	r.Ensure(name, func([]byte) bool { return true }, d)
 	return r, d
 }
 
@@ -100,16 +100,16 @@ func TestServe_DecodesOnce(t *testing.T) {
 	r, d := newTestRouter("testdialect", "TestEvent", &decodeCalls)
 	var handlerCalls atomic.Int32
 	for range 3 {
-		d.Register(hookkit.Handler(func(_ context.Context, hook Hook[testEvent]) (emptyOutput, error) {
+		d.Register(hookkit.Handler(func(_ context.Context, hook testEvent) (emptyOutput, error) {
 			handlerCalls.Add(1)
-			if hook.Event.raw != `{"hook_event_name":"TestEvent","ok":true}` {
-				t.Errorf("event = %#v", hook.Event)
+			if hook.raw != `{"hook_event_name":"TestEvent","ok":true}` {
+				t.Errorf("event = %#v", hook)
 			}
 			return emptyOutput{}, nil
 		}))
 	}
 
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent","ok":true}`), &bytes.Buffer{}, &bytes.Buffer{}, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent","ok":true}`), &bytes.Buffer{}, &bytes.Buffer{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -124,7 +124,7 @@ func TestServe_DecodesOnce(t *testing.T) {
 func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 	var decodeCalls atomic.Int32
 	r, _ := newTestRouter("empty", "NoHandlers", &decodeCalls)
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &bytes.Buffer{}, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &bytes.Buffer{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -136,15 +136,15 @@ func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 func TestServe_FoldsOutputsEncodeOnce(t *testing.T) {
 	var encodes atomic.Int32
 	r, d := newTestRouter("fold", "TestEvent", nil)
-	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (foldOutput, error) {
 		return foldOutput{body: "first", encodes: &encodes}, nil
 	}))
-	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (foldOutput, error) {
 		return foldOutput{body: "second", encodes: &encodes, exitCode: 2}, nil
 	}))
 
 	var stdout, stderr bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &stderr, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &stderr)
 	if code != 2 {
 		t.Fatalf("exit = %d, want 2", code)
 	}
@@ -162,17 +162,17 @@ func TestServe_FoldsOutputsEncodeOnce(t *testing.T) {
 func TestServe_StopSkipsLaterHandlers(t *testing.T) {
 	r, d := newTestRouter("stop", "TestEvent", nil)
 	var calls atomic.Int32
-	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (foldOutput, error) {
 		calls.Add(1)
 		return foldOutput{body: "deny", stop: true}, nil
 	}))
-	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (foldOutput, error) {
 		calls.Add(1)
 		return foldOutput{body: "later"}, nil
 	}))
 
 	var stdout bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &bytes.Buffer{}, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &bytes.Buffer{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -186,15 +186,15 @@ func TestServe_StopSkipsLaterHandlers(t *testing.T) {
 
 func TestServe_MergeTypeMismatch(t *testing.T) {
 	r, d := newTestRouter("mismatch", "TestEvent", nil)
-	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (foldOutput, error) {
 		return foldOutput{body: "a"}, nil
 	}))
-	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (otherOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (otherOutput, error) {
 		return otherOutput{body: "b"}, nil
 	}))
 
 	var stderr bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &bytes.Buffer{}, &stderr, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &bytes.Buffer{}, &stderr)
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
 	}

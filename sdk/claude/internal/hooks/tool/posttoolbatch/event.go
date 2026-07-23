@@ -6,7 +6,6 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/tools"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Call is one tool invocation entry in a PostToolBatch event.
@@ -50,7 +49,7 @@ func bindToolInputs(e *Event, raw []byte) {
 
 // Register registers this hook event decoder on c.
 func Register(c *hookkit.Codec) {
-	c.Register(event.PostToolBatch, func(raw []byte) (run.Event, error) {
+	c.Register(event.PostToolBatch, func(raw []byte) (hookkit.Event, error) {
 		return hookkit.DecodeEvent(c, raw, bindToolInputs)
 	})
 }

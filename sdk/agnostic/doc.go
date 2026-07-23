@@ -10,15 +10,14 @@
 // interfaces in sdk/agnostic/internal/model. Agnostic depends on the
 // per-agent SDKs; those SDKs remain usable without agnostic.
 //
-// Hook handlers receive a hook context wrapper (PreToolHook, PostToolHook, and
-// others) embedding a normalized typed event (PreToolEvent, PostToolEvent, …)
-// plus hook-scoped result builders (PreToolResults, PostToolResults, and others)
-// that wrap the native agent Results. Advanced fields use fluent With* methods
-// on the returned result (for example WithUpdatedInput). Observe-only kinds use
-// OnSessionEnd, OnUserPrompt, OnPreCompact, and OnSubagentStart with
-// per-kind handler types. Register handlers with UseHooks().OnPreTool,
-// UseHooks().OnPostTool, and related chain methods, then call run.Main from
-// github.com/sviatsviatsviat/wat/sdk/run.
+// Hook handlers receive a normalized typed event (PreToolEvent, PostToolEvent,
+// and others) plus hook-scoped result builders (PreToolResults, PostToolResults,
+// and others) that wrap the native agent Results. Advanced fields use fluent
+// With* methods on the returned result (for example WithUpdatedInput).
+// Observe-only kinds use OnSessionEnd, OnUserPrompt, OnPreCompact, and
+// OnSubagentStart with per-kind handler types. Register handlers with
+// UseHooks().OnPreTool, UseHooks().OnPostTool, and related chain methods, then
+// call run.Main from github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Agent-only capabilities (BlockPrompt, Env, HaltSession, and others) belong in
 // sdk/claude, sdk/copilot, and sdk/cursor.
