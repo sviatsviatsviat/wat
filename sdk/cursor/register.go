@@ -16,5 +16,5 @@ func init() {
 	tool.Register(c)
 	agent.Register(c)
 	compact.Register(c)
-	runtime.EnsureDialect(runtime.DefaultReg)
+	runtime.EnsureRegistered()
 }

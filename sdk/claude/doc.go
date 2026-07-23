@@ -1,6 +1,5 @@
 // Package claude is the Claude Code hook SDK. Hook authors register typed
-// handlers with UseHooks into a run.Registry (the process default when called
-// with no arguments), then call run.Main from
+// handlers with UseHooks, then call run.Main from
 // github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Handlers build responses with hook-scoped *Results builders (and With* for

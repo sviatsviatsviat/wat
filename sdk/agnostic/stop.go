@@ -29,9 +29,9 @@ func (c *chain) OnStop(fn StopHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterStop(c.reg, fn)
-	copilot.RegisterStop(c.reg, fn)
-	cursor.RegisterStop(c.reg, fn)
+	claude.RegisterStop(fn)
+	copilot.RegisterStop(fn)
+	cursor.RegisterStop(fn)
 	return c
 }
 
@@ -42,8 +42,8 @@ func (c *chain) OnSubagentStop(fn StopHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterSubagentStop(c.reg, fn)
-	copilot.RegisterSubagentStop(c.reg, fn)
-	cursor.RegisterSubagentStop(c.reg, fn)
+	claude.RegisterSubagentStop(fn)
+	copilot.RegisterSubagentStop(fn)
+	cursor.RegisterSubagentStop(fn)
 	return c
 }

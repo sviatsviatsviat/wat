@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterSubagentStart registers fn on the Cursor SubagentStart chain.
-func RegisterSubagentStart(r *run.Registry, fn model.SubagentStartHandler) {
+func RegisterSubagentStart(fn model.SubagentStartHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.UseHooks(r).SubagentStart(func(ctx context.Context, hook run.Hook[sdkcursor.SubagentStart], _ sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
+	sdkcursor.UseHooks().SubagentStart(func(ctx context.Context, hook run.Hook[sdkcursor.SubagentStart], _ sdkcursor.SubagentStartResults) (sdkcursor.PermissionOutput, error) {
 		return nil, fn(ctx, model.NewSubagentStartHook(hook.Invocation(), mapSubagentStart(hook.Event)))
 	})
 }

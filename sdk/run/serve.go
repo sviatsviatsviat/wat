@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 // Main runs one hook dispatch cycle on os.Stdin / os.Stdout / os.Stderr using
-// the default registry, then os.Exit with the resulting code.
+// the default dialect router, then os.Exit with the resulting code.
 func Main(opts ...Option) {
 	cfg := applyOptions(opts...)
-	os.Exit(GetDefaultRegistry().serve(context.Background(), os.Stdin, os.Stdout, os.Stderr, cfg))
+	code := serve(context.Background(), hookkit.DefaultRouter(), os.Stdin, os.Stdout, os.Stderr, cfg)
+	os.Exit(code)
 }
 
-func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw io.Writer, cfg *Config) int {
+func serve(ctx context.Context, router *hookkit.Router, in io.Reader, out io.Writer, errw io.Writer, cfg *Config) int {
 	raw, err := io.ReadAll(in)
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "run: read stdin: %v\n", err)
@@ -25,42 +28,36 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 		return 1
 	}
 
-	dialect, ok := r.detectDialect(raw, cfg.Getenv, cfg.Dialect)
-	if !ok {
+	name, d, ok := router.Detect(raw, cfg.Getenv, cfg.Dialect)
+	if !ok || d == nil || d.Codec() == nil {
 		_, _ = fmt.Fprintln(errw, "run: unknown dialect")
 		return 1
 	}
 
-	ops, ok := r.dialectOps(dialect)
-	if !ok || ops.Codec == nil {
-		_, _ = fmt.Fprintf(errw, "run: %s: missing dialect ops\n", dialect)
-		return 1
-	}
-
-	eventName, err := ops.Codec.EventName(raw)
+	eventName, err := d.Codec().EventName(raw)
 	if err != nil {
-		_, _ = fmt.Fprintf(errw, "run: %s: decode: %v\n", dialect, err)
+		_, _ = fmt.Fprintf(errw, "run: %s: decode: %v\n", name, err)
 		return 1
 	}
 
-	handlers := r.handlersFor(dialect, eventName)
+	handlers := d.HandlersFor(eventName)
 	if len(handlers) == 0 {
 		return 0
 	}
 
-	event, err := ops.Codec.Decode(raw)
+	event, err := d.Codec().Decode(raw)
 	if err != nil {
-		_, _ = fmt.Fprintf(errw, "run: %s: decode: %v\n", dialect, err)
+		_, _ = fmt.Fprintf(errw, "run: %s: decode: %v\n", name, err)
 		return 1
 	}
 
-	ctx = WithConfig(ctx, cfg)
+	ctx = hookkit.WithConfig(ctx, cfg)
 
 	var acc Output
 	for _, h := range handlers {
-		outVal, err := h.invoke(ctx, event)
+		outVal, err := h.Invoke(ctx, event)
 		if err != nil {
-			_, _ = fmt.Fprintf(errw, "run: %s: handler: %v\n", dialect, err)
+			_, _ = fmt.Fprintf(errw, "run: %s: handler: %v\n", name, err)
 			return 1
 		}
 		if outVal == nil || outVal.IsZero() {
@@ -71,11 +68,11 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 		} else {
 			merged, warnings, err := acc.Merge(outVal)
 			if err != nil {
-				_, _ = fmt.Fprintf(errw, "run: %s: merge: %v\n", dialect, err)
+				_, _ = fmt.Fprintf(errw, "run: %s: merge: %v\n", name, err)
 				return 1
 			}
 			for _, w := range warnings {
-				_, _ = fmt.Fprintf(errw, "run: %s: merge: %s\n", dialect, w)
+				_, _ = fmt.Fprintf(errw, "run: %s: merge: %s\n", name, w)
 			}
 			acc = merged
 		}
@@ -90,7 +87,7 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 
 	stdout, exitCode, err := acc.Encode()
 	if err != nil {
-		_, _ = fmt.Fprintf(errw, "run: %s: encode: %v\n", dialect, err)
+		_, _ = fmt.Fprintf(errw, "run: %s: encode: %v\n", name, err)
 		return 1
 	}
 	if len(stdout) > 0 {

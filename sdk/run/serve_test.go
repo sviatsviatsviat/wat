@@ -7,12 +7,9 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-)
 
-type testCodec struct {
-	eventName   string
-	decodeCalls *atomic.Int32
-}
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+)
 
 type testEvent struct {
 	raw string
@@ -73,36 +70,46 @@ func (o foldOutput) Merge(other Output) (Output, []string, error) {
 
 func (o foldOutput) Stop() bool { return o.stop }
 
-func (c testCodec) EventName([]byte) (string, error) {
-	return c.eventName, nil
+type otherOutput struct{ body string }
+
+func (o otherOutput) IsZero() bool                 { return o.body == "" }
+func (o otherOutput) Encode() ([]byte, int, error) { return []byte(o.body), 0, nil }
+func (o otherOutput) Stop() bool                   { return false }
+func (o otherOutput) Merge(other Output) (Output, []string, error) {
+	return nil, nil, fmt.Errorf("merge type mismatch: want otherOutput, got %T", other)
 }
 
-func (c testCodec) Decode(raw []byte) (Event, error) {
-	if c.decodeCalls != nil {
-		c.decodeCalls.Add(1)
-	}
-	return testEvent{raw: string(raw)}, nil
+func newTestRouter(name, eventName string, decodeCalls *atomic.Int32) (*hookkit.Router, *hookkit.Dialect) {
+	c := hookkit.NewCodec(name, fmt.Errorf("empty"), fmt.Errorf("decode"), fmt.Errorf("name required"))
+	c.Register(eventName, func(raw []byte) (hookkit.Event, error) {
+		if decodeCalls != nil {
+			decodeCalls.Add(1)
+		}
+		return testEvent{raw: string(raw)}, nil
+	})
+	// For EventName peek, hookkit.Codec requires hook_event_name in JSON.
+	// Tests pass payloads with that field or we register a custom path.
+	d := hookkit.NewDialect(c)
+	r := hookkit.NewRouter()
+	r.Ensure(name, func([]byte, func(string) string) bool { return true }, d)
+	return r, d
 }
 
 func TestServe_DecodesOnce(t *testing.T) {
-	r := NewRegistry()
 	var decodeCalls atomic.Int32
-	r.registerDialect("testdialect", DialectOps{
-		Detect: func([]byte, func(string) string) bool { return true },
-		Codec:  testCodec{eventName: "TestEvent", decodeCalls: &decodeCalls},
-	})
+	r, d := newTestRouter("testdialect", "TestEvent", &decodeCalls)
 	var handlerCalls atomic.Int32
 	for range 3 {
-		r.RegisterHandler("testdialect", Handler(func(_ context.Context, hook Hook[testEvent]) (emptyOutput, error) {
+		d.Register(hookkit.Handler(func(_ context.Context, hook Hook[testEvent]) (emptyOutput, error) {
 			handlerCalls.Add(1)
-			if hook.Event.raw != `{"ok":true}` {
+			if hook.Event.raw != `{"hook_event_name":"TestEvent","ok":true}` {
 				t.Errorf("event = %#v", hook.Event)
 			}
 			return emptyOutput{}, nil
 		}))
 	}
 
-	code := r.serve(context.Background(), strings.NewReader(`{"ok":true}`), &bytes.Buffer{}, &bytes.Buffer{}, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent","ok":true}`), &bytes.Buffer{}, &bytes.Buffer{}, applyOptions())
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -115,13 +122,9 @@ func TestServe_DecodesOnce(t *testing.T) {
 }
 
 func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
-	r := NewRegistry()
 	var decodeCalls atomic.Int32
-	r.registerDialect("empty", DialectOps{
-		Detect: func([]byte, func(string) string) bool { return true },
-		Codec:  testCodec{eventName: "NoHandlers", decodeCalls: &decodeCalls},
-	})
-	code := r.serve(context.Background(), strings.NewReader(`{}`), &bytes.Buffer{}, &bytes.Buffer{}, applyOptions())
+	r, _ := newTestRouter("empty", "NoHandlers", &decodeCalls)
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &bytes.Buffer{}, applyOptions())
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -131,21 +134,17 @@ func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 }
 
 func TestServe_FoldsOutputsEncodeOnce(t *testing.T) {
-	r := NewRegistry()
 	var encodes atomic.Int32
-	r.registerDialect("fold", DialectOps{
-		Detect: func([]byte, func(string) string) bool { return true },
-		Codec:  testCodec{eventName: "TestEvent"},
-	})
-	r.RegisterHandler("fold", Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	r, d := newTestRouter("fold", "TestEvent", nil)
+	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
 		return foldOutput{body: "first", encodes: &encodes}, nil
 	}))
-	r.RegisterHandler("fold", Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
 		return foldOutput{body: "second", encodes: &encodes, exitCode: 2}, nil
 	}))
 
 	var stdout, stderr bytes.Buffer
-	code := r.serve(context.Background(), strings.NewReader(`{}`), &stdout, &stderr, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &stderr, applyOptions())
 	if code != 2 {
 		t.Fatalf("exit = %d, want 2", code)
 	}
@@ -161,23 +160,19 @@ func TestServe_FoldsOutputsEncodeOnce(t *testing.T) {
 }
 
 func TestServe_StopSkipsLaterHandlers(t *testing.T) {
-	r := NewRegistry()
-	r.registerDialect("stop", DialectOps{
-		Detect: func([]byte, func(string) string) bool { return true },
-		Codec:  testCodec{eventName: "TestEvent"},
-	})
+	r, d := newTestRouter("stop", "TestEvent", nil)
 	var calls atomic.Int32
-	r.RegisterHandler("stop", Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
 		calls.Add(1)
 		return foldOutput{body: "deny", stop: true}, nil
 	}))
-	r.RegisterHandler("stop", Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
 		calls.Add(1)
 		return foldOutput{body: "later"}, nil
 	}))
 
 	var stdout bytes.Buffer
-	code := r.serve(context.Background(), strings.NewReader(`{}`), &stdout, &bytes.Buffer{}, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &bytes.Buffer{}, applyOptions())
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -190,20 +185,16 @@ func TestServe_StopSkipsLaterHandlers(t *testing.T) {
 }
 
 func TestServe_MergeTypeMismatch(t *testing.T) {
-	r := NewRegistry()
-	r.registerDialect("mismatch", DialectOps{
-		Detect: func([]byte, func(string) string) bool { return true },
-		Codec:  testCodec{eventName: "TestEvent"},
-	})
-	r.RegisterHandler("mismatch", Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
+	r, d := newTestRouter("mismatch", "TestEvent", nil)
+	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (foldOutput, error) {
 		return foldOutput{body: "a"}, nil
 	}))
-	r.RegisterHandler("mismatch", Handler(func(context.Context, Hook[testEvent]) (handlerTestOutput, error) {
-		return handlerTestOutput{body: "b"}, nil
+	d.Register(hookkit.Handler(func(context.Context, Hook[testEvent]) (otherOutput, error) {
+		return otherOutput{body: "b"}, nil
 	}))
 
 	var stderr bytes.Buffer
-	code := r.serve(context.Background(), strings.NewReader(`{}`), &bytes.Buffer{}, &stderr, applyOptions())
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &bytes.Buffer{}, &stderr, applyOptions())
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
 	}

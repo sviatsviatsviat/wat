@@ -10,21 +10,21 @@ import (
 )
 
 // RegisterStop registers fn on the Claude Stop chain.
-func RegisterStop(r *run.Registry, fn model.StopHandler) {
+func RegisterStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks(r).Stop(func(ctx context.Context, hook run.Hook[sdkclaude.Stop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
+	sdkclaude.UseHooks().Stop(func(ctx context.Context, hook run.Hook[sdkclaude.Stop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapStop(hook.Event), native, fn)
 	})
 }
 
 // RegisterSubagentStop registers fn on the Claude SubagentStop chain.
-func RegisterSubagentStop(r *run.Registry, fn model.StopHandler) {
+func RegisterSubagentStop(fn model.StopHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks(r).SubagentStop(func(ctx context.Context, hook run.Hook[sdkclaude.SubagentStop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
+	sdkclaude.UseHooks().SubagentStop(func(ctx context.Context, hook run.Hook[sdkclaude.SubagentStop], native sdkclaude.StopResults) (sdkclaude.StopOutput, error) {
 		return callStop(ctx, hook.Invocation(), mapSubagentStop(hook.Event), native, fn)
 	})
 }

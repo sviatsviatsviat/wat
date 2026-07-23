@@ -14,11 +14,11 @@ import (
 
 // RegisterPostTool registers fn on Cursor PostToolUse, AfterShellExecution,
 // AfterMCPExecution, and AfterFileEdit chains.
-func RegisterPostTool(registry *run.Registry, fn model.PostToolHandler) {
+func RegisterPostTool(fn model.PostToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcursor.UseHooks(registry).PostToolUse(func(ctx context.Context, hook run.Hook[sdkcursor.PostToolUse], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
+	sdkcursor.UseHooks().PostToolUse(func(ctx context.Context, hook run.Hook[sdkcursor.PostToolUse], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 		return callPostTool(ctx, hook.Invocation(), mapPostToolUse(hook.Event), native, fn)
 	}).
 		AfterShellExecution(func(ctx context.Context, hook run.Hook[sdkcursor.AfterShellExecution], native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {

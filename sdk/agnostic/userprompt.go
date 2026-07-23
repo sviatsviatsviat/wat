@@ -21,8 +21,8 @@ func (c *chain) OnUserPrompt(fn UserPromptHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterUserPrompt(c.reg, fn)
-	copilot.RegisterUserPrompt(c.reg, fn)
-	cursor.RegisterUserPrompt(c.reg, fn)
+	claude.RegisterUserPrompt(fn)
+	copilot.RegisterUserPrompt(fn)
+	cursor.RegisterUserPrompt(fn)
 	return c
 }

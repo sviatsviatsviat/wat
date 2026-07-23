@@ -1,49 +1,12 @@
 package agnostic
 
-import (
-	"github.com/sviatsviatsviat/wat/sdk/claude"
-	"github.com/sviatsviatsviat/wat/sdk/copilot"
-	"github.com/sviatsviatsviat/wat/sdk/cursor"
-	"github.com/sviatsviatsviat/wat/sdk/run"
-)
-
-// chain supports fluent handler registration into a run.Registry.
+// chain supports fluent portable handler registration.
 // Callers obtain a chain via UseHooks.
-type chain struct {
-	reg *run.Registry
-}
+type chain struct{}
 
-var (
-	defaultReg   = run.GetDefaultRegistry()
-	defaultChain = newChain(defaultReg)
-)
+var defaultChain = &chain{}
 
-func init() {
-	claude.UseHooks(defaultReg)
-	copilot.UseHooks(defaultReg)
-	cursor.UseHooks(defaultReg)
-}
-
-func newChain(r *run.Registry) *chain {
-	return &chain{reg: r}
-}
-
-// UseHooks returns a fluent registrar. With no arguments (or a nil / default
-// registry) it returns the package default chain; otherwise it attaches all
-// agent dialects to regs[0] and returns a new chain.
-func UseHooks(regs ...*run.Registry) *chain {
-	switch len(regs) {
-	case 0:
-		return defaultChain
-	case 1:
-		if regs[0] == nil || regs[0] == defaultReg {
-			return defaultChain
-		}
-		claude.UseHooks(regs[0])
-		copilot.UseHooks(regs[0])
-		cursor.UseHooks(regs[0])
-		return newChain(regs[0])
-	default:
-		panic("agnostic: UseHooks: at most one registry")
-	}
+// UseHooks returns a fluent registrar that fans out onto each agent SDK.
+func UseHooks() *chain {
+	return defaultChain
 }

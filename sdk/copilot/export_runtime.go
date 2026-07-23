@@ -5,7 +5,7 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
 
-// Dialect is the sdk/run registry name for GitHub Copilot hooks.
+// Dialect is the sdk/run router name for GitHub Copilot hooks.
 const Dialect = runtime.Dialect
 
 var (

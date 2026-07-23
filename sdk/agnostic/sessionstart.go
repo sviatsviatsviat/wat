@@ -27,8 +27,8 @@ func (c *chain) OnSessionStart(fn SessionStartHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterSessionStart(c.reg, fn)
-	copilot.RegisterSessionStart(c.reg, fn)
-	cursor.RegisterSessionStart(c.reg, fn)
+	claude.RegisterSessionStart(fn)
+	copilot.RegisterSessionStart(fn)
+	cursor.RegisterSessionStart(fn)
 	return c
 }

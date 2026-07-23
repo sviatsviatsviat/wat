@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-// Dialect is the sdk/run registry name for Claude Code hooks.
+// Dialect is the sdk/run router name for Claude Code hooks.
 const Dialect = "claude"
 
 // Decode error sentinels for stable error handling across packages.

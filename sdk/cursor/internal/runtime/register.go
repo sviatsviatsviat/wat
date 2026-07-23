@@ -4,25 +4,17 @@ import (
 	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // Codec decodes Cursor hook stdin payloads.
 var Codec = hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired)
 
-// DefaultReg is the process-wide default run.Registry.
-var DefaultReg = run.GetDefaultRegistry()
+// DefaultDialect is the process-wide Cursor dialect (codec plus handlers).
+var DefaultDialect = hookkit.NewDialect(Codec)
 
-func dialectOps() run.DialectOps {
-	return run.DialectOps{
-		Detect: detectPayload,
-		Codec:  Codec,
-	}
-}
-
-// EnsureDialect attaches this dialect to r when missing.
-func EnsureDialect(r *run.Registry) {
-	r.EnsureDialect(Dialect, dialectOps())
+// EnsureRegistered attaches DefaultDialect to the process router when missing.
+func EnsureRegistered() {
+	hookkit.DefaultRouter().Ensure(Dialect, detectPayload, DefaultDialect)
 }
 
 func detectPayload(raw []byte, getenv func(string) string) bool {

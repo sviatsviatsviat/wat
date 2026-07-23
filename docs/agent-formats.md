@@ -6,7 +6,7 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 ## Per-agent SDK skeleton
 
-`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `UseHooks` registration fans adapter handlers onto each agent SDK via `UseHooks(r)`, wrapping native events and Results builders.
+`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `UseHooks` registration fans adapter handlers onto each agent SDK via `UseHooks()`, wrapping native events and Results builders.
 
 Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/internal/hooks/<domain>/<event>/` (per-event package with `event.go` / `output.go` / `results.go`), reexported from the `claude` package root; Copilot and Cursor keep one file per native `hook_event_name` at the package root, including the typed chain method for that event. Shared decode helpers live in `internal/hookkit`. The shared `Event` interface (`EventName()` only) is defined in `hookkit` and re-exported as `run.Event`; per-agent SDKs do not define their own `Event` type. Typed handler context is `run.Hook`.
 
@@ -20,8 +20,8 @@ Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/
 | `envelope.go` | Shared payload fields (embedded on each event; access via promoted fields) |
 | `exit.go` | Handler/encode exit-code constants |
 | `encode.go` | Unexported encode router (wire mapping) |
-| `register.go` | Dialect codec and `EnsureDialect` init; handlers register via `run.Handler` / `run.ObserveHandler` |
-| `chain.go` | `UseHooks` and unexported fluent `chain` handle bound to a `run.Registry` |
+| `register.go` | Dialect codec init and process-router registration |
+| `chain.go` | Zero-arg `UseHooks` and unexported fluent `chain` |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
 | `tools/` (copilot/cursor) or root `Input` / `Tool*` (claude) | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
@@ -31,7 +31,7 @@ Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/
 | Location | Role |
 |----------|------|
 | `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool` chain method, adapters, …) |
-| `chain.go` | `UseHooks` and unexported fluent `chain` handle bound to a `run.Registry` |
+| `chain.go` | Zero-arg `UseHooks` and unexported fluent `chain` |
 | `toolcall.go` / `result.go` | Shared leaf types (`ToolCall`, `ToolResult`) and portable result projection |
 | `internal/model/<kind>.go` | Leaf definitions behind root aliases (`*Event`, `*Hook`, `*Handler`, `*Result`); same kind filenames as the package root |
 | `internal/model/toolcall.go` / `leaf.go` / `envelope.go` | Shared leaf payloads (`ToolCall`, `Subagent`, …) and `Envelope` |
@@ -88,7 +88,7 @@ See `go doc github.com/sviatsviatsviat/wat/sdk/agnostic` for typed events (`PreT
 
 ## Dialect identification
 
-Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"claude"`, and likewise for copilot/cursor) used for `sdk/run` registration and `Envelope.Agent`. CLI and config parse agent names via `cmd/wat/internal/dialect.Parse` (aliases like `claude-code`, `gh`). Hook serve resolves dialect via `run.WithDialect` / `WAT_AGENT`, or by walking each per-agent SDK’s registered `DialectOps.Detect` in `sdk/run` (payload shape and agent env hints such as `CURSOR_VERSION`).
+Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"claude"`, and likewise for copilot/cursor) used for process-router registration and `Envelope.Agent`. CLI and config parse agent names via `cmd/wat/internal/dialect.Parse` (aliases like `claude-code`, `gh`). Hook serve resolves dialect via `run.WithDialect` / `WAT_AGENT`, or by walking each dialect's registered detect function (payload shape and agent env hints such as `CURSOR_VERSION`).
 
 ## Portable agnostic API
 
@@ -176,7 +176,7 @@ Register with the per-agent SDK when you need features outside the portable inte
 
 ### Per-agent UseHooks coverage
 
-Each per-agent SDK exposes `UseHooks` (optional `*run.Registry`) and fluent chain methods with one entry per native hook surface (or shared builder where wire encode is identical). Claude-only long-tail events decode but have no dedicated portable `On*` — handle them with `sdk/claude` chain methods when available.
+Each per-agent SDK exposes zero-arg `UseHooks` and fluent chain methods with one entry per native hook surface (or shared builder where wire encode is identical). Agnostic `UseHooks` is likewise zero-arg. Claude-only long-tail events decode but have no dedicated portable `On*` — handle them with `sdk/claude` chain methods when available.
 
 | SDK | Chain methods | Notes |
 |---|---|---|
@@ -186,7 +186,7 @@ Each per-agent SDK exposes `UseHooks` (optional `*run.Registry`) and fluent chai
 
 ## Claude inbound mapping
 
-Portable `UseHooks().On*` handlers fan out onto `sdk/claude` via `UseHooks(r)` with unexported inbound mapping in `sdk/agnostic`; native decode, encode, and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
+Portable `UseHooks().On*` handlers fan out onto `sdk/claude` via `UseHooks()` with unexported inbound mapping in `sdk/agnostic`; native decode, encode, and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
 
 ### Event name mapping
 
@@ -226,7 +226,7 @@ Agent-native encode surfaces (use `sdk/claude` directly):
 
 ## Copilot inbound mapping
 
-Portable `UseHooks().On*` handlers fan out onto `sdk/copilot` via `UseHooks(r)` with unexported inbound mapping in `sdk/agnostic` (PascalCase `hook_event_name`, snake_case fields). Native decode stays in `sdk/copilot`.
+Portable `UseHooks().On*` handlers fan out onto `sdk/copilot` via `UseHooks()` with unexported inbound mapping in `sdk/agnostic` (PascalCase `hook_event_name`, snake_case fields). Native decode stays in `sdk/copilot`.
 
 ### Wire format
 
@@ -282,7 +282,7 @@ Agent-native encode surfaces (use `sdk/copilot` directly):
 
 ## Cursor inbound mapping
 
-Portable `UseHooks().On*` handlers fan out onto `sdk/cursor` via `UseHooks(r)` with unexported inbound mapping in `sdk/agnostic`. Native decode stays in `sdk/cursor`.
+Portable `UseHooks().On*` handlers fan out onto `sdk/cursor` via `UseHooks()` with unexported inbound mapping in `sdk/agnostic`. Native decode stays in `sdk/cursor`.
 
 Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`.
 

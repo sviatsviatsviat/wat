@@ -17,8 +17,7 @@
 // on the returned result (for example WithUpdatedInput). Observe-only kinds use
 // OnSessionEnd, OnUserPrompt, OnPreCompact, and OnSubagentStart with
 // per-kind handler types. Register handlers with UseHooks().OnPreTool,
-// UseHooks().OnPostTool, and related chain methods (or UseHooks(r) for a
-// private registry), then call run.Main from
+// UseHooks().OnPostTool, and related chain methods, then call run.Main from
 // github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Agent-only capabilities (BlockPrompt, Env, HaltSession, and others) belong in

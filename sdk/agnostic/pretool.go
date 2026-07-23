@@ -27,9 +27,9 @@ func (c *chain) OnPreTool(fn PreToolHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterPreTool(c.reg, fn)
-	copilot.RegisterPreTool(c.reg, fn)
-	cursor.RegisterPreTool(c.reg, fn)
-	cursor.RegisterBeforeReadFile(c.reg, fn)
+	claude.RegisterPreTool(fn)
+	copilot.RegisterPreTool(fn)
+	cursor.RegisterPreTool(fn)
+	cursor.RegisterBeforeReadFile(fn)
 	return c
 }

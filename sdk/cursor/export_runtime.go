@@ -5,7 +5,7 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
 )
 
-// Dialect is the sdk/run registry name for Cursor hooks.
+// Dialect is the sdk/run router name for Cursor hooks.
 const Dialect = runtime.Dialect
 
 var (

@@ -27,8 +27,8 @@ func (c *chain) OnPostToolFailure(fn PostToolFailureHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterPostToolFailure(c.reg, fn)
-	copilot.RegisterPostToolFailure(c.reg, fn)
-	cursor.RegisterPostToolFailure(c.reg, fn)
+	claude.RegisterPostToolFailure(fn)
+	copilot.RegisterPostToolFailure(fn)
+	cursor.RegisterPostToolFailure(fn)
 	return c
 }

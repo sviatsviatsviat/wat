@@ -21,8 +21,8 @@ func (c *chain) OnSessionEnd(fn SessionEndHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterSessionEnd(c.reg, fn)
-	copilot.RegisterSessionEnd(c.reg, fn)
-	cursor.RegisterSessionEnd(c.reg, fn)
+	claude.RegisterSessionEnd(fn)
+	copilot.RegisterSessionEnd(fn)
+	cursor.RegisterSessionEnd(fn)
 	return c
 }

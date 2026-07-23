@@ -11,11 +11,11 @@ import (
 )
 
 // RegisterPreTool registers fn on the Copilot PreToolUse chain.
-func RegisterPreTool(registry *run.Registry, fn model.PreToolHandler) {
+func RegisterPreTool(fn model.PreToolHandler) {
 	if fn == nil {
 		return
 	}
-	sdkcopilot.UseHooks(registry).PreToolUse(func(ctx context.Context, hook run.Hook[sdkcopilot.PreToolUse], native sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
+	sdkcopilot.UseHooks().PreToolUse(func(ctx context.Context, hook run.Hook[sdkcopilot.PreToolUse], native sdkcopilot.PreToolResults) (sdkcopilot.PreToolOutput, error) {
 		out, err := fn(ctx, model.NewPreToolHook(hook.Invocation(), mapPreToolUse(hook.Event)), newPreToolResults(native))
 		if err != nil || out == nil {
 			return nil, err

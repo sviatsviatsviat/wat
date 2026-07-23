@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterUserPrompt registers fn on the Claude UserPromptSubmit chain.
-func RegisterUserPrompt(r *run.Registry, fn model.UserPromptHandler) {
+func RegisterUserPrompt(fn model.UserPromptHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks(r).UserPromptSubmit(func(ctx context.Context, hook run.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
+	sdkclaude.UseHooks().UserPromptSubmit(func(ctx context.Context, hook run.Hook[sdkclaude.UserPromptSubmit], _ sdkclaude.UserPromptSubmitResults) (sdkclaude.UserPromptSubmitOutput, error) {
 		return nil, fn(ctx, model.NewUserPromptHook(hook.Invocation(), mapUserPromptSubmit(hook.Event)))
 	})
 }

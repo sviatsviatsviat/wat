@@ -21,8 +21,8 @@ func (c *chain) OnPreCompact(fn PreCompactHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterPreCompact(c.reg, fn)
-	copilot.RegisterPreCompact(c.reg, fn)
-	cursor.RegisterPreCompact(c.reg, fn)
+	claude.RegisterPreCompact(fn)
+	copilot.RegisterPreCompact(fn)
+	cursor.RegisterPreCompact(fn)
 	return c
 }

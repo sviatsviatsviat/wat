@@ -27,8 +27,8 @@ func (c *chain) OnPostTool(fn PostToolHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterPostTool(c.reg, fn)
-	copilot.RegisterPostTool(c.reg, fn)
-	cursor.RegisterPostTool(c.reg, fn)
+	claude.RegisterPostTool(fn)
+	copilot.RegisterPostTool(fn)
+	cursor.RegisterPostTool(fn)
 	return c
 }

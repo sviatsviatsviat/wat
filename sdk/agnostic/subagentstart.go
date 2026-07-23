@@ -21,8 +21,8 @@ func (c *chain) OnSubagentStart(fn SubagentStartHandler) *chain {
 	if fn == nil {
 		return c
 	}
-	claude.RegisterSubagentStart(c.reg, fn)
-	copilot.RegisterSubagentStart(c.reg, fn)
-	cursor.RegisterSubagentStart(c.reg, fn)
+	claude.RegisterSubagentStart(fn)
+	copilot.RegisterSubagentStart(fn)
+	cursor.RegisterSubagentStart(fn)
 	return c
 }

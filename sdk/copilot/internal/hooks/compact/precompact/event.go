@@ -5,7 +5,6 @@ import (
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
-	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -31,10 +30,10 @@ func Register(c *hookkit.Codec) {
 	c.Register(event.PreCompact, hookkit.EventDecoder[Event](c))
 }
 
-// RegisterHandler registers a PreCompact observe handler on reg.
-func RegisterHandler(reg *run.Registry, fn func(context.Context, run.Hook[Event]) error) {
+// RegisterHandler registers a PreCompact observe handler on d.
+func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, run.Hook[Event]) error) {
 	if fn == nil {
 		return
 	}
-	reg.RegisterObserveHandler(runtime.Dialect, run.ObserveHandler(fn))
+	d.Register(hookkit.ObserveHandler(fn))
 }

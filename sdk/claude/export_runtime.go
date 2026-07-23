@@ -5,7 +5,7 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
 )
 
-// Dialect is the sdk/run registry name for Claude Code hooks.
+// Dialect is the sdk/run router name for Claude Code hooks.
 const Dialect = runtime.Dialect
 
 var (

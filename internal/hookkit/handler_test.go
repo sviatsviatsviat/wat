@@ -1,4 +1,4 @@
-package run
+package hookkit
 
 import (
 	"context"
@@ -46,10 +46,10 @@ func TestHandler_invoke(t *testing.T) {
 	reg := Handler(func(_ context.Context, hook Hook[handlerTestEvent]) (handlerTestOutput, error) {
 		return handlerTestOutput{body: "ok"}, nil
 	})
-	if reg.eventName() != "HandlerTest" {
-		t.Fatalf("eventName = %q", reg.eventName())
+	if reg.EventName() != "HandlerTest" {
+		t.Fatalf("eventName = %q", reg.EventName())
 	}
-	out, err := reg.invoke(context.Background(), handlerTestEvent{})
+	out, err := reg.Invoke(context.Background(), handlerTestEvent{})
 	if err != nil {
 		t.Fatalf("err = %v", err)
 	}
@@ -69,15 +69,19 @@ func TestHandler_typeMismatch(t *testing.T) {
 			t.Fatalf("panic = %q", got)
 		}
 	}()
-	_, _ = reg.invoke(context.Background(), testEvent{raw: "other"})
+	_, _ = reg.Invoke(context.Background(), testEvent{})
 	t.Fatal("want panic")
 }
+
+type testEvent struct{}
+
+func (testEvent) EventName() string { return "Other" }
 
 func TestHandler_zeroOutput(t *testing.T) {
 	reg := Handler(func(context.Context, Hook[handlerTestEvent]) (handlerTestOutput, error) {
 		return handlerTestOutput{}, nil
 	})
-	out, err := reg.invoke(context.Background(), handlerTestEvent{})
+	out, err := reg.Invoke(context.Background(), handlerTestEvent{})
 	if err != nil {
 		t.Fatalf("err = %v", err)
 	}
@@ -92,7 +96,7 @@ func TestObserveHandler_invoke(t *testing.T) {
 		called = true
 		return nil
 	})
-	out, err := reg.invoke(context.Background(), handlerTestEvent{})
+	out, err := reg.Invoke(context.Background(), handlerTestEvent{})
 	if err != nil || out != nil || !called {
 		t.Fatalf("got out=%#v err=%v called=%v", out, err, called)
 	}
@@ -103,7 +107,7 @@ func TestObserveHandler_error(t *testing.T) {
 	reg := ObserveHandler(func(context.Context, Hook[handlerTestEvent]) error {
 		return want
 	})
-	_, err := reg.invoke(context.Background(), handlerTestEvent{})
+	_, err := reg.Invoke(context.Background(), handlerTestEvent{})
 	if !errors.Is(err, want) {
 		t.Fatalf("err=%v", err)
 	}

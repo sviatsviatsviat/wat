@@ -20,5 +20,5 @@ func init() {
 	compact.Register(c)
 	ui.Register(c)
 	hookerrors.Register(c)
-	runtime.EnsureDialect(runtime.DefaultReg)
+	runtime.EnsureRegistered()
 }

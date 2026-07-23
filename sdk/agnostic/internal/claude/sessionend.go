@@ -10,11 +10,11 @@ import (
 )
 
 // RegisterSessionEnd registers fn on the Claude SessionEnd chain.
-func RegisterSessionEnd(r *run.Registry, fn model.SessionEndHandler) {
+func RegisterSessionEnd(fn model.SessionEndHandler) {
 	if fn == nil {
 		return
 	}
-	sdkclaude.UseHooks(r).SessionEnd(func(ctx context.Context, hook run.Hook[sdkclaude.SessionEnd]) error {
+	sdkclaude.UseHooks().SessionEnd(func(ctx context.Context, hook run.Hook[sdkclaude.SessionEnd]) error {
 		return fn(ctx, model.NewSessionEndHook(hook.Invocation(), mapSessionEnd(hook.Event)))
 	})
 }

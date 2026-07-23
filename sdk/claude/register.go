@@ -24,5 +24,5 @@ func init() {
 	workspace.Register(c)
 	compact.Register(c)
 	elicit.Register(c)
-	runtime.EnsureDialect(runtime.DefaultReg)
+	runtime.EnsureRegistered()
 }

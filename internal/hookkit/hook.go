@@ -1,4 +1,4 @@
-package run
+package hookkit
 
 // Hook is the handler context for a typed hook event.
 type Hook[E Event] struct {

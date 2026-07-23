@@ -1,6 +1,5 @@
 // Package copilot is the GitHub Copilot hook SDK. Hook authors register
-// typed handlers with UseHooks into a run.Registry (the process default when
-// called with no arguments), then call run.Main from
+// typed handlers with UseHooks, then call run.Main from
 // github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Hook stdout JSON is encoded internally from Output (sealed; only this package
