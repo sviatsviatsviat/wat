@@ -10,10 +10,5 @@ import (
 
 // RegisterHandler registers this event handler on d.
 func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, run.Hook[Event], event.PermissionResults) (event.PermissionOutput, error)) {
-	if fn == nil {
-		return
-	}
-	d.Register(hookkit.Handler(func(ctx context.Context, hook run.Hook[Event]) (event.PermissionOutput, error) {
-		return fn(ctx, hook, event.NewPermissionResults())
-	}))
+	hookkit.RegisterWith(d, event.NewPermissionResults(), fn)
 }

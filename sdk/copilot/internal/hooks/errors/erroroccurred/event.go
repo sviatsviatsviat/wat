@@ -51,8 +51,5 @@ func Register(c *hookkit.Codec) {
 
 // RegisterHandler registers an ErrorOccurred observe handler on reg.
 func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, run.Hook[Event]) error) {
-	if fn == nil {
-		return
-	}
-	d.Register(hookkit.ObserveHandler(fn))
+	hookkit.RegisterObserve(d, fn)
 }

@@ -8,12 +8,7 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// RegisterHandler registers a PostToolUseFailure handler on reg.
+// RegisterHandler registers this event handler on d.
 func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, run.Hook[Event], Results) (posttooluse.Output, error)) {
-	if fn == nil {
-		return
-	}
-	d.Register(hookkit.Handler(func(ctx context.Context, hook run.Hook[Event]) (posttooluse.Output, error) {
-		return fn(ctx, hook, results{})
-	}))
+	hookkit.RegisterWith(d, Results(results{}), fn)
 }

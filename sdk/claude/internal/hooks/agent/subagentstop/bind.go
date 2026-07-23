@@ -11,12 +11,5 @@ import (
 
 // RegisterHandler registers this event handler on d.
 func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, run.Hook[Event], stopevent.Results) (stopevent.Output, error)) {
-	if fn == nil {
-		return
-	}
-	d.Register(hookkit.Handler(func(ctx context.Context, hook run.Hook[Event]) (stopevent.Output, error) {
-		return fn(ctx, hook, stopevent.NewResults(event.SubagentStop))
-	}))
+	hookkit.RegisterWith(d, stopevent.NewResults(event.SubagentStop), fn)
 }
-
-// OnTaskCreated registers a TaskCreated handler on reg.
