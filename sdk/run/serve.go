@@ -60,7 +60,7 @@ func (r *Registry) serve(ctx context.Context, in io.Reader, out io.Writer, errw 
 	for _, h := range handlers {
 		outVal, err := h.invoke(ctx, event)
 		if err != nil {
-			_, _ = fmt.Fprintln(errw, err.Error())
+			_, _ = fmt.Fprintf(errw, "run: %s: handler: %v\n", dialect, err)
 			return 1
 		}
 		if outVal == nil || outVal.IsZero() {

@@ -1,45 +1,28 @@
 package claude
 
 import (
-	"encoding/json"
-
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/run"
-)
-
-var codec = hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired)
-
-var (
-	defaultReg   = run.GetDefaultRegistry()
-	defaultChain = newChain(defaultReg)
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/agent"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/compact"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/elicit"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/prompt"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/session"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/stop"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/tool"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/ui"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/hooks/workspace"
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
 )
 
 func init() {
-	ensureDialect(defaultReg)
-}
-
-func dialectOps() run.DialectOps {
-	return run.DialectOps{
-		Detect: detectPayload,
-		Codec:  codec,
-	}
-}
-
-func ensureDialect(r *run.Registry) {
-	r.EnsureDialect(Dialect, dialectOps())
-}
-
-func detectPayload(raw []byte, getenv func(string) string) bool {
-	var probe map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &probe); err != nil {
-		return false
-	}
-	has := func(k string) bool { _, ok := probe[k]; return ok }
-	if has("cursor_version") || has("conversation_id") {
-		return false
-	}
-	if has("hook_event_name") && has("timestamp") {
-		return false
-	}
-	return has("session_id")
+	c := runtime.Codec
+	session.Register(c)
+	prompt.Register(c)
+	tool.Register(c)
+	agent.Register(c)
+	stop.Register(c)
+	ui.Register(c)
+	workspace.Register(c)
+	compact.Register(c)
+	elicit.Register(c)
+	runtime.EnsureDialect(runtime.DefaultReg)
 }

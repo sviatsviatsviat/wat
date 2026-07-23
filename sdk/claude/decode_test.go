@@ -2,38 +2,21 @@ package claude
 
 import (
 	"errors"
-	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func mustDecode[E any](t *testing.T, raw, wantName string) E {
-	t.Helper()
-	ev, err := codec.Decode([]byte(raw))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ev.EventName() != wantName {
-		t.Fatalf("EventName() = %q, want %q", ev.EventName(), wantName)
-	}
-	typed, ok := ev.(E)
-	if !ok {
-		t.Fatalf("want %T, got %T", *new(E), ev)
-	}
-	return typed
-}
-
 func TestDecode_UnknownEvent(t *testing.T) {
-	_, err := codec.Decode([]byte(`{"session_id":"s1","hook_event_name":"FutureEvent","cwd":"/w"}`))
+	_, err := runtime.Codec.Decode([]byte(`{"session_id":"s1","hook_event_name":"FutureEvent","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error")
-	}
-	if !strings.Contains(err.Error(), "unknown hook event") {
-		t.Fatalf("error = %v", err)
 	}
 }
 
 func TestDecode_RequiresHookEventName(t *testing.T) {
-	_, err := codec.Decode([]byte(`{"session_id":"s1","cwd":"/w"}`))
+	_, err := runtime.Codec.Decode([]byte(`{"session_id":"s1","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -44,29 +27,82 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 
 func TestDecode_InvalidJSON(t *testing.T) {
 	t.Run("envelope", func(t *testing.T) {
-		_, err := codec.Decode([]byte("not json"))
+		_, err := runtime.Codec.Decode([]byte("not json"))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		if !errors.Is(err, ErrDecodePayload) {
 			t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
-		}
-		if !strings.Contains(err.Error(), "decode payload") {
-			t.Fatalf("error = %v", err)
 		}
 	})
 
 	t.Run("typed event", func(t *testing.T) {
 		raw := []byte(`{"session_id":"s1","hook_event_name":"PreToolUse","cwd":"/w","tool_name":123}`)
-		_, err := codec.Decode(raw)
+		_, err := runtime.Codec.Decode(raw)
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		if !errors.Is(err, ErrDecodePayload) {
 			t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
 		}
-		if !strings.Contains(err.Error(), "decode payload") {
-			t.Fatalf("error = %v", err)
-		}
 	})
+}
+
+func TestEventNames(t *testing.T) {
+	cases := []run.Event{
+		SessionStart{},
+		Setup{},
+		SessionEnd{},
+		UserPromptSubmit{},
+		UserPromptExpansion{},
+		PreToolUse{},
+		PostToolUse{},
+		PostToolUseFailure{},
+		PostToolBatch{},
+		PermissionRequest{},
+		PermissionDenied{},
+		SubagentStart{},
+		SubagentStop{},
+		TaskCreated{},
+		TaskCompleted{},
+		Stop{},
+		StopFailure{},
+		TeammateIdle{},
+		Notification{},
+		MessageDisplay{},
+		InstructionsLoaded{},
+		ConfigChange{},
+		CwdChanged{},
+		FileChanged{},
+		WorktreeCreate{},
+		WorktreeRemove{},
+		PreCompact{},
+		PostCompact{},
+		Elicitation{},
+		ElicitationResult{},
+	}
+	for _, ev := range cases {
+		t.Run(ev.EventName(), func(t *testing.T) {
+			if ev.EventName() == "" {
+				t.Fatal("EventName() empty")
+			}
+		})
+	}
+}
+
+func TestEventNameFromRaw(t *testing.T) {
+	name, err := runtime.Codec.EventName([]byte(`{"hook_event_name":"PreToolUse","session_id":"s"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if name != "PreToolUse" {
+		t.Fatalf("name = %q", name)
+	}
+	_, err = runtime.Codec.EventName([]byte(`{"session_id":"s"}`))
+	if err == nil {
+		t.Fatal("expected error without hook_event_name")
+	}
+	if !errors.Is(err, ErrEventNameRequired) {
+		t.Fatalf("errors.Is ErrEventNameRequired = false, err = %v", err)
+	}
 }

@@ -8,5 +8,8 @@
 // internally from Output (sealed; only this package implements it). Blocking is
 // expressed via output fields; handler errors exit 1.
 //
+// Tool input on PreToolUse and related events is typed as [Input] with AsBash,
+// AsWrite, and related accessors (and Tool* name constants) in this package.
+//
 // See ExampleUseHooks in example_test.go for a minimal handler.
 package claude

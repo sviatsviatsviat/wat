@@ -8,12 +8,14 @@ Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/ref
 
 `claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `UseHooks` registration fans adapter handlers onto each agent SDK via `UseHooks(r)`, wrapping native events and Results builders.
 
-Hook logic is organized as **vertical slices at the package root** — one file per native `hook_event_name`, including the typed chain method for that event. Shared decode helpers live in `internal/hookkit`. The shared `Event` interface (`EventName()` only) is defined in `hookkit` and re-exported as `run.Event`; per-agent SDKs do not define their own `Event` type. Typed handler context is `run.Hook`.
+Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/internal/hooks/<domain>/<event>/` (per-event package with `event.go` / `output.go` / `results.go`), reexported from the `claude` package root; Copilot and Cursor keep one file per native `hook_event_name` at the package root, including the typed chain method for that event. Shared decode helpers live in `internal/hookkit`. The shared `Event` interface (`EventName()` only) is defined in `hookkit` and re-exported as `run.Event`; per-agent SDKs do not define their own `Event` type. Typed handler context is `run.Hook`.
 
 | Location | Role |
 |----------|------|
 | `doc.go` | Package overview |
-| `<event>.go` | Event struct, output, results, chain method, decode registration, encode for one hook |
+| `<event>.go` (copilot/cursor) | Event struct, output, results, chain method, decode, encode for one hook |
+| `internal/hooks/<domain>/<event>/` (claude) | Per-event package: `event.go`, `output.go`, `results.go`, `bind.go` |
+| `export_*.go` / `chain.go` (claude) | Public façade: type aliases and `UseHooks` chain methods |
 | `registry.go` | Event-name constants, alias tables |
 | `envelope.go` | Shared payload fields (embedded on each event; access via promoted fields) |
 | `exit.go` | Handler/encode exit-code constants |
@@ -22,7 +24,7 @@ Hook logic is organized as **vertical slices at the package root** — one file 
 | `chain.go` | `UseHooks` and unexported fluent `chain` handle bound to a `run.Registry` |
 | `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
-| `tools/` | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
+| `tools/` (copilot/cursor) or root `Input` / `Tool*` (claude) | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
 
 **Agnostic** uses the same root vertical-slice layout for portable hook kinds (`pretool.go`, `stop.go`, …):
 
