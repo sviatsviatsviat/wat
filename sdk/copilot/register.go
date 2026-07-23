@@ -1,42 +1,24 @@
 package copilot
 
 import (
-	"encoding/json"
-
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/run"
-)
-
-var codec = hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired)
-
-var (
-	defaultReg   = run.GetDefaultRegistry()
-	defaultChain = newChain(defaultReg)
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/agent"
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/compact"
+	hookerrors "github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/errors"
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/prompt"
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/session"
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/tool"
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/ui"
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
 
 func init() {
-	ensureDialect(defaultReg)
-}
-
-func dialectOps() run.DialectOps {
-	return run.DialectOps{
-		Detect: detectPayload,
-		Codec:  codec,
-	}
-}
-
-func ensureDialect(r *run.Registry) {
-	r.EnsureDialect(Dialect, dialectOps())
-}
-
-func detectPayload(raw []byte, getenv func(string) string) bool {
-	var probe map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &probe); err != nil {
-		return false
-	}
-	has := func(k string) bool { _, ok := probe[k]; return ok }
-	if has("cursor_version") || has("conversation_id") {
-		return false
-	}
-	return has("hook_event_name") && has("timestamp")
+	c := runtime.Codec
+	session.Register(c)
+	prompt.Register(c)
+	tool.Register(c)
+	agent.Register(c)
+	compact.Register(c)
+	ui.Register(c)
+	hookerrors.Register(c)
+	runtime.EnsureDialect(runtime.DefaultReg)
 }

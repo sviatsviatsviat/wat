@@ -7,6 +7,9 @@
 // implements it) as snake_case JSON with a process exit code. Payloads must
 // include hook_event_name on the wire.
 //
+// Tool input on PreToolUse and related events is typed as [Input] with AsBash,
+// AsCreate, and related accessors (and Tool* name constants) in this package.
+//
 // Example:
 //
 //	copilot.UseHooks().PreToolUse(func(ctx context.Context, hook run.Hook[copilot.PreToolUse], r copilot.PreToolResults) (copilot.PreToolOutput, error) {
