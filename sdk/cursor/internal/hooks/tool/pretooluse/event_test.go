@@ -1,14 +1,17 @@
 package pretooluse
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func mustDecode[E any](t *testing.T, raw string) E {
 	t.Helper()
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +26,7 @@ func mustDecode[E any](t *testing.T, raw string) E {
 }
 
 func TestToolInput_AsShell(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,5 +45,5 @@ func TestDecode_PreToolUse(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }

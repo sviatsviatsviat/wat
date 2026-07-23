@@ -1,17 +1,20 @@
 package copilot
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/tool/pretooluse"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func TestDecode_RequiresHookEventName(t *testing.T) {
-	_, err := runtime.Codec.Decode([]byte(`{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`))
+	_, err := testCodec.Decode([]byte(`{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error without hook_event_name")
 	}
@@ -21,7 +24,7 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 }
 
 func TestDecode_UnknownEvent(t *testing.T) {
-	_, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"FutureEvent","session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`))
+	_, err := testCodec.Decode([]byte(`{"hook_event_name":"FutureEvent","session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -31,8 +34,11 @@ func TestDecode_UnknownEvent(t *testing.T) {
 }
 
 func TestDecode_InvalidTypedEvent(t *testing.T) {
+	pretooluse.RegisterHandler(hookkit.NewDialect(testCodec), func(_ context.Context, _ pretooluse.Event, r pretooluse.Results) (pretooluse.Output, error) {
+		return r.Noop(), nil
+	})
 	raw := []byte(`{"hook_event_name":"PreToolUse","session_id":"s1","cwd":"/w","tool_name":123}`)
-	_, err := runtime.Codec.Decode(raw)
+	_, err := testCodec.Decode(raw)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -42,7 +48,7 @@ func TestDecode_InvalidTypedEvent(t *testing.T) {
 }
 
 func TestDecode_InvalidJSON(t *testing.T) {
-	_, err := runtime.Codec.Decode([]byte("not json"))
+	_, err := testCodec.Decode([]byte("not json"))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -80,14 +86,14 @@ func TestEventNames(t *testing.T) {
 }
 
 func TestEventNameFromRaw(t *testing.T) {
-	name, err := runtime.Codec.EventName([]byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z"}`))
+	name, err := testCodec.EventName([]byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if name != "PreToolUse" {
 		t.Fatalf("name = %q", name)
 	}
-	_, err = runtime.Codec.EventName([]byte(`{"session_id":"s"}`))
+	_, err = testCodec.EventName([]byte(`{"session_id":"s"}`))
 	if err == nil {
 		t.Fatal("expected error without hook_event_name")
 	}

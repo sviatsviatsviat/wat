@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"errors"
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
 )
 
@@ -33,14 +34,14 @@ func TestEventAliasMap(t *testing.T) {
 }
 
 func TestEventNameFromRaw(t *testing.T) {
-	name, err := Codec.EventName([]byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z"}`))
+	name, err := hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired).EventName([]byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if name != "PreToolUse" {
 		t.Fatalf("name = %q", name)
 	}
-	_, err = Codec.EventName([]byte(`{"session_id":"s"}`))
+	_, err = hookkit.NewCodec(Dialect, ErrEmptyPayload, ErrDecodePayload, ErrEventNameRequired).EventName([]byte(`{"session_id":"s"}`))
 	if err == nil {
 		t.Fatal("expected error without hook_event_name")
 	}

@@ -32,6 +32,8 @@ func NewCodec(dialect string, empty, decode, nameReq error) *Codec {
 }
 
 // Register associates wire event name with fn.
+// Agent event packages call their unexported register from RegisterHandler so
+// the codec holds decoders only for events that have handlers.
 func (c *Codec) Register(name string, fn Decoder) {
 	c.m[name] = fn
 }

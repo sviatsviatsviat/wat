@@ -10,5 +10,9 @@ import (
 
 // RegisterHandler registers this event handler on d.
 func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event, stopevent.Results) (stopevent.Output, error)) {
+	if fn == nil {
+		return
+	}
+	register(d.Codec())
 	hookkit.RegisterWith(d, stopevent.NewResults(event.SubagentStop), fn)
 }

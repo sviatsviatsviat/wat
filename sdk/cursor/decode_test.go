@@ -1,18 +1,22 @@
 package cursor
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-
+	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
+	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/hooks/tool/pretooluse"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func TestDecode_RequiresHookEventName(t *testing.T) {
 	raw := `{"conversation_id":"c1","command":"ls","cwd":"/w"}`
-	_, err := runtime.Codec.Decode([]byte(raw))
+	_, err := testCodec.Decode([]byte(raw))
 	if err == nil {
 		t.Fatal("expected error without hook_event_name")
 	}
@@ -25,7 +29,7 @@ func TestDecode_RequiresHookEventName(t *testing.T) {
 }
 
 func TestDecode_UnknownEvent(t *testing.T) {
-	_, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"FutureEvent","conversation_id":"c1","cwd":"/w"}`))
+	_, err := testCodec.Decode([]byte(`{"hook_event_name":"FutureEvent","conversation_id":"c1","cwd":"/w"}`))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -35,8 +39,11 @@ func TestDecode_UnknownEvent(t *testing.T) {
 }
 
 func TestDecode_InvalidTypedEvent(t *testing.T) {
+	pretooluse.RegisterHandler(hookkit.NewDialect(testCodec), func(_ context.Context, _ pretooluse.Event, r event.PermissionResults) (event.PermissionOutput, error) {
+		return r.Noop(), nil
+	})
 	raw := []byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":123}`)
-	_, err := runtime.Codec.Decode(raw)
+	_, err := testCodec.Decode(raw)
 	if err == nil {
 		t.Fatal("expected error")
 	}

@@ -1,12 +1,15 @@
 package userpromptsubmit
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
 )
+
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestEncode_UserPromptBlock(t *testing.T) {
 	out, code, err := results{}.Block("blocked prompt").Encode()
@@ -26,12 +29,12 @@ func TestDecode_UserPromptSubmit(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }
 
 func mustDecode[E any](t *testing.T, raw, wantName string) E {
 	t.Helper()
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}

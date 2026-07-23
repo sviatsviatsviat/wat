@@ -11,6 +11,8 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func TestEncode_PreToolDeny(t *testing.T) {
 	out, code, err := results{}.Deny("destructive command").Encode()
 	if err != nil {
@@ -43,7 +45,7 @@ const preToolUsePayload = `{
 }`
 
 func TestDecode_PreToolUse(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(preToolUsePayload))
+	ev, err := testCodec.Decode([]byte(preToolUsePayload))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,5 +107,5 @@ func TestMerge_PreToolUse_askDoesNotStop(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }

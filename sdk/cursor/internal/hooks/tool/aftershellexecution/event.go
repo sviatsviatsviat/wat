@@ -29,7 +29,7 @@ func (e Event) DurationMillis() int64 {
 	return e.Duration
 }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.AfterShellExecution, hookkit.EventDecoder[Event](c))
 }

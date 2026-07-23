@@ -19,7 +19,7 @@ type Event struct {
 // EventName returns the canonical hook event name.
 func (Event) EventName() string { return event.BeforeReadFile }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.BeforeReadFile, hookkit.EventDecoder[Event](c))
 }

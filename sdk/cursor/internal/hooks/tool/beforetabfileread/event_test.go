@@ -1,6 +1,7 @@
 package beforetabfileread
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
@@ -8,9 +9,11 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func mustDecode[E any](t *testing.T, raw string) E {
 	t.Helper()
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,5 +45,5 @@ func TestDecode_BeforeTabFileRead(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }

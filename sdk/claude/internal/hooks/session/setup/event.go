@@ -16,6 +16,6 @@ type Event struct {
 func (Event) EventName() string { return event.Setup }
 
 // Register registers the Setup decoder on c.
-func Register(c *hookkit.Codec) {
+func register(c *hookkit.Codec) {
 	c.Register(event.Setup, hookkit.EventDecoder[Event](c))
 }

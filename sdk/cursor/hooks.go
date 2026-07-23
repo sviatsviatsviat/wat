@@ -36,6 +36,8 @@ type hooks struct {
 	hookkit.HandlerQueue
 }
 
+var codec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 // UseHooks returns a fluent registrar for this package's Cursor dialect.
 func UseHooks() *hooks {
 	return &hooks{}
@@ -54,7 +56,7 @@ func (c *hooks) Contribute(reg run.Registry) {
 	if c == nil {
 		return
 	}
-	c.Install(reg, runtime.Dialect, detectPayload, runtime.Codec)
+	c.Install(reg, runtime.Dialect, detectPayload, codec)
 }
 
 func detectPayload(raw []byte) bool {

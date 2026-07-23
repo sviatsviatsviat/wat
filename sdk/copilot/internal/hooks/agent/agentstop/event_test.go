@@ -1,12 +1,15 @@
 package agentstop
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
+
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 const copilotVSCodeStop = `{
   "hook_event_name": "Stop",
@@ -18,7 +21,7 @@ const copilotVSCodeStop = `{
 }`
 
 func TestDecode_VSCodeStop(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(copilotVSCodeStop))
+	ev, err := testCodec.Decode([]byte(copilotVSCodeStop))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +62,7 @@ func TestDecode_VSCodeStopWithAgentScope(t *testing.T) {
   "agent_name": "task",
   "stop_reason": "end_turn"
 }`
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +82,7 @@ func TestDecode_VSCodeStopWithAgentScope(t *testing.T) {
 }
 
 func TestDecode_AgentStop(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","stop_reason":"end_turn"}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","stop_reason":"end_turn"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +93,7 @@ func TestDecode_AgentStop(t *testing.T) {
 }
 
 func TestDecode_AgentStopWithAgentScope(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"task","stop_reason":"end_turn"}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"task","stop_reason":"end_turn"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,5 +104,5 @@ func TestDecode_AgentStopWithAgentScope(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }

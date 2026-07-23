@@ -22,7 +22,7 @@ func (e Event) InitialPrompt() string {
 	return e.InitialPromptValue
 }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.SessionStart, hookkit.EventDecoder[Event](c))
 }

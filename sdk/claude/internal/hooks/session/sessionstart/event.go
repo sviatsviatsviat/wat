@@ -20,6 +20,6 @@ type Event struct {
 func (Event) EventName() string { return event.SessionStart }
 
 // Register registers the SessionStart decoder on c.
-func Register(c *hookkit.Codec) {
+func register(c *hookkit.Codec) {
 	c.Register(event.SessionStart, hookkit.EventDecoder[Event](c))
 }

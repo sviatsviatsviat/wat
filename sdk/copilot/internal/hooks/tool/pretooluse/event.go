@@ -36,8 +36,8 @@ func (e Event) ShellCommand() string {
 	return hookkit.ExtractShellCommand(e.Input().Raw())
 }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.PreToolUse, func(raw []byte) (hookkit.Event, error) {
 		return hookkit.DecodeEvent(c, raw, func(e *Event, payload []byte) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, payload, "tool_input")

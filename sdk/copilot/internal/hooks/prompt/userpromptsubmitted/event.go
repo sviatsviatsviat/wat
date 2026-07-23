@@ -17,12 +17,16 @@ type Event struct {
 // EventName returns the canonical hook event name.
 func (Event) EventName() string { return event.UserPromptSubmitted }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.UserPromptSubmitted, hookkit.EventDecoder[Event](c))
 }
 
 // RegisterHandler registers a UserPromptSubmitted observe handler on reg.
 func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
+	if fn == nil {
+		return
+	}
+	register(d.Codec())
 	hookkit.RegisterObserve(d, fn)
 }

@@ -18,7 +18,7 @@ type Event struct {
 // EventName returns the hook event name.
 func (Event) EventName() string { return event.TaskCreated }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.TaskCreated, hookkit.EventDecoder[Event](c))
 }

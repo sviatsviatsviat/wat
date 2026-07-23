@@ -1,12 +1,15 @@
 package stopevent
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
 )
+
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestEncode_StopBlock(t *testing.T) {
 	out, _, err := NewResults(event.Stop).FollowUp("run the tests").Encode()
@@ -23,12 +26,12 @@ func TestDecode_Stop(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }
 
 func mustDecode[E any](t *testing.T, raw, wantName string) E {
 	t.Helper()
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}

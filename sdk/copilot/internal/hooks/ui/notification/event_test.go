@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
@@ -8,8 +9,10 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }
 
 func TestDecode_Notification(t *testing.T) {
@@ -22,7 +25,7 @@ func TestDecode_Notification(t *testing.T) {
   "title": "Shell completed",
   "notification_type": "shell_completed"
 }`
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}

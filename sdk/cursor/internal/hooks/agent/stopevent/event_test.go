@@ -1,11 +1,14 @@
 package stopevent
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
 )
+
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 const cursorStop = `{
   "conversation_id": "c1",
@@ -16,7 +19,7 @@ const cursorStop = `{
 }`
 
 func TestDecodeEncode_StopFollowUp(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(cursorStop))
+	ev, err := testCodec.Decode([]byte(cursorStop))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,5 +41,5 @@ func TestDecodeEncode_StopFollowUp(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }

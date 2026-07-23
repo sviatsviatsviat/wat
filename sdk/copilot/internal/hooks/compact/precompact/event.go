@@ -24,12 +24,16 @@ func (e Event) Instructions() string {
 	return e.CustomInstructions
 }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.PreCompact, hookkit.EventDecoder[Event](c))
 }
 
 // RegisterHandler registers a PreCompact observe handler on d.
 func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
+	if fn == nil {
+		return
+	}
+	register(d.Codec())
 	hookkit.RegisterObserve(d, fn)
 }

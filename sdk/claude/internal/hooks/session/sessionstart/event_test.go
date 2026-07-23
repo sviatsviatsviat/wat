@@ -12,13 +12,15 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }
 
 func mustDecode[E any](t *testing.T, raw, wantName string) E {
 	t.Helper()
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}

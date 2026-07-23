@@ -1,11 +1,14 @@
 package posttoolusefailure
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
+
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestEncode_PostToolFailureContext(t *testing.T) {
 	out, code, err := results{}.Context("retry with smaller input").Encode()
@@ -21,7 +24,7 @@ func TestEncode_PostToolFailureContext(t *testing.T) {
 }
 
 func TestDecode_PostToolUseFailure(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"PostToolUseFailure","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"bash","tool_input":{},"error":"timeout"}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"PostToolUseFailure","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"bash","tool_input":{},"error":"timeout"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,5 +35,5 @@ func TestDecode_PostToolUseFailure(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }

@@ -1,11 +1,14 @@
 package posttooluse
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
+
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestEncode_PostToolUpdatedOutput(t *testing.T) {
 	out, code, err := results{}.Context("extra guidance").WithModifiedResult("rewritten").Encode()
@@ -20,7 +23,7 @@ func TestEncode_PostToolUpdatedOutput(t *testing.T) {
 
 func TestDecode_PostToolUseResultRaw(t *testing.T) {
 	raw := `{"hook_event_name":"PostToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"view","tool_input":{},"tool_result":{"result_type":"success","text_result_for_llm":"contents"}}`
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +35,7 @@ func TestDecode_PostToolUseResultRaw(t *testing.T) {
 }
 
 func TestDecode_PostToolUse(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"PostToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"view","tool_input":{},"tool_result":{"result_type":"success","text_result_for_llm":"contents"}}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"PostToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"view","tool_input":{},"tool_result":{"result_type":"success","text_result_for_llm":"contents"}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,5 +46,5 @@ func TestDecode_PostToolUse(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }

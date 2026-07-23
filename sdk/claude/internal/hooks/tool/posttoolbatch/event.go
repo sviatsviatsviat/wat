@@ -47,8 +47,8 @@ func bindToolInputs(e *Event, raw []byte) {
 	}
 }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.PostToolBatch, func(raw []byte) (hookkit.Event, error) {
 		return hookkit.DecodeEvent(c, raw, bindToolInputs)
 	})

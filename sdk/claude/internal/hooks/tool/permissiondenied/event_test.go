@@ -1,12 +1,15 @@
 package permissiondenied
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"encoding/json"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
 )
+
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_PermissionDenied(t *testing.T) {
 	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"PermissionDenied","tool_name":"Bash"}`, event.PermissionDenied)
@@ -43,12 +46,12 @@ func TestDecode_PermissionDenied(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }
 
 func mustDecode[E any](t *testing.T, raw, wantName string) E {
 	t.Helper()
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}

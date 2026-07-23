@@ -13,6 +13,8 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 const copilotPreToolUse = `{
   "hook_event_name": "PreToolUse",
   "session_id": "s1",
@@ -23,7 +25,7 @@ const copilotPreToolUse = `{
 }`
 
 func TestDecodeEncode_PreToolDeny(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(copilotPreToolUse))
+	ev, err := testCodec.Decode([]byte(copilotPreToolUse))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +62,7 @@ func TestDecode_VSCodePreToolBash(t *testing.T) {
   "tool_name": "Bash",
   "tool_input": {"command": "ls -la"}
 }`
-	ev, err := runtime.Codec.Decode([]byte(raw))
+	ev, err := testCodec.Decode([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +74,7 @@ func TestDecode_VSCodePreToolBash(t *testing.T) {
 
 func TestDecode_ToolInputNotAliased(t *testing.T) {
 	raw := []byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"bash","tool_input":{"command":"ls"}}`)
-	ev, err := runtime.Codec.Decode(raw)
+	ev, err := testCodec.Decode(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +145,7 @@ func TestMerge_PreTool_modifiedArgsOverwriteWarns(t *testing.T) {
 }
 
 func TestToolInput_AsBash(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"Bash","tool_input":{"command":"ls -la"}}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"Bash","tool_input":{"command":"ls -la"}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,5 +157,5 @@ func TestToolInput_AsBash(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }

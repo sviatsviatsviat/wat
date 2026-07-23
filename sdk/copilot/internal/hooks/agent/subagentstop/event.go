@@ -36,7 +36,7 @@ func (e Event) Reason() string {
 	return e.StopReason
 }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.SubagentStop, hookkit.EventDecoder[Event](c))
 }

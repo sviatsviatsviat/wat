@@ -29,7 +29,7 @@ func (e Event) DisplayName() string {
 	return e.AgentDisplayName
 }
 
-// Register registers this hook event decoder on c.
-func Register(c *hookkit.Codec) {
+// register registers this hook event decoder on c.
+func register(c *hookkit.Codec) {
 	c.Register(event.SubagentStart, hookkit.EventDecoder[Event](c))
 }

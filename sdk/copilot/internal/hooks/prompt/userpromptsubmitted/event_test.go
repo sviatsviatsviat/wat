@@ -1,18 +1,21 @@
 package userpromptsubmitted
 
 import (
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }
 
 func TestDecode_UserPromptSubmitted(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"UserPromptSubmit","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","prompt":"hello"}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"UserPromptSubmit","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","prompt":"hello"}`))
 	if err != nil {
 		t.Fatal(err)
 	}

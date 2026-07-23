@@ -10,6 +10,8 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"
 )
 
+var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
+
 func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
 	out, code, err := results{}.Deny("blocked").WithInterrupt(true).Encode()
 	if err != nil {
@@ -34,7 +36,7 @@ func TestEncode_PermissionRequestAsk(t *testing.T) {
 }
 
 func TestDecode_PermissionRequest(t *testing.T) {
-	ev, err := runtime.Codec.Decode([]byte(`{"hook_event_name":"PermissionRequest","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"create","tool_input":{"path":"a.txt"}}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"PermissionRequest","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","tool_name":"create","tool_input":{"path":"a.txt"}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,5 +140,5 @@ func TestStop_PermissionRequest(t *testing.T) {
 }
 
 func init() {
-	Register(runtime.Codec)
+	register(testCodec)
 }
