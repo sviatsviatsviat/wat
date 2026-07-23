@@ -1,4 +1,4 @@
-package config
+package copilot
 
 import (
 	"encoding/json"

@@ -30,7 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `cursor` package with typed Cursor hook events (21 surfaces), package-internal encode (`ErrEventNameRequired` when `hook_event_name` is absent), `UseHooks` chain methods with hook-scoped result builders registering into `sdk/run`, and event-bound tool input on the same package (`Input` with `AsShell`, `AsRead`, and related accessors; `Tool*` name constants)
 - Decode error sentinels (`ErrEmptyPayload`, `ErrDecodePayload`) for stable error handling; shared envelope fields are embedded on each event type (read via promoted fields such as `SessionID` / `Cwd`)
 - Shared `hookkit.Event` (`EventName()` only) and `hookkit.Output` (`IsZero`, `Encode`; both defined in `internal/hookkit`); codec decode returns `Event`
-- `claude.Handler.TimeoutSeconds` for hook config timeout lookup
 - `claude.HandlerErrorExit` and `copilot.HandlerErrorExit` for handler-error exit codes
 - Decoder registry parity tests in `claude` and `copilot` (`sdk/claude/decode_test.go`, `sdk/copilot/decode_test.go`)
 - Typed decode failures in `copilot` and `cursor` wrap `ErrDecodePayload` for stable `errors.Is` checks

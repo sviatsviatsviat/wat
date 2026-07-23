@@ -3,10 +3,11 @@ package copilot
 import (
 	"encoding/json"
 
+	hostcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/flat"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/copilot"
+	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
 // Parse reads GitHub Copilot hooks JSON into a normalized configuration.
@@ -19,7 +20,7 @@ func Parse(data []byte) (model.Config, []model.Warning, error) {
 }
 
 func copilotHandlerToEntry(event string, kind model.Kind, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
-	h, warns, ok := model.ParseHandlerJSON[copilot.Handler](event, handlerRaw)
+	h, warns, ok := model.ParseHandlerJSON[hostcopilot.Handler](event, handlerRaw)
 	if !ok {
 		return model.Entry{}, model.CloneRaw(handlerRaw), warns, false
 	}
@@ -83,7 +84,7 @@ func copilotHandlerAllowed(handlerType, event string) bool {
 	case "http":
 		return true
 	case "prompt":
-		return event == copilot.EventSessionStart
+		return event == sdkcopilot.EventSessionStart
 	default:
 		return false
 	}
@@ -91,7 +92,7 @@ func copilotHandlerAllowed(handlerType, event string) bool {
 
 func copilotHandlerRaw(e model.Entry) (json.RawMessage, error) {
 	if len(e.Raw) == 0 {
-		h := copilot.Handler{Matcher: e.Matcher, TimeoutSec: e.TimeoutSec}
+		h := hostcopilot.Handler{Matcher: e.Matcher, TimeoutSec: e.TimeoutSec}
 		switch e.Type {
 		case "command", "":
 			h.Type = "command"

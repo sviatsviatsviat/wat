@@ -1,8 +1,9 @@
 package instructionsloaded
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"

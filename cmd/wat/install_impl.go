@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/checks"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/claude"
-	"github.com/sviatsviatsviat/wat/sdk/copilot"
-	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 type installAgentPlan struct {

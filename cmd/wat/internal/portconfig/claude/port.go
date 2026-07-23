@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	hostclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
 // Parse reads Claude Code settings JSON into a normalized configuration.
 func Parse(data []byte) (model.Config, []model.Warning, error) {
-	var f claude.Settings
+	var f hostclaude.Settings
 	if err := json.Unmarshal(data, &f); err != nil {
 		return model.Config{}, nil, fmt.Errorf("portconfig: parse claude settings: %w", err)
 	}
@@ -48,7 +48,7 @@ func Parse(data []byte) (model.Config, []model.Warning, error) {
 }
 
 func claudeHandlerToEntry(event string, kind model.Kind, matcher string, groupIf json.RawMessage, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
-	h, warns, ok := model.ParseHandlerJSON[claude.Handler](event, handlerRaw)
+	h, warns, ok := model.ParseHandlerJSON[hostclaude.Handler](event, handlerRaw)
 	if !ok {
 		return model.Entry{}, model.CloneRaw(handlerRaw), warns, false
 	}
@@ -78,7 +78,7 @@ func claudeHandlerToEntry(event string, kind model.Kind, matcher string, groupIf
 		e.URL = h.URL
 		return e, nil, warns, true
 	default:
-		groupRaw, err := json.Marshal(claude.MatcherGroup{
+		groupRaw, err := json.Marshal(hostclaude.MatcherGroup{
 			Matcher: matcher,
 			If:      groupIf,
 			Hooks:   []json.RawMessage{handlerRaw},
@@ -94,7 +94,7 @@ func claudeHandlerToEntry(event string, kind model.Kind, matcher string, groupIf
 
 // Emit renders cfg as Claude Code settings JSON.
 func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
-	f := claude.Settings{Hooks: map[string][]claude.MatcherGroup{}}
+	f := hostclaude.Settings{Hooks: map[string][]hostclaude.MatcherGroup{}}
 	var warns []model.Warning
 	for kind, entries := range cfg.Hooks {
 		for _, e := range entries {
@@ -108,7 +108,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 				warns = append(warns, model.Warnf("%s: could not encode handler: %v", event, err))
 				continue
 			}
-			f.Hooks[event] = append(f.Hooks[event], claude.MatcherGroup{
+			f.Hooks[event] = append(f.Hooks[event], hostclaude.MatcherGroup{
 				Matcher: e.Matcher,
 				If:      model.CloneRaw(e.ClaudeGroupIf),
 				Hooks:   []json.RawMessage{handlerRaw},
@@ -116,7 +116,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 		}
 	}
 	for _, extra := range cfg.Extras {
-		var g claude.MatcherGroup
+		var g hostclaude.MatcherGroup
 		if err := json.Unmarshal(extra.Raw, &g); err != nil {
 			warns = append(warns, model.Warnf("%s: could not restore extra entry: %v", extra.Event, err))
 			continue
@@ -129,7 +129,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 
 func claudeHandlerRaw(e model.Entry) (json.RawMessage, error) {
 	if len(e.Raw) == 0 {
-		return hookkit.MarshalHandler(claude.Handler{
+		return hookkit.MarshalHandler(hostclaude.Handler{
 			Type:    e.Type,
 			Command: e.Command,
 			Prompt:  e.Prompt,

@@ -3,10 +3,10 @@ package cursor
 import (
 	"encoding/json"
 
+	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/flat"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // Parse reads Cursor hooks JSON into a normalized configuration.
@@ -20,7 +20,7 @@ func Parse(data []byte) (model.Config, []model.Warning, error) {
 }
 
 func cursorHandlerToEntry(event string, kind model.Kind, handlerRaw json.RawMessage) (model.Entry, json.RawMessage, []model.Warning, bool) {
-	h, warns, ok := model.ParseHandlerJSON[cursor.Handler](event, handlerRaw)
+	h, warns, ok := model.ParseHandlerJSON[hostcursor.Handler](event, handlerRaw)
 	if !ok {
 		return model.Entry{}, model.CloneRaw(handlerRaw), warns, false
 	}
@@ -32,12 +32,12 @@ func cursorHandlerToEntry(event string, kind model.Kind, handlerRaw json.RawMess
 		Raw:         model.CloneRaw(handlerRaw),
 	}
 	switch h.Type {
-	case cursor.HandlerTypeCommand, "":
-		e.Type = cursor.HandlerTypeCommand
+	case hostcursor.HandlerTypeCommand, "":
+		e.Type = hostcursor.HandlerTypeCommand
 		e.Command = h.Command
 		return e, nil, warns, true
-	case cursor.HandlerTypePrompt:
-		e.Type = cursor.HandlerTypePrompt
+	case hostcursor.HandlerTypePrompt:
+		e.Type = hostcursor.HandlerTypePrompt
 		e.Prompt = h.Prompt
 		return e, nil, warns, true
 	default:
@@ -59,7 +59,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 
 func cursorAllowEntry(e model.Entry, _ model.Kind, event string) ([]model.Warning, bool) {
 	switch e.Type {
-	case cursor.HandlerTypeCommand, "", cursor.HandlerTypePrompt:
+	case hostcursor.HandlerTypeCommand, "", hostcursor.HandlerTypePrompt:
 		return nil, true
 	case "http":
 		return []model.Warning{model.Warnf("%s: Cursor has no http hooks; dropped", e.NativeEvent)}, false
@@ -73,13 +73,13 @@ func cursorAllowEntry(e model.Entry, _ model.Kind, event string) ([]model.Warnin
 
 func cursorHandlerRaw(e model.Entry) (json.RawMessage, error) {
 	if len(e.Raw) == 0 {
-		h := cursor.Handler{
+		h := hostcursor.Handler{
 			Command: e.Command,
 			Prompt:  e.Prompt,
 			Matcher: e.Matcher,
 			Timeout: e.TimeoutSec,
 		}
-		if e.Type != "" && e.Type != cursor.HandlerTypeCommand {
+		if e.Type != "" && e.Type != hostcursor.HandlerTypeCommand {
 			h.Type = e.Type
 		}
 		return hookkit.MarshalHandler(h)
@@ -106,19 +106,19 @@ func overlayCursorHandlerFields(m map[string]any, e model.Entry) {
 
 	handlerType := e.Type
 	if handlerType == "" {
-		handlerType = cursor.HandlerTypeCommand
+		handlerType = hostcursor.HandlerTypeCommand
 	}
 	delete(m, "command")
 	delete(m, "prompt")
 	delete(m, "type")
 
 	switch handlerType {
-	case cursor.HandlerTypeCommand:
+	case hostcursor.HandlerTypeCommand:
 		if e.Command != "" {
 			m["command"] = e.Command
 		}
-	case cursor.HandlerTypePrompt:
-		m["type"] = cursor.HandlerTypePrompt
+	case hostcursor.HandlerTypePrompt:
+		m["type"] = hostcursor.HandlerTypePrompt
 		if e.Prompt != "" {
 			m["prompt"] = e.Prompt
 		}

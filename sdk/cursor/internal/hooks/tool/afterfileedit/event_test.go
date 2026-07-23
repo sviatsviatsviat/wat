@@ -1,8 +1,9 @@
 package afterfileedit
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"
 )

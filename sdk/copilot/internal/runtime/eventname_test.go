@@ -2,8 +2,9 @@ package runtime
 
 import (
 	"errors"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
 func TestCanonicalEventName(t *testing.T) {

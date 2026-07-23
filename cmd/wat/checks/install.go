@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/claude"
-	"github.com/sviatsviatsviat/wat/sdk/copilot"
-	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // Install verifies wat on PATH and installed hook config entries.

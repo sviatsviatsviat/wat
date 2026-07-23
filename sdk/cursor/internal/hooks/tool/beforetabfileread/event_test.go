@@ -1,9 +1,10 @@
 package beforetabfileread
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/runtime"

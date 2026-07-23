@@ -1,8 +1,9 @@
 package posttoolusefailure
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/runtime"

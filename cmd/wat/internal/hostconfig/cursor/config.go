@@ -1,4 +1,4 @@
-package config
+package cursor
 
 import (
 	"encoding/json"

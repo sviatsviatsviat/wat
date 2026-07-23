@@ -22,9 +22,10 @@ Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/
 | `encode.go` | Unexported encode router (wire mapping) |
 | `internal/runtime/codec.go` | Dialect codec (event decoder registration) |
 | `hooks.go` | Zero-arg `UseHooks` and unexported fluent registrar (deferred; `Contribute` installs via `run.Registry`) |
-| `config.go` | Native hook config types (`Handler`, `Settings`/`File`) |
 | `errors.go` | Decode error sentinels |
 | `tools/` (copilot/cursor) or root `Input` / `Tool*` (claude) | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
+
+Native hook **config file** schemas (Claude `settings.json` `Settings`, Copilot/Cursor `hooks.json` `File` / `Handler`) live under `cmd/wat/internal/hostconfig/{claude,cursor,copilot}` for CLI install, doctor, and `wat port` — not in the public agent SDKs.
 
 **Agnostic** uses the same root vertical-slice layout for portable hook kinds (`pretool.go`, `stop.go`, …):
 
@@ -45,7 +46,7 @@ Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission
 - **Wire format** — Claude, Copilot, and Cursor payloads include `hook_event_name`; Copilot uses PascalCase event names with snake_case fields.
 - **Encode contract** — Copilot and Cursor encode to `([]byte, exitCode, error)`; Claude encodes to `([]byte, error)` with blocking in JSON fields. Encoding is package-internal in all three SDKs.
 - **Side effects** — Claude `SessionStartOutput.Env` writes `CLAUDE_ENV_FILE`; Copilot and Cursor pass `env` in stdout JSON.
-- **Config schema** — Claude `settings.json` (`Settings`) vs Copilot/Cursor `hooks.json` (`File`).
+- **Config schema** — Claude `settings.json` vs Copilot/Cursor `hooks.json` (CLI hostconfig packages).
 
 ## Tool name normalization
 

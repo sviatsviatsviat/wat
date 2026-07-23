@@ -1,9 +1,10 @@
 package subagentstop
 
 import (
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"strings"
 	"testing"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/agent/agentstop"
