@@ -25,14 +25,3 @@ const HandlerErrorExit = event.HandlerErrorExit
 // PermissionRequest it means deny, and for PostToolUseFailure it carries
 // additional_context in stdout.
 const WarnExit = event.WarnExit
-
-// CanonicalEventName reports whether name is a known Copilot hook event name.
-// Known names are returned unchanged; unknown non-empty names return false.
-func CanonicalEventName(name string) (string, bool) {
-	return runtime.CanonicalEventName(name)
-}
-
-// EventAliasMap returns a copy of known event name to itself (identity map).
-func EventAliasMap() map[string]string {
-	return runtime.EventAliasMap()
-}

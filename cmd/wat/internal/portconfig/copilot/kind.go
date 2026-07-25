@@ -22,23 +22,9 @@ var EventForKind = map[model.Kind]string{
 	model.KindAgentError:        sdkcopilot.EventErrorOccurred,
 }
 
-var kindForEventMap = buildKindForEvent()
+var kindForEventMap = model.InvertEventForKind(EventForKind)
 
 func kindForEvent(name string) (model.Kind, bool) {
-	canonical, ok := sdkcopilot.CanonicalEventName(name)
-	if !ok {
-		return model.KindOther, false
-	}
-	kind, ok := kindForEventMap[canonical]
+	kind, ok := kindForEventMap[name]
 	return kind, ok
-}
-
-func buildKindForEvent() map[string]model.Kind {
-	out := model.InvertEventForKind(EventForKind)
-	for alias, canonical := range sdkcopilot.EventAliasMap() {
-		if kind, ok := out[canonical]; ok {
-			out[alias] = kind
-		}
-	}
-	return out
 }

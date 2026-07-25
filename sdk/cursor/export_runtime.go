@@ -24,14 +24,3 @@ const HandlerErrorExit = event.HandlerErrorExit
 // PermissionDenyExit is exit code 2. Cursor treats it as block/deny on permission-gating
 // events, equivalent to returning permission:"deny".
 const PermissionDenyExit = event.PermissionDenyExit
-
-// CanonicalEventName reports whether name is a known Cursor hook event name.
-// Known names are returned unchanged; unknown non-empty names return false.
-func CanonicalEventName(name string) (string, bool) {
-	return runtime.CanonicalEventName(name)
-}
-
-// EventAliasMap returns a copy of known event name to itself (identity map).
-func EventAliasMap() map[string]string {
-	return runtime.EventAliasMap()
-}

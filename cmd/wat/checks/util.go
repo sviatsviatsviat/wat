@@ -143,11 +143,7 @@ func isValidInstallEvent(agent, event string) bool {
 	case sdkclaude.Dialect:
 		return eventInMapValues(portclaude.EventForKind, event)
 	case sdkcopilot.Dialect:
-		canonical, ok := sdkcopilot.CanonicalEventName(event)
-		if !ok {
-			return false
-		}
-		return eventInMapValues(portcopilot.EventForKind, canonical)
+		return eventInMapValues(portcopilot.EventForKind, event)
 	case sdkcursor.Dialect:
 		return eventInMapValues(portcursor.EventForKind, event) || portcursor.IsDedicatedEvent(event)
 	default:
