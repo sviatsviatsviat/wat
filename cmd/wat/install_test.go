@@ -26,15 +26,7 @@ func TestInstallProject_freshInstallAll(t *testing.T) {
 	if err := os.MkdirAll(subdir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	deps := installcfg.DefaultDeps()
 	deps.Getwd = func() (string, error) { return subdir, nil }
@@ -153,15 +145,7 @@ func TestInstallProject_discoversAuthoredHooksIntegration(t *testing.T) {
 
 func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 	project := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	// Seed Cursor config with an unrelated hook entry.
 	unrelated := hostcursor.File{
@@ -210,15 +194,7 @@ func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 
 func TestInstallProject_reinstallReplacesWatEntries(t *testing.T) {
 	project := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	watAbs := filepath.Join(project, "bin", "wat")
 	cursorPath := filepath.Join(project, ".cursor", "hooks.json")
@@ -272,15 +248,7 @@ func TestInstallProject_reinstallReplacesWatEntries(t *testing.T) {
 
 func TestInstallProject_agentFiltering(t *testing.T) {
 	project := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	deps := installcfg.DefaultDeps()
 	deps.Getwd = func() (string, error) { return project, nil }
@@ -306,16 +274,7 @@ func TestInstallProject_agentFiltering(t *testing.T) {
 
 func TestInstallProject_emptyManifestDoesNotCreateConfigs(t *testing.T) {
 	project := t.TempDir()
-	watDir := filepath.Join(project, ".wat")
-	if err := os.MkdirAll(watDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	manifest := &sdkrun.Manifest{Version: 1}
 	deps := installcfg.DefaultDeps()
@@ -453,15 +412,7 @@ func TestUpsertClaudeGroups_multipleDefaultGroupsOnlyFirstGetsWat(t *testing.T) 
 
 func TestInstallProject_claudeMergePreservesUnrelated(t *testing.T) {
 	project := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	unrelated := hostclaude.Settings{
 		Hooks: map[string][]hostclaude.MatcherGroup{
@@ -518,15 +469,7 @@ func TestInstallProject_claudeMergePreservesUnrelated(t *testing.T) {
 
 func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 	project := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	watAbs := filepath.Join(project, "bin", "wat")
 	event := claude.EventPreToolUse
@@ -585,16 +528,7 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 
 func TestInstallProject_removesStaleManagedEvents(t *testing.T) {
 	project := t.TempDir()
-	watDir := filepath.Join(project, ".wat")
-	if err := os.MkdirAll(watDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	watAbs := filepath.Join(project, "bin", "wat")
 	cursorPath := filepath.Join(project, ".cursor", "hooks.json")
@@ -664,16 +598,7 @@ func TestInstallProject_removesStaleManagedEvents(t *testing.T) {
 
 func TestInstallProject_removesStaleClaudeManagedEvents(t *testing.T) {
 	project := t.TempDir()
-	watDir := filepath.Join(project, ".wat")
-	if err := os.MkdirAll(watDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	writeWatProjectFixture(t, project)
 
 	watAbs := filepath.Join(project, "bin", "wat")
 	claudePath := filepath.Join(project, ".claude", "settings.json")
@@ -751,6 +676,21 @@ func TestInstallProject_removesStaleClaudeManagedEvents(t *testing.T) {
 	}
 	if len(got.Hooks[claude.EventPreToolUse]) != 1 {
 		t.Fatalf("PreToolUse groups = %d, want 1", len(got.Hooks[claude.EventPreToolUse]))
+	}
+}
+
+
+func writeWatProjectFixture(t *testing.T, project string) {
+	t.Helper()
+	watDir := filepath.Join(project, ".wat")
+	if err := os.MkdirAll(watDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 
