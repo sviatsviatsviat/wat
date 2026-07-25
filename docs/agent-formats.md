@@ -103,8 +103,9 @@ Known limitations are part of the contract:
 - Cursor emits `updated_input` only for generic `preToolUse`, not for its
   dedicated pre-tool events.
 - Cursor does not support `"ask"` on `subagentStart`; it is treated as
-  `"deny"`. `sdk/cursor`'s `subagentstart.Results.Ask` documents this, but
-  callers gating subagent spawns should use `Deny` directly.
+  `"deny"`. `sdk/cursor`'s `SubagentStart` `Deny` writes `user_message` and
+  exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap
+  stdout as the message). Prefer `Deny` over `Ask` for this event.
 - Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
   where that native output field is supported.
 - Observe-only portable events never emit host JSON.

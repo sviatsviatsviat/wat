@@ -36,6 +36,10 @@ type permissionOutput struct {
 	userMessage  string
 	agentMessage string
 	updatedInput map[string]any
+	// denyExitZero, when true with DecisionDeny, encodes permission JSON with
+	// process exit 0. Used for events such as subagentStart where Cursor applies
+	// the JSON permission field and treats exit 2 as a raw-stdout deny message.
+	denyExitZero bool
 }
 
 func (permissionOutput) isPermissionOutput() {}
@@ -123,6 +127,17 @@ func (GateResults) Noop() PermissionOutput {
 	return permissionOutput{}
 }
 
+// DenyUserMessage returns a deny verdict with a user-facing message and process
+// exit 0. Cursor's subagentStart schema applies permission from JSON and does not
+// use agent_message; exit 2 would re-wrap stdout as the user message.
+func (GateResults) DenyUserMessage(userMessage string) PermissionOutput {
+	return permissionOutput{
+		decision:     DecisionDeny,
+		userMessage:  userMessage,
+		denyExitZero: true,
+	}
+}
+
 // Encode renders this output as Cursor stdout JSON.
 func (o permissionOutput) Encode() ([]byte, int, error) {
 	out := map[string]any{}
@@ -146,7 +161,7 @@ func (o permissionOutput) Encode() ([]byte, int, error) {
 		return nil, 0, err
 	}
 	exitCode := 0
-	if o.decision == DecisionDeny {
+	if o.decision == DecisionDeny && !o.denyExitZero {
 		exitCode = PermissionDenyExit
 	}
 	return b, exitCode, nil
@@ -177,6 +192,7 @@ func (o permissionOutput) Merge(other hookkit.Output) (hookkit.Output, []string,
 		userMessage:  userMessage,
 		agentMessage: agentMessage,
 		updatedInput: updatedInput,
+		denyExitZero: o.denyExitZero || b.denyExitZero,
 	}, warnings, nil
 }
 

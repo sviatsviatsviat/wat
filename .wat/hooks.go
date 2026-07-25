@@ -9,9 +9,6 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// autoModel is Cursor's automatic model selection value for a subagent.
-const autoModel = "auto"
-
 // Hooks contains this project's hook registrations.
 var Hooks = []run.Hooks{
 	agnostic.UseHooks().OnSessionStart(func(ctx context.Context, hook agnostic.SessionStartEvent, r agnostic.SessionStartResults) (agnostic.SessionStartResult, error) {
@@ -20,20 +17,30 @@ var Hooks = []run.Hooks{
 	cursor.UseHooks().SubagentStart(gateSubagentModel),
 }
 
-// gateSubagentModel blocks a subagent spawn that pins a model other than Cursor's
-// automatic selection, so a human decides whether to allow it. Cursor does not support
-// "ask" on subagentStart (it is treated as "deny"), so this denies and explains the next
-// step in a user-facing message rather than silently letting the spawn through.
+// gateSubagentModel blocks a subagent spawn that pins a concrete model. Cursor reports
+// automatic selection on subagent_model as "", "auto", "default", or "inherit".
+// Cursor does not support "ask" on subagentStart (it is treated as "deny"), so this
+// denies with a user-facing message.
 func gateSubagentModel(_ context.Context, hook cursor.SubagentStart, r cursor.SubagentStartResults) (cursor.PermissionOutput, error) {
-	model := strings.TrimSpace(hook.SubagentModel)
-	if model == "" || strings.EqualFold(model, autoModel) {
-		return nil, nil // no opinion: auto, or the host did not report a model
+	sub := strings.TrimSpace(hook.SubagentModel)
+	if isUnpinnedSubagentModel(sub) {
+		return nil, nil
 	}
 	name := strings.TrimSpace(hook.SubagentType)
 	if name == "" {
 		name = "subagent"
 	}
-	return r.Deny("subagent " + name + " requested model " + model + "; only " + autoModel + " is pre-approved").
-		WithUserMessage("wat blocked " + name + " from starting on model " + model +
-			". Re-run it with the auto model, or allow this model in .wat/hooks.go."), nil
+	return r.Deny("wat blocked " + name + " from starting on model " + sub +
+		". Re-run it with the default/auto model, or allow this model in .wat/hooks.go."), nil
+}
+
+// isUnpinnedSubagentModel reports whether subagent_model is unset or a Cursor
+// automatic-selection sentinel.
+func isUnpinnedSubagentModel(subagentModel string) bool {
+	switch strings.ToLower(strings.TrimSpace(subagentModel)) {
+	case "", "auto", "default", "inherit":
+		return true
+	default:
+		return false
+	}
 }

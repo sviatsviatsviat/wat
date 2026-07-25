@@ -48,7 +48,7 @@ func TestWatTest_sessionStartContext(t *testing.T) {
 }
 
 // cursorSubagentModelGateHooksGo registers a Cursor subagentStart handler that denies
-// a subagent spawn pinned to a model other than "auto", mirroring the gate in this
+// a subagent spawn pinned to a concrete model ID, mirroring the gate in this
 // repository's own .wat/hooks.go. This exercises wat's CLI path (registration
 // manifest, dispatch, permission-deny exit code) for a Cursor permission-gating event
 // in a project scaffolded by "wat init", independent of the committed .wat/ hooks.
@@ -62,24 +62,22 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-const autoModel = "auto"
-
 var Hooks = []run.Hooks{
 	cursor.UseHooks().SubagentStart(func(_ context.Context, hook cursor.SubagentStart, r cursor.SubagentStartResults) (cursor.PermissionOutput, error) {
-		model := strings.TrimSpace(hook.SubagentModel)
-		if model == "" || strings.EqualFold(model, autoModel) {
+		sub := strings.ToLower(strings.TrimSpace(hook.SubagentModel))
+		switch sub {
+		case "", "auto", "default", "inherit":
 			return nil, nil
 		}
-		return r.Deny("model " + model + " is not pre-approved").
-			WithUserMessage("wat blocked this subagent: re-run with the auto model."), nil
+		return r.Deny("wat blocked this subagent: re-run with the default/auto model."), nil
 	}),
 }
 `
 
 const cursorSubagentDenyExpect = `{
-  "exit": 2,
+  "exit": 0,
   "decision": "deny",
-  "stdout_contains": ["re-run with the auto model"]
+  "stdout_contains": ["re-run with the default/auto model"]
 }
 `
 
@@ -104,12 +102,17 @@ func TestWatTest_cursorSubagentStartModelGate(t *testing.T) {
 		expect  string
 	}{
 		{
-			name:    "non-auto model denied",
+			name:    "concrete subagent_model denied",
 			fixture: fixturePath(t, "cursor", "subagent_start.json"),
 			expect:  cursorSubagentDenyExpect,
 		},
 		{
-			name:    "auto model allowed",
+			name:    "concrete subagent_model denied when envelope model matches",
+			fixture: fixturePath(t, "cursor", "subagent_start_same_pinned.json"),
+			expect:  cursorSubagentDenyExpect,
+		},
+		{
+			name:    "default subagent_model allowed",
 			fixture: fixturePath(t, "cursor", "subagent_start_auto.json"),
 			expect:  cursorSubagentAllowExpect,
 		},

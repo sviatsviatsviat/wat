@@ -7,6 +7,14 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [v0.1.1-alpha] - 2026-07-25
+
+### Fixed
+
+- Cursor `SubagentStart` `Deny` emits `permission` + `user_message` with exit 0
+  (no `agent_message` / exit 2), matching Cursor's subagentStart schema so the
+  host does not re-wrap stdout as the user message.
+
 ## [v0.1.0-alpha] - 2026-07-25
 
 ### Added

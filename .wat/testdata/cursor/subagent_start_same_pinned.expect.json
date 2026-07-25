@@ -3,6 +3,7 @@
   "decision": "deny",
   "stdout_contains": [
     "\"permission\":\"deny\"",
+    "composer-2.5-fast",
     "Re-run it with the default/auto model"
   ]
 }

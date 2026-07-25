@@ -1,6 +1,7 @@
 package subagentstart
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -52,6 +53,26 @@ func TestDecode_SubagentStart(t *testing.T) {
 	}
 	if ev.GitBranch != "main" {
 		t.Errorf("GitBranch = %q, want main", ev.GitBranch)
+	}
+}
+
+func TestEncode_SubagentStartDeny_userMessageExitZero(t *testing.T) {
+	out, code, err := results{}.Deny("pinned model blocked").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0", code)
+	}
+	got := string(out)
+	if !strings.Contains(got, `"permission":"deny"`) {
+		t.Fatalf("missing permission deny: %s", got)
+	}
+	if !strings.Contains(got, `"user_message":"pinned model blocked"`) {
+		t.Fatalf("missing user_message: %s", got)
+	}
+	if strings.Contains(got, "agent_message") {
+		t.Fatalf("subagentStart deny must not emit agent_message: %s", got)
 	}
 }
 

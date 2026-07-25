@@ -14,7 +14,7 @@ The project currently requires Go 1.26.
 Install the CLI:
 
 ```bash
-go install github.com/sviatsviatsviat/wat/cmd/wat@v0.1.0-alpha
+go install github.com/sviatsviatsviat/wat/cmd/wat@v0.1.1-alpha
 ```
 
 From a repository checkout, `go install ./cmd/wat` also works (build with VCS

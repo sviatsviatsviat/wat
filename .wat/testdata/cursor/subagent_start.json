@@ -1,9 +1,9 @@
 {
   "conversation_id": "c1",
   "generation_id": "g1",
-  "model": "auto",
+  "model": "default",
   "hook_event_name": "subagentStart",
-  "cursor_version": "1.7.2",
+  "cursor_version": "3.13.10",
   "workspace_roots": ["/w"],
   "user_email": null,
   "transcript_path": null,

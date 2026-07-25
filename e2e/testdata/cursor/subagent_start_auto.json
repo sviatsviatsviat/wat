@@ -1,19 +1,19 @@
 {
   "conversation_id": "c1",
   "generation_id": "g1",
-  "model": "claude-4.5-sonnet",
+  "model": "default",
   "hook_event_name": "subagentStart",
-  "cursor_version": "1.7.2",
+  "cursor_version": "3.13.10",
   "workspace_roots": ["/w"],
   "user_email": null,
   "transcript_path": null,
   "cwd": "/w",
   "subagent_id": "sa2",
-  "subagent_type": "explore",
+  "subagent_type": "general-purpose",
   "task": "find files",
   "parent_conversation_id": "c0",
   "tool_call_id": "tc2",
-  "subagent_model": "auto",
+  "subagent_model": "default",
   "is_parallel_worker": false,
   "git_branch": "main"
 }
