@@ -7,7 +7,7 @@ import (
 
 	hostclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/internal/hookconfig"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 )
 
 // Parse reads Claude Code settings JSON into a normalized configuration.

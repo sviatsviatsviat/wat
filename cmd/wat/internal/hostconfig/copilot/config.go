@@ -3,7 +3,7 @@ package copilot
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/internal/hookconfig"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 )
 
 // File is the GitHub Copilot hooks.json shape.

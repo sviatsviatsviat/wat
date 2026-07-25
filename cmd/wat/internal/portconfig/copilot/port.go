@@ -6,7 +6,7 @@ import (
 	hostcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/flat"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/internal/hookconfig"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 

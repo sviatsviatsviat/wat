@@ -10,7 +10,7 @@ import (
 	hostclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	hostcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
-	"github.com/sviatsviatsviat/wat/internal/hookconfig"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
 

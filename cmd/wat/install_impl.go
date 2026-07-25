@@ -13,7 +13,7 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
-	"github.com/sviatsviatsviat/wat/internal/hookconfig"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 )
 
 type installAgentPlan struct {
