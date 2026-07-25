@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "/go/bin/wat run --agent copilot --event SessionStart"
+      }
+    ]
+  }
+}

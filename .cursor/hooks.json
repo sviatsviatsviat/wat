@@ -1,4 +1,17 @@
 {
   "version": 1,
-  "hooks": {}
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "command": "/go/bin/wat run --agent cursor --event sessionStart"
+      }
+    ],
+    "subagentStart": [
+      {
+        "type": "command",
+        "command": "/go/bin/wat run --agent cursor --event subagentStart"
+      }
+    ]
+  }
 }
