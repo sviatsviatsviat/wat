@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portio"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -51,11 +52,11 @@ func TestPortProject_claudeToCursor(t *testing.T) {
 	stdout, stderr = &outBuf, &errBuf
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
-	code := portProject(portConfig{
-		from:      sdkclaude.Dialect,
-		to:        sdkcursor.Dialect,
-		inputPath: inputPath,
-	}, defaultPortDeps())
+	code := portio.Run(portio.Config{
+		From:      sdkclaude.Dialect,
+		To:        sdkcursor.Dialect,
+		InputPath: inputPath,
+	}, portio.DefaultDeps(), stdout, stderr)
 	if code != exitOK {
 		t.Fatalf("exit = %d, want %d\nstderr: %s", code, exitOK, errBuf.String())
 	}
@@ -107,12 +108,12 @@ func TestPortProject_writesOutputFile(t *testing.T) {
 	stdout, stderr = io.Discard, io.Discard
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
-	code := portProject(portConfig{
-		from:       sdkclaude.Dialect,
-		to:         sdkcursor.Dialect,
-		inputPath:  inputPath,
-		outputPath: outputPath,
-	}, defaultPortDeps())
+	code := portio.Run(portio.Config{
+		From:       sdkclaude.Dialect,
+		To:         sdkcursor.Dialect,
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+	}, portio.DefaultDeps(), stdout, stderr)
 	if code != exitOK {
 		t.Fatalf("exit = %d, want %d", code, exitOK)
 	}
@@ -140,16 +141,16 @@ func TestPortProject_missingInput(t *testing.T) {
 	stdout, stderr = io.Discard, io.Discard
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
-	deps := defaultPortDeps()
-	deps.readFile = func(string) ([]byte, error) {
+	deps := portio.DefaultDeps()
+	deps.ReadFile = func(string) ([]byte, error) {
 		return nil, os.ErrNotExist
 	}
 
-	code := portProject(portConfig{
-		from:      sdkclaude.Dialect,
-		to:        sdkcursor.Dialect,
-		inputPath: "/nonexistent/settings.json",
-	}, deps)
+	code := portio.Run(portio.Config{
+		From:      sdkclaude.Dialect,
+		To:        sdkcursor.Dialect,
+		InputPath: "/nonexistent/settings.json",
+	}, deps, stdout, stderr)
 	if code != exitRuntimeFailure {
 		t.Fatalf("exit = %d, want %d", code, exitRuntimeFailure)
 	}
@@ -167,11 +168,11 @@ func TestPortProject_sameDialect(t *testing.T) {
 	stdout, stderr = &outBuf, &errBuf
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
-	code := portProject(portConfig{
-		from:      sdkclaude.Dialect,
-		to:        sdkclaude.Dialect,
-		inputPath: inputPath,
-	}, defaultPortDeps())
+	code := portio.Run(portio.Config{
+		From:      sdkclaude.Dialect,
+		To:        sdkclaude.Dialect,
+		InputPath: inputPath,
+	}, portio.DefaultDeps(), stdout, stderr)
 	if code != exitOK {
 		t.Fatalf("exit = %d, want %d", code, exitOK)
 	}
@@ -198,7 +199,7 @@ func TestParsePortDialect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parsePortDialect(tt.value, tt.flag)
+			got, err := portio.ParseDialect(tt.value, tt.flag)
 			if tt.wantErr != "" {
 				if err == nil {
 					t.Fatal("expected error")
@@ -230,8 +231,8 @@ func TestDefaultInputPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.from, func(t *testing.T) {
-			if got := defaultInputPath(tt.from, wd); got != tt.want {
-				t.Fatalf("defaultInputPath = %q, want %q", got, tt.want)
+			if got := portio.DefaultInputPath(tt.from, wd); got != tt.want {
+				t.Fatalf("DefaultInputPath = %q, want %q", got, tt.want)
 			}
 		})
 	}

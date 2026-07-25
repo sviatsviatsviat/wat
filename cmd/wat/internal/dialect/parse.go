@@ -1,6 +1,7 @@
 package dialect
 
 import (
+	"fmt"
 	"strings"
 
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
@@ -22,4 +23,15 @@ func Parse(s string) string {
 	default:
 		return ""
 	}
+}
+
+// Validate reports whether agent is empty or a known dialect name.
+func Validate(agent string) error {
+	if agent == "" {
+		return nil
+	}
+	if Parse(agent) == "" {
+		return fmt.Errorf("unknown agent dialect %q (want claude, copilot, or cursor)", agent)
+	}
+	return nil
 }

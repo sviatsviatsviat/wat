@@ -1,4 +1,4 @@
-package checks
+package doctor
 
 import (
 	"encoding/json"
@@ -8,10 +8,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
-	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/installcfg"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/paths"
+	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
 // Install verifies wat on PATH and installed hook config entries.
@@ -49,31 +53,23 @@ func Install(deps Deps, ctx Context) []Result {
 	}
 
 	root := filepath.Dir(ctx.WatDir)
+	configs := paths.All(root)
 
-	type agentConfig struct {
-		agent string
-		path  string
-	}
-	configs := []agentConfig{
-		{"claude", filepath.Join(root, ".claude", "settings.json")},
-		{"copilot", filepath.Join(root, ".github", "hooks", "wat.json")},
-		{"cursor", filepath.Join(root, ".cursor", "hooks.json")},
-	}
-
-	existing := 0
+	present := make(map[string]os.FileInfo, len(configs))
 	for _, cfg := range configs {
-		if _, err := deps.Stat(cfg.path); err == nil {
-			existing++
+		fi, err := deps.Stat(cfg.Path)
+		if err == nil {
+			present[cfg.Path] = fi
 		} else if !errors.Is(err, os.ErrNotExist) {
 			results = append(results, Result{
 				Group:   "install",
 				Status:  Fail,
-				Message: fmt.Sprintf("stat %s failed", cfg.path),
+				Message: fmt.Sprintf("stat %s failed", cfg.Path),
 				Fix:     "fix permissions or re-run wat install",
 			})
 		}
 	}
-	if existing == 0 {
+	if len(present) == 0 {
 		results = append(results, Result{
 			Group:   "install",
 			Status:  Fail,
@@ -84,20 +80,20 @@ func Install(deps Deps, ctx Context) []Result {
 	}
 
 	for _, cfg := range configs {
-		if _, err := deps.Stat(cfg.path); err != nil {
+		if _, ok := present[cfg.Path]; !ok {
 			continue
 		}
-		results = append(results, agentInstall(deps, cfg.agent, cfg.path, watAbs)...)
+		results = append(results, agentInstall(deps, cfg.Agent, cfg.Path, watAbs)...)
 	}
 
-	results = append(results, disableAllHooks(deps, filepath.Join(root, ".claude", "settings.json"))...)
+	results = append(results, disableAllHooks(deps, paths.ConfigPath(sdkclaude.Dialect, root))...)
 
 	return results
 }
 
 func agentInstall(deps Deps, agent, path, watAbs string) []Result {
 	var results []Result
-	expected, err := ExpectedInstallEvents(agent)
+	expected, err := installcfg.ExpectedEvents(agent)
 	if err != nil {
 		return []Result{{
 			Group:   "install",
@@ -131,7 +127,7 @@ func agentInstall(deps Deps, agent, path, watAbs string) []Result {
 	for _, event := range expected {
 		count := 0
 		for _, cmd := range commands {
-			if IsWatManagedCommand(cmd, agent, event, watAbs) {
+			if installcfg.IsWatManagedCommand(cmd, agent, event, watAbs) {
 				count++
 			}
 		}
@@ -211,7 +207,7 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 				for _, raw := range g.Hooks {
 					h, err := hookconfig.ParseHandler[claude.Handler](raw)
 					if err != nil {
-						continue
+						return nil, fmt.Errorf("%s: malformed hook entry: %w", path, err)
 					}
 					if h.Type == "" || h.Type == "command" {
 						if strings.Contains(h.Command, "run --agent ") {
@@ -257,14 +253,14 @@ func flatWatCommands(hooks map[string][]json.RawMessage, getCommand func(json.Ra
 }
 
 func validateWatCommand(command string) (string, bool) {
-	agent, event, ok := ParseWatRunFlags(command)
+	agent, event, ok := installcfg.ParseWatRunFlags(command)
 	if !ok {
 		return "invalid wat run command in config: " + firstLine(command), false
 	}
-	if err := validateAgent(agent); err != nil {
+	if err := dialect.Validate(agent); err != nil {
 		return fmt.Sprintf("invalid --agent %q in config command", agent), false
 	}
-	if !isValidInstallEvent(agent, event) {
+	if !installcfg.IsValidEvent(agent, event) {
 		return fmt.Sprintf("invalid --event %q for agent %s in config command", event, agent), false
 	}
 	return "", true

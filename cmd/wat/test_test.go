@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hooktest"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/initproj"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
 )
@@ -46,32 +48,30 @@ func TestRunTest_emptyFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deps := defaultTestDeps()
-	deps.getenv = func(key string) string {
+	deps := hooktest.DefaultDeps(io.Discard)
+	deps.Getenv = func(key string) string {
 		if key == "WAT_PROJECT_DIR" {
 			return project
 		}
 		return ""
 	}
-	deps.readFixture = func(string, io.Reader) ([]byte, error) {
+	deps.ReadFixture = func(string, io.Reader) ([]byte, error) {
 		return nil, nil
 	}
 
-	code := runTest(testConfig{fixture: "-"}, deps)
-	if code != exitRuntimeFailure {
-		t.Fatalf("exit = %d, want %d", code, exitRuntimeFailure)
+	code := hooktest.Run(hooktest.Config{Fixture: "-"}, watModuleVersionFn(), deps, os.Stdin, stderr)
+	if code != hooktest.ExitRuntimeFailure {
+		t.Fatalf("exit = %d, want %d", code, hooktest.ExitRuntimeFailure)
 	}
 	if !strings.Contains(errBuf.String(), "empty fixture") {
 		t.Fatalf("stderr = %q", errBuf.String())
 	}
 }
 
-// TestResolveFixture_copilotRequiresHookEventName checks that resolveFixture
-// rejects Copilot fixtures that omit hook_event_name.
 func TestResolveFixture_copilotRequiresHookEventName(t *testing.T) {
 	payload := []byte(`{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`)
 
-	_, err := resolveFixture("copilot", "", payload)
+	_, err := hooktest.ResolveFixture("copilot", payload)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -80,11 +80,9 @@ func TestResolveFixture_copilotRequiresHookEventName(t *testing.T) {
 	}
 }
 
-// TestWriteTestReport_fixtureSummary checks that writeTestReport includes agent,
-// event, decision, and exit fields in the summary.
 func TestWriteTestReport_fixtureSummary(t *testing.T) {
 	var buf bytes.Buffer
-	writeTestReport(&buf, fixtureInfo{dialect: sdkclaude.Dialect, event: "PreToolUse"}, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)
+	hooktest.WriteReport(&buf, hooktest.FixtureInfo{Dialect: sdkclaude.Dialect, Event: "PreToolUse"}, []byte(`{"permissionDecision":"deny","reason":"blocked"}`), nil, 0, false)
 
 	out := buf.String()
 	for _, want := range []string{"agent: claude", "event: PreToolUse", "decision: deny", "exit:   0"} {
@@ -141,20 +139,18 @@ func TestRunTest_preToolDenyIntegration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var report bytes.Buffer
-			deps := defaultTestDeps()
-			deps.getenv = func(key string) string {
+			deps := hooktest.DefaultDeps(&report)
+			deps.Getenv = func(key string) string {
 				if key == "WAT_PROJECT_DIR" {
 					return project
 				}
 				return os.Getenv(key)
 			}
-			deps.writeReport = &report
 
-			code := runTest(testConfig{
-				agent:   tt.agent,
-				event:   tt.event,
-				fixture: tt.fixture,
-			}, deps)
+			code := hooktest.Run(hooktest.Config{
+				Agent:   tt.agent,
+				Fixture: tt.fixture,
+			}, watModuleVersionFn(), deps, os.Stdin, stderr)
 			if code != tt.wantExit {
 				t.Fatalf("exit = %d, want %d\nreport:\n%s", code, tt.wantExit, report.String())
 			}
@@ -180,8 +176,8 @@ func setupTestHookProject(t *testing.T) string {
 	stdout, stderr = io.Discard, io.Discard
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
-	if err := initProject(dir, false, exec.Command); err != nil {
-		t.Fatalf("initProject: %v", err)
+	if err := initproj.Init(dir, false, watModuleVersionFn(), initproj.DefaultDeps(), stdout, stderr); err != nil {
+		t.Fatalf("initproj.Init: %v", err)
 	}
 
 	modRoot := testModuleRoot(t)

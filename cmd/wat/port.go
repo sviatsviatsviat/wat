@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portio"
 )
 
 func newPortCmd() *subcommandRunner {
@@ -23,22 +25,22 @@ func newPortCmd() *subcommandRunner {
 			"Lossy or unsupported mappings emit warnings on stderr but exit 0. Translation errors exit non-zero.",
 		fs: fs,
 		run: func() int {
-			fromDialect, err := parsePortDialect(*from, "from")
+			fromDialect, err := portio.ParseDialect(*from, "from")
 			if err != nil {
 				_, _ = fmt.Fprintf(stderr, "wat port: %v\n", err)
 				return exitUsage
 			}
-			toDialect, err := parsePortDialect(*to, "to")
+			toDialect, err := portio.ParseDialect(*to, "to")
 			if err != nil {
 				_, _ = fmt.Fprintf(stderr, "wat port: %v\n", err)
 				return exitUsage
 			}
-			return portProject(portConfig{
-				from:       fromDialect,
-				to:         toDialect,
-				inputPath:  *input,
-				outputPath: *output,
-			}, defaultPortDeps())
+			return portio.Run(portio.Config{
+				From:       fromDialect,
+				To:         toDialect,
+				InputPath:  *input,
+				OutputPath: *output,
+			}, portio.DefaultDeps(), stdout, stderr)
 		},
 	}
 }

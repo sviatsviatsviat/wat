@@ -1,8 +1,10 @@
-package checks
+package doctor
 
 import (
 	"fmt"
 	"path/filepath"
+
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/project"
 )
 
 // ToolchainGoOnPath verifies go is available on PATH.
@@ -32,7 +34,7 @@ func ToolchainGoVersion(deps Deps, ctx Context) []Result {
 			Fix:     "run wat init",
 		}}
 	}
-	goModPath := filepath.Join(ctx.WatDir, "go.mod")
+	goModPath := filepath.Join(ctx.WatDir, project.GoModFile)
 	data, err := deps.ReadFile(goModPath)
 	if err != nil {
 		return []Result{{

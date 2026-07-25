@@ -10,9 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sviatsviatsviat/wat/cmd/wat/checks"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/buildcache"
 	hostclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/installcfg"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
@@ -187,11 +188,14 @@ func TestRunDoctor_missingInstallEntry(t *testing.T) {
 	})
 	cursorPath := filepath.Join(project, ".cursor", "hooks.json")
 	var f hostcursor.File
-	instDeps := defaultInstallDeps()
-	if err := readInstallJSON(cursorPath, &f, instDeps); err != nil {
+	data, err := os.ReadFile(cursorPath)
+	if err != nil {
 		t.Fatal(err)
 	}
-	events, err := checks.ExpectedInstallEvents("cursor")
+	if err := json.Unmarshal(data, &f); err != nil {
+		t.Fatal(err)
+	}
+	events, err := installcfg.ExpectedEvents("cursor")
 	if err != nil || len(events) == 0 {
 		t.Fatal("expected cursor events")
 	}
@@ -251,7 +255,11 @@ func TestRunDoctor_disableAllHooks(t *testing.T) {
 	project, watAbs := doctorTestProject(t)
 	claudePath := filepath.Join(project, ".claude", "settings.json")
 	var settings hostclaude.Settings
-	if err := readInstallJSON(claudePath, &settings, defaultInstallDeps()); err != nil {
+	data, err := os.ReadFile(claudePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(data, &settings); err != nil {
 		t.Fatal(err)
 	}
 	settings.DisableAllHooks = true
@@ -325,11 +333,11 @@ func doctorTestProject(t *testing.T, opts ...doctorProjectOpts) (project, watAbs
 
 	watAbs = filepath.Join(project, "bin", "wat")
 	if !o.skipInstall {
-		deps := defaultInstallDeps()
-		deps.getwd = func() (string, error) { return project, nil }
-		if err := installProject(installConfig{
-			agents:  installAgentPlan{claude: true, copilot: true, cursor: true},
-			watPath: watAbs,
+		deps := installcfg.DefaultDeps()
+		deps.Getwd = func() (string, error) { return project, nil }
+		if err := installcfg.Install(installcfg.Config{
+			Agents:  installcfg.AgentPlan{Claude: true, Copilot: true, Cursor: true},
+			WatPath: watAbs,
 		}, deps); err != nil {
 			t.Fatalf("installProject: %v", err)
 		}
@@ -352,6 +360,9 @@ func doctorTestDeps(t *testing.T, project, watAbs string, goCfg doctorTestGoDeps
 		}
 	}
 	deps.Command = func(name string, args ...string) *exec.Cmd {
+		if name == "go" && len(args) >= 2 && args[0] == "env" && args[1] == "GOVERSION" {
+			return exec.Command("echo", "go1.26.0")
+		}
 		if name == "go" && len(args) > 0 && args[0] == "version" {
 			return exec.Command("echo", goCfg.goVersion)
 		}
@@ -374,11 +385,12 @@ func doctorTestDeps(t *testing.T, project, watAbs string, goCfg doctorTestGoDeps
 func warmDoctorCache(t *testing.T, project string, deps doctorDeps) {
 	t.Helper()
 	watDir := filepath.Join(project, ".wat")
-	key, err := hookBuildCacheKey(watDir, deps.runDeps())
+	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.Command)
+	key, err := buildcache.CacheKey(watDir, deps.WatVersion, bc)
 	if err != nil {
 		t.Fatal(err)
 	}
-	binPath := hooksBinaryPath(watDir, key)
+	binPath := buildcache.BinaryPath(watDir, key)
 	if err := os.MkdirAll(filepath.Dir(binPath), 0o755); err != nil {
 		t.Fatal(err)
 	}

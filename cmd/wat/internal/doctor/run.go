@@ -1,4 +1,4 @@
-package checks
+package doctor
 
 // Run executes all doctor checks in order and returns the combined results.
 func Run(deps Deps, ctx Context) []Result {

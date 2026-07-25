@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/installcfg"
 )
 
 func newInstallCmd() *subcommandRunner {
@@ -16,15 +18,15 @@ func newInstallCmd() *subcommandRunner {
 			"This command generates fresh wat-managed hook entries that invoke `wat run`. Use `wat port` to translate existing hook configurations between agents.",
 		fs: fs,
 		run: func() int {
-			plan, err := parseInstallAgent(*agent)
+			plan, err := installcfg.ParseAgentPlan(*agent)
 			if err != nil {
 				_, _ = fmt.Fprintf(stderr, "wat install: %v\n", err)
 				return exitUsage
 			}
-			if err := installProject(installConfig{
-				agents:  plan,
-				watPath: *watPath,
-			}, defaultInstallDeps()); err != nil {
+			if err := installcfg.Install(installcfg.Config{
+				Agents:  plan,
+				WatPath: *watPath,
+			}, installcfg.DefaultDeps()); err != nil {
 				_, _ = fmt.Fprintf(stderr, "wat install: %v\n", err)
 				return exitRuntimeFailure
 			}

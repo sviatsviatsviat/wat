@@ -6,13 +6,7 @@ const (
 	exitUsage          = 1
 	exitRuntimeFailure = 3
 	exitCheckFailed    = 4
-
-	// exitBuildFailed is used when wat fails to compile the user hook script.
-	// It intentionally matches exitUsage (1) because the calling agent treats
-	// non-zero exits as a hook failure (fail-open by default).
-	exitBuildFailed = 1
-
-	// exitFailClosed is used when --fail-closed is set and the hook script build
-	// fails. Exit code 2 is chosen because many agents interpret it as block/deny.
-	exitFailClosed = 2
 )
+
+// Build-failure exits for wat run/test are defined in hookrun/hooktest
+// (ExitBuildFailed=1, ExitFailClosed=2) and returned directly from those packages.

@@ -1,4 +1,4 @@
-package checks
+package doctor
 
 // Context carries resolved project state shared across doctor checks.
 type Context struct {

@@ -26,14 +26,22 @@ func addFailClosedFlag(fs *flag.FlagSet, f *sharedFlags) {
 	f.failClosed = fs.Bool("fail-closed", false, "treat build failures as block/deny (exit 2)")
 }
 
+func (f *sharedFlags) agentValue() string {
+	if f == nil || f.agent == nil {
+		return ""
+	}
+	return *f.agent
+}
+
+func (f *sharedFlags) failClosedValue() bool {
+	if f == nil || f.failClosed == nil {
+		return false
+	}
+	return *f.failClosed
+}
+
 func validateAgent(agent string) error {
-	if agent == "" {
-		return nil
-	}
-	if dialect.Parse(agent) == "" {
-		return fmt.Errorf("unknown agent dialect %q (want claude, copilot, or cursor)", agent)
-	}
-	return nil
+	return dialect.Validate(agent)
 }
 
 func validateSharedFlags(cmd string, f *sharedFlags) int {

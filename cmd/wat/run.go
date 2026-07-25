@@ -1,6 +1,10 @@
 package main
 
-import "flag"
+import (
+	"flag"
+
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookrun"
+)
 
 func newRunCmd() *subcommandRunner {
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
@@ -15,23 +19,8 @@ func newRunCmd() *subcommandRunner {
 			"wat run is designed for low warm-path latency: it hashes .wat/hooks.go + .wat/go.mod + wat version to\n" +
 			"compute a cache key, then executes a cached binary under .wat/.cache/ on subsequent invocations.",
 		run: func() int {
-			cfg := runConfig{
-				agent:      "",
-				event:      "",
-				failClosed: false,
-			}
-			if shared != nil {
-				if shared.agent != nil {
-					cfg.agent = *shared.agent
-				}
-				if shared.event != nil {
-					cfg.event = *shared.event
-				}
-				if shared.failClosed != nil {
-					cfg.failClosed = *shared.failClosed
-				}
-			}
-			return runHook(cfg, defaultRunDeps())
+			cfg := hookrun.Config{FailClosed: shared.failClosedValue()}
+			return hookrun.Run(cfg, watModuleVersionFn(), hookrun.DefaultDeps(), stderr)
 		},
 		fs:     fs,
 		shared: shared,

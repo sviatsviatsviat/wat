@@ -7,10 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 	hostclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	hostcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
-	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/installcfg"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
@@ -31,13 +32,13 @@ func TestInstallProject_freshInstallAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deps := defaultInstallDeps()
-	deps.getwd = func() (string, error) { return subdir, nil }
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return subdir, nil }
 
 	watAbs := filepath.Join(project, "bin", "wat")
-	if err := installProject(installConfig{
-		agents:  installAgentPlan{claude: true, copilot: true, cursor: true},
-		watPath: watAbs,
+	if err := installcfg.Install(installcfg.Config{
+		Agents:  installcfg.AgentPlan{Claude: true, Copilot: true, Cursor: true},
+		WatPath: watAbs,
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -139,12 +140,12 @@ func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deps := defaultInstallDeps()
-	deps.getwd = func() (string, error) { return project, nil }
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
 	watAbs := filepath.Join(project, "bin", "wat")
-	if err := installProject(installConfig{
-		agents:  installAgentPlan{cursor: true},
-		watPath: watAbs,
+	if err := installcfg.Install(installcfg.Config{
+		Agents:  installcfg.AgentPlan{Cursor: true},
+		WatPath: watAbs,
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -195,11 +196,11 @@ func TestInstallProject_reinstallReplacesWatEntries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deps := defaultInstallDeps()
-	deps.getwd = func() (string, error) { return project, nil }
-	if err := installProject(installConfig{
-		agents:  installAgentPlan{cursor: true},
-		watPath: watAbs,
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
+	if err := installcfg.Install(installcfg.Config{
+		Agents:  installcfg.AgentPlan{Cursor: true},
+		WatPath: watAbs,
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -237,12 +238,12 @@ func TestInstallProject_agentFiltering(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deps := defaultInstallDeps()
-	deps.getwd = func() (string, error) { return project, nil }
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
 	watAbs := filepath.Join(project, "bin", "wat")
-	if err := installProject(installConfig{
-		agents:  installAgentPlan{cursor: true},
-		watPath: watAbs,
+	if err := installcfg.Install(installcfg.Config{
+		Agents:  installcfg.AgentPlan{Cursor: true},
+		WatPath: watAbs,
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -261,7 +262,7 @@ func TestInstallProject_agentFiltering(t *testing.T) {
 func TestUpsertClaudeGroups_preservesUnrelatedRemovesWatManaged(t *testing.T) {
 	watAbs := "/bin/wat"
 	event := claude.EventPreToolUse
-	cmd := watRunCommand(watAbs, "claude", event)
+	cmd := installcfg.WatRunCommand(watAbs, "claude", event)
 
 	groups := []hostclaude.MatcherGroup{
 		{
@@ -278,7 +279,7 @@ func TestUpsertClaudeGroups_preservesUnrelatedRemovesWatManaged(t *testing.T) {
 		},
 	}
 
-	got := upsertClaudeGroups(groups, cmd, "claude", event, watAbs)
+	got := installcfg.UpsertClaudeGroups(groups, cmd, "claude", event, watAbs)
 	if len(got) != 2 {
 		t.Fatalf("group count = %d, want 2", len(got))
 	}
@@ -303,7 +304,7 @@ func TestUpsertClaudeGroups_preservesUnrelatedRemovesWatManaged(t *testing.T) {
 func TestUpsertClaudeGroups_dropsEmptyGroups(t *testing.T) {
 	watAbs := "/bin/wat"
 	event := claude.EventPreToolUse
-	cmd := watRunCommand(watAbs, "claude", event)
+	cmd := installcfg.WatRunCommand(watAbs, "claude", event)
 
 	groups := []hostclaude.MatcherGroup{
 		{
@@ -319,7 +320,7 @@ func TestUpsertClaudeGroups_dropsEmptyGroups(t *testing.T) {
 		},
 	}
 
-	got := upsertClaudeGroups(groups, cmd, "claude", event, watAbs)
+	got := installcfg.UpsertClaudeGroups(groups, cmd, "claude", event, watAbs)
 	if len(got) != 2 {
 		t.Fatalf("group count = %d, want 2 (empty wat-only group removed, Write group kept, new default added)", len(got))
 	}
@@ -337,7 +338,7 @@ func TestUpsertClaudeGroups_dropsEmptyGroups(t *testing.T) {
 func TestUpsertClaudeGroups_multipleDefaultGroupsOnlyFirstGetsWat(t *testing.T) {
 	watAbs := "/bin/wat"
 	event := claude.EventPreToolUse
-	cmd := watRunCommand(watAbs, "claude", event)
+	cmd := installcfg.WatRunCommand(watAbs, "claude", event)
 
 	groups := []hostclaude.MatcherGroup{
 		{
@@ -352,7 +353,7 @@ func TestUpsertClaudeGroups_multipleDefaultGroupsOnlyFirstGetsWat(t *testing.T) 
 		},
 	}
 
-	got := upsertClaudeGroups(groups, cmd, "claude", event, watAbs)
+	got := installcfg.UpsertClaudeGroups(groups, cmd, "claude", event, watAbs)
 	if len(got) != 2 {
 		t.Fatalf("group count = %d, want 2", len(got))
 	}
@@ -404,12 +405,12 @@ func TestInstallProject_claudeMergePreservesUnrelated(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deps := defaultInstallDeps()
-	deps.getwd = func() (string, error) { return project, nil }
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
 	watAbs := filepath.Join(project, "bin", "wat")
-	if err := installProject(installConfig{
-		agents:  installAgentPlan{claude: true},
-		watPath: watAbs,
+	if err := installcfg.Install(installcfg.Config{
+		Agents:  installcfg.AgentPlan{Claude: true},
+		WatPath: watAbs,
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -469,11 +470,11 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deps := defaultInstallDeps()
-	deps.getwd = func() (string, error) { return project, nil }
-	if err := installProject(installConfig{
-		agents:  installAgentPlan{claude: true},
-		watPath: watAbs,
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
+	if err := installcfg.Install(installcfg.Config{
+		Agents:  installcfg.AgentPlan{Claude: true},
+		WatPath: watAbs,
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}

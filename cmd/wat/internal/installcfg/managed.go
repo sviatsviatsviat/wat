@@ -1,10 +1,9 @@
-package checks
+package installcfg
 
 import (
 	"fmt"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
@@ -43,102 +42,13 @@ func IsWatManagedCommand(command, agent, event, watAbs string) bool {
 	return slices.Equal(fields, wantAbs) || slices.Equal(fields, wantPlain)
 }
 
-// ParseGoModDirective returns the go version from a go.mod file body.
-func ParseGoModDirective(data []byte) (string, error) {
-	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "go ") {
-			v := strings.TrimSpace(strings.TrimPrefix(line, "go "))
-			if v == "" {
-				return "", fmt.Errorf("empty go directive")
-			}
-			if i := strings.IndexByte(v, ' '); i >= 0 {
-				v = v[:i]
-			}
-			return v, nil
-		}
-	}
-	return "", fmt.Errorf("no go directive found")
+// WatRunCommand builds the shell command wat install writes for an agent event.
+func WatRunCommand(watAbs, agent, event string) string {
+	return fmt.Sprintf("%s run --agent %s --event %s", watAbs, agent, event)
 }
 
-// ParseInstalledGoVersion extracts the semver from go version output.
-func ParseInstalledGoVersion(output string) (string, error) {
-	fields := strings.Fields(strings.TrimSpace(output))
-	for _, f := range fields {
-		if strings.HasPrefix(f, "go") && len(f) > 2 {
-			v := strings.TrimPrefix(f, "go")
-			if v != "" {
-				return v, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("no go version in output %q", strings.TrimSpace(output))
-}
-
-// GoVersionAtLeast reports whether installed satisfies required.
-func GoVersionAtLeast(installed, required string) bool {
-	inst := parseVersionParts(installed)
-	req := parseVersionParts(required)
-	for i := 0; i < len(req); i++ {
-		iv := 0
-		if i < len(inst) {
-			iv = inst[i]
-		}
-		if iv > req[i] {
-			return true
-		}
-		if iv < req[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func parseVersionParts(v string) []int {
-	parts := strings.Split(v, ".")
-	out := make([]int, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-		n, err := strconv.Atoi(p)
-		if err != nil {
-			end := 0
-			for end < len(p) && p[end] >= '0' && p[end] <= '9' {
-				end++
-			}
-			if end == 0 {
-				continue
-			}
-			n, err = strconv.Atoi(p[:end])
-			if err != nil {
-				continue
-			}
-		}
-		out = append(out, n)
-	}
-	return out
-}
-
-func firstLine(s string) string {
-	if i := strings.IndexByte(s, '\n'); i >= 0 {
-		return s[:i]
-	}
-	return s
-}
-
-func validateAgent(agent string) error {
-	if agent == "" {
-		return nil
-	}
-	if dialect.Parse(agent) == "" {
-		return fmt.Errorf("unknown agent dialect %q (want claude, copilot, or cursor)", agent)
-	}
-	return nil
-}
-
-func isValidInstallEvent(agent, event string) bool {
+// IsValidEvent reports whether event is a known install event for agent.
+func IsValidEvent(agent, event string) bool {
 	switch dialect.Parse(agent) {
 	case sdkclaude.Dialect:
 		return eventInMapValues(portclaude.EventForKind, event)
@@ -151,17 +61,8 @@ func isValidInstallEvent(agent, event string) bool {
 	}
 }
 
-func eventInMapValues(m map[model.Kind]string, event string) bool {
-	for _, name := range m {
-		if name == event {
-			return true
-		}
-	}
-	return false
-}
-
-// ExpectedInstallEvents returns hook event names wat install writes for agent.
-func ExpectedInstallEvents(agent string) ([]string, error) {
+// ExpectedEvents returns hook event names wat install writes for agent.
+func ExpectedEvents(agent string) ([]string, error) {
 	switch dialect.Parse(agent) {
 	case sdkclaude.Dialect:
 		return sortedValues(portclaude.EventForKind), nil
@@ -179,6 +80,15 @@ func ExpectedInstallEvents(agent string) ([]string, error) {
 	default:
 		return nil, fmt.Errorf("unknown agent %q", agent)
 	}
+}
+
+func eventInMapValues(m map[model.Kind]string, event string) bool {
+	for _, name := range m {
+		if name == event {
+			return true
+		}
+	}
+	return false
 }
 
 func sortedValues[K comparable](m map[K]string) []string {

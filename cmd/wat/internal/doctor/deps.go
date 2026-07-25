@@ -1,4 +1,4 @@
-package checks
+package doctor
 
 import (
 	"os"
@@ -18,9 +18,8 @@ type Deps struct {
 	LookPath  func(string) (string, error)
 	Command   func(string, ...string) *exec.Cmd
 
-	MustHaveWatFiles  func(watDir string) error
-	HookBuildCacheKey func(watDir string) (string, error)
-	HooksBinaryPath   func(watDir, key string) string
+	// WatVersion is included in the hook build cache key (typically the wat module version).
+	WatVersion string
 }
 
 // DefaultDeps returns production dependencies backed by the OS.

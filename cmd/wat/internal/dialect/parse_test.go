@@ -33,3 +33,15 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
+
+func TestValidate(t *testing.T) {
+	if err := Validate(""); err != nil {
+		t.Fatalf("empty: %v", err)
+	}
+	if err := Validate("claude"); err != nil {
+		t.Fatalf("claude: %v", err)
+	}
+	if err := Validate("nosuch"); err == nil {
+		t.Fatal("expected error for unknown agent")
+	}
+}

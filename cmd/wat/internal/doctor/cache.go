@@ -1,11 +1,16 @@
-package checks
+package doctor
 
 import (
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/buildcache"
 )
+
+// cacheWarmFix tells users how to populate the hooks build cache.
+const cacheWarmFix = "run wat test with a project fixture, or otherwise warm the cache for this project"
 
 // CacheWritable verifies .wat/.cache/ exists and is writable.
 func CacheWritable(deps Deps, ctx Context) []Result {
@@ -48,31 +53,24 @@ func CacheWarm(deps Deps, ctx Context) []Result {
 	if ctx.WatErr != nil {
 		return nil
 	}
-	if deps.HookBuildCacheKey == nil || deps.HooksBinaryPath == nil {
-		return []Result{{
-			Group:   "cache",
-			Status:  Warn,
-			Message: "cannot compute cache key for current hook sources",
-			Fix:     "run wat test --fixture testdata/fixtures/claude/pre_tool_force_push.json to warm the cache after fixing .wat/",
-		}}
-	}
-	key, err := deps.HookBuildCacheKey(ctx.WatDir)
+	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.Command)
+	key, err := buildcache.CacheKey(ctx.WatDir, deps.WatVersion, bc)
 	if err != nil {
 		return []Result{{
 			Group:   "cache",
 			Status:  Warn,
 			Message: "cannot compute cache key for current hook sources",
-			Fix:     "run wat test --fixture testdata/fixtures/claude/pre_tool_force_push.json to warm the cache after fixing .wat/",
+			Fix:     cacheWarmFix,
 		}}
 	}
-	binPath := deps.HooksBinaryPath(ctx.WatDir, key)
+	binPath := buildcache.BinaryPath(ctx.WatDir, key)
 	if _, err := deps.Stat(binPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return []Result{{
 				Group:   "cache",
 				Status:  Warn,
 				Message: "no cached binary for current hook sources",
-				Fix:     "run wat test --fixture testdata/fixtures/claude/pre_tool_force_push.json to warm the cache",
+				Fix:     cacheWarmFix,
 			}}
 		}
 		return []Result{{

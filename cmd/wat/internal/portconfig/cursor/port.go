@@ -3,10 +3,10 @@ package cursor
 import (
 	"encoding/json"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/flat"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
 )
 
 // Parse reads Cursor hooks JSON into a normalized configuration.

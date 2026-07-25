@@ -3,7 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
+
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hooktest"
 )
 
 func newTestCmd() *subcommandRunner {
@@ -33,19 +36,12 @@ func newTestCmd() *subcommandRunner {
 				return exitUsage
 			}
 
-			cfg := testConfig{
-				fixture: *fixture,
-				verbose: *verbose,
+			cfg := hooktest.Config{
+				Agent:   shared.agentValue(),
+				Fixture: *fixture,
+				Verbose: *verbose,
 			}
-			if shared != nil {
-				if shared.agent != nil {
-					cfg.agent = *shared.agent
-				}
-				if shared.event != nil {
-					cfg.event = *shared.event
-				}
-			}
-			return runTest(cfg, defaultTestDeps())
+			return hooktest.Run(cfg, watModuleVersionFn(), hooktest.DefaultDeps(stdout), os.Stdin, stderr)
 		},
 	}
 }

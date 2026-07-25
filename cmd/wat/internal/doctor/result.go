@@ -1,4 +1,4 @@
-package checks
+package doctor
 
 import (
 	"fmt"
@@ -35,6 +35,8 @@ func PrintResult(w io.Writer, r Result) {
 		prefix = "FAIL"
 	case Warn:
 		prefix = "WARN"
+	default:
+		prefix = "????"
 	}
 	_, _ = fmt.Fprintf(w, "%-4s  %-9s  %s\n", prefix, r.Group, r.Message)
 	if r.Fix != "" {
