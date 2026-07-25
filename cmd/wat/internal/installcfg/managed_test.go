@@ -31,3 +31,45 @@ func TestIsWatManagedAgentCommand_ignoresEvent(t *testing.T) {
 		t.Fatal("command for another agent must not match")
 	}
 }
+
+func TestIsWatManagedCommand_recognizesQuotedAndBasename(t *testing.T) {
+	watAbs := `/usr/local/bin/wat`
+	tests := []struct {
+		name    string
+		command string
+		want    bool
+	}{
+		{
+			name:    "quoted absolute path",
+			command: `"/usr/local/bin/wat" run --agent claude --event PreToolUse`,
+			want:    true,
+		},
+		{
+			name:    "basename with exe suffix",
+			command: `Wat.EXE run --agent claude --event PreToolUse`,
+			want:    true,
+		},
+		{
+			name:    "other path with wat basename",
+			command: `/other/wat run --agent claude --event PreToolUse`,
+			want:    true,
+		},
+		{
+			name:    "non-wat basename",
+			command: `/usr/bin/hook run --agent claude --event PreToolUse`,
+			want:    false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsWatManagedCommand(tt.command, "claude", "PreToolUse", watAbs)
+			if got != tt.want {
+				t.Fatalf("IsWatManagedCommand(%q) = %v, want %v", tt.command, got, tt.want)
+			}
+			gotAgent := IsWatManagedAgentCommand(tt.command, "claude", watAbs)
+			if gotAgent != tt.want {
+				t.Fatalf("IsWatManagedAgentCommand(%q) = %v, want %v", tt.command, gotAgent, tt.want)
+			}
+		})
+	}
+}

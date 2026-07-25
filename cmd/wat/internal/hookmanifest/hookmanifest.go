@@ -2,14 +2,23 @@ package hookmanifest
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
+	"time"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/buildcache"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
+
+// LoadTimeout bounds how long LoadBinary waits for manifest mode to finish.
+var LoadTimeout = 30 * time.Second
+
+// ErrLoadTimeout indicates the authored hook binary did not finish manifest mode in time.
+var ErrLoadTimeout = errors.New("hook manifest timed out")
 
 // Load ensures the authored hook binary and returns its registration manifest.
 func Load(watDir, version string, deps buildcache.Deps, errOut io.Writer) (run.Manifest, error) {
@@ -36,7 +45,10 @@ func LoadBinary(binPath string, command func(string, ...string) *exec.Cmd) (run.
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
+	if err := runWithTimeout(cmd, LoadTimeout); err != nil {
+		if errors.Is(err, ErrLoadTimeout) {
+			return run.Manifest{}, fmt.Errorf("read hook manifest: %w after %s", ErrLoadTimeout, LoadTimeout)
+		}
 		if stderr.Len() > 0 {
 			return run.Manifest{}, fmt.Errorf("read hook manifest: %w: %s", err, bytes.TrimSpace(stderr.Bytes()))
 		}
@@ -56,4 +68,29 @@ func LoadBinary(binPath string, command func(string, ...string) *exec.Cmd) (run.
 		}
 	}
 	return manifest, nil
+}
+
+func runWithTimeout(cmd *exec.Cmd, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+		}
+		<-done
+		return ErrLoadTimeout
+	}
 }

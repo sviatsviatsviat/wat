@@ -21,7 +21,7 @@ func newTestCmd() *subcommandRunner {
 		summary: "run hook script against fixture payloads",
 		long: "Run the user's hook script against a fixture payload without invoking an agent.\n\n" +
 			"wat test builds and executes the same cached .wat/hooks binary as wat run, feeding the\n" +
-			"fixture on stdin. The fixture's native event must be registered. Pass --agent. It prints\n" +
+			"fixture on stdin. Pass --agent, register the fixture's native event, and wat test prints\n" +
 			"fixture agent/event, the hook's stdout JSON, and exit code so you can iterate on handlers\n" +
 			"locally.",
 		fs:     fs,

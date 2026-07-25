@@ -36,16 +36,7 @@ func IsWatManagedAgentCommand(command, agent, watAbs string) bool {
 	if !ok || parsedAgent != agent {
 		return false
 	}
-	fields := strings.Fields(strings.TrimSpace(command))
-	if len(fields) != 6 || fields[1] != "run" {
-		return false
-	}
-	program := strings.Trim(fields[0], `"'`)
-	if program == strings.TrimSpace(watAbs) {
-		return true
-	}
-	base := strings.TrimSuffix(strings.ToLower(filepath.Base(program)), ".exe")
-	return base == "wat"
+	return isWatRunExecutable(command, watAbs)
 }
 
 func isWatRunExecutable(command, watAbs string) bool {
@@ -53,7 +44,13 @@ func isWatRunExecutable(command, watAbs string) bool {
 	if len(fields) != 6 || fields[1] != "run" {
 		return false
 	}
-	return fields[0] == strings.TrimSpace(watAbs) || fields[0] == "wat"
+	program := strings.Trim(fields[0], `"'`)
+	watAbs = strings.TrimSpace(watAbs)
+	if program == watAbs {
+		return true
+	}
+	base := strings.TrimSuffix(strings.ToLower(filepath.Base(program)), ".exe")
+	return base == "wat"
 }
 
 // WatRunCommand builds the shell command wat install writes for an agent event.
