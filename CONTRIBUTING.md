@@ -135,16 +135,17 @@ relative to behavior that users could obtain from a published release.
 ## Version pinning
 
 Tool and GitHub Action versions are exact. Never introduce `@latest`, branch
-tags, or floating major tags.
+tags, or floating major/minor tags. Action `uses:` values must be exact
+`@vN.N.N` release tags.
 
 When bumping a dependency, update every reference to that same dependency in
 the same pull request. For example, a golangci-lint bump must update the
 workflow, Dev Container, this guide, and agent instructions if they cite it.
 
-Audit workflow action tags with:
+Audit floating major or minor Action tags with:
 
 ```bash
-rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows
+rg 'uses:\s*[\w./-]+@v\d+(\.\d+)?$' .github/workflows
 ```
 
 The command must produce no matches.

@@ -2,7 +2,8 @@
 name: godoc
 description: >-
   Document exported Go APIs and package contracts for wat's portable, native,
-  runtime, and CLI-support packages.
+  runtime, and CLI-support packages. Use when adding or changing public funcs,
+  types, constants, vars, methods, or package doc.go files.
 ---
 
 # Godoc

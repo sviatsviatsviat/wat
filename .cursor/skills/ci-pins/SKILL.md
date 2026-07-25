@@ -2,7 +2,8 @@
 name: ci-pins
 description: >-
   Keep GitHub Actions, Go tools, and Dev Container features exactly pinned and
-  synchronized across the repository.
+  synchronized across the repository. Use when editing .github/workflows,
+  bumping actions, or reviewing CI config.
 ---
 
 # CI and tool pins
@@ -27,10 +28,11 @@ Examples of synchronized references:
 - govulncheck: every workflow command using `govulncheck@...`;
 - an Action: every `uses:` entry for that Action.
 
-Audit floating major tags:
+Audit floating major or minor Action tags (`@vN` or `@vN.N`); only exact
+`@vN.N.N` tags are allowed:
 
 ```bash
-rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows
+rg 'uses:\s*[\w./-]+@v\d+(\.\d+)?$' .github/workflows
 ```
 
 The audit must produce no matches. Also search manually for `@latest`,

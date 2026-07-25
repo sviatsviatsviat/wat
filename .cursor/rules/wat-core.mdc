@@ -35,11 +35,12 @@ free of external side effects.
 
 ## Version pinning
 
-Use exact tool and Action versions. When one dependency changes, update every
-reference to that dependency in the same change. Audit workflow tags with:
+Use exact tool and Action versions (`@vN.N.N` only for Actions). When one
+dependency changes, update every reference to that dependency in the same
+change. Audit floating major or minor tags with:
 
 ```bash
-rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows
+rg 'uses:\s*[\w./-]+@v\d+(\.\d+)?$' .github/workflows
 ```
 
 No matches are allowed.

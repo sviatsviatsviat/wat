@@ -40,8 +40,19 @@ import (
 )
 
 func guardPush(ctx context.Context, event agnostic.PreToolEvent, results agnostic.PreToolResults) (agnostic.PreToolResult, error) {
-	if event.Tool != nil && strings.Contains(event.Tool.Shell, "push --force") {
-		return results.Deny("force pushes are not allowed"), nil
+	if event.Tool == nil {
+		return nil, nil
+	}
+	args := strings.Fields(event.Tool.Shell)
+	for i, arg := range args {
+		if arg != "push" {
+			continue
+		}
+		for _, flag := range args[i+1:] {
+			if flag == "--force" || flag == "-f" {
+				return results.Deny("force pushes are not allowed"), nil
+			}
+		}
 	}
 	return nil, nil
 }
@@ -51,6 +62,10 @@ var Hooks = []run.Hooks{
 	agnostic.UseHooks().OnPreTool(guardPush),
 }
 ```
+
+This example tokenizes on whitespace so it catches `git push -f` and trailing
+`--force`. It is not a full shell parser; quote-heavy or obfuscated commands
+need a real argv parser before treating the hook as a security boundary.
 
 Returning `nil` means that a handler has no opinion. Response-producing
 handlers receive a hook-specific result builder; observe-only handlers return
