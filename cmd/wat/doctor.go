@@ -43,11 +43,12 @@ func runDoctor(deps doctorDeps) int {
 	results := doctor.Run(deps.Deps, ctx)
 
 	failCount := doctor.FailCount(results)
+	color := doctor.ColorEnabled(deps.Deps, stdout)
 	for _, r := range results {
-		doctor.PrintResult(stdout, r)
+		doctor.PrintResult(stdout, r, color)
 	}
 	if failCount > 0 {
-		doctor.PrintFailureSummary(stdout, failCount)
+		doctor.PrintFailureSummary(stdout, failCount, color)
 		return exitCheckFailed
 	}
 	return exitOK

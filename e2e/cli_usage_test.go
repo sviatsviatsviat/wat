@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"bytes"
 	"errors"
 	"os/exec"
 	"strings"
@@ -16,6 +17,7 @@ func TestWat_usage(t *testing.T) {
 		wantErr      bool
 		wantCode     int
 		wantOutput   string
+		wantOnStdout bool
 		emptyWorkDir bool
 	}{
 		{
@@ -91,6 +93,7 @@ func TestWat_usage(t *testing.T) {
 			wantErr:      true,
 			wantCode:     4,
 			wantOutput:   "no .wat/ project found",
+			wantOnStdout: true,
 			emptyWorkDir: true,
 		},
 		{
@@ -116,25 +119,39 @@ func TestWat_usage(t *testing.T) {
 				cmd.Dir = t.TempDir()
 				cmd.Env = append(cmd.Environ(), "WAT_PROJECT_DIR=")
 			}
-			out, err := cmd.CombinedOutput()
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			err := cmd.Run()
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected non-zero exit")
 				}
 				var exitErr *exec.ExitError
 				if !errors.As(err, &exitErr) {
-					t.Fatalf("expected exit error, got %v\n%s", err, out)
+					t.Fatalf("expected exit error, got %v\nstdout:\n%s\nstderr:\n%s", err, stdout.String(), stderr.String())
 				}
 				if code := exitErr.ExitCode(); code != tt.wantCode {
-					t.Fatalf("exit code = %d, want %d\n%s", code, tt.wantCode, out)
+					t.Fatalf("exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", code, tt.wantCode, stdout.String(), stderr.String())
 				}
-			} else if err != nil {
-				t.Fatalf("unexpected error: %v\n%s", err, out)
+				got := stderr.String()
+				if tt.wantOnStdout {
+					got = stdout.String()
+				}
+				if !strings.Contains(got, tt.wantOutput) {
+					stream := "stderr"
+					if tt.wantOnStdout {
+						stream = "stdout"
+					}
+					t.Fatalf("%s missing %q:\n%s", stream, tt.wantOutput, got)
+				}
+				return
 			}
-
-			text := string(out)
-			if !strings.Contains(text, tt.wantOutput) {
-				t.Fatalf("output missing %q: %q", tt.wantOutput, text)
+			if err != nil {
+				t.Fatalf("unexpected error: %v\nstdout:\n%s\nstderr:\n%s", err, stdout.String(), stderr.String())
+			}
+			if !strings.Contains(stdout.String(), tt.wantOutput) {
+				t.Fatalf("stdout missing %q:\n%s", tt.wantOutput, stdout.String())
 			}
 		})
 	}

@@ -11,40 +11,62 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
-func TestResolveFixture_copilotRequiresHookEventName(t *testing.T) {
-	payload := []byte(`{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`)
-
-	_, err := ResolveFixture("copilot", payload)
-	if err == nil {
-		t.Fatal("expected error")
+func TestResolveFixture(t *testing.T) {
+	tests := []struct {
+		name        string
+		agent       string
+		payload     string
+		wantDialect string
+		wantEvent   string
+		wantErr     string
+	}{
+		{
+			name:    "copilot_requires_hook_event_name",
+			agent:   "copilot",
+			payload: `{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`,
+			wantErr: "event name",
+		},
+		{
+			name:        "claude_pre_tool_use",
+			agent:       "claude",
+			payload:     `{"hook_event_name":"PreToolUse","session_id":"s1"}`,
+			wantDialect: sdkclaude.Dialect,
+			wantEvent:   "PreToolUse",
+		},
+		{
+			name:    "unknown_agent",
+			agent:   "nosuch",
+			payload: `{"hook_event_name":"PreToolUse"}`,
+			wantErr: "unknown dialect",
+		},
 	}
-	if !strings.Contains(err.Error(), "hook_event_name") && !strings.Contains(err.Error(), "event name") {
-		t.Fatalf("error = %q", err.Error())
-	}
-}
-
-func TestResolveFixture_claudePreToolUse(t *testing.T) {
-	payload := []byte(`{"hook_event_name":"PreToolUse","session_id":"s1"}`)
-	info, err := ResolveFixture("claude", payload)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if info.Dialect != sdkclaude.Dialect {
-		t.Fatalf("dialect = %q, want %q", info.Dialect, sdkclaude.Dialect)
-	}
-	if info.Event != "PreToolUse" {
-		t.Fatalf("event = %q, want PreToolUse", info.Event)
-	}
-}
-
-func TestResolveFixture_unknownAgent(t *testing.T) {
-	payload := []byte(`{"hook_event_name":"PreToolUse"}`)
-	_, err := ResolveFixture("nosuch", payload)
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !strings.Contains(err.Error(), "unknown dialect") {
-		t.Fatalf("error = %q", err.Error())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			info, err := ResolveFixture(tt.agent, []byte(tt.payload))
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				errText := err.Error()
+				ok := strings.Contains(errText, tt.wantErr)
+				if tt.wantErr == "event name" {
+					ok = ok || strings.Contains(errText, "hook_event_name")
+				}
+				if !ok {
+					t.Fatalf("error = %q, want substring %q", errText, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if info.Dialect != tt.wantDialect {
+				t.Fatalf("dialect = %q, want %q", info.Dialect, tt.wantDialect)
+			}
+			if info.Event != tt.wantEvent {
+				t.Fatalf("event = %q, want %q", info.Event, tt.wantEvent)
+			}
+		})
 	}
 }
 

@@ -21,6 +21,8 @@ recreate the volume:
 ```bash
 sudo chown -R vscode:vscode /home/vscode/.claude
 # or, from the host after stopping the container:
+# WARNING: removing wat-claude-config deletes persisted Claude authentication
+# and settings. Back up anything you need first.
 docker volume rm wat-claude-config
 ```
 

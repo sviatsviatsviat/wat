@@ -10,23 +10,47 @@ import (
 )
 
 func TestGoMod_requiresVersion(t *testing.T) {
-	_, err := GoMod("")
-	if err == nil {
-		t.Fatal("expected error for empty version")
+	tests := []struct {
+		name    string
+		version string
+		wantErr string
+		want    []string
+	}{
+		{
+			name:    "empty",
+			version: "",
+			wantErr: "wat module version",
+		},
+		{
+			name:    "valid",
+			version: "v0.0.0-test-000000000000",
+			want: []string{
+				"github.com/sviatsviatsviat/wat v0.0.0-test-000000000000",
+				"module wat-hooks",
+			},
+		},
 	}
-	if !strings.Contains(err.Error(), "wat module version") {
-		t.Fatalf("error = %q", err.Error())
-	}
-
-	got, err := GoMod("v0.0.0-test-000000000000")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(got, "github.com/sviatsviatsviat/wat v0.0.0-test-000000000000") {
-		t.Fatalf("go.mod = %q", got)
-	}
-	if !strings.Contains(got, "module wat-hooks") {
-		t.Fatalf("go.mod = %q", got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GoMod(tt.version)
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatal("expected error for empty version")
+				}
+				if !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("error = %q", err.Error())
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, want := range tt.want {
+				if !strings.Contains(got, want) {
+					t.Fatalf("go.mod = %q, missing %q", got, want)
+				}
+			}
+		})
 	}
 }
 

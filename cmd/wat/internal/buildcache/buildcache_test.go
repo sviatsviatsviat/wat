@@ -163,16 +163,33 @@ func TestCacheKey_includesBuildEnv(t *testing.T) {
 
 func TestCurrentModulePath_rejectsMultiLine(t *testing.T) {
 	dir := t.TempDir()
+	emitSrc := filepath.Join(t.TempDir(), "emit.go")
+	const emitMain = "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Print(\"github.com/example/a\\nwat-hooks\\n\")\n}\n"
+	if err := os.WriteFile(emitSrc, []byte(emitMain), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var listArgs []string
 	deps := DefaultDeps()
 	deps.Command = func(name string, args ...string) *exec.Cmd {
 		if name == "go" && len(args) >= 1 && args[0] == "list" {
-			return exec.Command("printf", "%s", "github.com/example/a\nwat-hooks\n")
+			listArgs = append([]string(nil), args...)
+			return exec.Command("go", "run", emitSrc)
 		}
 		return exec.Command(name, args...)
 	}
 	_, err := currentModulePath(dir, deps, buildSettings{})
 	if err == nil || !strings.Contains(err.Error(), "multi-line") {
 		t.Fatalf("got err %v, want multi-line failure", err)
+	}
+	wantArgs := []string{"list", "-f={{.Module.Path}}", "."}
+	if len(listArgs) != len(wantArgs) {
+		t.Fatalf("go list args = %v, want %v", listArgs, wantArgs)
+	}
+	for i := range wantArgs {
+		if listArgs[i] != wantArgs[i] {
+			t.Fatalf("go list args = %v, want %v", listArgs, wantArgs)
+		}
 	}
 }
 

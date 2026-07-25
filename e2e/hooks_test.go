@@ -1,9 +1,6 @@
 package e2e_test
 
 import (
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -67,30 +64,13 @@ func TestWatTest_preToolDeny(t *testing.T) {
 	}
 
 	t.Run("unregistered event", func(t *testing.T) {
-		cmd := exec.Command(binary, "test", "--agent", "claude", "--fixture", "-")
-		cmd.Dir = project
-		cmd.Env = append(os.Environ(),
-			"WAT_PROJECT_DIR="+project,
-			"PATH="+filepath.Dir(binary)+string(os.PathListSeparator)+os.Getenv("PATH"),
-		)
-		cmd.Stdin = strings.NewReader(`{"hook_event_name":"Notification","session_id":"s1"}`)
-		var outBuf, errBuf strings.Builder
-		cmd.Stdout = &outBuf
-		cmd.Stderr = &errBuf
-		err := cmd.Run()
-		code := 0
-		if err != nil {
-			exitErr, ok := err.(*exec.ExitError)
-			if !ok {
-				t.Fatalf("run wat test: %v\n%s\n%s", err, outBuf.String(), errBuf.String())
-			}
-			code = exitErr.ExitCode()
-		}
+		stdin := strings.NewReader(`{"hook_event_name":"Notification","session_id":"s1"}`)
+		_, stderr, code := runWatWithStdin(t, binary, project, stdin, "test", "--agent", "claude", "--fixture", "-")
 		if code != 3 {
-			t.Fatalf("exit = %d, want 3\nstdout:\n%s\nstderr:\n%s", code, outBuf.String(), errBuf.String())
+			t.Fatalf("exit = %d, want 3\nstderr:\n%s", code, stderr)
 		}
-		if !strings.Contains(errBuf.String(), "no claude Notification handler is registered") {
-			t.Fatalf("stderr = %q", errBuf.String())
+		if !strings.Contains(stderr, "no claude Notification handler is registered") {
+			t.Fatalf("stderr = %q", stderr)
 		}
 	})
 }

@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,19 +14,29 @@ import (
 var (
 	watBinaryOnce sync.Once
 	watBinaryPath string
+	watBinaryDir  string
 	watBinaryErr  error
 )
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	if watBinaryDir != "" {
+		_ = os.RemoveAll(watBinaryDir)
+	}
+	os.Exit(code)
+}
 
 func buildWat(t *testing.T) string {
 	t.Helper()
 
+	root := moduleRoot(t)
 	watBinaryOnce.Do(func() {
-		root := moduleRoot()
 		dir, err := os.MkdirTemp("", "wat-e2e-bin-*")
 		if err != nil {
 			watBinaryErr = err
 			return
 		}
+		watBinaryDir = dir
 		name := "wat"
 		if runtime.GOOS == "windows" {
 			name += ".exe"
@@ -54,14 +65,15 @@ func (e *buildError) Error() string {
 	return e.err.Error() + "\n" + string(e.out)
 }
 
-func moduleRoot() string {
+func moduleRoot(t *testing.T) string {
+	t.Helper()
 	out, err := exec.Command("go", "env", "GOMOD").Output()
 	if err != nil {
-		panic("go env GOMOD: " + err.Error())
+		t.Fatalf("go env GOMOD: %v", err)
 	}
 	mod := strings.TrimSpace(string(out))
 	if mod == "" || mod == "/dev/null" {
-		panic("not inside a Go module")
+		t.Fatal("not inside a Go module")
 	}
 	return filepath.Dir(mod)
 }
@@ -102,7 +114,7 @@ func initProjectWithReplace(t *testing.T) string {
 		t.Fatal(err)
 	}
 
-	goMod := "module wat-hooks\n\ngo 1.26\n\nrequire github.com/sviatsviatsviat/wat " + version + "\n\nreplace github.com/sviatsviatsviat/wat => " + filepath.ToSlash(moduleRoot()) + "\n"
+	goMod := "module wat-hooks\n\ngo 1.26\n\nrequire github.com/sviatsviatsviat/wat " + version + "\n\nreplace github.com/sviatsviatsviat/wat => " + filepath.ToSlash(moduleRoot(t)) + "\n"
 	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte(goMod), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -116,6 +128,11 @@ func initProjectWithReplace(t *testing.T) string {
 
 func runWat(t *testing.T, binary, dir string, args ...string) (stdout, stderr string, exitCode int) {
 	t.Helper()
+	return runWatWithStdin(t, binary, dir, nil, args...)
+}
+
+func runWatWithStdin(t *testing.T, binary, dir string, stdin io.Reader, args ...string) (stdout, stderr string, exitCode int) {
+	t.Helper()
 
 	cmd := exec.Command(binary, args...)
 	cmd.Dir = dir
@@ -123,6 +140,7 @@ func runWat(t *testing.T, binary, dir string, args ...string) (stdout, stderr st
 		"WAT_PROJECT_DIR="+dir,
 		"PATH="+filepath.Dir(binary)+string(os.PathListSeparator)+os.Getenv("PATH"),
 	)
+	cmd.Stdin = stdin
 
 	var outBuf, errBuf strings.Builder
 	cmd.Stdout = &outBuf
@@ -141,5 +159,5 @@ func runWat(t *testing.T, binary, dir string, args ...string) (stdout, stderr st
 
 func fixturePath(t *testing.T, agent, name string) string {
 	t.Helper()
-	return filepath.Join(moduleRoot(), "testdata", "fixtures", agent, name)
+	return filepath.Join(moduleRoot(t), "testdata", "fixtures", agent, name)
 }
