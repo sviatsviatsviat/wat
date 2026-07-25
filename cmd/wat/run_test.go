@@ -80,6 +80,7 @@ func TestRunHook_buildFailureExitCode(t *testing.T) {
 	deps.ReadDir = func(string) ([]os.DirEntry, error) { return nil, nil }
 	deps.ReadFile = func(string) ([]byte, error) { return []byte("x"), nil }
 	deps.MkdirAll = func(string, os.FileMode) error { return nil }
+	deps.WriteFile = func(string, []byte, os.FileMode) error { return nil }
 	deps.Command = func(name string, args ...string) *exec.Cmd {
 		if name == "go" && len(args) >= 2 && args[0] == "env" {
 			return exec.Command("echo", "go1.26.0")

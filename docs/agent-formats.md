@@ -175,7 +175,7 @@ Register with the per-agent SDK when you need features outside the portable inte
 
 ### Per-agent UseHooks coverage
 
-Each per-agent SDK exposes zero-arg `UseHooks` and fluent chain methods with one entry per native hook surface (or shared builder where wire encode is identical). Agnostic `UseHooks` is likewise zero-arg. Pass one or more registrations to `run.Serve`; same-dialect hooks merge (handlers append). Claude-only long-tail events decode but have no dedicated portable `On*` — handle them with `sdk/claude` chain methods when available.
+Each per-agent SDK exposes zero-arg `UseHooks` and fluent chain methods with one entry per native hook surface (or shared builder where wire encode is identical). Agnostic `UseHooks` is likewise zero-arg. Direct SDK consumers can pass registrations to `run.Serve`; same-dialect hooks merge (handlers append). A wat project instead exports them as `var Hooks = []run.Hooks{...}` from `.wat/hooks.go`; the generated bootstrap serves them and exposes their native registration manifest to `wat install`, `wat doctor`, and `wat test`. Claude-only long-tail events decode but have no dedicated portable `On*` — handle them with `sdk/claude` chain methods when available.
 
 | SDK | Chain methods | Notes |
 |---|---|---|
@@ -343,7 +343,7 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 
 ## Related code
 
-- Install event lists: [`cmd/wat/internal/installcfg`](../cmd/wat/internal/installcfg/) (`ExpectedEvents` / `IsValidEvent`)
+- Registration discovery: [`sdk/run`](../sdk/run/) (`Inspect` / `Manifest`); selective config reconciliation: [`cmd/wat/internal/installcfg`](../cmd/wat/internal/installcfg/)
 - Dialect: per-agent `Dialect` constants in [`sdk/claude`](../sdk/claude/), [`sdk/copilot`](../sdk/copilot/), [`sdk/cursor`](../sdk/cursor/); CLI name parsing in [`cmd/wat/internal/dialect`](../cmd/wat/internal/dialect/)
 - Tests: [`cmd/wat/internal/dialect`](../cmd/wat/internal/dialect/)
 - Normalization: [`internal/hookkit/toolname.go`](../internal/hookkit/toolname.go) — `NormalizeToolName`; [`sdk/agnostic/tools`](../sdk/agnostic/tools/) — `Input` with `AsBash`, `AsWrite`, and related accessors

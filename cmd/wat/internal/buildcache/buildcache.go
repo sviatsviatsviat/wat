@@ -18,19 +18,46 @@ import (
 // cacheDirName is excluded from the source manifest (build outputs live there).
 const cacheDirName = ".cache"
 
+// ManifestArgument requests registration metadata from the generated hook binary.
+const ManifestArgument = "__wat_manifest"
+
+const bootstrapSource = `package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	authored %q
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
+func main() {
+	if len(os.Args) == 2 && os.Args[1] == %q {
+		if err := json.NewEncoder(os.Stdout).Encode(run.Inspect(authored.Hooks...)); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "hooks manifest: %%v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+	run.Serve(authored.Hooks...)
+}
+`
+
 // Deps holds injectable filesystem and exec dependencies.
 type Deps struct {
-	Getenv   func(string) string
-	Stat     func(string) (os.FileInfo, error)
-	ReadDir  func(string) ([]os.DirEntry, error)
-	ReadFile func(string) ([]byte, error)
-	MkdirAll func(string, os.FileMode) error
-	Command  func(string, ...string) *exec.Cmd
+	Getenv    func(string) string
+	Stat      func(string) (os.FileInfo, error)
+	ReadDir   func(string) ([]os.DirEntry, error)
+	ReadFile  func(string) ([]byte, error)
+	MkdirAll  func(string, os.FileMode) error
+	WriteFile func(string, []byte, os.FileMode) error
+	Command   func(string, ...string) *exec.Cmd
 }
 
 // DefaultDeps returns production dependencies backed by the OS.
 func DefaultDeps() Deps {
-	return Adapt(os.Getenv, os.Stat, os.ReadDir, os.ReadFile, os.MkdirAll, exec.Command)
+	return Adapt(os.Getenv, os.Stat, os.ReadDir, os.ReadFile, os.MkdirAll, os.WriteFile, exec.Command)
 }
 
 // Adapt builds Deps from the injectable fields shared by CLI packages.
@@ -40,15 +67,17 @@ func Adapt(
 	readDir func(string) ([]os.DirEntry, error),
 	readFile func(string) ([]byte, error),
 	mkdirAll func(string, os.FileMode) error,
+	writeFile func(string, []byte, os.FileMode) error,
 	command func(string, ...string) *exec.Cmd,
 ) Deps {
 	return Deps{
-		Getenv:   getenv,
-		Stat:     stat,
-		ReadDir:  readDir,
-		ReadFile: readFile,
-		MkdirAll: mkdirAll,
-		Command:  command,
+		Getenv:    getenv,
+		Stat:      stat,
+		ReadDir:   readDir,
+		ReadFile:  readFile,
+		MkdirAll:  mkdirAll,
+		WriteFile: writeFile,
+		Command:   command,
 	}
 }
 
@@ -96,6 +125,8 @@ func manifest(watDir, version string, deps Deps) ([]byte, error) {
 	writePart("goflags", []byte(settings.goflags))
 	writePart("cgo_enabled", []byte(settings.cgoEnabled))
 	writePart("go_version", []byte(settings.goVersion))
+	writePart("bootstrap", []byte(bootstrapSource))
+	writePart("manifest_argument", []byte(ManifestArgument))
 
 	for _, rel := range files {
 		data, err := deps.ReadFile(filepath.Join(watDir, rel))
@@ -217,7 +248,28 @@ func build(watDir, binPath string, deps Deps, errOut io.Writer) bool {
 		return false
 	}
 
-	cmd := deps.Command("go", "build", "-o", binPath)
+	modulePath, err := currentModulePath(watDir, deps, settings)
+	if err != nil {
+		_, _ = fmt.Fprintf(errOut, "wat run: %v\n", err)
+		return false
+	}
+
+	bootstrapDir := filepath.Join(cacheDir, "bootstrap")
+	if err := deps.MkdirAll(bootstrapDir, 0o755); err != nil {
+		_, _ = fmt.Fprintf(errOut, "wat run: create %s: %v\n", bootstrapDir, err)
+		return false
+	}
+	source := fmt.Sprintf(bootstrapSource, modulePath, ManifestArgument)
+	writeFile := deps.WriteFile
+	if writeFile == nil {
+		writeFile = os.WriteFile
+	}
+	if err := writeFile(filepath.Join(bootstrapDir, "main.go"), []byte(source), 0o600); err != nil {
+		_, _ = fmt.Fprintf(errOut, "wat run: write bootstrap: %v\n", err)
+		return false
+	}
+
+	cmd := deps.Command("go", "build", "-o", binPath, bootstrapDir)
 	cmd.Dir = watDir
 	cmd.Env = pinnedBuildEnv(os.Environ(), settings)
 	out, err := cmd.CombinedOutput()
@@ -233,6 +285,21 @@ func build(watDir, binPath string, deps Deps, errOut io.Writer) bool {
 	}
 	_, _ = fmt.Fprintf(errOut, "wat run: go build failed in %s\n", watDir)
 	return false
+}
+
+func currentModulePath(watDir string, deps Deps, settings buildSettings) (string, error) {
+	cmd := deps.Command("go", "list", "-m", "-f={{.Path}}")
+	cmd.Dir = watDir
+	cmd.Env = pinnedBuildEnv(os.Environ(), settings)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("resolve hook module path: %w", err)
+	}
+	modulePath := strings.TrimSpace(string(out))
+	if modulePath == "" {
+		return "", fmt.Errorf("resolve hook module path: empty module path")
+	}
+	return modulePath, nil
 }
 
 func pinnedBuildEnv(base []string, settings buildSettings) []string {

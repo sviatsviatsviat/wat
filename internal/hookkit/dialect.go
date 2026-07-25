@@ -2,6 +2,7 @@ package hookkit
 
 import (
 	"context"
+	"sort"
 )
 
 // DetectFunc reports whether raw matches a dialect.
@@ -66,4 +67,16 @@ func (d *Dialect) Codec() *Codec {
 // HandlersFor returns a copy of handlers registered for eventName.
 func (d *Dialect) HandlersFor(eventName string) []HookHandler {
 	return append([]HookHandler(nil), d.handlers[eventName]...)
+}
+
+// EventNames returns the sorted names that have at least one registered handler.
+func (d *Dialect) EventNames() []string {
+	names := make([]string, 0, len(d.handlers))
+	for name, handlers := range d.handlers {
+		if len(handlers) > 0 {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names
 }

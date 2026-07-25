@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
@@ -22,6 +23,14 @@ import (
 func Install(deps Deps, ctx Context) []Result {
 	var results []Result
 
+	if ctx.ManifestErr != nil {
+		return []Result{{
+			Group:   "install",
+			Status:  Fail,
+			Message: "cannot verify install without authored hook registrations",
+			Fix:     "fix .wat/hooks.go and re-run wat doctor",
+		}}
+	}
 	watAbs, watPathErr := deps.LookPath("wat")
 	if watPathErr != nil {
 		results = append(results, Result{
@@ -69,39 +78,36 @@ func Install(deps Deps, ctx Context) []Result {
 			})
 		}
 	}
-	if len(present) == 0 {
-		results = append(results, Result{
-			Group:   "install",
-			Status:  Fail,
-			Message: "no hook config files found",
-			Fix:     "run wat install",
-		})
-		return results
-	}
-
 	for _, cfg := range configs {
+		expected := ctx.Manifest.EventsFor(cfg.Agent)
 		if _, ok := present[cfg.Path]; !ok {
+			if len(expected) > 0 {
+				results = append(results, Result{
+					Group:   "install",
+					Status:  Fail,
+					Message: fmt.Sprintf("%s: hook config file missing", cfg.Agent),
+					Fix:     fmt.Sprintf("run wat install --agent %s", cfg.Agent),
+				})
+			}
 			continue
 		}
-		results = append(results, agentInstall(deps, cfg.Agent, cfg.Path, watAbs)...)
+		results = append(results, agentInstall(deps, cfg.Agent, cfg.Path, watAbs, expected)...)
 	}
 
 	results = append(results, disableAllHooks(deps, paths.ConfigPath(sdkclaude.Dialect, root))...)
+	if len(ctx.Manifest.Registrations) == 0 && FailCount(results) == 0 {
+		results = append(results, Result{
+			Group:   "install",
+			Status:  Pass,
+			Message: "no hooks registered; no install entries required",
+		})
+	}
 
 	return results
 }
 
-func agentInstall(deps Deps, agent, path, watAbs string) []Result {
+func agentInstall(deps Deps, agent, path, watAbs string, expected []string) []Result {
 	var results []Result
-	expected, err := installcfg.ExpectedEvents(agent)
-	if err != nil {
-		return []Result{{
-			Group:   "install",
-			Status:  Fail,
-			Message: err.Error(),
-			Fix:     "re-run wat install",
-		}}
-	}
 
 	commands, err := collectWatCommands(deps, agent, path)
 	if err != nil {
@@ -120,6 +126,18 @@ func agentInstall(deps Deps, agent, path, watAbs string) []Result {
 				Status:  Fail,
 				Message: r,
 				Fix:     "re-run wat install or fix the command in the config file",
+			})
+			continue
+		}
+		commandAgent, event, _ := installcfg.ParseWatRunFlags(cmd)
+		if commandAgent == agent &&
+			installcfg.IsWatManagedAgentCommand(cmd, agent, watAbs) &&
+			!slices.Contains(expected, event) {
+			results = append(results, Result{
+				Group:   "install",
+				Status:  Fail,
+				Message: fmt.Sprintf("%s: unregistered --event %q is still installed", agent, event),
+				Fix:     fmt.Sprintf("run wat install --agent %s", agent),
 			})
 		}
 	}
@@ -151,7 +169,7 @@ func agentInstall(deps Deps, agent, path, watAbs string) []Result {
 		}
 	}
 
-	if len(results) == 0 {
+	if len(results) == 0 && len(expected) > 0 {
 		results = append(results, Result{
 			Group:   "install",
 			Status:  Pass,
@@ -253,15 +271,12 @@ func flatWatCommands(hooks map[string][]json.RawMessage, getCommand func(json.Ra
 }
 
 func validateWatCommand(command string) (string, bool) {
-	agent, event, ok := installcfg.ParseWatRunFlags(command)
+	agent, _, ok := installcfg.ParseWatRunFlags(command)
 	if !ok {
 		return "invalid wat run command in config: " + firstLine(command), false
 	}
 	if err := dialect.Validate(agent); err != nil {
 		return fmt.Sprintf("invalid --agent %q in config command", agent), false
-	}
-	if !installcfg.IsValidEvent(agent, event) {
-		return fmt.Sprintf("invalid --event %q for agent %s in config command", event, agent), false
 	}
 	return "", true
 }

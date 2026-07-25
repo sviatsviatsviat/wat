@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +16,9 @@ import (
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/installcfg"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/copilot"
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
+	sdkrun "github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestRunDoctor_allPass(t *testing.T) {
@@ -195,11 +199,7 @@ func TestRunDoctor_missingInstallEntry(t *testing.T) {
 	if err := json.Unmarshal(data, &f); err != nil {
 		t.Fatal(err)
 	}
-	events, err := installcfg.ExpectedEvents("cursor")
-	if err != nil || len(events) == 0 {
-		t.Fatal("expected cursor events")
-	}
-	delete(f.Hooks, events[0])
+	delete(f.Hooks, cursor.EventSessionEnd)
 	b, _ := json.MarshalIndent(f, "", "  ")
 	b = append(b, '\n')
 	if err := os.WriteFile(cursorPath, b, 0o644); err != nil {
@@ -246,7 +246,7 @@ func TestRunDoctor_invalidEventInConfig(t *testing.T) {
 	if code != exitCheckFailed {
 		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
 	}
-	if !strings.Contains(outBuf.String(), "invalid --event") {
+	if !strings.Contains(outBuf.String(), "unregistered --event") {
 		t.Fatalf("output: %s", outBuf.String())
 	}
 }
@@ -297,7 +297,7 @@ func TestRunDoctor_noInstallConfigs(t *testing.T) {
 	if code != exitCheckFailed {
 		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
 	}
-	if !strings.Contains(outBuf.String(), "no hook config files found") {
+	if !strings.Contains(outBuf.String(), "hook config file missing") {
 		t.Fatalf("output: %s", outBuf.String())
 	}
 }
@@ -324,10 +324,26 @@ func doctorTestProject(t *testing.T, opts ...doctorProjectOpts) (project, watAbs
 	if err := os.MkdirAll(filepath.Join(watDir, ".cache"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+	hooksSource := `package hooks
+
+import (
+	"context"
+
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
+var Hooks = []run.Hooks{
+	agnostic.UseHooks().OnSessionEnd(func(context.Context, agnostic.SessionEndEvent) error {
+		return nil
+	}),
+}
+`
+	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte(hooksSource), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
+	goMod := "module wat-hooks\n\ngo 1.26\n\nrequire github.com/sviatsviatsviat/wat v0.0.0\n\nreplace github.com/sviatsviatsviat/wat => " + filepath.ToSlash(testModuleRoot(t)) + "\n"
+	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte(goMod), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -336,8 +352,9 @@ func doctorTestProject(t *testing.T, opts ...doctorProjectOpts) (project, watAbs
 		deps := installcfg.DefaultDeps()
 		deps.Getwd = func() (string, error) { return project, nil }
 		if err := installcfg.Install(installcfg.Config{
-			Agents:  installcfg.AgentPlan{Claude: true, Copilot: true, Cursor: true},
-			WatPath: watAbs,
+			Agents:   installcfg.AgentPlan{Claude: true, Copilot: true, Cursor: true},
+			WatPath:  watAbs,
+			Manifest: doctorTestManifest(),
 		}, deps); err != nil {
 			t.Fatalf("installProject: %v", err)
 		}
@@ -379,13 +396,27 @@ func doctorTestDeps(t *testing.T, project, watAbs string, goCfg doctorTestGoDeps
 		}
 		return exec.Command(name, args...)
 	}
+	deps.LoadManifest = func(string, string, buildcache.Deps, io.Writer) (sdkrun.Manifest, error) {
+		return *doctorTestManifest(), nil
+	}
 	return deps
+}
+
+func doctorTestManifest() *sdkrun.Manifest {
+	return &sdkrun.Manifest{
+		Version: 1,
+		Registrations: []sdkrun.Registration{
+			{Dialect: claude.Dialect, Event: claude.EventSessionEnd, HandlerCount: 1},
+			{Dialect: copilot.Dialect, Event: copilot.EventSessionEnd, HandlerCount: 1},
+			{Dialect: cursor.Dialect, Event: cursor.EventSessionEnd, HandlerCount: 1},
+		},
+	}
 }
 
 func warmDoctorCache(t *testing.T, project string, deps doctorDeps) {
 	t.Helper()
 	watDir := filepath.Join(project, ".wat")
-	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.Command)
+	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.WriteFile, deps.Command)
 	key, err := buildcache.CacheKey(watDir, deps.WatVersion, bc)
 	if err != nil {
 		t.Fatal(err)
@@ -421,6 +452,7 @@ func TestRunDoctor_realGoBuild(t *testing.T) {
 		}
 		return exec.LookPath(name)
 	}
+	deps.LoadManifest = nil
 
 	outBuf := captureStdout(t)
 	code := runDoctor(deps)

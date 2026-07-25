@@ -32,7 +32,7 @@ type subcommandRunner struct {
 
 var subcommands = []subcommand{
 	{name: "init", summary: "scaffold a .wat/ hook project", newCmd: newInitCmd},
-	{name: "install", summary: "write hook config entries pointing at wat run", newCmd: newInstallCmd},
+	{name: "install", summary: "install registered hooks into agent configs", newCmd: newInstallCmd},
 	{name: "run", summary: "execute .wat/hooks.go on hook invocation", newCmd: newRunCmd},
 	{name: "test", summary: "run hook script against fixture payloads", newCmd: newTestCmd},
 	{name: "doctor", summary: "verify toolchain, script, cache, and install state", newCmd: newDoctorCmd},

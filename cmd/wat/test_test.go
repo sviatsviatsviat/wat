@@ -162,6 +162,31 @@ func TestRunTest_preToolDenyIntegration(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("unregistered event", func(t *testing.T) {
+		var report, errBuf bytes.Buffer
+		deps := hooktest.DefaultDeps(&report)
+		deps.Getenv = func(key string) string {
+			if key == "WAT_PROJECT_DIR" {
+				return project
+			}
+			return os.Getenv(key)
+		}
+		deps.ReadFixture = func(string, io.Reader) ([]byte, error) {
+			return []byte(`{"hook_event_name":"Notification","session_id":"s1"}`), nil
+		}
+
+		code := hooktest.Run(hooktest.Config{
+			Agent:   "claude",
+			Fixture: "-",
+		}, watModuleVersionFn(), deps, strings.NewReader(""), &errBuf)
+		if code != hooktest.ExitRuntimeFailure {
+			t.Fatalf("exit = %d, want %d", code, hooktest.ExitRuntimeFailure)
+		}
+		if !strings.Contains(errBuf.String(), "no claude Notification handler is registered") {
+			t.Fatalf("stderr = %q", errBuf.String())
+		}
+	})
 }
 
 func setupTestHookProject(t *testing.T) string {
@@ -176,25 +201,22 @@ func setupTestHookProject(t *testing.T) string {
 	stdout, stderr = io.Discard, io.Discard
 	t.Cleanup(func() { stdout, stderr = prevStdout, prevStderr })
 
-	if err := initproj.Init(dir, false, watModuleVersionFn(), initproj.DefaultDeps(), stdout, stderr); err != nil {
-		t.Fatalf("initproj.Init: %v", err)
-	}
-
 	modRoot := testModuleRoot(t)
-	goModPath := filepath.Join(dir, ".wat", "go.mod")
-	goModBytes, err := os.ReadFile(goModPath)
-	if err != nil {
-		t.Fatalf("read go.mod: %v", err)
+	deps := initproj.DefaultDeps()
+	deps.Command = func(name string, args ...string) *exec.Cmd {
+		goModPath := filepath.Join(dir, ".wat", "go.mod")
+		goModBytes, err := os.ReadFile(goModPath)
+		if err != nil {
+			t.Fatalf("read go.mod: %v", err)
+		}
+		replaceLine := "\nreplace github.com/sviatsviatsviat/wat => " + filepath.ToSlash(modRoot) + "\n"
+		if err := os.WriteFile(goModPath, append(goModBytes, []byte(replaceLine)...), 0o644); err != nil {
+			t.Fatalf("write go.mod replace: %v", err)
+		}
+		return exec.Command(name, args...)
 	}
-	replaceLine := "\nreplace github.com/sviatsviatsviat/wat => " + modRoot + "\n"
-	if err := os.WriteFile(goModPath, append(goModBytes, []byte(replaceLine)...), 0o644); err != nil {
-		t.Fatalf("write go.mod replace: %v", err)
-	}
-
-	cmd := exec.Command("go", "mod", "tidy")
-	cmd.Dir = filepath.Join(dir, ".wat")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("go mod tidy: %v\n%s", err, out)
+	if err := initproj.Init(dir, false, watModuleVersionFn(), deps, stdout, stderr); err != nil {
+		t.Fatalf("initproj.Init: %v", err)
 	}
 	return dir
 }

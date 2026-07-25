@@ -3,21 +3,24 @@ package doctor
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/installcfg"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestAgentInstall_results(t *testing.T) {
 	watAbs := "/usr/bin/wat"
 	claudePath := "/project/.claude/settings.json"
+	expected := []string{"PreToolUse"}
 
 	t.Run("missing", func(t *testing.T) {
 		deps := Deps{ReadFile: func(string) ([]byte, error) {
 			return []byte(`{"hooks":{}}`), nil
 		}}
-		results := agentInstall(deps, "claude", claudePath, watAbs)
+		results := agentInstall(deps, "claude", claudePath, watAbs, expected)
 		if statusCount(results, Fail) == 0 {
 			t.Fatalf("expected missing Fail results, got %#v", results)
 		}
@@ -32,7 +35,7 @@ func TestAgentInstall_results(t *testing.T) {
 			t.Fatal(err)
 		}
 		deps := Deps{ReadFile: func(string) ([]byte, error) { return body, nil }}
-		results := agentInstall(deps, "claude", claudePath, watAbs)
+		results := agentInstall(deps, "claude", claudePath, watAbs, expected)
 		if len(results) != 1 || results[0].Status != Pass {
 			t.Fatalf("want single Pass, got %#v", results)
 		}
@@ -44,7 +47,7 @@ func TestAgentInstall_results(t *testing.T) {
 			t.Fatal(err)
 		}
 		deps := Deps{ReadFile: func(string) ([]byte, error) { return body, nil }}
-		results := agentInstall(deps, "claude", claudePath, watAbs)
+		results := agentInstall(deps, "claude", claudePath, watAbs, expected)
 		if !hasMessageContaining(results, "duplicate wat-managed entries") {
 			t.Fatalf("expected duplicate message, got %#v", results)
 		}
@@ -59,9 +62,9 @@ func TestAgentInstall_results(t *testing.T) {
 			}
 		}`)
 		deps := Deps{ReadFile: func(string) ([]byte, error) { return body, nil }}
-		results := agentInstall(deps, "claude", claudePath, watAbs)
-		if !hasMessageContaining(results, "invalid --event") {
-			t.Fatalf("expected invalid event message, got %#v", results)
+		results := agentInstall(deps, "claude", claudePath, watAbs, expected)
+		if !hasMessageContaining(results, "unregistered --event") {
+			t.Fatalf("expected unregistered event message, got %#v", results)
 		}
 	})
 }
@@ -179,7 +182,7 @@ func TestValidateWatCommand(t *testing.T) {
 		{name: "valid", command: "wat run --agent claude --event PreToolUse", ok: true},
 		{name: "malformed flags", command: "wat run --agent claude", ok: false, wantSub: "invalid wat run command"},
 		{name: "invalid agent", command: "wat run --agent nosuch --event PreToolUse", ok: false, wantSub: "invalid --agent"},
-		{name: "invalid event", command: "wat run --agent claude --event NotReal", ok: false, wantSub: "invalid --event"},
+		{name: "unregistered event is syntactically valid", command: "wat run --agent claude --event NotReal", ok: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -196,9 +199,9 @@ func TestValidateWatCommand(t *testing.T) {
 
 func TestInstall_reusesCachedStats(t *testing.T) {
 	root := t.TempDir()
-	watDir := root + "/.wat"
-	claudePath := root + "/.claude/settings.json"
-	if err := os.MkdirAll(root+"/.claude", 0o755); err != nil {
+	watDir := filepath.Join(root, ".wat")
+	claudePath := filepath.Join(root, ".claude", "settings.json")
+	if err := os.MkdirAll(filepath.Join(root, ".claude"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	body, err := claudeConfigJSON("/usr/bin/wat", false)
@@ -224,7 +227,7 @@ func TestInstall_reusesCachedStats(t *testing.T) {
 		return nil, os.ErrNotExist
 	}
 
-	_ = Install(deps, Context{WatDir: watDir})
+	_ = Install(deps, Context{WatDir: watDir, Manifest: manifestForEvents("claude", []string{"PreToolUse"})})
 	// One Stat from the presence scan, one from disableAllHooks — not a third from the install loop.
 	if n := statCalls[claudePath]; n != 2 {
 		t.Fatalf("stat(%s) called %d times, want 2", claudePath, n)
@@ -232,10 +235,7 @@ func TestInstall_reusesCachedStats(t *testing.T) {
 }
 
 func claudeConfigJSON(watAbs string, duplicate bool) ([]byte, error) {
-	events, err := installcfg.ExpectedEvents("claude")
-	if err != nil {
-		return nil, err
-	}
+	events := []string{"PreToolUse"}
 	hooks := map[string][]map[string]any{}
 	for _, event := range events {
 		cmd := installcfg.WatRunCommand(watAbs, "claude", event)
@@ -254,6 +254,18 @@ func claudeConfigJSON(watAbs string, duplicate bool) ([]byte, error) {
 		}}
 	}
 	return json.Marshal(map[string]any{"hooks": hooks})
+}
+
+func manifestForEvents(agent string, events []string) run.Manifest {
+	manifest := run.Manifest{Version: 1}
+	for _, event := range events {
+		manifest.Registrations = append(manifest.Registrations, run.Registration{
+			Dialect:      agent,
+			Event:        event,
+			HandlerCount: 1,
+		})
+	}
+	return manifest
 }
 
 func statusCount(results []Result, status Status) int {

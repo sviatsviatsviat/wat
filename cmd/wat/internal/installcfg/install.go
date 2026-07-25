@@ -1,6 +1,7 @@
 package installcfg
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,7 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/buildcache"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookconfig"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookmanifest"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
@@ -18,6 +21,7 @@ import (
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 // AgentPlan selects which agent configs to install.
@@ -45,29 +49,37 @@ func ParseAgentPlan(s string) (AgentPlan, error) {
 
 // Config holds options for Install.
 type Config struct {
-	Agents  AgentPlan
-	WatPath string
+	Agents     AgentPlan
+	WatPath    string
+	WatVersion string
+	Manifest   *run.Manifest
 }
 
 // Deps holds injectable dependencies for Install.
 type Deps struct {
 	Getwd     func() (string, error)
+	Getenv    func(string) string
 	Stat      func(string) (os.FileInfo, error)
+	ReadDir   func(string) ([]os.DirEntry, error)
 	ReadFile  func(string) ([]byte, error)
 	MkdirAll  func(string, os.FileMode) error
 	WriteFile func(string, []byte, os.FileMode) error
 	LookPath  func(string) (string, error)
+	Command   func(string, ...string) *exec.Cmd
 }
 
 // DefaultDeps returns production dependencies backed by the OS.
 func DefaultDeps() Deps {
 	return Deps{
 		Getwd:     os.Getwd,
+		Getenv:    os.Getenv,
 		Stat:      os.Stat,
+		ReadDir:   os.ReadDir,
 		ReadFile:  os.ReadFile,
 		MkdirAll:  os.MkdirAll,
 		WriteFile: os.WriteFile,
 		LookPath:  exec.LookPath,
+		Command:   exec.Command,
 	}
 }
 
@@ -84,28 +96,50 @@ func Install(cfg Config, deps Deps) error {
 	}
 	root := filepath.Dir(watDir)
 
+	manifest, err := authoredManifest(cfg, watDir, deps)
+	if err != nil {
+		return err
+	}
+
 	watAbs, err := resolveWatPath(cfg.WatPath, deps)
 	if err != nil {
 		return err
 	}
 
 	if cfg.Agents.Claude {
-		if err := installClaude(root, watAbs, deps); err != nil {
+		if err := installClaude(root, watAbs, manifest.EventsFor(sdkclaude.Dialect), deps); err != nil {
 			return err
 		}
 	}
 	if cfg.Agents.Copilot {
-		if err := installCopilot(root, watAbs, deps); err != nil {
+		if err := installCopilot(root, watAbs, manifest.EventsFor(sdkcopilot.Dialect), deps); err != nil {
 			return err
 		}
 	}
 	if cfg.Agents.Cursor {
-		if err := installCursor(root, watAbs, deps); err != nil {
+		if err := installCursor(root, watAbs, manifest.EventsFor(sdkcursor.Dialect), deps); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func authoredManifest(cfg Config, watDir string, deps Deps) (run.Manifest, error) {
+	if cfg.Manifest != nil {
+		return *cfg.Manifest, nil
+	}
+	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.WriteFile, deps.Command)
+	var diagnostics bytes.Buffer
+	manifest, err := hookmanifest.Load(watDir, cfg.WatVersion, bc, &diagnostics)
+	if err == nil {
+		return manifest, nil
+	}
+	message := strings.TrimSpace(diagnostics.String())
+	if message != "" {
+		return run.Manifest{}, fmt.Errorf("load authored hooks: %w: %s", err, message)
+	}
+	return run.Manifest{}, fmt.Errorf("load authored hooks: %w", err)
 }
 
 func resolveWatPath(flagValue string, deps Deps) (string, error) {
@@ -127,8 +161,14 @@ func resolveWatPath(flagValue string, deps Deps) (string, error) {
 	return p, nil
 }
 
-func installClaude(root, watAbs string, deps Deps) error {
+func installClaude(root, watAbs string, events []string, deps Deps) error {
 	path := paths.ConfigPath(sdkclaude.Dialect, root)
+	if len(events) == 0 {
+		absent, err := configAbsent(path, deps)
+		if err != nil || absent {
+			return err
+		}
+	}
 	settings := claude.Settings{Hooks: map[string][]claude.MatcherGroup{}}
 
 	if err := readJSON(path, &settings, deps); err != nil {
@@ -138,9 +178,13 @@ func installClaude(root, watAbs string, deps Deps) error {
 		settings.Hooks = map[string][]claude.MatcherGroup{}
 	}
 
-	events, err := ExpectedEvents(sdkclaude.Dialect)
-	if err != nil {
-		return err
+	for event, groups := range settings.Hooks {
+		groups = removeClaudeManagedGroups(groups, sdkclaude.Dialect, watAbs)
+		if len(groups) == 0 {
+			delete(settings.Hooks, event)
+			continue
+		}
+		settings.Hooks[event] = groups
 	}
 	for _, event := range events {
 		cmd := WatRunCommand(watAbs, sdkclaude.Dialect, event)
@@ -148,6 +192,26 @@ func installClaude(root, watAbs string, deps Deps) error {
 	}
 
 	return writeJSON(path, settings, deps)
+}
+
+func removeClaudeManagedGroups(groups []claude.MatcherGroup, agent, watAbs string) []claude.MatcherGroup {
+	var out []claude.MatcherGroup
+	for _, group := range groups {
+		var kept []json.RawMessage
+		for _, raw := range group.Hooks {
+			handler, err := hookconfig.ParseHandler[claude.Handler](raw)
+			if err != nil || (handler.Type != "" && handler.Type != "command") ||
+				!IsWatManagedAgentCommand(handler.Command, agent, watAbs) {
+				kept = append(kept, raw)
+			}
+		}
+		if len(kept) == 0 {
+			continue
+		}
+		group.Hooks = kept
+		out = append(out, group)
+	}
+	return out
 }
 
 // UpsertClaudeGroups removes wat-managed handlers and adds cmd to a default matcher group.
@@ -191,33 +255,37 @@ func UpsertClaudeGroups(groups []claude.MatcherGroup, cmd, agent, event, watAbs 
 	return out
 }
 
-func installCopilot(root, watAbs string, deps Deps) error {
+func installCopilot(root, watAbs string, events []string, deps Deps) error {
 	path := paths.ConfigPath(sdkcopilot.Dialect, root)
+	if len(events) == 0 {
+		absent, err := configAbsent(path, deps)
+		if err != nil || absent {
+			return err
+		}
+	}
 	f := copilot.File{Version: 1, Hooks: map[string][]json.RawMessage{}}
 	if err := readJSON(path, &f, deps); err != nil {
 		return err
 	}
 	initFlatHooksFile(&f.Hooks, &f.Version)
-	events, err := ExpectedEvents(sdkcopilot.Dialect)
-	if err != nil {
-		return err
-	}
-	upsertFlatHookEvents(f.Hooks, sdkcopilot.Dialect, watAbs, events, copilot.ParseFlatCommand, marshalCopilotCommand)
+	reconcileFlatHookEvents(f.Hooks, sdkcopilot.Dialect, watAbs, events, copilot.ParseFlatCommand, marshalCopilotCommand)
 	return writeJSON(path, f, deps)
 }
 
-func installCursor(root, watAbs string, deps Deps) error {
+func installCursor(root, watAbs string, events []string, deps Deps) error {
 	path := paths.ConfigPath(sdkcursor.Dialect, root)
+	if len(events) == 0 {
+		absent, err := configAbsent(path, deps)
+		if err != nil || absent {
+			return err
+		}
+	}
 	f := cursor.File{Version: 1, Hooks: map[string][]json.RawMessage{}}
 	if err := readJSON(path, &f, deps); err != nil {
 		return err
 	}
 	initFlatHooksFile(&f.Hooks, &f.Version)
-	events, err := ExpectedEvents(sdkcursor.Dialect)
-	if err != nil {
-		return err
-	}
-	upsertFlatHookEvents(f.Hooks, sdkcursor.Dialect, watAbs, events, cursor.ParseFlatCommand, marshalCursorCommand)
+	reconcileFlatHookEvents(f.Hooks, sdkcursor.Dialect, watAbs, events, cursor.ParseFlatCommand, marshalCursorCommand)
 	return writeJSON(path, f, deps)
 }
 
@@ -230,11 +298,37 @@ func initFlatHooksFile(hooks *map[string][]json.RawMessage, version *int) {
 	}
 }
 
-func upsertFlatHookEvents(hooks map[string][]json.RawMessage, agent, watAbs string, events []string, parseCommand func(json.RawMessage) (string, bool), marshalCommand func(string) json.RawMessage) {
+func reconcileFlatHookEvents(hooks map[string][]json.RawMessage, agent, watAbs string, events []string, parseCommand func(json.RawMessage) (string, bool), marshalCommand func(string) json.RawMessage) {
+	for event, handlers := range hooks {
+		var kept []json.RawMessage
+		for _, raw := range handlers {
+			command, ok := parseCommand(raw)
+			if ok && IsWatManagedAgentCommand(command, agent, watAbs) {
+				continue
+			}
+			kept = append(kept, raw)
+		}
+		if len(kept) == 0 {
+			delete(hooks, event)
+			continue
+		}
+		hooks[event] = kept
+	}
 	for _, event := range events {
 		cmd := WatRunCommand(watAbs, agent, event)
 		hooks[event] = UpsertFlatHandlers(hooks[event], cmd, agent, event, watAbs, parseCommand, marshalCommand)
 	}
+}
+
+func configAbsent(path string, deps Deps) (bool, error) {
+	_, err := deps.Stat(path)
+	if err == nil {
+		return false, nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return true, nil
+	}
+	return false, fmt.Errorf("stat %s: %w", path, err)
 }
 
 func marshalCopilotCommand(cmd string) json.RawMessage {

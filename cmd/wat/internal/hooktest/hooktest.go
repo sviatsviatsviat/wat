@@ -12,6 +12,7 @@ import (
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/buildcache"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookmanifest"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/project"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
@@ -44,6 +45,7 @@ type Deps struct {
 	ReadDir     func(string) ([]os.DirEntry, error)
 	ReadFile    func(string) ([]byte, error)
 	MkdirAll    func(string, os.FileMode) error
+	WriteFile   func(string, []byte, os.FileMode) error
 	Command     func(string, ...string) *exec.Cmd
 	RunCmd      func(*exec.Cmd) error
 	ReadFixture func(path string, stdin io.Reader) ([]byte, error)
@@ -55,13 +57,14 @@ type Deps struct {
 // set ReadFixture to override that behavior.
 func DefaultDeps(writeReport io.Writer) Deps {
 	return Deps{
-		Getenv:   os.Getenv,
-		Getwd:    os.Getwd,
-		Stat:     os.Stat,
-		ReadDir:  os.ReadDir,
-		ReadFile: os.ReadFile,
-		MkdirAll: os.MkdirAll,
-		Command:  exec.Command,
+		Getenv:    os.Getenv,
+		Getwd:     os.Getwd,
+		Stat:      os.Stat,
+		ReadDir:   os.ReadDir,
+		ReadFile:  os.ReadFile,
+		MkdirAll:  os.MkdirAll,
+		WriteFile: os.WriteFile,
+		Command:   exec.Command,
 		RunCmd: func(cmd *exec.Cmd) error {
 			return cmd.Run()
 		},
@@ -105,13 +108,17 @@ func Run(cfg Config, version string, deps Deps, stdin io.Reader, errOut io.Write
 		return ExitRuntimeFailure
 	}
 
-	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.Command)
-	binPath, err := buildcache.Ensure(watDir, version, bc, errOut)
+	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.WriteFile, deps.Command)
+	binPath, manifest, err := hookmanifest.EnsureAndLoad(watDir, version, bc, errOut)
 	if err != nil {
 		if errors.Is(err, buildcache.ErrBuildFailed) {
 			return ExitBuildFailed
 		}
 		_, _ = fmt.Fprintf(errOut, "wat test: %v\n", err)
+		return ExitRuntimeFailure
+	}
+	if !manifest.Has(info.Dialect, info.Event) {
+		_, _ = fmt.Fprintf(errOut, "wat test: no %s %s handler is registered\n", info.Dialect, info.Event)
 		return ExitRuntimeFailure
 	}
 

@@ -2,14 +2,8 @@ package installcfg
 
 import (
 	"fmt"
-	"slices"
-	"sort"
+	"path/filepath"
 	"strings"
-
-	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
-	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
-	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
-	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
 )
 
 // ParseWatRunFlags extracts --agent and --event from a wat run shell command.
@@ -32,46 +26,37 @@ func IsWatManagedCommand(command, agent, event, watAbs string) bool {
 	if !ok || parsedAgent != agent || parsedEvent != event {
 		return false
 	}
+	return isWatRunExecutable(command, watAbs)
+}
+
+// IsWatManagedAgentCommand reports whether command is a wat-managed hook entry
+// for agent, regardless of its native event.
+func IsWatManagedAgentCommand(command, agent, watAbs string) bool {
+	parsedAgent, _, ok := ParseWatRunFlags(command)
+	if !ok || parsedAgent != agent {
+		return false
+	}
 	fields := strings.Fields(strings.TrimSpace(command))
-	wantAbs := []string{strings.TrimSpace(watAbs), "run", "--agent", agent, "--event", event}
-	wantPlain := []string{"wat", "run", "--agent", agent, "--event", event}
-	return slices.Equal(fields, wantAbs) || slices.Equal(fields, wantPlain)
+	if len(fields) != 6 || fields[1] != "run" {
+		return false
+	}
+	program := strings.Trim(fields[0], `"'`)
+	if program == strings.TrimSpace(watAbs) {
+		return true
+	}
+	base := strings.TrimSuffix(strings.ToLower(filepath.Base(program)), ".exe")
+	return base == "wat"
+}
+
+func isWatRunExecutable(command, watAbs string) bool {
+	fields := strings.Fields(strings.TrimSpace(command))
+	if len(fields) != 6 || fields[1] != "run" {
+		return false
+	}
+	return fields[0] == strings.TrimSpace(watAbs) || fields[0] == "wat"
 }
 
 // WatRunCommand builds the shell command wat install writes for an agent event.
 func WatRunCommand(watAbs, agent, event string) string {
 	return fmt.Sprintf("%s run --agent %s --event %s", watAbs, agent, event)
-}
-
-// IsValidEvent reports whether event is a known install event for agent.
-func IsValidEvent(agent, event string) bool {
-	events, err := eventsForAgent(agent)
-	if err != nil {
-		return false
-	}
-	return slices.Contains(events, event)
-}
-
-// ExpectedEvents returns hook event names wat install writes for agent.
-func ExpectedEvents(agent string) ([]string, error) {
-	events, err := eventsForAgent(agent)
-	if err != nil {
-		return nil, err
-	}
-	out := slices.Clone(events)
-	sort.Strings(out)
-	return out, nil
-}
-
-func eventsForAgent(agent string) ([]string, error) {
-	switch dialect.Parse(agent) {
-	case sdkclaude.Dialect:
-		return claudeEvents, nil
-	case sdkcopilot.Dialect:
-		return copilotEvents, nil
-	case sdkcursor.Dialect:
-		return cursorEvents, nil
-	default:
-		return nil, fmt.Errorf("unknown agent %q", agent)
-	}
 }
