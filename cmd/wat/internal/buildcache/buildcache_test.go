@@ -80,11 +80,15 @@ func TestCacheKey_includesNestedFiles(t *testing.T) {
 				fakeDirEntry{name: "hooks.go"},
 				fakeDirEntry{name: "internal", isDir: true},
 				fakeDirEntry{name: ".cache", isDir: true},
+				fakeDirEntry{name: "testdata", isDir: true},
 			}, nil
 		case "/tmp/.wat/internal":
 			return []os.DirEntry{fakeDirEntry{name: "lib.go"}}, nil
 		case "/tmp/.wat/.cache":
 			t.Fatal(".cache should be skipped")
+			return nil, nil
+		case "/tmp/.wat/testdata":
+			t.Fatal("testdata should be skipped")
 			return nil, nil
 		default:
 			return nil, os.ErrNotExist
@@ -126,6 +130,55 @@ func TestCacheKey_includesNestedFiles(t *testing.T) {
 	}
 	if withNested == changed {
 		t.Fatal("cache key should change when nested package file changes")
+	}
+}
+
+func TestCacheKey_ignoresTestdataContents(t *testing.T) {
+	deps := DefaultDeps()
+	deps.Getenv = func(string) string { return "" }
+	testdataReads := 0
+	deps.ReadDir = func(dir string) ([]os.DirEntry, error) {
+		switch filepath.ToSlash(dir) {
+		case "/tmp/.wat":
+			return []os.DirEntry{
+				fakeDirEntry{name: "hooks.go"},
+				fakeDirEntry{name: "testdata", isDir: true},
+			}, nil
+		case "/tmp/.wat/testdata":
+			testdataReads++
+			return []os.DirEntry{fakeDirEntry{name: "fixture.json"}}, nil
+		default:
+			return nil, os.ErrNotExist
+		}
+	}
+	deps.ReadFile = func(path string) ([]byte, error) {
+		switch filepath.ToSlash(path) {
+		case "/tmp/.wat/hooks.go":
+			return []byte("package hooks\n"), nil
+		case "/tmp/.wat/testdata/fixture.json":
+			t.Fatal("testdata fixture must not be hashed")
+			return nil, nil
+		default:
+			return nil, os.ErrNotExist
+		}
+	}
+
+	a, err := CacheKey("/tmp/.wat", "v1", deps)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if testdataReads != 0 {
+		t.Fatalf("testdata ReadDir calls = %d, want 0", testdataReads)
+	}
+
+	// Changing only testdata must not affect the key even if a buggy caller
+	// somehow listed it; the directory is skipped before recursion.
+	b, err := CacheKey("/tmp/.wat", "v1", deps)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a != b {
+		t.Fatal("cache key must be stable when only testdata would change")
 	}
 }
 

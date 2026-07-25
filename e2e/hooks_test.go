@@ -12,45 +12,22 @@ func TestWatTest_sessionStartContext(t *testing.T) {
 	project := initProjectWithReplace(t)
 
 	tests := []struct {
-		name       string
-		agent      string
-		fixture    string
-		wantOutput []string
+		name  string
+		agent string
 	}{
-		{
-			name:    "claude",
-			agent:   "claude",
-			fixture: fixturePath(t, "claude", "session_start.json"),
-			wantOutput: []string{
-				"event: SessionStart",
-				"wat hooks are active",
-			},
-		},
-		{
-			name:    "copilot",
-			agent:   "copilot",
-			fixture: fixturePath(t, "copilot", "session_start.json"),
-			wantOutput: []string{
-				"wat hooks are active",
-			},
-		},
-		{
-			name:    "cursor",
-			agent:   "cursor",
-			fixture: fixturePath(t, "cursor", "session_start.json"),
-			wantOutput: []string{
-				"wat hooks are active",
-			},
-		},
+		{name: "claude", agent: "claude"},
+		{name: "copilot", agent: "copilot"},
+		{name: "cursor", agent: "cursor"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stdout, stderr, code := runWat(t, binary, project, "test", "--agent", tt.agent, "--fixture", tt.fixture)
+			fixture := filepath.Join(project, ".wat", "testdata", tt.agent, "session_start.json")
+			stdout, stderr, code := runWat(t, binary, project, "test", "--agent", tt.agent, "--fixture", fixture)
 			if code != 0 {
 				t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 			}
 			out := stdout + stderr
-			for _, want := range tt.wantOutput {
+			for _, want := range []string{"status: pass", "wat hooks are active"} {
 				if !strings.Contains(out, want) {
 					t.Fatalf("output missing %q:\n%s", want, out)
 				}
@@ -99,6 +76,19 @@ var Hooks = []run.Hooks{
 }
 `
 
+const cursorSubagentDenyExpect = `{
+  "exit": 2,
+  "decision": "deny",
+  "stdout_contains": ["re-run with the auto model"]
+}
+`
+
+const cursorSubagentAllowExpect = `{
+  "exit": 0,
+  "stdout_empty": true
+}
+`
+
 func TestWatTest_cursorSubagentStartModelGate(t *testing.T) {
 	binary := buildWat(t)
 	project := initProjectWithReplace(t)
@@ -109,36 +99,55 @@ func TestWatTest_cursorSubagentStartModelGate(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		fixture    string
-		wantExit   int
-		wantOutput []string
+		name    string
+		fixture string
+		expect  string
 	}{
 		{
-			name:       "non-auto model denied",
-			fixture:    fixturePath(t, "cursor", "subagent_start.json"),
-			wantExit:   2,
-			wantOutput: []string{`"permission":"deny"`, "re-run with the auto model"},
+			name:    "non-auto model denied",
+			fixture: fixturePath(t, "cursor", "subagent_start.json"),
+			expect:  cursorSubagentDenyExpect,
 		},
 		{
-			name:       "auto model allowed",
-			fixture:    fixturePath(t, "cursor", "subagent_start_auto.json"),
-			wantExit:   0,
-			wantOutput: []string{"stdout: (empty)"},
+			name:    "auto model allowed",
+			fixture: fixturePath(t, "cursor", "subagent_start_auto.json"),
+			expect:  cursorSubagentAllowExpect,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stdout, stderr, code := runWat(t, binary, project, "test", "--agent", "cursor", "--fixture", tt.fixture)
-			if code != tt.wantExit {
-				t.Fatalf("exit = %d, want %d\nstdout:\n%s\nstderr:\n%s", code, tt.wantExit, stdout, stderr)
+			expectPath := filepath.Join(t.TempDir(), "case.expect.json")
+			if err := os.WriteFile(expectPath, []byte(tt.expect), 0o600); err != nil {
+				t.Fatal(err)
 			}
-			out := stdout + stderr
-			for _, want := range tt.wantOutput {
-				if !strings.Contains(out, want) {
-					t.Fatalf("output missing %q:\n%s", want, out)
-				}
+			stdout, stderr, code := runWat(t, binary, project, "test", "--agent", "cursor", "--fixture", tt.fixture, "--expect", expectPath)
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+			}
+			if !strings.Contains(stdout, "status: pass") {
+				t.Fatalf("output missing expect pass:\n%s\n%s", stdout, stderr)
 			}
 		})
+	}
+}
+
+func TestWatTest_expectMismatch(t *testing.T) {
+	binary := buildWat(t)
+	project := initProjectWithReplace(t)
+
+	fixture := filepath.Join(project, ".wat", "testdata", "cursor", "session_start.json")
+	expectPath := filepath.Join(t.TempDir(), "wrong.expect.json")
+	if err := os.WriteFile(expectPath, []byte(`{"exit":2,"decision":"deny"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	stdout, stderr, code := runWat(t, binary, project, "test", "--agent", "cursor", "--fixture", fixture, "--expect", expectPath)
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+	}
+	if !strings.Contains(stderr, "expect failed") {
+		t.Fatalf("stderr = %q", stderr)
+	}
+	if !strings.Contains(stdout, "status: fail") {
+		t.Fatalf("stdout missing fail status:\n%s", stdout)
 	}
 }

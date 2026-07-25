@@ -49,10 +49,14 @@ Initialization:
 - creates `.wat/.cache/`;
 - creates `.wat/go.mod` if it is missing;
 - writes `.wat/hooks.go`;
+- writes starter fixtures and expect sidecars under `.wat/testdata/` when
+  missing (one `session_start` case per agent);
 - runs `go mod tidy` inside `.wat/`.
 
 Re-running `wat init` preserves an existing `go.mod` and refuses to overwrite
-`hooks.go`. Use `wat init --force` only when replacing `hooks.go` is intended.
+`hooks.go` unless `--force` is set. Starter fixtures use write-if-missing, so
+custom cases under `.wat/testdata/` are kept. Use `wat init --force` only when
+replacing `hooks.go` is intended.
 
 The generated file is an importable package, not a `main` package. Its required
 contract is:
@@ -114,8 +118,8 @@ payload itself.
 
 On a cache miss, wat builds a bootstrap that imports `.wat/hooks.go` and calls
 `run.Serve(Hooks...)`. The cache key includes all files under `.wat/` except
-`.cache/`, the wat version, Go version, target OS/architecture, `GOFLAGS`,
-`CGO_ENABLED`, and bootstrap format. The binary is stored below:
+`.cache/` and `testdata/`, the wat version, Go version, target OS/architecture,
+`GOFLAGS`, `CGO_ENABLED`, and bootstrap format. The binary is stored below:
 
 ```text
 .wat/.cache/<content-hash>/hooks[.exe]
@@ -128,7 +132,7 @@ operation.
 ## Test with fixtures
 
 ```bash
-wat test --agent <dialect> --fixture <file|-> [--verbose]
+wat test --agent <dialect> --fixture <file|-> [--expect <file>] [--verbose]
 ```
 
 `--agent` and `--fixture` are required. A fixture must be non-empty JSON with a
@@ -142,11 +146,28 @@ Get-Content fixture.json | wat test --agent cursor --fixture -
 
 The report includes the fixture dialect/event, hook stdout, a recognized
 decision field, and the hook exit code. `--verbose` also includes hook stderr.
-The command returns the hook's exit code, so a deliberately denied fixture can
-make the test command non-zero.
 
-Repository examples live under [`testdata/fixtures/`](../testdata/fixtures/).
-Use native event names and payload shapes for the selected dialect.
+### Optional expect documents
+
+When `<fixture>.expect.json` exists, or when `--expect` points at a JSON file,
+`wat test` asserts the hook outcome after printing the report:
+
+| Field | Meaning |
+|---|---|
+| `exit` | Exact hook process exit code |
+| `decision` | Recognized decision value from stdout (`deny`, `allow`, …) |
+| `stdout_contains` | Substrings that must appear in hook stdout |
+| `stdout_empty` | Whether trimmed stdout must be empty |
+
+Unknown JSON fields are rejected. A matching expect run exits `0` even when the
+hook itself returned a denial exit code. A mismatch exits `1` and lists failed
+assertions on stderr. Without an expect document, the command still returns the
+hook binary's exit code.
+
+`wat init` seeds `.wat/testdata/<agent>/session_start.json` plus matching
+`.expect.json` sidecars. Repository protocol samples also live under
+[`testdata/fixtures/`](../testdata/fixtures/). Use native event names and
+payload shapes for the selected dialect.
 
 ## Diagnose a project
 
@@ -197,14 +218,15 @@ codes remain agent-specific.
 
 | Code | Meaning |
 |---|---|
-| `0` | Successful CLI operation or hook execution |
-| `1` | Invalid CLI usage; hook build failure in default mode; or hook runtime/protocol error |
+| `0` | Successful CLI operation or hook execution; or a matching `wat test` expect run |
+| `1` | Invalid CLI usage; hook build failure in default mode; hook runtime/protocol error; or `wat test` expect mismatch |
 | `2` | `wat run --fail-closed` build failure, or a native host denial that uses exit 2 |
 | `3` | CLI runtime failure such as missing project, unreadable fixture, or failed install |
 | `4` | At least one `wat doctor` check failed |
 
-For `wat test`, a successfully executed fixture returns the hook binary's exit
-code rather than translating it to a CLI-only code.
+For `wat test` without an expect document, a successfully executed fixture
+returns the hook binary's exit code rather than translating it to a CLI-only
+code. With an expect document, exit `0` means the assertions passed.
 
 ## Common problems
 
@@ -225,6 +247,6 @@ wat-managed command entries and will not remove unrelated hooks.
 
 ### A source change does not run
 
-All files under `.wat/` participate in the cache key. Check that the command is
-resolving the intended project and that `WAT_PROJECT_DIR` is not pointing
-elsewhere.
+Source files under `.wat/` (except `.cache/` and `testdata/`) participate in the
+cache key. Check that the command is resolving the intended project and that
+`WAT_PROJECT_DIR` is not pointing elsewhere.

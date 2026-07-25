@@ -15,6 +15,7 @@ func newTestCmd() *subcommandRunner {
 	addAgentFlag(fs, shared)
 	addEventFlag(fs, shared)
 	fixture := fs.String("fixture", "", "path to fixture JSON, or \"-\" for stdin")
+	expect := fs.String("expect", "", "path to expect JSON (default: <fixture>.expect.json when present)")
 	verbose := fs.Bool("verbose", false, "print hook stderr")
 	return &subcommandRunner{
 		name:    "test",
@@ -23,7 +24,10 @@ func newTestCmd() *subcommandRunner {
 			"wat test builds and executes the same cached .wat/hooks binary as wat run, feeding the\n" +
 			"fixture on stdin. Pass --agent, register the fixture's native event, and wat test prints\n" +
 			"fixture agent/event, the hook's stdout JSON, and exit code so you can iterate on handlers\n" +
-			"locally.",
+			"locally.\n\n" +
+			"When <fixture>.expect.json exists (or --expect is set), wat test also asserts exit code,\n" +
+			"decision, and stdout substrings from that document. A matching expect run exits 0; a\n" +
+			"mismatch exits 1. Without an expect document, the command returns the hook exit code.",
 		fs:     fs,
 		shared: shared,
 		run: func() int {
@@ -39,6 +43,7 @@ func newTestCmd() *subcommandRunner {
 			cfg := hooktest.Config{
 				Agent:   shared.agentValue(),
 				Fixture: *fixture,
+				Expect:  *expect,
 				Verbose: *verbose,
 			}
 			return hooktest.Run(cfg, watModuleVersionFn(), hooktest.DefaultDeps(stdout), os.Stdin, stderr)

@@ -1,0 +1,19 @@
+{
+  "conversation_id": "c1",
+  "generation_id": "g1",
+  "model": "claude-4.5-sonnet",
+  "hook_event_name": "subagentStart",
+  "cursor_version": "1.7.2",
+  "workspace_roots": ["/w"],
+  "user_email": null,
+  "transcript_path": null,
+  "cwd": "/w",
+  "subagent_id": "sa1",
+  "subagent_type": "explore",
+  "task": "find files",
+  "parent_conversation_id": "c0",
+  "tool_call_id": "tc1",
+  "subagent_model": "claude-4.5-sonnet",
+  "is_parallel_worker": false,
+  "git_branch": "main"
+}

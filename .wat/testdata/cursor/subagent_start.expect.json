@@ -1,0 +1,8 @@
+{
+  "exit": 2,
+  "decision": "deny",
+  "stdout_contains": [
+    "\"permission\":\"deny\"",
+    "Re-run it with the auto model"
+  ]
+}

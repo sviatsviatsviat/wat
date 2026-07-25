@@ -50,10 +50,11 @@ Returning `nil` means that a handler has no opinion. Response-producing
 handlers receive a hook-specific result builder; observe-only handlers return
 only an error.
 
-Test the hook without starting an agent:
+Test the hook without starting an agent. `wat init` seeds
+`.wat/testdata/<agent>/session_start.json` with an expect sidecar:
 
 ```bash
-wat test --agent claude --fixture testdata/fixtures/claude/session_start.json
+wat test --agent cursor --fixture .wat/testdata/cursor/session_start.json
 ```
 
 Run the command from a directory inside the target project, or set
@@ -63,10 +64,10 @@ Run the command from a directory inside the target project, or set
 
 | Command | Purpose |
 |---|---|
-| `wat init [path]` | Create `.wat/go.mod`, `.wat/hooks.go`, and the build cache directory |
+| `wat init [path]` | Create `.wat/` module, hooks scaffold, starter testdata, and cache dir |
 | `wat install` | Reconcile registered native events into the selected agent configs |
 | `wat run` | Build on a cache miss, then execute the hook process against stdin |
-| `wat test` | Execute a registered hook against a JSON fixture and print a report |
+| `wat test` | Run a fixture (optional expect sidecar) and print a report |
 | `wat doctor` | Check Go, the hook project, cache, manifest, and installed configs |
 
 Use `wat help` and `wat <command> -h` for the exact flags.

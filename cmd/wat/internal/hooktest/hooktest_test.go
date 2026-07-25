@@ -115,3 +115,129 @@ func TestRun_emptyFixture(t *testing.T) {
 		t.Fatalf("stderr = %q", errBuf.String())
 	}
 }
+
+func TestSidecarExpectPath(t *testing.T) {
+	tests := []struct {
+		fixture string
+		want    string
+	}{
+		{fixture: "", want: ""},
+		{fixture: "-", want: ""},
+		{fixture: "foo.json", want: "foo.expect.json"},
+		{fixture: "dir/subagent_start.json", want: "dir/subagent_start.expect.json"},
+		{fixture: "payload", want: "payload.expect.json"},
+	}
+	for _, tt := range tests {
+		if got := SidecarExpectPath(tt.fixture); got != tt.want {
+			t.Fatalf("SidecarExpectPath(%q) = %q, want %q", tt.fixture, got, tt.want)
+		}
+	}
+}
+
+func TestResolveExpectPath(t *testing.T) {
+	dir := t.TempDir()
+	fixture := filepath.Join(dir, "case.json")
+	sidecar := filepath.Join(dir, "case.expect.json")
+	explicit := filepath.Join(dir, "custom.expect.json")
+	if err := os.WriteFile(sidecar, []byte(`{"exit":0}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(explicit, []byte(`{"exit":2}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("explicit wins", func(t *testing.T) {
+		got, err := ResolveExpectPath(fixture, explicit, os.Stat)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != explicit {
+			t.Fatalf("got %q, want %q", got, explicit)
+		}
+	})
+	t.Run("sidecar when present", func(t *testing.T) {
+		got, err := ResolveExpectPath(fixture, "", os.Stat)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != sidecar {
+			t.Fatalf("got %q, want %q", got, sidecar)
+		}
+	})
+	t.Run("missing sidecar is optional", func(t *testing.T) {
+		got, err := ResolveExpectPath(filepath.Join(dir, "missing.json"), "", os.Stat)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != "" {
+			t.Fatalf("got %q, want empty", got)
+		}
+	})
+	t.Run("explicit missing errors", func(t *testing.T) {
+		_, err := ResolveExpectPath(fixture, filepath.Join(dir, "nope.json"), os.Stat)
+		if err == nil {
+			t.Fatal("expected error")
+		}
+	})
+}
+
+func TestCheckExpect(t *testing.T) {
+	denyExit := 2
+	empty := true
+	tests := []struct {
+		name    string
+		exp     Expect
+		stdout  string
+		exit    int
+		wantLen int
+	}{
+		{
+			name: "pass deny",
+			exp: Expect{
+				Exit:           &denyExit,
+				Decision:       "deny",
+				StdoutContains: []string{"blocked"},
+			},
+			stdout:  `{"permission":"deny","user_message":"blocked"}`,
+			exit:    2,
+			wantLen: 0,
+		},
+		{
+			name:    "fail exit",
+			exp:     Expect{Exit: &denyExit},
+			stdout:  `{}`,
+			exit:    0,
+			wantLen: 1,
+		},
+		{
+			name:    "fail empty",
+			exp:     Expect{StdoutEmpty: &empty},
+			stdout:  `{"permission":"allow"}`,
+			exit:    0,
+			wantLen: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fails := CheckExpect(tt.exp, "cursor", []byte(tt.stdout), tt.exit)
+			if len(fails) != tt.wantLen {
+				t.Fatalf("fails = %#v, want len %d", fails, tt.wantLen)
+			}
+		})
+	}
+}
+
+func TestLoadExpect_rejectsUnknownField(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bad.expect.json")
+	if err := os.WriteFile(path, []byte(`{"exitt":0}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := LoadExpect(path, os.ReadFile)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "decode expect") {
+		t.Fatalf("error = %q", err)
+	}
+}

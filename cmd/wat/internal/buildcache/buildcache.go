@@ -18,6 +18,10 @@ import (
 // cacheDirName is excluded from the source manifest (build outputs live there).
 const cacheDirName = ".cache"
 
+// testdataDirName is excluded from the source manifest (fixture payloads and
+// expect sidecars are not part of the hook binary).
+const testdataDirName = "testdata"
+
 // ManifestArgument requests registration metadata from the generated hook binary.
 const ManifestArgument = "__wat_manifest"
 
@@ -187,7 +191,7 @@ func listSourceFiles(dir, rel string, deps Deps) ([]string, error) {
 			childRel = filepath.Join(rel, name)
 		}
 		if e.IsDir() {
-			if name == cacheDirName {
+			if name == cacheDirName || name == testdataDirName {
 				continue
 			}
 			sub, err := listSourceFiles(filepath.Join(dir, name), childRel, deps)
