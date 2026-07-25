@@ -679,7 +679,6 @@ func TestInstallProject_removesStaleClaudeManagedEvents(t *testing.T) {
 	}
 }
 
-
 func writeWatProjectFixture(t *testing.T, project string) {
 	t.Helper()
 	watDir := filepath.Join(project, ".wat")
