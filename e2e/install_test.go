@@ -28,16 +28,16 @@ func TestWatInstall_discoversAuthoredHooks(t *testing.T) {
 	if err := json.Unmarshal(body, &installed); err != nil {
 		t.Fatal(err)
 	}
+	if len(installed.Hooks["sessionStart"]) != 1 {
+		t.Fatalf("sessionStart handlers = %d, want 1", len(installed.Hooks["sessionStart"]))
+	}
 	for _, event := range []string{
 		"beforeShellExecution",
 		"afterFileEdit",
 		"stop",
 	} {
-		if len(installed.Hooks[event]) != 1 {
-			t.Fatalf("%s handlers = %d, want 1", event, len(installed.Hooks[event]))
+		if _, ok := installed.Hooks[event]; ok {
+			t.Fatalf("unregistered %s event was installed", event)
 		}
-	}
-	if _, ok := installed.Hooks["sessionStart"]; ok {
-		t.Fatalf("unregistered sessionStart event was installed")
 	}
 }
