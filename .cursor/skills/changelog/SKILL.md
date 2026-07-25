@@ -2,7 +2,8 @@
 name: changelog
 description: >-
   Maintain CHANGELOG.md as a concise record of user-visible CLI, SDK, hook
-  protocol, and security behavior.
+  protocol, and security behavior. Use when adding release notes, documenting
+  shipped user-facing features, or editing the [Unreleased] section.
 ---
 
 # Changelog

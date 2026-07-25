@@ -2,7 +2,8 @@
 name: go-tests
 description: >-
   Test wat CLI, SDK, codec, adapter, merge, and filesystem behavior using the
-  repository's current architecture.
+  repository's current architecture. Use when adding tests, reviewing test
+  quality, or implementing hook/CLI behavior.
 ---
 
 # Go tests
@@ -50,6 +51,7 @@ caller's input and assert it remains unchanged as well as checking the result.
 
 ```bash
 go test ./path/to/touched/package
+go build ./cmd/wat
 go vet ./...
 go test ./...
 golangci-lint run ./...

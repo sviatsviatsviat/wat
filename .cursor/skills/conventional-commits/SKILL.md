@@ -1,7 +1,8 @@
 ---
 name: conventional-commits
 description: >-
-  Draft intentional conventional commits for wat changes.
+  Draft intentional conventional commits for wat changes. Use when committing,
+  summarizing changes for commit, or the user asks for commit message help.
 ---
 
 # Conventional commits

@@ -2,7 +2,8 @@
 name: task-planning
 description: >-
   Plan wat changes against the current architecture with explicit scope,
-  compatibility, tests, documentation, and completion checks.
+  compatibility, tests, documentation, and completion checks. Use when creating
+  or updating plan/tasks/*.md files or drafting implementation plans.
 ---
 
 # Task planning
