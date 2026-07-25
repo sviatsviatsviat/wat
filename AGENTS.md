@@ -26,7 +26,9 @@ Read these committed references before changing behavior:
   machinery.
 - `e2e`: public CLI and hook end-to-end tests (real `wat` binary + `.wat/`
   project). Package-local tests stay injected and non-social.
-- `testdata/fixtures`: native hook payloads consumed by `wat test` and `e2e`.
+- `testdata/fixtures`: native hook payloads consumed by package tests and `e2e`.
+- `.wat/testdata`: project-local fixtures and optional `*.expect.json` sidecars
+  for `wat test` (excluded from the hook binary cache key).
 
 ## Non-negotiable boundaries
 

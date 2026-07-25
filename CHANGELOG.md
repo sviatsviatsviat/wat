@@ -11,8 +11,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 - A `wat` CLI for the complete hook-project lifecycle:
   - `wat init [path]` creates an independent `.wat/` Go module with a minimal
-    portable `OnSessionStart` example and preserves existing files unless
-    `--force` is explicitly used for `hooks.go`.
+    portable `OnSessionStart` example, starter `.wat/testdata/` fixtures with
+    expect sidecars, and preserves existing files unless `--force` is
+    explicitly used for `hooks.go`.
   - `wat install` inspects authored registrations and reconciles only the
     matching wat-managed entries in Claude Code, GitHub Copilot, and Cursor
     project configuration. Unrelated hooks are preserved and stale wat-managed
@@ -21,10 +22,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
     warm invocations, and passes the native hook process streams and exit code
     through. `--fail-closed` maps build failures to exit 2. Hook module path
     resolution uses the package's owning module so builds work inside a
-    `go.work` workspace that lists multiple modules.
+    `go.work` workspace that lists multiple modules. The cache key hashes
+    `.wat/` sources except `.cache/` and `testdata/`.
   - `wat test` runs a registered native event against a JSON fixture, including
     stdin fixtures, and reports the dialect, event, stdout, recognized decision,
-    and exit code.
+    and exit code. Optional `<fixture>.expect.json` sidecars (or `--expect`)
+    assert exit code, decision, and stdout; a matching expect run exits 0.
   - `wat doctor` checks the Go toolchain, project files, compilation, cache,
     authored registration manifest, and installed configurations, with
     actionable fixes and exit 4 when a check fails. Missing install wiring and
@@ -62,9 +65,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 - This repository's own `.wat/hooks.go` now includes a real Cursor
   `subagentStart` hook that denies a subagent spawn pinned to a model other
-  than Cursor's automatic selection, with a `dotwat` package that runs it
-  against `testdata/fixtures/cursor/subagent_start*.json` through `wat test`
-  in CI.
+  than Cursor's automatic selection. CI runs `wat test` against the expect
+  sidecars under `.wat/testdata/`.
 
 - `sdk/run` for standalone hook executables and tooling:
   - `Serve` detects one native dialect, decodes a registered event once, invokes

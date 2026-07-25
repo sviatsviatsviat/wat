@@ -11,6 +11,10 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/project"
 )
 
+// testdataDirName is the project-local fixture directory. buildcache excludes the
+// same top-level name from the hook binary cache key.
+const testdataDirName = "testdata"
+
 // Deps holds injectable dependencies for Init.
 type Deps struct {
 	Command   func(string, ...string) *exec.Cmd
@@ -29,7 +33,7 @@ func DefaultDeps() Deps {
 	}
 }
 
-// Init scaffolds .wat/go.mod and .wat/hooks.go under root.
+// Init scaffolds .wat/go.mod, .wat/hooks.go, and starter fixtures under root.
 func Init(root string, force bool, version string, deps Deps, out, errOut io.Writer) error {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
@@ -62,6 +66,10 @@ func Init(root string, force bool, version string, deps Deps, out, errOut io.Wri
 		return fmt.Errorf("write %s: %w", hooksPath, err)
 	}
 
+	if err := writeStarterTestdata(watDir, deps); err != nil {
+		return err
+	}
+
 	if err := goModTidy(watDir, deps, out, errOut); err != nil {
 		return err
 	}
@@ -70,8 +78,22 @@ func Init(root string, force bool, version string, deps Deps, out, errOut io.Wri
 	_, _ = fmt.Fprintln(out, "")
 	_, _ = fmt.Fprintln(out, "Next steps:")
 	_, _ = fmt.Fprintln(out, "  - Edit .wat/hooks.go")
+	_, _ = fmt.Fprintln(out, "  - Run wat test --agent cursor --fixture .wat/testdata/cursor/session_start.json")
 	_, _ = fmt.Fprintln(out, "  - Run wat install")
 	_, _ = fmt.Fprintln(out, "  - Run wat doctor")
+	return nil
+}
+
+func writeStarterTestdata(watDir string, deps Deps) error {
+	for _, f := range starterTestdata {
+		path := filepath.Join(watDir, filepath.FromSlash(f.rel))
+		if err := deps.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+			return fmt.Errorf("create %s: %w", filepath.Dir(path), err)
+		}
+		if err := writeFileIfMissing(path, []byte(f.body), deps); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -123,3 +145,76 @@ var Hooks = []run.Hooks{
 	}),
 }
 `
+
+type starterFile struct {
+	rel  string
+	body string
+}
+
+// starterTestdata is written under .wat/ on init when the paths are missing.
+var starterTestdata = []starterFile{
+	{
+		rel: testdataDirName + "/cursor/session_start.json",
+		body: `{
+  "conversation_id": "c1",
+  "generation_id": "g1",
+  "model": "some-model",
+  "hook_event_name": "sessionStart",
+  "cursor_version": "1.7.2",
+  "workspace_roots": ["/w"],
+  "user_email": null,
+  "transcript_path": null,
+  "cwd": "/w",
+  "is_background_agent": false
+}
+`,
+	},
+	{
+		rel: testdataDirName + "/cursor/session_start.expect.json",
+		body: `{
+  "exit": 0,
+  "stdout_contains": ["wat hooks are active"]
+}
+`,
+	},
+	{
+		rel: testdataDirName + "/claude/session_start.json",
+		body: `{
+  "session_id": "s1",
+  "transcript_path": "/tmp/t.jsonl",
+  "cwd": "/w",
+  "permission_mode": "default",
+  "hook_event_name": "SessionStart",
+  "source": "startup"
+}
+`,
+	},
+	{
+		rel: testdataDirName + "/claude/session_start.expect.json",
+		body: `{
+  "exit": 0,
+  "stdout_contains": ["wat hooks are active"]
+}
+`,
+	},
+	{
+		rel: testdataDirName + "/copilot/session_start.json",
+		body: `{
+  "session_id": "s1",
+  "timestamp": "2026-07-12T10:00:00Z",
+  "cwd": "/w",
+  "hook_event_name": "SessionStart",
+  "source": "new",
+  "initial_prompt": "hi"
+}
+`,
+	},
+	{
+		rel: testdataDirName + "/copilot/session_start.expect.json",
+		body: `{
+  "exit": 0,
+  "stdout_contains": ["wat hooks are active"]
+}
+`,
+	},
+}

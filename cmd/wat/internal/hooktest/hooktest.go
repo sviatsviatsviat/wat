@@ -33,6 +33,9 @@ type Config struct {
 	Agent string
 	// Fixture is a path to fixture JSON, or "-" for stdin.
 	Fixture string
+	// Expect is an optional path to an expect JSON document. When empty, Run
+	// loads the conventional sidecar (<fixture>.expect.json) if it exists.
+	Expect string
 	// Verbose prints hook stderr in the report.
 	Verbose bool
 }
@@ -129,7 +132,30 @@ func Run(cfg Config, version string, deps Deps, stdin io.Reader, errOut io.Write
 	}
 
 	WriteReport(deps.WriteReport, info, hookStdout, hookStderr, hookExit, cfg.Verbose)
-	return hookExit
+
+	expectPath, err := ResolveExpectPath(cfg.Fixture, cfg.Expect, deps.Stat)
+	if err != nil {
+		_, _ = fmt.Fprintf(errOut, "wat test: %v\n", err)
+		return ExitRuntimeFailure
+	}
+	if expectPath == "" {
+		return hookExit
+	}
+
+	exp, err := LoadExpect(expectPath, deps.ReadFile)
+	if err != nil {
+		_, _ = fmt.Fprintf(errOut, "wat test: %v\n", err)
+		return ExitRuntimeFailure
+	}
+	fails := CheckExpect(exp, info.Dialect, hookStdout, hookExit)
+	writeExpectReport(deps.WriteReport, expectPath, fails)
+	if len(fails) > 0 {
+		for _, fail := range fails {
+			_, _ = fmt.Fprintf(errOut, "wat test: expect failed: %s\n", fail)
+		}
+		return ExitExpectFailed
+	}
+	return ExitOK
 }
 
 // ResolveFixture peeks hook_event_name and validates the agent dialect.
@@ -201,6 +227,20 @@ func WriteReport(w io.Writer, info FixtureInfo, hookStdout, hookStderr []byte, h
 		_, _ = fmt.Fprintf(w, "  stderr: %s\n", strings.TrimSpace(string(hookStderr)))
 	}
 	_, _ = fmt.Fprintf(w, "  exit:   %d\n", hookExit)
+}
+
+func writeExpectReport(w io.Writer, path string, fails []string) {
+	_, _ = fmt.Fprintln(w, "")
+	_, _ = fmt.Fprintln(w, "expect:")
+	_, _ = fmt.Fprintf(w, "  file:   %s\n", path)
+	if len(fails) == 0 {
+		_, _ = fmt.Fprintln(w, "  status: pass")
+		return
+	}
+	_, _ = fmt.Fprintln(w, "  status: fail")
+	for _, fail := range fails {
+		_, _ = fmt.Fprintf(w, "  - %s\n", fail)
+	}
 }
 
 func summarizeHookDecision(dialectName string, hookStdout []byte) string {

@@ -94,6 +94,30 @@ func TestInit_createsScaffold(t *testing.T) {
 	if gotCmd == nil || gotCmd.Dir != filepath.Join(dir, ".wat") {
 		t.Fatalf("tidy Dir = %v", gotCmd)
 	}
+
+	for _, rel := range []string{
+		filepath.Join("testdata", "cursor", "session_start.json"),
+		filepath.Join("testdata", "cursor", "session_start.expect.json"),
+		filepath.Join("testdata", "claude", "session_start.json"),
+		filepath.Join("testdata", "claude", "session_start.expect.json"),
+		filepath.Join("testdata", "copilot", "session_start.json"),
+		filepath.Join("testdata", "copilot", "session_start.expect.json"),
+	} {
+		path := filepath.Join(dir, ".wat", rel)
+		body, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("missing scaffold fixture %s: %v", rel, err)
+		}
+		if strings.Contains(rel, "expect") {
+			if !strings.Contains(string(body), "wat hooks are active") {
+				t.Fatalf("%s missing expect substring: %s", rel, body)
+			}
+			continue
+		}
+		if !strings.Contains(string(body), "hook_event_name") {
+			t.Fatalf("%s missing hook_event_name: %s", rel, body)
+		}
+	}
 }
 
 func TestInit_refusesOverwriteWithoutForce(t *testing.T) {

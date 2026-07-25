@@ -43,12 +43,12 @@ Substantive behavior lives in focused internal packages:
 |---|---|
 | `internal/project` | Upward `.wat/` discovery and `WAT_PROJECT_DIR` |
 | `internal/initproj` | Scaffold and `go mod tidy` |
-| `internal/buildcache` | Content-addressed bootstrap builds |
+| `internal/buildcache` | Content-addressed bootstrap builds (`.cache/` and `testdata/` excluded from the key) |
 | `internal/hookmanifest` | Load `run.Inspect` data from the built hook |
 | `internal/installcfg` | Reconcile wat-managed native config entries |
 | `internal/hostconfig/*` | Native configuration schemas |
 | `internal/hookrun` | Live stdin/stdout/stderr execution |
-| `internal/hooktest` | Fixture validation, execution, and reporting |
+| `internal/hooktest` | Fixture execution, optional expect assertions, and reporting |
 | `internal/doctor` | Independent diagnostic checks and fixes |
 | `internal/dialect`, `paths`, `hookconfig` | Small shared CLI concepts |
 

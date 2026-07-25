@@ -76,6 +76,15 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 	if gotCmd == nil || gotCmd.Dir != filepath.Join(dir, ".wat") {
 		t.Fatalf("go mod tidy Dir = %v", gotCmd)
 	}
+
+	fixture := filepath.Join(dir, ".wat", "testdata", "cursor", "session_start.json")
+	if _, err := os.Stat(fixture); err != nil {
+		t.Fatalf("missing scaffold fixture: %v", err)
+	}
+	expect := filepath.Join(dir, ".wat", "testdata", "cursor", "session_start.expect.json")
+	if _, err := os.Stat(expect); err != nil {
+		t.Fatalf("missing scaffold expect: %v", err)
+	}
 }
 
 func TestInitProject_refusesOverwriteWithoutForce(t *testing.T) {
