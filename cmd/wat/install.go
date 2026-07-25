@@ -15,7 +15,7 @@ func newInstallCmd() *subcommandRunner {
 		name:    "install",
 		summary: "write hook config entries pointing at wat run",
 		long: "Write or merge hook configuration entries for Claude Code, GitHub Copilot, and Cursor.\n\n" +
-			"This command generates fresh wat-managed hook entries that invoke `wat run`. Use `wat port` to translate existing hook configurations between agents.",
+			"This command generates fresh wat-managed hook entries that invoke `wat run`.",
 		fs: fs,
 		run: func() int {
 			plan, err := installcfg.ParseAgentPlan(*agent)

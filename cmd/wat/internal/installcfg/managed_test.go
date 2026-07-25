@@ -2,13 +2,7 @@ package installcfg
 
 import (
 	"slices"
-	"sort"
 	"testing"
-
-	portclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/claude"
-	portcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/copilot"
-	portcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/cursor"
-	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 )
 
 func TestParseWatRunFlags(t *testing.T) {
@@ -31,67 +25,94 @@ func TestIsWatManagedCommand_exactEvent(t *testing.T) {
 	}
 }
 
-func TestExpectedEvents_matchesInstallCounts(t *testing.T) {
-	for _, agent := range []string{"claude", "copilot", "cursor"} {
-		events, err := ExpectedEvents(agent)
-		if err != nil {
-			t.Fatalf("agent %s: %v", agent, err)
-		}
-		if len(events) == 0 {
-			t.Fatalf("agent %s: no events", agent)
-		}
+func TestExpectedEvents(t *testing.T) {
+	// Sorted wire names ExpectedEvents must return (independent of installcfg event slices).
+	wantClaude := []string{
+		"Notification",
+		"PermissionRequest",
+		"PostToolUse",
+		"PostToolUseFailure",
+		"PreCompact",
+		"PreToolUse",
+		"SessionEnd",
+		"SessionStart",
+		"Stop",
+		"StopFailure",
+		"SubagentStart",
+		"SubagentStop",
+		"UserPromptSubmit",
+	}
+	wantCopilot := []string{
+		"ErrorOccurred",
+		"Notification",
+		"PermissionRequest",
+		"PostToolUse",
+		"PostToolUseFailure",
+		"PreCompact",
+		"PreToolUse",
+		"SessionEnd",
+		"SessionStart",
+		"Stop",
+		"SubagentStart",
+		"SubagentStop",
+		"UserPromptSubmit",
+	}
+	wantCursor := []string{
+		"afterFileEdit",
+		"afterMCPExecution",
+		"afterShellExecution",
+		"beforeMCPExecution",
+		"beforeReadFile",
+		"beforeShellExecution",
+		"beforeSubmitPrompt",
+		"postToolUse",
+		"postToolUseFailure",
+		"preCompact",
+		"preToolUse",
+		"sessionEnd",
+		"sessionStart",
+		"stop",
+		"subagentStart",
+		"subagentStop",
 	}
 
-	claude, err := ExpectedEvents("claude")
-	if err != nil {
-		t.Fatalf("claude: %v", err)
+	tests := []struct {
+		agent string
+		want  []string
+	}{
+		{agent: "claude", want: wantClaude},
+		{agent: "copilot", want: wantCopilot},
+		{agent: "cursor", want: wantCursor},
+		{agent: "claude-code", want: wantClaude},
 	}
-	wantClaude := sortedKindEvents(portclaude.EventForKind)
-	if !slices.Equal(claude, wantClaude) {
-		t.Fatalf("claude events = %v, want %v", claude, wantClaude)
-	}
-
-	copilot, err := ExpectedEvents("copilot")
-	if err != nil {
-		t.Fatalf("copilot: %v", err)
-	}
-	wantCopilot := sortedKindEvents(portcopilot.EventForKind)
-	if !slices.Equal(copilot, wantCopilot) {
-		t.Fatalf("copilot events = %v, want %v", copilot, wantCopilot)
-	}
-
-	cursor, err := ExpectedEvents("cursor")
-	if err != nil {
-		t.Fatalf("cursor: %v", err)
-	}
-	wantCursor := sortedKindEvents(portcursor.EventForKind)
-	for ev := range portcursor.DedicatedEvents {
-		wantCursor = append(wantCursor, ev)
-	}
-	sort.Strings(wantCursor)
-	if !slices.Equal(cursor, wantCursor) {
-		t.Fatalf("cursor events = %v, want %v", cursor, wantCursor)
+	for _, tt := range tests {
+		t.Run(tt.agent, func(t *testing.T) {
+			got, err := ExpectedEvents(tt.agent)
+			if err != nil {
+				t.Fatalf("ExpectedEvents(%q): %v", tt.agent, err)
+			}
+			if !slices.Equal(got, tt.want) {
+				t.Fatalf("ExpectedEvents(%q) = %v, want %v", tt.agent, got, tt.want)
+			}
+		})
 	}
 
-	claudeAlias, err := ExpectedEvents("claude-code")
-	if err != nil {
-		t.Fatalf("claude-code alias: %v", err)
-	}
-	if !slices.Equal(claudeAlias, claude) {
-		t.Fatalf("claude-code alias events = %v, want %v", claudeAlias, claude)
-	}
 	if _, err := ExpectedEvents("nosuch"); err == nil {
 		t.Fatal("expected error for unknown agent")
 	}
 }
 
-func sortedKindEvents(m map[model.Kind]string) []string {
-	out := make([]string, 0, len(m))
-	for _, v := range m {
-		if v != "" {
-			out = append(out, v)
-		}
+func TestIsValidEvent(t *testing.T) {
+	if !IsValidEvent("claude", "PreToolUse") {
+		t.Fatal("expected PreToolUse valid for claude")
 	}
-	sort.Strings(out)
-	return out
+	if !IsValidEvent("cursor", "beforeShellExecution") {
+		t.Fatal("expected Cursor dedicated event valid")
+	}
+	if IsValidEvent("claude", "beforeShellExecution") {
+		t.Fatal("Claude must not accept Cursor dedicated events")
+	}
+	if IsValidEvent("nosuch", "PreToolUse") {
+		t.Fatal("unknown agent must be invalid")
+	}
 }

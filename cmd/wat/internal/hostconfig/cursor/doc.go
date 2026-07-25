@@ -1,3 +1,3 @@
 // Package cursor holds the Cursor hooks.json shape used by the wat CLI
-// (install, doctor, port).
+// (install, doctor).
 package cursor

@@ -17,7 +17,6 @@ On Windows the toolchain writes `wat.exe`; on Unix, `wat`. Avoid `go build -o wa
 | `wat init` | Scaffold a `.wat/` hook project |
 | `wat install` | Write hook config entries pointing at `wat run` |
 | `wat run` | Execute `.wat/hooks.go` on hook invocation |
-| `wat port` | Translate hook configs between agents |
 | `wat test` | Run hook script against fixture payloads |
 | `wat doctor` | Verify toolchain, script, cache, and install state |
 
@@ -30,7 +29,7 @@ Run `wat help` for the command list or `wat <command> -h` for per-command flags.
 | `0` | Success |
 | `1` | Usage error (unknown command, invalid flags) |
 | `2` | `wat run --fail-closed` build failure (block/deny) |
-| `3` | Runtime failure (missing project, I/O error, translation failure) |
+| `3` | Runtime failure (missing project, I/O error) |
 | `4` | `wat doctor` check failure |
 
 ## Test and lint

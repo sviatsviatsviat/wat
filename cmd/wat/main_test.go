@@ -71,18 +71,6 @@ func TestWat_usage(t *testing.T) {
 			emptyWorkDir: true,
 		},
 		{
-			name:       "port_missing_flags",
-			args:       []string{"port"},
-			wantErr:    true,
-			wantCode:   1,
-			wantOutput: "--from is required",
-		},
-		{
-			name:       "port_help",
-			args:       []string{"port", "--help"},
-			wantOutput: "-from",
-		},
-		{
 			name:       "test_missing_fixture",
 			args:       []string{"test"},
 			wantErr:    true,

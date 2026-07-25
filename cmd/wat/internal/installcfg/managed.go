@@ -7,10 +7,6 @@ import (
 	"strings"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
-	portclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/claude"
-	portcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/copilot"
-	portcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/cursor"
-	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 	sdkcursor "github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -49,64 +45,33 @@ func WatRunCommand(watAbs, agent, event string) string {
 
 // IsValidEvent reports whether event is a known install event for agent.
 func IsValidEvent(agent, event string) bool {
-	switch dialect.Parse(agent) {
-	case sdkclaude.Dialect:
-		return eventInMapValues(portclaude.EventForKind, event)
-	case sdkcopilot.Dialect:
-		return eventInMapValues(portcopilot.EventForKind, event)
-	case sdkcursor.Dialect:
-		return eventInMapValues(portcursor.EventForKind, event) || portcursor.IsDedicatedEvent(event)
-	default:
+	events, err := eventsForAgent(agent)
+	if err != nil {
 		return false
 	}
+	return slices.Contains(events, event)
 }
 
 // ExpectedEvents returns hook event names wat install writes for agent.
 func ExpectedEvents(agent string) ([]string, error) {
+	events, err := eventsForAgent(agent)
+	if err != nil {
+		return nil, err
+	}
+	out := slices.Clone(events)
+	sort.Strings(out)
+	return out, nil
+}
+
+func eventsForAgent(agent string) ([]string, error) {
 	switch dialect.Parse(agent) {
 	case sdkclaude.Dialect:
-		return sortedValues(portclaude.EventForKind), nil
+		return claudeEvents, nil
 	case sdkcopilot.Dialect:
-		return sortedValues(portcopilot.EventForKind), nil
+		return copilotEvents, nil
 	case sdkcursor.Dialect:
-		eventSet := map[string]bool{}
-		for _, ev := range sortedValues(portcursor.EventForKind) {
-			eventSet[ev] = true
-		}
-		for ev := range portcursor.DedicatedEvents {
-			eventSet[ev] = true
-		}
-		return sortedKeys(eventSet), nil
+		return cursorEvents, nil
 	default:
 		return nil, fmt.Errorf("unknown agent %q", agent)
 	}
-}
-
-func eventInMapValues(m map[model.Kind]string, event string) bool {
-	for _, name := range m {
-		if name == event {
-			return true
-		}
-	}
-	return false
-}
-
-func sortedValues[K comparable](m map[K]string) []string {
-	out := make([]string, 0, len(m))
-	for _, v := range m {
-		if v != "" {
-			out = append(out, v)
-		}
-	}
-	sort.Strings(out)
-	return out
-}
-
-func sortedKeys(m map[string]bool) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
 }

@@ -1,6 +1,6 @@
 # Agent hook formats
 
-Reference for tool names, MCP naming, and payload conventions across Claude Code, GitHub Copilot, and Cursor. Use this when implementing normalization, codecs, matchers, or `wat port` config translation.
+Reference for tool names, MCP naming, and payload conventions across Claude Code, GitHub Copilot, and Cursor. Use this when implementing normalization, codecs, or matchers.
 
 Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference), [copilot-sdk#869](https://github.com/github/copilot-sdk/issues/869).
 
@@ -25,7 +25,7 @@ Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/
 | `errors.go` | Decode error sentinels |
 | `tools/` (copilot/cursor) or root `Input` / `Tool*` (claude) | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
 
-Native hook **config file** schemas (Claude `settings.json` `Settings`, Copilot/Cursor `hooks.json` `File` / `Handler`) live under `cmd/wat/internal/hostconfig/{claude,cursor,copilot}` for CLI install, doctor, and `wat port` — not in the public agent SDKs.
+Native hook **config file** schemas (Claude `settings.json` `Settings`, Copilot/Cursor `hooks.json` `File` / `Handler`) live under `cmd/wat/internal/hostconfig/{claude,cursor,copilot}` for CLI install and doctor — not in the public agent SDKs.
 
 **Agnostic** uses the same root vertical-slice layout for portable hook kinds (`pretool.go`, `stop.go`, …):
 
@@ -82,8 +82,6 @@ Typed handlers receive kind-specific events that embed a shared envelope:
 
 - `Agent` — string dialect name (`claude.Dialect`, `copilot.Dialect`, or `cursor.Dialect`)
 - `Name` — native hook event name as received
-
-Config porting uses an internal `Kind` taxonomy (`KindPreTool`, `KindStop`, …) in `cmd/wat/internal/portconfig/model` — not part of the hook-author SDK.
 
 See `go doc github.com/sviatsviatsviat/wat/sdk/agnostic` for typed events (`PreToolEvent`, `StopEvent`, …) and leaf structs (`ToolCall`, `Lifecycle`, …).
 
@@ -345,11 +343,10 @@ Agent-native encode surfaces (use `sdk/cursor` directly):
 
 ## Related code
 
-- Config porting: `wat port --from` / `--to` (see [`cmd/wat/port.go`](../cmd/wat/port.go))
+- Install event lists: [`cmd/wat/internal/installcfg`](../cmd/wat/internal/installcfg/) (`ExpectedEvents` / `IsValidEvent`)
 - Dialect: per-agent `Dialect` constants in [`sdk/claude`](../sdk/claude/), [`sdk/copilot`](../sdk/copilot/), [`sdk/cursor`](../sdk/cursor/); CLI name parsing in [`cmd/wat/internal/dialect`](../cmd/wat/internal/dialect/)
 - Tests: [`cmd/wat/internal/dialect`](../cmd/wat/internal/dialect/)
 - Normalization: [`internal/hookkit/toolname.go`](../internal/hookkit/toolname.go) — `NormalizeToolName`; [`sdk/agnostic/tools`](../sdk/agnostic/tools/) — `Input` with `AsBash`, `AsWrite`, and related accessors
 - Tests: [`internal/hookkit/toolname_test.go`](../internal/hookkit/toolname_test.go); [`sdk/agnostic/tools`](../sdk/agnostic/tools/) (`input_test.go`)
-- Port kind/event registries: [`cmd/wat/internal/portconfig/`](../cmd/wat/internal/portconfig/) (`claude/`, `copilot/`, `cursor/`)
 - Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, package-internal encode, `UseHooks` registration into [`sdk/run`](../sdk/run/), event-bound tool input on the same package (`Input` with `AsShell`, …)
 - Tests: [`sdk/cursor/decode_test.go`](../sdk/cursor/decode_test.go) and per-hook tests under [`sdk/cursor/internal/hooks/`](../sdk/cursor/internal/hooks/)
