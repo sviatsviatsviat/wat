@@ -59,10 +59,13 @@ contract is:
 
 ```go
 var Hooks = []run.Hooks{
-	agnostic.UseHooks().OnPreTool(preTool),
-	cursor.UseHooks().BeforeShellExecution(cursorShell),
+	agnostic.UseHooks().OnSessionStart(sessionStart),
 }
 ```
+
+`wat init` scaffolds a single `OnSessionStart` handler that injects observable
+context (`"wat hooks are active"`) so you can confirm install and `wat test`
+quickly. Add more `On*` registrations as needed.
 
 Registration expressions and package `init` functions run during install,
 doctor, testing, and live invocation. Keep them deterministic and free of

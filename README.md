@@ -33,39 +33,18 @@ package hooks
 
 import (
 	"context"
-	"strings"
 
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func guardPush(ctx context.Context, event agnostic.PreToolEvent, results agnostic.PreToolResults) (agnostic.PreToolResult, error) {
-	if event.Tool == nil {
-		return nil, nil
-	}
-	args := strings.Fields(event.Tool.Shell)
-	for i, arg := range args {
-		if arg != "push" {
-			continue
-		}
-		for _, flag := range args[i+1:] {
-			if flag == "--force" || flag == "-f" {
-				return results.Deny("force pushes are not allowed"), nil
-			}
-		}
-	}
-	return nil, nil
-}
-
 // Hooks is the hook project's public contract with wat.
 var Hooks = []run.Hooks{
-	agnostic.UseHooks().OnPreTool(guardPush),
+	agnostic.UseHooks().OnSessionStart(func(ctx context.Context, hook agnostic.SessionStartEvent, r agnostic.SessionStartResults) (agnostic.SessionStartResult, error) {
+		return r.Context("wat hooks are active"), nil
+	}),
 }
 ```
-
-This example tokenizes on whitespace so it catches `git push -f` and trailing
-`--force`. It is not a full shell parser; quote-heavy or obfuscated commands
-need a real argv parser before treating the hook as a security boundary.
 
 Returning `nil` means that a handler has no opinion. Response-producing
 handlers receive a hook-specific result builder; observe-only handlers return
@@ -74,7 +53,7 @@ only an error.
 Test the hook without starting an agent:
 
 ```bash
-wat test --agent claude --fixture path/to/pre_tool_fixture.json
+wat test --agent claude --fixture testdata/fixtures/claude/session_start.json
 ```
 
 Run the command from a directory inside the target project, or set

@@ -78,6 +78,9 @@ func TestInit_createsScaffold(t *testing.T) {
 	if !strings.Contains(string(hooks), "agnostic.UseHooks()") {
 		t.Fatalf("hooks.go missing UseHooks: %s", hooks)
 	}
+	if !strings.Contains(string(hooks), "OnSessionStart") {
+		t.Fatalf("hooks.go missing OnSessionStart: %s", hooks)
+	}
 	goMod, err := os.ReadFile(filepath.Join(dir, ".wat", "go.mod"))
 	if err != nil {
 		t.Fatal(err)

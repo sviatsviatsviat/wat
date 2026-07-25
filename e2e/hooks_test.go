@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestWatTest_preToolDeny(t *testing.T) {
+func TestWatTest_sessionStartContext(t *testing.T) {
 	binary := buildWat(t)
 	project := initProjectWithReplace(t)
 
@@ -13,46 +13,39 @@ func TestWatTest_preToolDeny(t *testing.T) {
 		name       string
 		agent      string
 		fixture    string
-		wantExit   int
 		wantOutput []string
 	}{
 		{
 			name:     "claude",
 			agent:    "claude",
-			fixture:  fixturePath(t, "claude", "pre_tool_force_push.json"),
-			wantExit: 0,
+			fixture:  fixturePath(t, "claude", "session_start.json"),
 			wantOutput: []string{
-				"event: PreToolUse",
-				"deny",
-				"force pushes are not allowed",
+				"event: SessionStart",
+				"wat hooks are active",
 			},
 		},
 		{
 			name:     "copilot",
 			agent:    "copilot",
-			fixture:  fixturePath(t, "copilot", "pre_tool_force_push.json"),
-			wantExit: 0,
+			fixture:  fixturePath(t, "copilot", "session_start.json"),
 			wantOutput: []string{
-				`"permission_decision":"deny"`,
-				"force pushes are not allowed",
+				"wat hooks are active",
 			},
 		},
 		{
 			name:     "cursor",
 			agent:    "cursor",
-			fixture:  fixturePath(t, "cursor", "before_shell_force_push.json"),
-			wantExit: 2, // cursor.PermissionDenyExit
+			fixture:  fixturePath(t, "cursor", "session_start.json"),
 			wantOutput: []string{
-				`"permission":"deny"`,
-				"force pushes are not allowed",
+				"wat hooks are active",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stdout, stderr, code := runWat(t, binary, project, "test", "--agent", tt.agent, "--fixture", tt.fixture)
-			if code != tt.wantExit {
-				t.Fatalf("exit = %d, want %d\nstdout:\n%s\nstderr:\n%s", code, tt.wantExit, stdout, stderr)
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 			}
 			out := stdout + stderr
 			for _, want := range tt.wantOutput {

@@ -10,9 +10,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 ### Added
 
 - A `wat` CLI for the complete hook-project lifecycle:
-  - `wat init [path]` creates an independent `.wat/` Go module with a working
-    portable hook example and preserves existing files unless `--force` is
-    explicitly used for `hooks.go`.
+  - `wat init [path]` creates an independent `.wat/` Go module with a minimal
+    portable `OnSessionStart` example and preserves existing files unless
+    `--force` is explicitly used for `hooks.go`.
   - `wat install` inspects authored registrations and reconciles only the
     matching wat-managed entries in Claude Code, GitHub Copilot, and Cursor
     project configuration. Unrelated hooks are preserved and stale wat-managed

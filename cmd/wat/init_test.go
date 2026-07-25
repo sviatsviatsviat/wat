@@ -50,6 +50,9 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 	if !strings.Contains(string(hooks), "agnostic.UseHooks()") {
 		t.Fatalf("hooks.go missing UseHooks: %s", hooks)
 	}
+	if !strings.Contains(string(hooks), "OnSessionStart") {
+		t.Fatalf("hooks.go missing OnSessionStart: %s", hooks)
+	}
 	if !strings.Contains(string(hooks), "package hooks") {
 		t.Fatalf("hooks.go is not an importable hooks package: %s", hooks)
 	}
