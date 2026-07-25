@@ -8,7 +8,8 @@ type Results interface {
 	Allow() event.PermissionOutput
 	// Deny returns a deny verdict with an agent-facing message.
 	Deny(agentMessage string) event.PermissionOutput
-	// Ask returns an ask verdict with an agent-facing message.
+	// Ask returns an ask verdict with an agent-facing message. Cursor does not support
+	// "ask" on subagentStart; it is treated as "deny", so prefer Deny for this event.
 	Ask(agentMessage string) event.PermissionOutput
 	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
 	Noop() event.PermissionOutput

@@ -102,6 +102,9 @@ Known limitations are part of the contract:
 - Copilot cloud-agent handling may downgrade `Ask` to a denial.
 - Cursor emits `updated_input` only for generic `preToolUse`, not for its
   dedicated pre-tool events.
+- Cursor does not support `"ask"` on `subagentStart`; it is treated as
+  `"deny"`. `sdk/cursor`'s `subagentstart.Results.Ask` documents this, but
+  callers gating subagent spawns should use `Deny` directly.
 - Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
   where that native output field is supported.
 - Observe-only portable events never emit host JSON.

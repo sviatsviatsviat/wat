@@ -55,6 +55,17 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   hook-scoped response builders, advanced fluent output fields, typed tool
   inputs, stable decode errors, and native output/exit behavior.
 
+- `sdk/cursor`'s `SubagentStart` event decodes the full native
+  `subagentStart` payload: `parent_conversation_id`, `tool_call_id`,
+  `subagent_model`, `is_parallel_worker`, and `git_branch`, in addition to
+  the existing `subagent_id`, `subagent_type`, and `task`.
+
+- This repository's own `.wat/hooks.go` now includes a real Cursor
+  `subagentStart` hook that denies a subagent spawn pinned to a model other
+  than Cursor's automatic selection, with a `dotwat` package that runs it
+  against `testdata/fixtures/cursor/subagent_start*.json` through `wat test`
+  in CI.
+
 - `sdk/run` for standalone hook executables and tooling:
   - `Serve` detects one native dialect, decodes a registered event once, invokes
     handlers in registration order, merges their typed results, stops on a
