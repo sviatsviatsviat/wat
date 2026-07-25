@@ -6,7 +6,23 @@ verification suite. It includes:
 - Go 1.26 from `mcr.microsoft.com/devcontainers/go:2-1.26-bookworm`;
 - golangci-lint 2.12.2;
 - ripgrep 15.1.0;
-- GitHub CLI 2.96.0.
+- GitHub CLI 2.96.0;
+- Node.js 22.23.1 and the Claude Code CLI (feature `1.0.5`, latest CLI at
+  rebuild time; auto-update disabled via `DISABLE_AUTOUPDATER`).
+
+Claude Code auth and settings persist in the named volume `wat-claude-config`
+mounted at `/home/vscode/.claude`. The Dockerfile seeds that path as
+`vscode`-owned so the volume is writable on first create; `postStartCommand`
+also `chown`s it in case an older root-owned volume already exists.
+
+If transcript or settings writes still fail with `EACCES`, fix ownership or
+recreate the volume:
+
+```bash
+sudo chown -R vscode:vscode /home/vscode/.claude
+# or, from the host after stopping the container:
+docker volume rm wat-claude-config
+```
 
 The repository lives in the named Docker volume `wat-workspace` at
 `/workspaces/wat`. Only the local `.devcontainer/` directory is bind-mounted,
