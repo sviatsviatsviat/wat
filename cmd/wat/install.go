@@ -14,7 +14,7 @@ func newInstallCmd() *subcommandRunner {
 	return &subcommandRunner{
 		name:    "install",
 		summary: "install registered hooks into agent configs",
-		long: "Build .wat/hooks.go, inspect its exported Hooks registrations, and reconcile hook configuration\n" +
+		long: "Build the .wat/ hook project, inspect its exported Hooks registrations, and reconcile hook configuration\n" +
 			"entries for Claude Code, GitHub Copilot, and Cursor.\n\n" +
 			"Only registered native events are installed. Stale wat-managed entries are removed.",
 		fs: fs,

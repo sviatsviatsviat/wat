@@ -1,38 +1,63 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable user-visible changes to wat are documented here.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/).
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
 ### Added
 
-- Importable `.wat/hooks.go` projects export `var Hooks = []run.Hooks{...}`; `wat` generates and caches the executable bootstrap, while `run.Inspect` exposes the contributed native registration manifest. `wat install` reconciles only registered events and removes stale wat-managed entries; `wat doctor` validates installed entries against the same manifest; `wat test` reports unregistered fixture events
-- Multi-handler hook responses fold via typed `Output.Merge` / `Stop` in `sdk/run` (encode once); deny/block and `continue: false` stop later handlers; Ask does not; last-wins replace-field conflicts warn on stderr
-- Claude stamps `hookEventName` from Results builders (or a fixed event constant per output type); Claude `SessionStart` `WithEnv` writes `CLAUDE_ENV_FILE` inside `sessionStartOutput.Encode`
-- `sdk/run` process lifecycle with `Serve(hooks ...Hooks)`; dialect codec and handler bag live in `internal/hookkit`; public `Hooks` / `Registry` and private dialect router live in `sdk/run`; agent and agnostic SDKs build deferred `UseHooks` registrations that `Serve` merges by dialect before auto-detect, peek, decode-once, and typed dispatch
-- Agnostic `UseHooks` registration fans adapter handlers onto each agent SDK via deferred chains passed to `run.Serve` (native encode owned by `sdk/claude`, `sdk/copilot`, `sdk/cursor`; decode is internal to each SDK and `sdk/run`); inbound mappers in `sdk/agnostic/internal/{claude,cursor,copilot}` convert native payloads to unified events
-- `wat` CLI with subcommands `init`, `install`, `run`, `test`, and `doctor`; root and per-command help; `--agent`, `--event`, and `--fail-closed` flags on the subcommands that need them
-- `wat doctor` verifies Go toolchain, `.wat/` hook project compile, build cache, and installed hook entries; prints `PASS`/`FAIL`/`WARN` lines with fix suggestions; exits 4 when any check fails (warnings alone exit 0)
-- `wat test --fixture` runs the user's hook script against a fixture JSON payload (file or stdin `-`); requires `--agent`; prints fixture agent/event, hook stdout JSON, decision when present, and exit code; optional `--verbose` for hook stderr; sample fixtures under `testdata/fixtures/`
-- Normalized `ToolCall.Name` values for hook authors; `ToolCall.Input` is a typed `tools.Input` (`sdk/agnostic/tools`) with `AsBash`, `AsWrite`, `AsEdit`, `AsRead`, and related accessors (path/`file_path` aliases)
-- Kind-specific portable hook response types (`PreToolResult`, `PostToolResult`, `PostToolFailureResult`, `StopResult`, `SessionStartResult`) with hook-scoped builder interfaces (`PreToolResults`, `PostToolResults`, `StopResults`, and others) passed into typed `OnPreTool`, `OnPostTool`, and related registration methods; one exported builder per `On*` method; advanced fields via fluent `With*` (for example `WithUpdatedInput`); portable field matrix documented in `docs/agent-formats.md`
-- Hook output and portable result types in `sdk/agnostic` are constructed via `On*`-injected `*Results` builders (and `With*`); `nil` is the no-op; host-specific wrappers live in `sdk/agnostic/internal/{claude,cursor,copilot}` and implement interfaces from `internal/model`
-- Claude `OnElicitation`, `OnMessageDisplay`, and `OnWorktreeCreate` accept hook-scoped result builders (`ElicitationResults`, `MessageDisplayResults`, `WorktreeCreateResults`)
-- Agnostic normalized event types (`PreToolEvent`, `PostToolEvent`, `SessionEndEvent`, …) and per-kind handlers; unified signatures `(ctx, event, results)` / `(ctx, event) error`; expanded `On*` coverage (copilot 13/13, cursor 21/21, claude `OnSessionEnd`)
-- Typed `UseHooks().OnPreTool`, `OnPostTool`, `OnStop`, and related handlers plus observe-only `OnSessionEnd` with fluent chaining; direct SDK consumers pass hooks to `run.Serve`, while wat projects export them through `Hooks`
-- Payloads must include `hook_event_name` (Claude, Copilot, and Cursor)
-- Per-agent `Dialect` string constants (`claude.Dialect`, `copilot.Dialect`, `cursor.Dialect`) for `sdk/run` registration and `Envelope.Agent`
-- `claude` package with typed Claude Code hook events, package-internal encode, `UseHooks` chain methods with hook-scoped result builders registering into `sdk/run`, and event-bound tool input on the same package (`Input` with `AsBash`, `AsWrite`, and related accessors; `Tool*` name constants)
-- `copilot` package with typed GitHub Copilot hook events (PascalCase `hook_event_name`, snake_case fields and package-internal encode), `UseHooks` chain methods with hook-scoped result builders registering into `sdk/run`, and event-bound tool input on the same package (`Input` with `AsBash`, `AsCreate`, and related accessors; `Tool*` name constants)
-- `cursor` package with typed Cursor hook events (21 surfaces), package-internal encode (`ErrEventNameRequired` when `hook_event_name` is absent), `UseHooks` chain methods with hook-scoped result builders registering into `sdk/run`, and event-bound tool input on the same package (`Input` with `AsShell`, `AsRead`, and related accessors; `Tool*` name constants)
-- Decode error sentinels (`ErrEmptyPayload`, `ErrDecodePayload`) for stable error handling; shared envelope fields are embedded on each event type (read via promoted fields such as `SessionID` / `Cwd`)
-- Shared `hookkit.Event` (`EventName()` only) and `hookkit.Output` (`IsZero`, `Encode`; both defined in `internal/hookkit`); codec decode returns `Event`
-- `claude.HandlerErrorExit` and `copilot.HandlerErrorExit` for handler-error exit codes
-- Decoder registry parity tests in `claude` and `copilot` (`sdk/claude/decode_test.go`, `sdk/copilot/decode_test.go`)
-- Typed decode failures in `copilot` and `cursor` wrap `ErrDecodePayload` for stable `errors.Is` checks
-- `claude.ErrEventNameRequired` when `hook_event_name` is absent (aligned with Copilot and Cursor)
-- Copilot wire `Stop` always decodes as `AgentStop` (optional `agent_name` / `agent_display_name` via `IsSubagent`); portable `OnStop` skips subagent-scoped `Stop`, and portable `OnSubagentStop` receives those payloads
-- Per-agent decode returns an error if `hook_event_name` is not a registered typed event (Main never decodes unknown names when no handlers are registered)
+- A `wat` CLI for the complete hook-project lifecycle:
+  - `wat init [path]` creates an independent `.wat/` Go module with a working
+    portable hook example and preserves existing files unless `--force` is
+    explicitly used for `hooks.go`.
+  - `wat install` inspects authored registrations and reconciles only the
+    matching wat-managed entries in Claude Code, GitHub Copilot, and Cursor
+    project configuration. Unrelated hooks are preserved and stale wat-managed
+    events are removed.
+  - `wat run` builds a content-addressed hook executable on demand, reuses it on
+    warm invocations, and passes the native hook process streams and exit code
+    through. `--fail-closed` maps build failures to exit 2.
+  - `wat test` runs a registered native event against a JSON fixture, including
+    stdin fixtures, and reports the dialect, event, stdout, recognized decision,
+    and exit code.
+  - `wat doctor` checks the Go toolchain, project files, compilation, cache,
+    authored registration manifest, and installed configurations, with
+    actionable fixes and exit 4 when a check fails.
+
+- Upward `.wat/` project discovery for CLI commands, with
+  `WAT_PROJECT_DIR` available to select a workspace root explicitly.
+
+- A portable `sdk/agnostic` hook API for Claude Code, GitHub Copilot, and
+  Cursor:
+  - typed session start/end, user prompt, pre/post tool, post-tool failure,
+    subagent start/stop, stop, and pre-compact events;
+  - fluent `UseHooks().On*` registration that expands to the correct native
+    events for each agent, including Cursor's dedicated shell, MCP, read, and
+    edit hooks;
+  - hook-scoped result builders for portable allow/deny/ask, context injection,
+    input/output updates, and stop follow-up behavior;
+  - observe-only handlers for events that cannot emit a portable response;
+  - normalized event envelopes and tool calls that preserve the native event,
+    native tool name, raw input, call ID, shell command, and MCP identity.
+
+- Canonical typed tool inputs in `sdk/agnostic/tools` for shell, edit, write,
+  read, glob, grep, task, web fetch, and web search operations.
+
+- Native typed hook SDKs for Claude Code, GitHub Copilot, and Cursor, including
+  native event constants and payloads, fluent `UseHooks` registration,
+  hook-scoped response builders, advanced fluent output fields, typed tool
+  inputs, stable decode errors, and native output/exit behavior.
+
+- `sdk/run` for standalone hook executables and tooling:
+  - `Serve` detects one native dialect, decodes a registered event once, invokes
+    handlers in registration order, merges their typed results, stops on a
+    terminal result, and encodes one native response;
+  - `Inspect` returns the expanded native dialect/event manifest and handler
+    counts without invoking handlers.
+
+- Deterministic multi-handler composition. Additive fields merge, later
+  replacement fields win with a stderr warning, deny/block and
+  `continue: false` stop later handlers, and nil/zero results remain silent.

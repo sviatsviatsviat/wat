@@ -1,44 +1,45 @@
 ---
-description: Core wat monorepo layout, layering, and agent context
+description: Current wat architecture, behavior, and repository workflow
 alwaysApply: true
 ---
 
 # wat core
 
-Read [AGENTS.md](../../AGENTS.md) for architecture, build commands, and repo rules.
+Use the committed documentation as the source of truth:
 
-## Layout
+- [Architecture](../../docs/architecture.md): dependencies, package ownership,
+  request lifecycle, and extension patterns.
+- [SDK API](../../docs/sdk.md): public hook-author contract.
+- [Using wat](../../docs/usage.md): CLI behavior and exit codes.
+- [Agent protocols](../../docs/agent-formats.md): native mapping and
+  normalization.
+- [Contributing](../../CONTRIBUTING.md): tests, documentation, changelog,
+  versions, commits, and pull requests.
+- [AGENTS.md](../../AGENTS.md): concise non-negotiable rules.
 
-- `cmd/wat` — CLI; depends on `sdk/agnostic`
-- `sdk/agnostic` — unified hook library (depends on per-agent SDKs); host mapping and result wrappers in `sdk/agnostic/internal/{claude,cursor,copilot}`, shared types/interfaces in `internal/model`
-- `sdk/claude`, `sdk/copilot`, `sdk/cursor` — independent per-agent SDKs
-- `plan/` — local-only design docs (gitignored); do not commit
-- `docs/` — committed user-facing reference (agent formats, doc index)
-- `.devcontainer/` — Linux Dev Container (named volume workspace at `/workspaces/wat`)
+## Boundaries
 
-## Layering
+- `cmd/wat` is thin CLI wiring; behavior belongs in `cmd/wat/internal/*`.
+- `sdk/run` owns dispatch and registration inspection.
+- Native SDKs own native wire contracts and never import `sdk/agnostic`.
+- `sdk/agnostic` exposes only truthful cross-agent behavior and adapts onto all
+  three native SDKs.
+- `internal/hookkit` is module-private machinery, not a public convenience API.
+- Install/test/doctor get registration identity from `run.Inspect`.
 
-- Do not add the old `internal/core` + host-package layout unless a task requires it.
-- Keep per-agent SDKs usable without `sdk/agnostic`.
-- New exported API must include godoc comments (enforced by revive in CI).
+## Public changes
+
+Ship tests, godoc, guides, and changelog updates with public behavior. Every
+exported identifier needs godoc. Keep registrations and package initialization
+free of external side effects.
 
 ## Version pinning
 
-Pin **exact versions** for tools and actions referenced in repo config and docs. Do not use `@latest`, `version: latest`, or floating major/minor tags (e.g. `@v4`, `@v6`) in:
+Use exact tool and Action versions. When one dependency changes, update every
+reference to that dependency in the same change. Audit workflow tags with:
 
-- `.github/workflows/ci.yml` (exact action release tags, e.g. `actions/checkout@v4.3.1`, `golangci-lint-action@v9.3.0`; tool versions, e.g. `golangci-lint@v2.12.2`, `govulncheck@v1.6.0`)
-- `README.md`, `AGENTS.md`, and install instructions
+```bash
+rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows
+```
 
-When bumping a pinned version, update every reference in the same change.
-
-**Audit:** After workflow edits, run `rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows` — zero matches required. See `.cursor/skills/ci-pins/SKILL.md`.
-
-## Workflow pointers
-
-- Changelog: `.cursor/skills/changelog/SKILL.md`
-- Commits: `.cursor/skills/conventional-commits/SKILL.md`
-- Godoc: `.cursor/skills/godoc/SKILL.md`
-- Tests: `.cursor/skills/go-tests/SKILL.md`
-- Task plans: `.cursor/skills/task-planning/SKILL.md`
-- CI pins: `.cursor/skills/ci-pins/SKILL.md`
-- Agent formats: `docs/agent-formats.md`
+No matches are allowed.

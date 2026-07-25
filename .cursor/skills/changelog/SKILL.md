@@ -1,57 +1,47 @@
 ---
 name: changelog
 description: >-
-  Update CHANGELOG.md using Keep a Changelog rules. Use when adding release
-  notes, documenting shipped user-facing features, or editing the [Unreleased]
-  section.
+  Maintain CHANGELOG.md as a concise record of user-visible CLI, SDK, hook
+  protocol, and security behavior.
 ---
 
 # Changelog
 
-Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) in [CHANGELOG.md](../../CHANGELOG.md).
+Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the policy
+in [CONTRIBUTING.md](../../../CONTRIBUTING.md).
 
-## What belongs
+## Include
 
-Document **user-facing functionality** — behavior users or hook authors can rely on in released artifacts:
+Add an entry when users or SDK consumers can observe a new or changed:
 
-- CLI commands, flags, exit codes
-- Public library API (`sdk/agnostic`, per-agent SDKs under `sdk/`)
-- Hook protocol support, breaking API changes
-- Security fixes affecting shipped behavior
+- CLI command, flag, discovery rule, installation effect, cache rule, report,
+  or exit behavior;
+- public SDK event, registration, builder, tool input, or compatibility
+  contract;
+- native protocol mapping or output behavior;
+- security property.
 
-Write affirmative, reader-focused entries. Describe what exists and what users can do.
+Write outcomes, not implementation history:
 
-## What to omit
+```markdown
+- `wat install` removes stale wat-managed events while preserving unrelated
+  native hook entries.
+```
 
-Do **not** add changelog entries for internal or non-artifact work, including:
+## Exclude
 
-- Repo layout, module scaffolding, package stubs
-- CI, lint, test harness, or agent tooling (`.cursor/`, skills, rules)
-- Refactors, chores, or docs that do not change shipped behavior
-- Negative framing or features that were never released
+Do not mention scaffolding of repository packages, internal refactors, test
+harnesses, CI/lint changes, agent rules/skills, or documentation-only work.
 
-If `[Unreleased]` has no user-facing changes yet, leave the section empty (no placeholder bullets).
+Keep related details under one feature bullet. Avoid listing internal type
+aliases, codec files, and helper packages unless they are themselves public API
+that users call.
 
 ## Sections
 
-Use **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**, **Security** under `[Unreleased]` or a version heading.
+Use `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, and `Security`.
+Before a published baseline, describe initial-release behavior under `Added`;
+do not claim a behavior changed or was removed from users when it was never
+released.
 
-- **Added** — new user-facing capability in the current release cycle.
-- **Changed** / **Removed** — only when comparing to an **already published** release.
-- While `[Unreleased]` has no prior public release, put corrections in **Added**, not **Changed**.
-
-## Example
-
-```markdown
-### Added
-
-- `wat run` executes `.wat/hooks.go` against stdin hook JSON from any supported agent.
-```
-
-Not:
-
-```markdown
-### Added
-
-- Monorepo scaffold with CI and golangci-lint.
-```
+If a change has no user-visible behavior, leave the changelog untouched.
