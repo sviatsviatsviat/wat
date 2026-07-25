@@ -13,4 +13,4 @@ Follow [.cursor/skills/go-tests/SKILL.md](../skills/go-tests/SKILL.md) for full 
 - `t.Helper()` only in helpers — not in top-level tests.
 - Per-case `wantOutput` for CLI tests; help → stdout, invalid usage → stderr.
 - Inject I/O; use `t.TempDir()` for filesystem tests.
-- For CLI behavior, build and run `cmd/wat` when validating end-to-end paths.
+- Unit tests stay local; public CLI/hook end-to-end paths belong in `e2e/`.

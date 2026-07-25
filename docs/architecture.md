@@ -56,6 +56,13 @@ Command files in `cmd/wat` should remain thin. New behavior belongs in an
 internal package with injected filesystem, environment, process, and I/O
 dependencies so it can be tested without mutating the developer's machine.
 
+### `e2e`
+
+The [`e2e`](../e2e/) package owns public end-to-end coverage: build `cmd/wat`,
+scaffold a real `.wat/` project, and exercise CLI commands plus fixture-driven
+hook runs. Package-local tests stay simple and injected; they do not recreate
+full init/install/build scaffolds.
+
 ### `sdk/run`
 
 `run` is the public process boundary. SDK registrars implement `run.Hooks` and
@@ -221,9 +228,9 @@ document the deliberate downgrade; do not fabricate parity.
 2. Put behavior in a focused `cmd/wat/internal` package with explicit
    dependencies.
 3. Preserve stream conventions: help to stdout, invalid usage to stderr.
-4. Add unit tests for injected behavior and end-to-end CLI tests for the public
-   contract.
-5. Update usage documentation, help text, and changelog together.
+4. Add unit tests for injected behavior in the owning package.
+5. Add or extend `e2e/` coverage for the public command and hook contract.
+6. Update usage documentation, help text, and changelog together.
 
 ## Architectural invariants
 

@@ -106,43 +106,6 @@ func TestInstallProject_freshInstallAll(t *testing.T) {
 	}
 }
 
-func TestInstallProject_discoversAuthoredHooksIntegration(t *testing.T) {
-	project := setupTestHookProject(t)
-	deps := installcfg.DefaultDeps()
-	deps.Getwd = func() (string, error) { return project, nil }
-	watAbs := filepath.Join(project, "bin", "wat")
-
-	if err := installcfg.Install(installcfg.Config{
-		Agents:     installcfg.AgentPlan{Cursor: true},
-		WatPath:    watAbs,
-		WatVersion: watModuleVersionFn(),
-	}, deps); err != nil {
-		t.Fatal(err)
-	}
-
-	cursorPath := filepath.Join(project, ".cursor", "hooks.json")
-	body, err := os.ReadFile(cursorPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var installed hostcursor.File
-	if err := json.Unmarshal(body, &installed); err != nil {
-		t.Fatal(err)
-	}
-	for _, event := range []string{
-		cursor.EventBeforeShellExecution,
-		cursor.EventAfterFileEdit,
-		cursor.EventStop,
-	} {
-		if len(installed.Hooks[event]) != 1 {
-			t.Fatalf("%s handlers = %d, want 1", event, len(installed.Hooks[event]))
-		}
-	}
-	if _, ok := installed.Hooks[cursor.EventSessionStart]; ok {
-		t.Fatalf("unregistered %s event was installed", cursor.EventSessionStart)
-	}
-}
-
 func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 	project := t.TempDir()
 	writeWatProjectFixture(t, project)

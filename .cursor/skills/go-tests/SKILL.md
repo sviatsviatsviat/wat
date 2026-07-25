@@ -11,6 +11,13 @@ description: >-
 Follow [CONTRIBUTING.md](../../../CONTRIBUTING.md) and the extension checklists
 in [docs/architecture.md](../../../docs/architecture.md).
 
+## Two layers
+
+| Layer | Location | Rule |
+|---|---|---|
+| Unit | Package `*_test.go` | Inject I/O; `t.TempDir()`; inline JSON; synthetic manifests. No init + replace + real hook build. |
+| E2E | [`e2e/`](../../../e2e/) | Build real `cmd/wat`; scaffold `.wat/`; assert CLI streams, exit codes, and fixture hook runs. |
+
 ## General rules
 
 - Assert observable behavior; no placeholder or tautological tests.
@@ -43,14 +50,15 @@ caller's input and assert it remains unchanged as well as checking the result.
 - Keep command help on stdout with exit 0.
 - Keep invalid usage on stderr with exit 1.
 - Test internal behavior with injected I/O, environment, filesystem, and
-  process functions.
-- Build and execute `cmd/wat` for the public end-to-end contract.
+  process functions in the owning package.
+- Cover the public command and hook contract in `e2e/` (build and run `cmd/wat`).
 - Assert distinctive output, the correct stream, and the exact exit code.
 
 ## Verification
 
 ```bash
 go test ./path/to/touched/package
+go test ./e2e
 go build ./cmd/wat
 go vet ./...
 go test ./...

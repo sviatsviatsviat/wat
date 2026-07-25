@@ -1,10 +1,8 @@
-package main_test
+package e2e_test
 
 import (
 	"errors"
 	"os/exec"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -116,6 +114,7 @@ func TestWat_usage(t *testing.T) {
 			cmd := exec.Command(binary, tt.args...)
 			if tt.emptyWorkDir {
 				cmd.Dir = t.TempDir()
+				cmd.Env = append(cmd.Environ(), "WAT_PROJECT_DIR=")
 			}
 			out, err := cmd.CombinedOutput()
 			if tt.wantErr {
@@ -139,37 +138,4 @@ func TestWat_usage(t *testing.T) {
 			}
 		})
 	}
-}
-
-func buildWat(t *testing.T) string {
-	t.Helper()
-
-	root := moduleRoot(t)
-	dir := t.TempDir()
-	name := "wat"
-	if runtime.GOOS == "windows" {
-		name += ".exe"
-	}
-	binary := filepath.Join(dir, name)
-
-	cmd := exec.Command("go", "build", "-o", binary, "./cmd/wat")
-	cmd.Dir = root
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("go build: %v\n%s", err, out)
-	}
-	return binary
-}
-
-func moduleRoot(t *testing.T) string {
-	t.Helper()
-
-	out, err := exec.Command("go", "env", "GOMOD").Output()
-	if err != nil {
-		t.Fatalf("go env GOMOD: %v", err)
-	}
-	mod := strings.TrimSpace(string(out))
-	if mod == "" || mod == "/dev/null" {
-		t.Fatal("not inside a Go module")
-	}
-	return filepath.Dir(mod)
 }

@@ -84,6 +84,16 @@ change.
 
 Tests must assert behavior rather than implementation bookkeeping.
 
+wat uses two test layers:
+
+| Layer | Location | Scope |
+|---|---|---|
+| Unit | `*_test.go` next to the package under test | Injected I/O; `t.TempDir()`; inline JSON; synthetic manifests; table-driven protocol and flag cases |
+| E2E | [`e2e/`](e2e/) | Build real `cmd/wat`; scaffold a `.wat/` project; run CLI commands and fixture hooks |
+
+Package unit tests must not spin up multi-command project scaffolds (`init` +
+module `replace` + real hook builds). That social setup belongs in `e2e/`.
+
 - Prefer table-driven tests for protocol matrices and flag validation.
 - Use subtests with descriptive scenario names.
 - Put reusable native JSON under `testdata/`; keep narrowly focused payloads
@@ -94,6 +104,7 @@ Tests must assert behavior rather than implementation bookkeeping.
 - Include the expected stdout/stderr stream and process exit code in CLI tests.
 - For portable changes, test each agent adapter and the native registration
   expansion returned by `run.Inspect`.
+- Cover public CLI command and hook flows in `go test ./e2e`.
 
 Run a focused package test while iterating, then the complete verification
 suite before handoff.

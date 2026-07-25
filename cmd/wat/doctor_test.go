@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -20,30 +19,6 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
 	sdkrun "github.com/sviatsviatsviat/wat/sdk/run"
 )
-
-func TestRunDoctor_allPass(t *testing.T) {
-	project, watAbs := doctorTestProject(t)
-	deps := doctorTestDeps(t, project, watAbs, doctorTestGoDeps{
-		goVersion: "go version go1.26.0 linux/amd64",
-		buildOK:   true,
-	})
-	warmDoctorCache(t, project, deps)
-
-	outBuf := captureStdout(t)
-	code := runDoctor(deps)
-	if code != exitOK {
-		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
-	}
-	out := outBuf.String()
-	for _, want := range []string{"PASS", "toolchain", "script", "cache", "install"} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("output missing %q: %s", want, out)
-		}
-	}
-	if strings.Contains(out, "FAIL") {
-		t.Fatalf("unexpected FAIL in output: %s", out)
-	}
-}
 
 func TestRunDoctor_missingGo(t *testing.T) {
 	project, watAbs := doctorTestProject(t)
@@ -342,7 +317,7 @@ var Hooks = []run.Hooks{
 	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte(hooksSource), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	goMod := "module wat-hooks\n\ngo 1.26\n\nrequire github.com/sviatsviatsviat/wat v0.0.0\n\nreplace github.com/sviatsviatsviat/wat => " + filepath.ToSlash(testModuleRoot(t)) + "\n"
+	goMod := "module wat-hooks\n\ngo 1.26\n\nrequire github.com/sviatsviatsviat/wat v0.0.0\n"
 	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte(goMod), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -437,26 +412,4 @@ func captureStdout(t *testing.T) *bytes.Buffer {
 	stdout = buf
 	t.Cleanup(func() { stdout = prevStdout })
 	return buf
-}
-
-func TestRunDoctor_realGoBuild(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("shell-based go mock not used; real go build covered by allPass on unix")
-	}
-	project, watAbs := doctorTestProject(t)
-	deps := defaultDoctorDeps()
-	deps.Getwd = func() (string, error) { return project, nil }
-	deps.LookPath = func(name string) (string, error) {
-		if name == "wat" {
-			return watAbs, nil
-		}
-		return exec.LookPath(name)
-	}
-	deps.LoadManifest = nil
-
-	outBuf := captureStdout(t)
-	code := runDoctor(deps)
-	if code != exitOK {
-		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
-	}
 }

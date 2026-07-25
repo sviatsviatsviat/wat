@@ -24,7 +24,9 @@ Read these committed references before changing behavior:
 - `sdk/agnostic/tools`: canonical portable tool names and typed inputs.
 - `internal/hookkit`: module-private codec, handler, merge, and normalization
   machinery.
-- `testdata/fixtures`: native end-to-end hook payloads.
+- `e2e`: public CLI and hook end-to-end tests (real `wat` binary + `.wat/`
+  project). Package-local tests stay injected and non-social.
+- `testdata/fixtures`: native hook payloads consumed by `wat test` and `e2e`.
 
 ## Non-negotiable boundaries
 
@@ -55,10 +57,11 @@ Install the pinned linter outside the Dev Container:
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 ```
 
-Use focused package tests while iterating, then run the complete suite. New
-public behavior requires real behavior tests and documentation in the same
-change. The Linux Dev Container is the authoritative full-suite environment;
-some CLI tests rely on Unix utilities and are not Windows-hermetic.
+Use focused package tests while iterating, then run the complete suite
+(including `./e2e`). New public behavior requires real behavior tests and
+documentation in the same change. The Linux Dev Container is the authoritative
+full-suite environment; some CLI and e2e tests rely on Unix utilities and are
+not Windows-hermetic.
 
 ## Change hygiene
 
