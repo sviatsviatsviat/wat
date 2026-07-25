@@ -162,6 +162,30 @@ rg 'uses:\s*[\w./-]+@v\d+(\.\d+)?$' .github/workflows
 
 The command must produce no matches.
 
+## Cutting a release
+
+Releases are git tags. The Go module and CLI version come from the tag;
+`proxy.golang.org` serves the module when the tag is pushed. A tag-triggered
+workflow creates the GitHub Release (notes + CLI binaries). Do not publish to
+GitHub Packages.
+
+1. On `main`, promote `## [Unreleased]` in `CHANGELOG.md` to
+   `## [vX.Y.Z] - YYYY-MM-DD` (or a pre-release such as `v0.1.0-alpha`), leave a
+   fresh empty `## [Unreleased]`, and merge after CI is green. The heading must
+   match the tag string exactly, including the `v` prefix.
+2. Create and push only the tag on that `main` commit (GitHub → Tags, or
+   `git tag -a vX.Y.Z && git push origin vX.Y.Z`). The release workflow refuses
+   tags whose commit is not an ancestor of `origin/main`. Do not craft the
+   Release body by hand; `.github/workflows/release.yml` fills notes from that
+   changelog section and attaches multi-platform `wat` archives plus
+   `sha256sums.txt`.
+3. Confirm the Release page, then
+   `go install github.com/sviatsviatsviat/wat/cmd/wat@vX.Y.Z` and
+   `go list -m github.com/sviatsviatsviat/wat@vX.Y.Z`.
+
+Pre-release tags (`vX.Y.Z-…`) are marked as GitHub prereleases. Keep README and
+`docs/usage.md` install examples on a current tagged module version.
+
 ## Commits and pull requests
 
 Use an imperative conventional commit subject:

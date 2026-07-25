@@ -5,16 +5,16 @@ hook project.
 
 ## Requirements and installation
 
-`wat` and generated hook projects require Go 1.26. Install the CLI from a
-checkout with:
+`wat` and generated hook projects require Go 1.26. Install the CLI with:
 
 ```bash
-go install ./cmd/wat
+go install github.com/sviatsviatsviat/wat/cmd/wat@v0.1.0-alpha
 ```
 
-The executable must contain module version or VCS build information because
-`wat init` pins that version in the generated `.wat/go.mod`. Build normally
-with Go's VCS stamping enabled; do not use `-buildvcs=false`.
+From a repository checkout, `go install ./cmd/wat` also works. The executable
+must contain module version or VCS build information because `wat init` pins
+that version in the generated `.wat/go.mod`. Build normally with Go's VCS
+stamping enabled; do not use `-buildvcs=false`.
 
 Check the available commands with:
 

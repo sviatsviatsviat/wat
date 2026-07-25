@@ -9,7 +9,7 @@ The documentation is organized by audience:
 | [Architecture](architecture.md) | Maintainers extending packages, events, adapters, or commands |
 | [Agent protocols](agent-formats.md) | Maintainers working on codecs, mappings, and tool normalization |
 | [Contributing](../CONTRIBUTING.md) | Anyone preparing a change or pull request |
-| [Changelog](../CHANGELOG.md) | Users evaluating the next release's visible behavior |
+| [Changelog](../CHANGELOG.md) | User-visible changes by release |
 
 The root [README](../README.md) is the short entry point. Package-level details
 also belong in godoc so they are available to library consumers:

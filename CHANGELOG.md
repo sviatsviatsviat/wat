@@ -7,6 +7,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [v0.1.0-alpha] - 2026-07-25
+
 ### Added
 
 - A `wat` CLI for the complete hook-project lifecycle:

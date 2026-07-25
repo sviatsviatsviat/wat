@@ -11,11 +11,14 @@ The project currently requires Go 1.26.
 
 ## Quick start
 
-Build and install the CLI from this checkout:
+Install the CLI:
 
 ```bash
-go install ./cmd/wat
+go install github.com/sviatsviatsviat/wat/cmd/wat@v0.1.0-alpha
 ```
+
+From a repository checkout, `go install ./cmd/wat` also works (build with VCS
+stamping enabled).
 
 From the repository where you want hooks:
 
@@ -96,7 +99,7 @@ bootstrap for `.wat/` projects.
 | [Architecture](docs/architecture.md) | Package boundaries, request lifecycle, and implementation patterns |
 | [Agent protocols](docs/agent-formats.md) | Event coverage, tool normalization, and native protocol differences |
 | [Contributing](CONTRIBUTING.md) | Development workflow, tests, docs, commits, and pull requests |
-| [Changelog](CHANGELOG.md) | User-visible capabilities planned for the next release |
+| [Changelog](CHANGELOG.md) | User-visible changes by release |
 
 Browse package documentation locally:
 
