@@ -10,7 +10,7 @@ import (
 	hostclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	hostcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 )
 
@@ -502,7 +502,7 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 
 func mustHandlerRaw[T any](t *testing.T, h T) json.RawMessage {
 	t.Helper()
-	raw, err := hookkit.MarshalHandler(h)
+	raw, err := hookconfig.MarshalHandler(h)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -511,7 +511,7 @@ func mustHandlerRaw[T any](t *testing.T, h T) json.RawMessage {
 
 func parseHandler[T any](t *testing.T, raw json.RawMessage) T {
 	t.Helper()
-	parsed, err := hookkit.ParseHandler[T](raw)
+	parsed, err := hookconfig.ParseHandler[T](raw)
 	if err != nil {
 		t.Fatalf("parse handler: %v", err)
 	}

@@ -3,7 +3,7 @@ package copilot
 import (
 	"encoding/json"
 
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 )
 
 // File is the GitHub Copilot hooks.json shape.
@@ -23,12 +23,12 @@ func (f File) HooksMap() map[string][]json.RawMessage {
 
 // ParseFlatCommand decodes native handler JSON and returns the shell command when type is empty or command.
 func ParseFlatCommand(raw json.RawMessage) (string, bool) {
-	return hookkit.ParseFlatCommand(raw)
+	return hookconfig.ParseFlatCommand(raw)
 }
 
 // MarshalFlatCommand encodes a command-type handler as native hooks.json JSON.
 func MarshalFlatCommand(command string) (json.RawMessage, error) {
-	return hookkit.MarshalFlatCommand(command)
+	return hookconfig.MarshalFlatCommand(command)
 }
 
 // Handler is a GitHub Copilot hook handler definition.

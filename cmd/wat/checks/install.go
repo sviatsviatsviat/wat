@@ -11,7 +11,7 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 )
 
 // Install verifies wat on PATH and installed hook config entries.
@@ -209,7 +209,7 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 		for _, groups := range settings.Hooks {
 			for _, g := range groups {
 				for _, raw := range g.Hooks {
-					h, err := hookkit.ParseHandler[claude.Handler](raw)
+					h, err := hookconfig.ParseHandler[claude.Handler](raw)
 					if err != nil {
 						continue
 					}

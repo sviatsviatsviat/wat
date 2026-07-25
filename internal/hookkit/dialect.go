@@ -4,6 +4,9 @@ import (
 	"context"
 )
 
+// DetectFunc reports whether raw matches a dialect.
+type DetectFunc func(raw []byte) bool
+
 // HookHandler is a typed hook registration ready for dialect dispatch.
 type HookHandler interface {
 	EventName() string

@@ -1,6 +1,9 @@
-package hookkit
+package hookconfig
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 const flatCommandType = "command"
 
@@ -27,23 +30,10 @@ func MarshalHandler[T any](h T) (json.RawMessage, error) {
 	return json.Marshal(h)
 }
 
-// handlers encodes typed handlers as native handler JSON blobs.
-func handlers[T any](h ...T) ([]json.RawMessage, error) {
-	out := make([]json.RawMessage, 0, len(h))
-	for _, handler := range h {
-		raw, err := MarshalHandler(handler)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, raw)
-	}
-	return out, nil
-}
-
 // ParseFlatCommand decodes copilot or cursor flat handler JSON and returns the command
 // when type is empty or command.
 func ParseFlatCommand(raw json.RawMessage) (string, bool) {
-	if len(raw) == 0 || string(raw) == "null" {
+	if len(raw) == 0 || strings.TrimSpace(string(raw)) == "null" {
 		return "", false
 	}
 	h, err := ParseHandler[FlatCommandHandler](raw)

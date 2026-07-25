@@ -13,7 +13,7 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 )
 
 type installAgentPlan struct {
@@ -173,7 +173,7 @@ func upsertClaudeGroups(groups []claude.MatcherGroup, cmd, agent, event, watAbs 
 	for _, g := range groups {
 		var kept []json.RawMessage
 		for _, raw := range g.Hooks {
-			h, err := hookkit.ParseHandler[claude.Handler](raw)
+			h, err := hookconfig.ParseHandler[claude.Handler](raw)
 			if err != nil {
 				kept = append(kept, raw)
 				continue
@@ -196,14 +196,14 @@ func upsertClaudeGroups(groups []claude.MatcherGroup, cmd, agent, event, watAbs 
 	added := false
 	for i := range out {
 		if out[i].Matcher == "" && len(out[i].If) == 0 {
-			raw, _ := hookkit.MarshalHandler(claude.Handler{Type: "command", Command: cmd})
+			raw, _ := hookconfig.MarshalHandler(claude.Handler{Type: "command", Command: cmd})
 			out[i].Hooks = append(out[i].Hooks, raw)
 			added = true
 			break
 		}
 	}
 	if !added {
-		raw, _ := hookkit.MarshalHandler(claude.Handler{Type: "command", Command: cmd})
+		raw, _ := hookconfig.MarshalHandler(claude.Handler{Type: "command", Command: cmd})
 		out = append(out, claude.MatcherGroup{Hooks: []json.RawMessage{raw}})
 	}
 	return out

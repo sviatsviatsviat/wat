@@ -13,11 +13,6 @@ func CloneBytes(raw []byte) json.RawMessage {
 	return append(json.RawMessage(nil), raw...)
 }
 
-// CloneRaw copies raw JSON for independent mutation.
-func CloneRaw(raw json.RawMessage) json.RawMessage {
-	return CloneBytes(raw)
-}
-
 // NullToNil returns nil when raw is empty or JSON null; otherwise raw unchanged.
 // Surrounding JSON whitespace around null is ignored.
 func NullToNil(raw json.RawMessage) json.RawMessage {

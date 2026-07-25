@@ -1,94 +1,140 @@
 package hookkit
 
-import "testing"
+import (
+	"maps"
+	"slices"
+	"testing"
+)
 
-func TestApplyRankedDecision(t *testing.T) {
-	rank := PermissionRank
-
-	tests := []struct {
-		name string
-		dst  map[string]any
-		src  map[string]any
-		want map[string]any
-	}{
-		{
-			name: "stricter decision replaces with reason",
-			dst:  map[string]any{"permissionDecision": "allow", "permissionDecisionReason": "ok"},
-			src: map[string]any{
-				"permissionDecision":       "deny",
-				"permissionDecisionReason": "blocked",
-			},
-			want: map[string]any{"permissionDecision": "deny", "permissionDecisionReason": "blocked"},
-		},
-		{
-			name: "stricter decision without reason clears stale reason",
-			dst:  map[string]any{"permissionDecision": "allow", "permissionDecisionReason": "ok"},
-			src:  map[string]any{"permissionDecision": "deny"},
-			want: map[string]any{"permissionDecision": "deny"},
-		},
-		{
-			name: "weaker decision ignored",
-			dst:  map[string]any{"permissionDecision": "deny", "permissionDecisionReason": "blocked"},
-			src:  map[string]any{"permissionDecision": "allow", "permissionDecisionReason": "ok"},
-			want: map[string]any{"permissionDecision": "deny", "permissionDecisionReason": "blocked"},
-		},
+func TestTakeLastPtr(t *testing.T) {
+	a, b := 1, 2
+	got, w := TakeLastPtr("x", &a, &b)
+	if got == nil || *got != 2 || w == "" {
+		t.Fatalf("got=%v warn=%q", got, w)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dst := mapsClone(tt.dst)
-			ApplyRankedDecision(dst, tt.src, "permissionDecision", "permissionDecisionReason", tt.src["permissionDecision"], rank)
-			if !mapsEqual(dst, tt.want) {
-				t.Fatalf("dst = %v, want %v", dst, tt.want)
-			}
-		})
+	got, w = TakeLastPtr("x", &a, (*int)(nil))
+	if got == nil || *got != 1 || w != "" {
+		t.Fatalf("dst only: got=%v warn=%q", got, w)
 	}
 }
 
-func TestApplyOrphanDetail(t *testing.T) {
-	dst := map[string]any{}
-	ApplyOrphanDetail(dst, "permissionDecision", "permissionDecisionReason", "early reason")
-	if dst["permissionDecisionReason"] != "early reason" {
-		t.Fatalf("orphan detail = %v", dst)
+func TestTakeLastString(t *testing.T) {
+	got, w := TakeLastString("field", "a", "b")
+	if got != "b" || w != OverwriteWarning("field") {
+		t.Fatalf("got=%q warn=%q", got, w)
 	}
-
-	dst = map[string]any{"permissionDecision": "deny"}
-	ApplyOrphanDetail(dst, "permissionDecision", "permissionDecisionReason", "ignored")
-	if _, ok := dst["permissionDecisionReason"]; ok {
-		t.Fatalf("detail should not apply when decision exists: %v", dst)
-	}
-
-	dst = map[string]any{}
-	ApplyOrphanDetail(dst, "permissionDecision", "permissionDecisionReason", nil)
-	if _, ok := dst["permissionDecisionReason"]; ok {
-		t.Fatalf("nil detail should not be stored: %v", dst)
+	got, w = TakeLastString("field", "a", "")
+	if got != "a" || w != "" {
+		t.Fatalf("empty src: got=%q warn=%q", got, w)
 	}
 }
 
-func TestJoinContext(t *testing.T) {
-	if got := JoinContext("first", "second"); got != "first\n\nsecond" {
-		t.Fatalf("JoinContext() = %q", got)
+func TestTakeLastMap(t *testing.T) {
+	dst := map[string]int{"a": 1}
+	src := map[string]int{"b": 2}
+	origDst := maps.Clone(dst)
+	origSrc := maps.Clone(src)
+	got, w := TakeLastMap("env", dst, src)
+	if w == "" || got["b"] != 2 {
+		t.Fatalf("got=%v warn=%q", got, w)
+	}
+	if !maps.Equal(dst, origDst) {
+		t.Fatalf("caller dst mutated: %v", dst)
+	}
+	if !maps.Equal(src, origSrc) {
+		t.Fatalf("caller src mutated: %v", src)
+	}
+	got["b"] = 99
+	if src["b"] != 2 {
+		t.Fatalf("src aliased")
 	}
 }
 
-func mapsClone(m map[string]any) map[string]any {
-	if m == nil {
-		return nil
+func TestTakeLastSlice(t *testing.T) {
+	dst := []string{"a"}
+	src := []string{"b", "c"}
+	origDst := slices.Clone(dst)
+	origSrc := slices.Clone(src)
+	got, w := TakeLastSlice("watchPaths", dst, src)
+	if w != OverwriteWarning("watchPaths") || len(got) != 2 || got[0] != "b" {
+		t.Fatalf("got=%v warn=%q", got, w)
 	}
-	out := make(map[string]any, len(m))
-	for k, v := range m {
-		out[k] = v
+	if !slices.Equal(dst, origDst) {
+		t.Fatalf("caller dst mutated: %v", dst)
 	}
-	return out
+	if !slices.Equal(src, origSrc) {
+		t.Fatalf("caller src mutated: %v", src)
+	}
+	got[0] = "mutated"
+	if src[0] != "b" {
+		t.Fatalf("src aliased")
+	}
+	got, w = TakeLastSlice("watchPaths", dst, nil)
+	if w != "" || !slices.Equal(got, dst) {
+		t.Fatalf("nil src: got=%v warn=%q", got, w)
+	}
 }
 
-func mapsEqual(a, b map[string]any) bool {
-	if len(a) != len(b) {
-		return false
+func TestTakeLastAny(t *testing.T) {
+	dst := map[string]any{"a": 1}
+	src := map[string]any{"b": 2}
+	got, w := TakeLastAny("updatedToolOutput", dst, src)
+	if w == "" {
+		t.Fatal("expected overwrite warning")
 	}
-	for k, v := range a {
-		if b[k] != v {
-			return false
-		}
+	m, ok := got.(map[string]any)
+	if !ok || m["b"] != 2 {
+		t.Fatalf("got=%v", got)
 	}
-	return true
+	m["b"] = 99
+	if src["b"] != 2 {
+		t.Fatal("src aliased")
+	}
+}
+
+func TestMergeRankedString(t *testing.T) {
+	d, r := MergeRankedString("allow", "ok", "deny", "blocked", PermissionRankString)
+	if d != "deny" || r != "blocked" {
+		t.Fatalf("got %q %q", d, r)
+	}
+	d, r = MergeRankedString("deny", "blocked", "allow", "ok", PermissionRankString)
+	if d != "deny" || r != "blocked" {
+		t.Fatalf("weaker ignored: %q %q", d, r)
+	}
+	d, r = MergeRankedString("allow", "ok", "deny", "", PermissionRankString)
+	if d != "deny" || r != "" {
+		t.Fatalf("clear reason: %q %q", d, r)
+	}
+}
+
+func TestPermissionRankString(t *testing.T) {
+	if PermissionRankString("deny") <= PermissionRankString("ask") ||
+		PermissionRankString("ask") <= PermissionRankString("allow") {
+		t.Fatal("expected deny > ask > allow")
+	}
+}
+
+func TestBlockDecisionRankString(t *testing.T) {
+	if BlockDecisionRankString("block") != 1 || BlockDecisionRankString("") != 0 {
+		t.Fatal("expected block=1, other=0")
+	}
+}
+
+func TestElicitationActionRankString(t *testing.T) {
+	if ElicitationActionRankString("decline") <= ElicitationActionRankString("accept") ||
+		ElicitationActionRankString("cancel") <= ElicitationActionRankString("accept") {
+		t.Fatal("expected decline/cancel > accept")
+	}
+}
+
+func TestJoinContextStrings(t *testing.T) {
+	if got := JoinContextStrings("a", "b"); got != "a\n\nb" {
+		t.Fatalf("got %q", got)
+	}
+	if got := JoinContextStrings("", "b"); got != "b" {
+		t.Fatalf("empty existing: %q", got)
+	}
+	if got := JoinContextStrings("a", ""); got != "a" {
+		t.Fatalf("empty add: %q", got)
+	}
 }

@@ -7,7 +7,7 @@ import (
 
 	hostclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 )
 
 // Parse reads Claude Code settings JSON into a normalized configuration.
@@ -129,7 +129,7 @@ func Emit(cfg model.Config) ([]byte, []model.Warning, error) {
 
 func claudeHandlerRaw(e model.Entry) (json.RawMessage, error) {
 	if len(e.Raw) == 0 {
-		return hookkit.MarshalHandler(hostclaude.Handler{
+		return hookconfig.MarshalHandler(hostclaude.Handler{
 			Type:    e.Type,
 			Command: e.Command,
 			Prompt:  e.Prompt,

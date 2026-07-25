@@ -1,4 +1,4 @@
-package hookkit
+package hookconfig
 
 import (
 	"encoding/json"
@@ -26,32 +26,6 @@ func TestParseHandler(t *testing.T) {
 	}
 }
 
-func TestHandlers(t *testing.T) {
-	t.Parallel()
-	type handler struct {
-		Type string `json:"type"`
-	}
-	raws, err := handlers(
-		handler{Type: "command"},
-		handler{Type: "prompt"},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(raws) != 2 {
-		t.Fatalf("len = %d", len(raws))
-	}
-	for i, wantType := range []string{"command", "prompt"} {
-		var got handler
-		if err := json.Unmarshal(raws[i], &got); err != nil {
-			t.Fatalf("raws[%d]: unmarshal: %v", i, err)
-		}
-		if got.Type != wantType {
-			t.Fatalf("raws[%d].Type = %q, want %q", i, got.Type, wantType)
-		}
-	}
-}
-
 func TestParseFlatCommand(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -66,6 +40,7 @@ func TestParseFlatCommand(t *testing.T) {
 		{name: "invalid json", raw: `{`, want: "", wantOK: false},
 		{name: "nil raw", raw: "", want: "", wantOK: false},
 		{name: "json null", raw: `null`, want: "", wantOK: false},
+		{name: "whitespace-padded json null", raw: "  null\n", want: "", wantOK: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

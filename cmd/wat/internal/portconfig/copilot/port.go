@@ -6,7 +6,7 @@ import (
 	hostcopilot "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/flat"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 	sdkcopilot "github.com/sviatsviatsviat/wat/sdk/copilot"
 )
 
@@ -106,7 +106,7 @@ func copilotHandlerRaw(e model.Entry) (json.RawMessage, error) {
 		default:
 			h.Type = e.Type
 		}
-		return hookkit.MarshalHandler(h)
+		return hookconfig.MarshalHandler(h)
 	}
 	var m map[string]any
 	if err := json.Unmarshal(e.Raw, &m); err != nil {

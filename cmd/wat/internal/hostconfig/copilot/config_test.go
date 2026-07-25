@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/copilot"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 )
 
 func TestHandler_EffectiveCommand(t *testing.T) {
@@ -32,7 +32,7 @@ func TestHandler_EffectiveCommand(t *testing.T) {
 }
 
 func TestParseHandler_RoundTrip(t *testing.T) {
-	raw, err := hookkit.MarshalHandler(copilot.Handler{
+	raw, err := hookconfig.MarshalHandler(copilot.Handler{
 		Type:           "command",
 		Bash:           "echo hi",
 		Cwd:            "/tmp",
@@ -44,7 +44,7 @@ func TestParseHandler_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h, err := hookkit.ParseHandler[copilot.Handler](raw)
+	h, err := hookconfig.ParseHandler[copilot.Handler](raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestHandlers_EncodesMultiple(t *testing.T) {
 	}
 	blobs := make([]json.RawMessage, 0, len(handlers))
 	for _, h := range handlers {
-		raw, err := hookkit.MarshalHandler(h)
+		raw, err := hookconfig.MarshalHandler(h)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +96,7 @@ func TestHandlers_EncodesMultiple(t *testing.T) {
 		t.Fatalf("len = %d", len(blobs))
 	}
 	for i, wantCommand := range []string{"a", "b"} {
-		got, err := hookkit.ParseHandler[copilot.Handler](blobs[i])
+		got, err := hookconfig.ParseHandler[copilot.Handler](blobs[i])
 		if err != nil {
 			t.Fatalf("blobs[%d]: parse: %v", i, err)
 		}

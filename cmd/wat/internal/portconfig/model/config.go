@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
@@ -71,12 +72,12 @@ func AppendExtra(cfg *Config, event string, raw json.RawMessage) {
 
 // CloneRaw returns a copy of raw JSON.
 func CloneRaw(raw json.RawMessage) json.RawMessage {
-	return hookkit.CloneRaw(raw)
+	return hookkit.CloneBytes(raw)
 }
 
 // ParseHandlerJSON decodes handler JSON into T, returning warnings on failure.
 func ParseHandlerJSON[T any](event string, handlerRaw json.RawMessage) (T, []Warning, bool) {
-	h, err := hookkit.ParseHandler[T](handlerRaw)
+	h, err := hookconfig.ParseHandler[T](handlerRaw)
 	if err != nil {
 		var zero T
 		return zero, []Warning{Warnf("%s: invalid handler JSON: %v", event, err)}, false

@@ -5,19 +5,19 @@ import (
 	"testing"
 )
 
-func TestCloneRaw(t *testing.T) {
+func TestCloneBytes(t *testing.T) {
 	t.Parallel()
 	raw := json.RawMessage(`{"a":1}`)
-	got := CloneRaw(raw)
+	got := CloneBytes(raw)
 	if string(got) != string(raw) {
-		t.Fatalf("CloneRaw() = %q, want %q", got, raw)
+		t.Fatalf("CloneBytes() = %q, want %q", got, raw)
 	}
 	got[0] = '['
 	if raw[0] == '[' {
-		t.Fatal("CloneRaw must not alias input")
+		t.Fatal("CloneBytes must not alias input")
 	}
-	if CloneRaw(nil) != nil {
-		t.Fatal("CloneRaw(nil) should be nil")
+	if CloneBytes(nil) != nil {
+		t.Fatal("CloneBytes(nil) should be nil")
 	}
 }
 

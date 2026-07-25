@@ -6,7 +6,7 @@ import (
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/flat"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/portconfig/model"
-	"github.com/sviatsviatsviat/wat/internal/hookkit"
+	"github.com/sviatsviatsviat/wat/internal/hookconfig"
 )
 
 // Parse reads Cursor hooks JSON into a normalized configuration.
@@ -82,7 +82,7 @@ func cursorHandlerRaw(e model.Entry) (json.RawMessage, error) {
 		if e.Type != "" && e.Type != hostcursor.HandlerTypeCommand {
 			h.Type = e.Type
 		}
-		return hookkit.MarshalHandler(h)
+		return hookconfig.MarshalHandler(h)
 	}
 	var m map[string]any
 	if err := json.Unmarshal(e.Raw, &m); err != nil {

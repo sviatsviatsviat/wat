@@ -32,7 +32,7 @@ func mapPostToolUse(e sdkclaude.PostToolUse) *model.PostToolEvent {
 	return &model.PostToolEvent{
 		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
-		Result:   &model.ToolResult{Raw: hookkit.CloneRaw(e.ToolResponse), Text: hookkit.RawToText(e.ToolResponse)},
+		Result:   &model.ToolResult{Raw: hookkit.CloneBytes(e.ToolResponse), Text: hookkit.RawToText(e.ToolResponse)},
 	}
 }
 

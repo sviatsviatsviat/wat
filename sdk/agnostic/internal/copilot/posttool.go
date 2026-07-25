@@ -32,7 +32,7 @@ func mapPostToolUse(e sdkcopilot.PostToolUse) *model.PostToolEvent {
 	return &model.PostToolEvent{
 		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.NativeToolName(), e.Input().Raw(), ""),
-		Result:   &model.ToolResult{Raw: hookkit.CloneRaw(e.ResultRaw()), Text: e.ResultText()},
+		Result:   &model.ToolResult{Raw: hookkit.CloneBytes(e.ResultRaw()), Text: e.ResultText()},
 	}
 }
 

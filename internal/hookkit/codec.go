@@ -2,14 +2,6 @@ package hookkit
 
 import "fmt"
 
-// Event is implemented by every decoded per-agent hook event.
-type Event interface {
-	EventName() string
-}
-
-// Decoder parses raw JSON into a decoded event value.
-type Decoder func(raw []byte) (Event, error)
-
 // Codec owns a per-agent decoder registry and dialect-scoped error sentinels.
 // Each agent SDK should hold its own Codec instance; registries must not be shared
 // across dialects (wire names overlap with different Go types).

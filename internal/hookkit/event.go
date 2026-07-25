@@ -1,5 +1,13 @@
 package hookkit
 
+// Event is implemented by every decoded per-agent hook event.
+type Event interface {
+	EventName() string
+}
+
+// Decoder parses raw JSON into a decoded event value.
+type Decoder func(raw []byte) (Event, error)
+
 // Output is a hook response. Concrete per-agent types implement IsZero, Encode,
 // Merge, and Stop.
 type Output interface {
