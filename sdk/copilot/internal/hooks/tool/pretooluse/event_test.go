@@ -3,6 +3,7 @@ package pretooluse
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"maps"
 	"strings"
 	"testing"
@@ -69,6 +70,17 @@ func TestDecode_VSCodePreToolBash(t *testing.T) {
 	pre, ok := ev.(Event)
 	if !ok || pre.NativeToolName() != "Bash" || pre.ShellCommand() != "ls -la" {
 		t.Fatalf("PreToolUse=%+v", ev)
+	}
+}
+
+func TestDecode_PreToolUse_InvalidJSON(t *testing.T) {
+	raw := []byte(`{"hook_event_name":"PreToolUse","session_id":"s1","cwd":"/w","tool_name":123}`)
+	_, err := testCodec.Decode(raw)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !errors.Is(err, runtime.ErrDecodePayload) {
+		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
 	}
 }
 

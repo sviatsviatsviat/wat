@@ -1,6 +1,7 @@
 package pretooluse
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -42,6 +43,17 @@ func TestDecode_PreToolUse(t *testing.T) {
 	e := mustDecode[Event](t, `{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`)
 	if e.ShellCommand() != "ls" {
 		t.Fatalf("ShellCommand=%q", e.ShellCommand())
+	}
+}
+
+func TestDecode_PreToolUse_InvalidJSON(t *testing.T) {
+	raw := []byte(`{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":123}`)
+	_, err := testCodec.Decode(raw)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !errors.Is(err, runtime.ErrDecodePayload) {
+		t.Fatalf("errors.Is ErrDecodePayload = false, err = %v", err)
 	}
 }
 
