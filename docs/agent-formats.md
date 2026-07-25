@@ -151,4 +151,5 @@ decode.
 | Portable model and adapters | [`sdk/agnostic/internal`](../sdk/agnostic/internal/) |
 | Portable typed tool inputs | [`sdk/agnostic/tools`](../sdk/agnostic/tools/) |
 | Installation schemas | [`cmd/wat/internal/hostconfig`](../cmd/wat/internal/hostconfig/) |
-| End-to-end fixtures | [`testdata/fixtures`](../testdata/fixtures/) |
+| End-to-end fixtures | [`e2e/testdata`](../e2e/testdata/) |
+| Project `wat test` fixtures | [`.wat/testdata`](../.wat/testdata/) |

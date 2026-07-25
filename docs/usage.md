@@ -165,9 +165,9 @@ assertions on stderr. Without an expect document, the command still returns the
 hook binary's exit code.
 
 `wat init` seeds `.wat/testdata/<agent>/session_start.json` plus matching
-`.expect.json` sidecars. Repository protocol samples also live under
-[`testdata/fixtures/`](../testdata/fixtures/). Use native event names and
-payload shapes for the selected dialect.
+`.expect.json` sidecars. E2E-only payloads live under
+[`e2e/testdata/`](../e2e/testdata/). Use native event names and payload shapes
+for the selected dialect.
 
 ## Diagnose a project
 

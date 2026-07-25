@@ -159,5 +159,5 @@ func runWatWithStdin(t *testing.T, binary, dir string, stdin io.Reader, args ...
 
 func fixturePath(t *testing.T, agent, name string) string {
 	t.Helper()
-	return filepath.Join(moduleRoot(t), "testdata", "fixtures", agent, name)
+	return filepath.Join(moduleRoot(t), "e2e", "testdata", agent, name)
 }

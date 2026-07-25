@@ -1,8 +1,0 @@
-{
-  "session_id": "s1",
-  "timestamp": "2026-07-12T10:00:00Z",
-  "cwd": "/w",
-  "hook_event_name": "SessionStart",
-  "source": "new",
-  "initial_prompt": "hi"
-}

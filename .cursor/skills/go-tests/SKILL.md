@@ -25,8 +25,8 @@ in [docs/architecture.md](../../../docs/architecture.md).
 - Use descriptive `t.Run` names.
 - Use `t.Helper()` only inside helpers.
 - Use `t.TempDir()` and injected dependencies for filesystem/process behavior.
-- Store reusable native JSON in `testdata/fixtures`; keep small focused payloads
-  inline.
+- Store reusable native JSON for e2e under `e2e/testdata/`; keep small focused
+  payloads inline. Project `wat test` cases live under `.wat/testdata/`.
 
 ## SDK and protocol changes
 
