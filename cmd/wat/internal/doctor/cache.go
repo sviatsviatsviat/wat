@@ -10,7 +10,7 @@ import (
 )
 
 // cacheWarmFix tells users how to populate the hooks build cache.
-const cacheWarmFix = "run wat test --fixture .wat/testdata/..., or otherwise warm the cache for this project"
+const cacheWarmFix = "run wat test --agent cursor --fixture .wat/testdata/cursor/session_start.json, or otherwise warm the cache for this project"
 
 // CacheWritable verifies .wat/.cache/ exists and is writable.
 func CacheWritable(deps Deps, ctx Context) []Result {

@@ -42,15 +42,18 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          fixtures=(.wat/testdata/*/*.json)
+          fixtures=()
+          for fixture in .wat/testdata/*/*.json; do
+            case "$fixture" in
+              *.expect.json) continue ;;
+            esac
+            fixtures+=("$fixture")
+          done
           if [ ${#fixtures[@]} -eq 0 ]; then
             echo "no fixtures under .wat/testdata" >&2
             exit 1
           fi
           for fixture in "${fixtures[@]}"; do
-            case "$fixture" in
-              *.expect.json) continue ;;
-            esac
             agent="$(basename "$(dirname "$fixture")")"
             echo "::group::wat test --agent ${agent} --fixture ${fixture}"
             ./wat test --agent "$agent" --fixture "$fixture"

@@ -141,3 +141,18 @@ func TestInit_refusesOverwriteWithoutForce(t *testing.T) {
 		t.Fatalf("Init with force: %v", err)
 	}
 }
+
+func TestWriteFileIfMissing_rejectsDirectory(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "session_start.json")
+	if err := os.MkdirAll(path, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	err := writeFileIfMissing(path, []byte("{}"), DefaultDeps())
+	if err == nil {
+		t.Fatal("expected error for directory path")
+	}
+	if !strings.Contains(err.Error(), "not a regular file") {
+		t.Fatalf("error = %q", err)
+	}
+}

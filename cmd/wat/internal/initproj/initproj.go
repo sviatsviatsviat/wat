@@ -98,7 +98,10 @@ func writeStarterTestdata(watDir string, deps Deps) error {
 }
 
 func writeFileIfMissing(path string, contents []byte, deps Deps) error {
-	if _, err := deps.Stat(path); err == nil {
+	if info, err := deps.Stat(path); err == nil {
+		if info == nil || !info.Mode().IsRegular() {
+			return fmt.Errorf("%s is not a regular file", path)
+		}
 		return nil
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("stat %s: %w", path, err)
