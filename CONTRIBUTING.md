@@ -96,8 +96,9 @@ module `replace` + real hook builds). That social setup belongs in `e2e/`.
 
 - Prefer table-driven tests for protocol matrices and flag validation.
 - Use subtests with descriptive scenario names.
-- Put reusable native JSON under `testdata/`; keep narrowly focused payloads
-  inline when easier to understand.
+- Put reusable native JSON for e2e under `e2e/testdata/`; keep narrowly focused
+  payloads inline when easier to understand. Project `wat test` cases live under
+  `.wat/testdata/`.
 - Use `t.Helper()` only in helper functions.
 - Assert both the combined output and caller input immutability for merge
   helpers that receive maps or slices by value.
