@@ -1,11 +1,13 @@
 package hookmanifest
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
@@ -51,5 +53,20 @@ func TestLoadBinary_rejectsInvalidRegistration(t *testing.T) {
 
 	if _, err := LoadBinary("hooks", command); err == nil {
 		t.Fatal("LoadBinary() error = nil, want invalid registration error")
+	}
+}
+
+func TestLoadBinary_timesOut(t *testing.T) {
+	command := func(string, ...string) *exec.Cmd {
+		return exec.Command("sleep", "10")
+	}
+
+	old := LoadTimeout
+	LoadTimeout = 50 * time.Millisecond
+	defer func() { LoadTimeout = old }()
+
+	_, err := LoadBinary("hooks", command)
+	if !errors.Is(err, ErrLoadTimeout) {
+		t.Fatalf("LoadBinary() error = %v, want %v", err, ErrLoadTimeout)
 	}
 }

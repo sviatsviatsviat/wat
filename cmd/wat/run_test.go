@@ -35,7 +35,7 @@ func TestRunHook_walkUpFindsWatDir(t *testing.T) {
 	if err := os.MkdirAll(watDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
@@ -49,7 +49,20 @@ func TestRunHook_walkUpFindsWatDir(t *testing.T) {
 	deps := hookrun.DefaultDeps()
 	deps.Getenv = func(string) string { return "" }
 	deps.Getwd = func() (string, error) { return subdir, nil }
-	deps.Command = func(string, ...string) *exec.Cmd { return exec.Command("go", "version") }
+	deps.Command = func(name string, args ...string) *exec.Cmd {
+		if name == "go" && len(args) > 0 && args[0] == "build" {
+			for i := 0; i+1 < len(args); i++ {
+				if args[i] == "-o" {
+					if err := os.WriteFile(args[i+1], []byte("#!/bin/true\n"), 0o755); err != nil {
+						t.Fatalf("stage fake binary: %v", err)
+					}
+					break
+				}
+			}
+			return exec.Command("true")
+		}
+		return exec.Command("go", "version")
+	}
 	deps.RunCmd = func(*exec.Cmd) error { return nil }
 
 	if got := hookrun.Run(hookrun.Config{}, "vtest", deps, stderr); got != hookrun.ExitOK {

@@ -254,11 +254,15 @@ func build(watDir, binPath string, deps Deps, errOut io.Writer) bool {
 		return false
 	}
 
-	bootstrapDir := filepath.Join(cacheDir, "bootstrap")
-	if err := deps.MkdirAll(bootstrapDir, 0o755); err != nil {
-		_, _ = fmt.Fprintf(errOut, "wat run: create %s: %v\n", bootstrapDir, err)
+	// Unique bootstrap + binary staging paths avoid concurrent cold-cache
+	// writers truncating a shared main.go mid-build.
+	bootstrapDir, err := os.MkdirTemp(cacheDir, "bootstrap-*")
+	if err != nil {
+		_, _ = fmt.Fprintf(errOut, "wat run: create bootstrap dir: %v\n", err)
 		return false
 	}
+	defer func() { _ = os.RemoveAll(bootstrapDir) }()
+
 	source := fmt.Sprintf(bootstrapSource, modulePath, ManifestArgument)
 	writeFile := deps.WriteFile
 	if writeFile == nil {
@@ -269,22 +273,62 @@ func build(watDir, binPath string, deps Deps, errOut io.Writer) bool {
 		return false
 	}
 
-	cmd := deps.Command("go", "build", "-o", binPath, bootstrapDir)
+	tmpBin, err := os.CreateTemp(cacheDir, "hooks-build-*")
+	if err != nil {
+		_, _ = fmt.Fprintf(errOut, "wat run: create temp binary: %v\n", err)
+		return false
+	}
+	tmpBinPath := tmpBin.Name()
+	_ = tmpBin.Close()
+	_ = os.Remove(tmpBinPath)
+	if runtime.GOOS == "windows" {
+		tmpBinPath += ".exe"
+	}
+	defer func() { _ = os.Remove(tmpBinPath) }()
+
+	cmd := deps.Command("go", "build", "-o", tmpBinPath, bootstrapDir)
 	cmd.Dir = watDir
 	cmd.Env = pinnedBuildEnv(os.Environ(), settings)
 	out, err := cmd.CombinedOutput()
-	if err == nil {
-		return true
+	if err != nil {
+		if len(out) > 0 {
+			_, _ = errOut.Write(out)
+			if out[len(out)-1] != '\n' {
+				_, _ = fmt.Fprintln(errOut, "")
+			}
+		}
+		_, _ = fmt.Fprintf(errOut, "wat run: go build failed in %s\n", watDir)
+		return false
 	}
 
-	if len(out) > 0 {
-		_, _ = errOut.Write(out)
-		if out[len(out)-1] != '\n' {
-			_, _ = fmt.Fprintln(errOut, "")
-		}
+	if err := publishBinary(tmpBinPath, binPath); err != nil {
+		_, _ = fmt.Fprintf(errOut, "wat run: publish binary: %v\n", err)
+		return false
 	}
-	_, _ = fmt.Fprintf(errOut, "wat run: go build failed in %s\n", watDir)
-	return false
+	return true
+}
+
+// publishBinary atomically replaces dest with src when possible.
+// If another process already published dest, that complete binary wins.
+func publishBinary(src, dest string) error {
+	if err := os.Rename(src, dest); err == nil {
+		return nil
+	} else if _, statErr := os.Stat(dest); statErr == nil {
+		// Another concurrent Ensure finished first with a complete binary.
+		_ = os.Remove(src)
+		return nil
+	} else {
+		// Windows cannot rename over an existing file; replace then retry.
+		_ = os.Remove(dest)
+		if err := os.Rename(src, dest); err != nil {
+			if _, statErr := os.Stat(dest); statErr == nil {
+				_ = os.Remove(src)
+				return nil
+			}
+			return err
+		}
+		return nil
+	}
 }
 
 func currentModulePath(watDir string, deps Deps, settings buildSettings) (string, error) {

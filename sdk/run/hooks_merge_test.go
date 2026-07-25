@@ -107,3 +107,20 @@ func TestInspect_deduplicatesNativeEventAndCountsHandlers(t *testing.T) {
 		t.Fatalf("EventsFor(merge) = %v, want [MergeTest]", events)
 	}
 }
+
+func TestManifest_ignoresZeroHandlerCount(t *testing.T) {
+	m := Manifest{
+		Version: 1,
+		Registrations: []Registration{{
+			Dialect:      "cursor",
+			Event:        "beforeShellExecution",
+			HandlerCount: 0,
+		}},
+	}
+	if m.Has("cursor", "beforeShellExecution") {
+		t.Fatal("Has() = true for HandlerCount 0, want false")
+	}
+	if events := m.EventsFor("cursor"); len(events) != 0 {
+		t.Fatalf("EventsFor() = %v, want empty", events)
+	}
+}

@@ -44,10 +44,11 @@ type Manifest struct {
 }
 
 // EventsFor returns the sorted native events registered for dialect.
+// Events with HandlerCount < 1 are omitted.
 func (m Manifest) EventsFor(dialect string) []string {
 	var events []string
 	for _, registration := range m.Registrations {
-		if registration.Dialect == dialect {
+		if registration.Dialect == dialect && registration.HandlerCount > 0 {
 			events = append(events, registration.Event)
 		}
 	}
@@ -58,7 +59,7 @@ func (m Manifest) EventsFor(dialect string) []string {
 // Has reports whether dialect and event have at least one registered handler.
 func (m Manifest) Has(dialect, event string) bool {
 	for _, registration := range m.Registrations {
-		if registration.Dialect == dialect && registration.Event == event {
+		if registration.Dialect == dialect && registration.Event == event && registration.HandlerCount > 0 {
 			return true
 		}
 	}

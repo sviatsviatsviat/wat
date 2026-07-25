@@ -129,9 +129,8 @@ func agentInstall(deps Deps, agent, path, watAbs string, expected []string) []Re
 			})
 			continue
 		}
-		commandAgent, event, _ := installcfg.ParseWatRunFlags(cmd)
-		if commandAgent == agent &&
-			installcfg.IsWatManagedAgentCommand(cmd, agent, watAbs) &&
+		_, event, _ := installcfg.ParseWatRunFlags(cmd)
+		if installcfg.IsWatManagedAgentCommand(cmd, agent, watAbs) &&
 			!slices.Contains(expected, event) {
 			results = append(results, Result{
 				Group:   "install",

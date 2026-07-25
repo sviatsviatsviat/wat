@@ -29,7 +29,7 @@ func TestInstallProject_freshInstallAll(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
@@ -156,7 +156,7 @@ func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
@@ -213,7 +213,7 @@ func TestInstallProject_reinstallReplacesWatEntries(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
@@ -275,7 +275,7 @@ func TestInstallProject_agentFiltering(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
@@ -456,7 +456,7 @@ func TestInstallProject_claudeMergePreservesUnrelated(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
@@ -521,7 +521,7 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(project, ".wat", "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(project, ".wat", "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
@@ -659,6 +659,98 @@ func TestInstallProject_removesStaleManagedEvents(t *testing.T) {
 	}
 	if handler := parseHandler[hostcursor.Handler](t, staleHandlers[0]); handler.Command != "echo keep-me" {
 		t.Fatalf("preserved command = %q, want echo keep-me", handler.Command)
+	}
+}
+
+func TestInstallProject_removesStaleClaudeManagedEvents(t *testing.T) {
+	project := t.TempDir()
+	watDir := filepath.Join(project, ".wat")
+	if err := os.MkdirAll(watDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	watAbs := filepath.Join(project, "bin", "wat")
+	claudePath := filepath.Join(project, ".claude", "settings.json")
+	if err := os.MkdirAll(filepath.Dir(claudePath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	seed := hostclaude.Settings{
+		Hooks: map[string][]hostclaude.MatcherGroup{
+			claude.EventPostToolUse: {{
+				Matcher: "Bash",
+				Hooks: []json.RawMessage{
+					mustHandlerRaw(t, hostclaude.Handler{
+						Type:    "command",
+						Command: installcfg.WatRunCommand(filepath.Join(project, "old", "wat"), claude.Dialect, claude.EventPostToolUse),
+					}),
+					mustHandlerRaw(t, hostclaude.Handler{
+						Type:    "command",
+						Command: "echo keep-claude",
+					}),
+				},
+			}},
+			claude.EventSessionEnd: {{
+				Hooks: []json.RawMessage{
+					mustHandlerRaw(t, hostclaude.Handler{
+						Type:    "command",
+						Command: installcfg.WatRunCommand(filepath.Join(project, "old", "wat"), claude.Dialect, claude.EventSessionEnd),
+					}),
+				},
+			}},
+		},
+	}
+	body, err := json.MarshalIndent(seed, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(claudePath, append(body, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	manifest := &sdkrun.Manifest{
+		Version: 1,
+		Registrations: []sdkrun.Registration{{
+			Dialect:      claude.Dialect,
+			Event:        claude.EventPreToolUse,
+			HandlerCount: 1,
+		}},
+	}
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
+	if err := installcfg.Install(installcfg.Config{
+		Agents:   installcfg.AgentPlan{Claude: true},
+		WatPath:  watAbs,
+		Manifest: manifest,
+	}, deps); err != nil {
+		t.Fatal(err)
+	}
+
+	var got hostclaude.Settings
+	installed, err := os.ReadFile(claudePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(installed, &got); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := got.Hooks[claude.EventSessionEnd]; ok {
+		t.Fatalf("expected empty SessionEnd event to be removed, got %#v", got.Hooks[claude.EventSessionEnd])
+	}
+	groups := got.Hooks[claude.EventPostToolUse]
+	if len(groups) != 1 || len(groups[0].Hooks) != 1 {
+		t.Fatalf("PostToolUse groups = %#v, want one group with unrelated handler only", groups)
+	}
+	if handler := parseHandler[hostclaude.Handler](t, groups[0].Hooks[0]); handler.Command != "echo keep-claude" {
+		t.Fatalf("preserved command = %q, want echo keep-claude", handler.Command)
+	}
+	if len(got.Hooks[claude.EventPreToolUse]) != 1 {
+		t.Fatalf("PreToolUse groups = %d, want 1", len(got.Hooks[claude.EventPreToolUse]))
 	}
 }
 
