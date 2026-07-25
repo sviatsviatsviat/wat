@@ -10,6 +10,8 @@ import (
 type File struct {
 	// Version is the hooks file schema version.
 	Version int `json:"version"`
+	// DisableAllHooks disables every hook in this file when true.
+	DisableAllHooks bool `json:"disableAllHooks,omitempty"`
 	// Hooks maps event names to handler definitions.
 	Hooks map[string][]json.RawMessage `json:"hooks"`
 }
@@ -43,6 +45,14 @@ type Handler struct {
 	URL string `json:"url,omitempty"`
 	// Prompt is the prompt text for prompt handlers.
 	Prompt string `json:"prompt,omitempty"`
+	// Cwd is the working directory for command-type handlers.
+	Cwd string `json:"cwd,omitempty"`
+	// Env holds additional environment variables for command-type handlers.
+	Env map[string]string `json:"env,omitempty"`
+	// Headers are HTTP headers for http-type handlers.
+	Headers map[string]string `json:"headers,omitempty"`
+	// AllowedEnvVars lists env vars that may be expanded inside headers.
+	AllowedEnvVars []string `json:"allowedEnvVars,omitempty"`
 	// Matcher is the tool or event matcher string.
 	Matcher string `json:"matcher,omitempty"`
 	// TimeoutSec is the handler timeout in seconds.

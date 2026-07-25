@@ -33,9 +33,13 @@ func TestHandler_EffectiveCommand(t *testing.T) {
 
 func TestParseHandler_RoundTrip(t *testing.T) {
 	raw, err := hookkit.MarshalHandler(copilot.Handler{
-		Type:       "command",
-		Bash:       "echo hi",
-		TimeoutSec: 30,
+		Type:           "command",
+		Bash:           "echo hi",
+		Cwd:            "/tmp",
+		Env:            map[string]string{"FOO": "bar"},
+		Headers:        map[string]string{"X-Source": "wat"},
+		AllowedEnvVars: []string{"GITHUB_TOKEN"},
+		TimeoutSec:     30,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -44,11 +48,34 @@ func TestParseHandler_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.Bash != "echo hi" || h.TimeoutSec != 30 {
+	if h.Bash != "echo hi" || h.TimeoutSec != 30 || h.Cwd != "/tmp" {
 		t.Fatalf("handler = %+v", h)
+	}
+	if h.Env["FOO"] != "bar" || h.Headers["X-Source"] != "wat" || len(h.AllowedEnvVars) != 1 || h.AllowedEnvVars[0] != "GITHUB_TOKEN" {
+		t.Fatalf("optional fields = env=%v headers=%v allowedEnvVars=%v", h.Env, h.Headers, h.AllowedEnvVars)
 	}
 	if h.TimeoutSeconds() != 30 || h.EffectiveCommand() != "echo hi" {
 		t.Fatalf("helpers = %d, %q", h.TimeoutSeconds(), h.EffectiveCommand())
+	}
+}
+
+func TestFile_DisableAllHooksRoundTrip(t *testing.T) {
+	t.Parallel()
+	in := copilot.File{
+		Version:         1,
+		DisableAllHooks: true,
+		Hooks:           map[string][]json.RawMessage{},
+	}
+	raw, err := json.Marshal(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out copilot.File
+	if err := json.Unmarshal(raw, &out); err != nil {
+		t.Fatal(err)
+	}
+	if !out.DisableAllHooks || out.Version != 1 {
+		t.Fatalf("file = %+v", out)
 	}
 }
 
