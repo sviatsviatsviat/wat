@@ -1,7 +1,7 @@
 {
   "conversation_id": "c1",
   "generation_id": "g1",
-  "model": "claude-4.5-sonnet",
+  "model": "auto",
   "hook_event_name": "subagentStart",
   "cursor_version": "1.7.2",
   "workspace_roots": ["/w"],

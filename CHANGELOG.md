@@ -65,8 +65,7 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 - This repository's own `.wat/hooks.go` now includes a real Cursor
   `subagentStart` hook that denies a subagent spawn pinned to a model other
-  than Cursor's automatic selection. CI runs `wat test` against the expect
-  sidecars under `.wat/testdata/`.
+  than Cursor's automatic selection.
 
 - `sdk/run` for standalone hook executables and tooling:
   - `Serve` detects one native dialect, decodes a registered event once, invokes
