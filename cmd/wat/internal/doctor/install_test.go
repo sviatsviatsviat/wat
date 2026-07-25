@@ -21,8 +21,11 @@ func TestAgentInstall_results(t *testing.T) {
 			return []byte(`{"hooks":{}}`), nil
 		}}
 		results := agentInstall(deps, "claude", claudePath, watAbs, expected)
-		if statusCount(results, Fail) == 0 {
-			t.Fatalf("expected missing Fail results, got %#v", results)
+		if statusCount(results, Warn) == 0 {
+			t.Fatalf("expected missing Warn results, got %#v", results)
+		}
+		if statusCount(results, Fail) != 0 {
+			t.Fatalf("missing entries must not Fail, got %#v", results)
 		}
 		if !hasMessageContaining(results, "missing hook entry") {
 			t.Fatalf("expected missing message, got %#v", results)

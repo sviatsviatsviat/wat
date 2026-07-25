@@ -19,13 +19,17 @@ The project intends to use [Semantic Versioning](https://semver.org/).
     events are removed.
   - `wat run` builds a content-addressed hook executable on demand, reuses it on
     warm invocations, and passes the native hook process streams and exit code
-    through. `--fail-closed` maps build failures to exit 2.
+    through. `--fail-closed` maps build failures to exit 2. Hook module path
+    resolution uses the package's owning module so builds work inside a
+    `go.work` workspace that lists multiple modules.
   - `wat test` runs a registered native event against a JSON fixture, including
     stdin fixtures, and reports the dialect, event, stdout, recognized decision,
     and exit code.
   - `wat doctor` checks the Go toolchain, project files, compilation, cache,
     authored registration manifest, and installed configurations, with
-    actionable fixes and exit 4 when a check fails.
+    actionable fixes and exit 4 when a check fails. Missing install wiring and
+    `wat` not on `PATH` are warnings (hooks will not run until installed).
+    Status labels are colored on a TTY.
 
 - Upward `.wat/` project discovery for CLI commands, with
   `WAT_PROJECT_DIR` available to select a workspace root explicitly.

@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/doctor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/project"
@@ -14,6 +13,7 @@ func newDoctorCmd() *subcommandRunner {
 		name:    "doctor",
 		summary: "verify toolchain, script, cache, and install state",
 		long: "Check Go toolchain, .wat/ project, build cache, and installed hook entries.\n\n" +
+			"Missing install wiring and wat-on-PATH gaps are warnings (hooks simply will not run).\n" +
 			"Exits 0 when all checks pass (warnings are allowed). Exits 4 when any check fails.",
 		fs: fs,
 		run: func() int {
@@ -47,7 +47,7 @@ func runDoctor(deps doctorDeps) int {
 		doctor.PrintResult(stdout, r)
 	}
 	if failCount > 0 {
-		_, _ = fmt.Fprintf(stdout, "\nwat doctor: %d check(s) failed\n", failCount)
+		doctor.PrintFailureSummary(stdout, failCount)
 		return exitCheckFailed
 	}
 	return exitOK

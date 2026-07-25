@@ -2,6 +2,7 @@ package buildcache
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -157,6 +158,21 @@ func TestCacheKey_includesBuildEnv(t *testing.T) {
 	}
 	if a == b {
 		t.Fatal("cache key should differ when CGO_ENABLED changes")
+	}
+}
+
+func TestCurrentModulePath_rejectsMultiLine(t *testing.T) {
+	dir := t.TempDir()
+	deps := DefaultDeps()
+	deps.Command = func(name string, args ...string) *exec.Cmd {
+		if name == "go" && len(args) >= 1 && args[0] == "list" {
+			return exec.Command("printf", "%s", "github.com/example/a\nwat-hooks\n")
+		}
+		return exec.Command(name, args...)
+	}
+	_, err := currentModulePath(dir, deps, buildSettings{})
+	if err == nil || !strings.Contains(err.Error(), "multi-line") {
+		t.Fatalf("got err %v, want multi-line failure", err)
 	}
 }
 

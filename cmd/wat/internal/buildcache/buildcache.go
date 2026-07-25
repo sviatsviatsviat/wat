@@ -332,7 +332,10 @@ func publishBinary(src, dest string) error {
 }
 
 func currentModulePath(watDir string, deps Deps, settings buildSettings) (string, error) {
-	cmd := deps.Command("go", "list", "-m", "-f={{.Path}}")
+	// Prefer the module that owns the package in watDir. Plain `go list -m`
+	// lists every module in a go.work workspace, which would produce an
+	// invalid multi-line import path for the generated bootstrap.
+	cmd := deps.Command("go", "list", "-f={{.Module.Path}}", ".")
 	cmd.Dir = watDir
 	cmd.Env = pinnedBuildEnv(os.Environ(), settings)
 	out, err := cmd.CombinedOutput()
@@ -342,6 +345,9 @@ func currentModulePath(watDir string, deps Deps, settings buildSettings) (string
 	modulePath := strings.TrimSpace(string(out))
 	if modulePath == "" {
 		return "", fmt.Errorf("resolve hook module path: empty module path")
+	}
+	if strings.ContainsAny(modulePath, "\n\r") {
+		return "", fmt.Errorf("resolve hook module path: unexpected multi-line output %q", modulePath)
 	}
 	return modulePath, nil
 }

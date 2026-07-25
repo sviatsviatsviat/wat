@@ -160,6 +160,15 @@ Doctor prints `PASS`, `WARN`, and `FAIL` results for:
 - installed config presence, disabled hooks, stale entries, duplicates, and
   command validity.
 
+Missing install wiring (absent agent configs or hook entries) and `wat` not
+being on `PATH` are warnings: hooks simply will not be invoked until you run
+`wat install`. Broken configs, duplicates, and toolchain/project failures
+remain hard failures.
+
+Status labels are colored on a TTY (`PASS` green, `WARN` yellow, `FAIL` red).
+Set `NO_COLOR` to disable, or `FORCE_COLOR` to enable when stdout is not a
+terminal.
+
 Warnings do not fail the command. One or more failed checks return exit 4 and
 include a suggested fix when available.
 

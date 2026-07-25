@@ -151,8 +151,8 @@ func TestRunDoctor_watNotOnPath(t *testing.T) {
 
 	outBuf := captureStdout(t)
 	code := runDoctor(deps)
-	if code != exitCheckFailed {
-		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
 	}
 	if !strings.Contains(outBuf.String(), "wat not found on PATH") {
 		t.Fatalf("output: %s", outBuf.String())
@@ -183,8 +183,8 @@ func TestRunDoctor_missingInstallEntry(t *testing.T) {
 
 	outBuf := captureStdout(t)
 	code := runDoctor(deps)
-	if code != exitCheckFailed {
-		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
 	}
 	if !strings.Contains(outBuf.String(), "missing hook entry") {
 		t.Fatalf("output: %s", outBuf.String())
@@ -269,8 +269,8 @@ func TestRunDoctor_noInstallConfigs(t *testing.T) {
 
 	outBuf := captureStdout(t)
 	code := runDoctor(deps)
-	if code != exitCheckFailed {
-		t.Fatalf("exit = %d, want %d\n%s", code, exitCheckFailed, outBuf.String())
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitOK, outBuf.String())
 	}
 	if !strings.Contains(outBuf.String(), "hook config file missing") {
 		t.Fatalf("output: %s", outBuf.String())

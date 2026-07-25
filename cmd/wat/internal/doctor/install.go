@@ -20,6 +20,8 @@ import (
 )
 
 // Install verifies wat on PATH and installed hook config entries.
+// Missing agent configs, missing wat-managed entries, and wat not on PATH are
+// warnings: they mean hooks will not be invoked, not that the project is broken.
 func Install(deps Deps, ctx Context) []Result {
 	var results []Result
 
@@ -35,7 +37,7 @@ func Install(deps Deps, ctx Context) []Result {
 	if watPathErr != nil {
 		results = append(results, Result{
 			Group:   "install",
-			Status:  Fail,
+			Status:  Warn,
 			Message: "wat not found on PATH",
 			Fix:     "install wat and ensure it is on PATH (or use wat install --wat-path)",
 		})
@@ -84,7 +86,7 @@ func Install(deps Deps, ctx Context) []Result {
 			if len(expected) > 0 {
 				results = append(results, Result{
 					Group:   "install",
-					Status:  Fail,
+					Status:  Warn,
 					Message: fmt.Sprintf("%s: hook config file missing", cfg.Agent),
 					Fix:     fmt.Sprintf("run wat install --agent %s", cfg.Agent),
 				})
@@ -152,7 +154,7 @@ func agentInstall(deps Deps, agent, path, watAbs string, expected []string) []Re
 		case 0:
 			results = append(results, Result{
 				Group:   "install",
-				Status:  Fail,
+				Status:  Warn,
 				Message: fmt.Sprintf("%s: missing hook entry for %s", agent, event),
 				Fix:     fmt.Sprintf("run wat install --agent %s", agent),
 			})
