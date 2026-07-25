@@ -1,50 +1,37 @@
 ---
 name: ci-pins
 description: >-
-  Pin exact GitHub Actions versions in workflows and audit for floating tags.
-  Use when editing .github/workflows, bumping actions, or reviewing CI config.
+  Keep GitHub Actions, Go tools, and Dev Container features exactly pinned and
+  synchronized across the repository.
 ---
 
-# CI action version pinning
+# CI and tool pins
 
-Every `uses:` reference in `.github/workflows/` must pin an **exact release tag** with a patch version (e.g. `actions/checkout@v4.3.1`), not a floating major or minor (`@v4`, `@v6`).
+All workflow `uses:` values must use exact release tags with patch versions.
+Tool versions in workflow commands, Dev Container features, and installation
+documentation must also be exact. Do not use `@latest`, branches, or floating
+major/minor tags.
 
-Tool versions inside `with:` blocks must also be exact (e.g. `version: v2.12.2`, `go run ...@v1.6.0`).
+When bumping one dependency:
 
-## Audit command
+1. locate every reference with `rg`;
+2. update all references to that dependency in the same change;
+3. preserve unrelated pins unless compatibility requires another bump;
+4. run the workflow-tag audit;
+5. run the normal repository verification when config affects builds.
 
-Run from repo root after editing workflows:
+Examples of synchronized references:
+
+- golangci-lint: workflow, `.devcontainer/devcontainer.json`,
+  `CONTRIBUTING.md`, and `AGENTS.md`;
+- govulncheck: every workflow command using `govulncheck@...`;
+- an Action: every `uses:` entry for that Action.
+
+Audit floating major tags:
 
 ```bash
 rg 'uses:\s*[\w./-]+@v\d+$' .github/workflows
 ```
 
-Exit code 0 with **no matches** means no floating major pins remain. Any match is a violation.
-
-Also scan manually for `@main`, `@master`, and `@latest`.
-
-## When bumping an action
-
-1. Find the latest patch for the intended major line on the action's releases page.
-2. Update **every** reference to that action in the same change (workflow, README, AGENTS.md if mentioned).
-3. Re-run the audit command.
-4. Unrelated action pins do not need to move unless compatibility requires it (see AGENTS.md Dependabot note).
-
-## Examples
-
-```yaml
-# Good
-uses: actions/checkout@v4.3.1
-uses: actions/setup-go@v5.6.0
-uses: golangci/golangci-lint-action@v9.3.0
-
-# Bad — floating major
-uses: actions/checkout@v4
-uses: actions/setup-go@v5
-```
-
-## Definition of done (workflow edits)
-
-- [ ] Audit command reports no floating `@vN` pins
-- [ ] `go-version-file` and other existing `with:` config preserved unless intentionally changed
-- [ ] README / AGENTS.md updated if they cite the bumped action or tool version
+The audit must produce no matches. Also search manually for `@latest`,
+`@main`, and `@master`.

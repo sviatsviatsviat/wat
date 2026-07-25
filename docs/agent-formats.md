@@ -1,352 +1,151 @@
-# Agent hook formats
+# Agent protocols and normalization
 
-Reference for tool names, MCP naming, and payload conventions across Claude Code, GitHub Copilot, and Cursor. Use this when implementing normalization, codecs, or matchers.
+This document records the cross-agent protocol facts that affect codecs,
+portable mappings, fixtures, and public behavior. It is not a replacement for
+the native agent documentation or the typed SDK godoc.
 
-Sources: [GitHub Copilot hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference), [copilot-sdk#869](https://github.com/github/copilot-sdk/issues/869).
+## Dialect detection and event identity
 
-## Per-agent SDK skeleton
+All supported payloads must include `hook_event_name`.
 
-`claude`, `copilot`, and `cursor` are standalone packages (stdlib only) with the same layout. Each can be used without `agnostic`. `agnostic` depends on them: `UseHooks` registration builds deferred adapter chains that `run.Serve` merges by dialect.
+| Dialect | Detection signals used by wat |
+|---|---|
+| Claude Code | `session_id`, excluding Cursor and Copilot-specific signals |
+| GitHub Copilot | `hook_event_name` plus `timestamp`, excluding Cursor signals |
+| Cursor | `cursor_version`, `conversation_id`, or `CURSOR_VERSION` |
 
-Hook logic is organized as **vertical slices** — for Claude under `sdk/claude/internal/hooks/<domain>/<event>/` (per-event package with `event.go` / `output.go` / `results.go`), reexported from the `claude` package root; Copilot and Cursor keep one file per native `hook_event_name` at the package root, including the typed chain method for that event. Shared decode helpers live in `internal/hookkit`. The shared `Event` interface (`EventName()` only) is defined in `internal/hookkit`; per-agent SDKs do not define their own `Event` type. Handlers receive the typed event value directly.
+Each native SDK exports its string `Dialect` constant. Portable event
+`Envelope.Agent` uses that value, while `Envelope.Name` preserves the native
+event name.
 
-| Location | Role |
-|----------|------|
-| `doc.go` | Package overview |
-| `<event>.go` (copilot/cursor) | Event struct, output, results, chain method, decode, encode for one hook |
-| `internal/hooks/<domain>/<event>/` (claude) | Per-event package: `event.go`, `output.go`, `results.go`, `bind.go` |
-| `export_*.go` / `hooks.go` (claude) | Public façade: type aliases and `UseHooks` fluent methods |
-| `registry.go` | Event-name constants, alias tables |
-| `envelope.go` | Shared payload fields (embedded on each event; access via promoted fields) |
-| `exit.go` | Handler/encode exit-code constants |
-| `encode.go` | Unexported encode router (wire mapping) |
-| `internal/runtime/codec.go` | Dialect codec (event decoder registration) |
-| `hooks.go` | Zero-arg `UseHooks` and unexported fluent registrar (deferred; `Contribute` installs via `run.Registry`) |
-| `errors.go` | Decode error sentinels |
-| `tools/` (copilot/cursor) or root `Input` / `Tool*` (claude) | Event-bound tool input (`Input` with `AsBash`, `AsWrite`, …) |
+The installed `wat run --agent ... --event ...` flags identify managed config
+entries. Runtime dispatch still trusts the payload detected by `sdk/run`.
 
-Native hook **config file** schemas (Claude `settings.json` `Settings`, Copilot/Cursor `hooks.json` `File` / `Handler`) live under `cmd/wat/internal/hostconfig/{claude,cursor,copilot}` for CLI install and doctor — not in the public agent SDKs.
+## Portable registration expansion
 
-**Agnostic** uses the same root vertical-slice layout for portable hook kinds (`pretool.go`, `stop.go`, …):
+One portable registration may install more than one native event, especially
+for Cursor's dedicated tool hooks.
 
-| Location | Role |
-|----------|------|
-| `<kind>.go` | Portable kind slice (`PreToolEvent`, `OnPreTool` chain method, adapters, …) |
-| `hooks.go` | Zero-arg `UseHooks` and unexported fluent registrar (deferred; `Contribute` installs via `run.Registry`) |
-| `toolcall.go` / `result.go` | Shared leaf types (`ToolCall`, `ToolResult`) and portable result projection |
-| `internal/model/<kind>.go` | Leaf definitions behind root aliases (`*Event`, `*Hook`, `*Handler`, `*Result`); same kind filenames as the package root |
-| `internal/model/toolcall.go` / `leaf.go` / `envelope.go` | Shared leaf payloads (`ToolCall`, `Subagent`, …) and `Envelope` |
-| `tools/` | Canonical tool names and typed `Input` with `AsBash`, `AsWrite`, … |
+| Portable method | Claude | Copilot | Cursor |
+|---|---|---|---|
+| `OnSessionStart` | `SessionStart` | `SessionStart` | `sessionStart` |
+| `OnSessionEnd` | `SessionEnd` | `SessionEnd` | `sessionEnd` |
+| `OnUserPrompt` | `UserPromptSubmit` | `UserPromptSubmitted` | `beforeSubmitPrompt` |
+| `OnPreTool` | `PreToolUse` | `PreToolUse` | `preToolUse`, `beforeShellExecution`, `beforeMCPExecution`, `beforeReadFile` |
+| `OnPostTool` | `PostToolUse` | `PostToolUse` | `postToolUse`, `afterShellExecution`, `afterMCPExecution`, `afterFileEdit` |
+| `OnPostToolFailure` | `PostToolUseFailure` | `PostToolUseFailure` | `postToolUseFailure` |
+| `OnSubagentStart` | `SubagentStart` | `SubagentStart` | `subagentStart` |
+| `OnSubagentStop` | `SubagentStop` | `SubagentStop` and subagent-scoped `AgentStop` | `subagentStop` |
+| `OnStop` | `Stop` | main-agent `AgentStop` | `stop` |
+| `OnPreCompact` | `PreCompact` | `PreCompact` | `preCompact` |
 
-Shared wire shapes may live in dedicated root files (e.g. `stop.go`, `permission.go`, `common.go`) when multiple events reuse the same output type.
+Copilot's `AgentStop` wire event can describe either the main agent or a
+subagent. The adapter routes it by its optional agent identity fields so
+`OnStop` and `OnSubagentStop` do not both handle the same payload.
 
-**Intentional protocol differences** (do not expect parity):
+Events not representable on every agent are native-only. Examples include
+permission requests and notifications (Claude/Copilot), Claude worktree and
+elicitation events, and Cursor workspace/tab events.
 
-- **Event count** — Claude exposes ~30 events; Copilot exposes 13; Cursor exposes 21.
-- **Wire format** — Claude, Copilot, and Cursor payloads include `hook_event_name`; Copilot uses PascalCase event names with snake_case fields.
-- **Encode contract** — Copilot and Cursor encode to `([]byte, exitCode, error)`; Claude encodes to `([]byte, error)` with blocking in JSON fields. Encoding is package-internal in all three SDKs.
-- **Side effects** — Claude `SessionStartOutput.Env` writes `CLAUDE_ENV_FILE`; Copilot and Cursor pass `env` in stdout JSON.
-- **Config schema** — Claude `settings.json` vs Copilot/Cursor `hooks.json` (CLI hostconfig packages).
+## Tool-name normalization
 
-## Tool name normalization
+Portable `ToolCall.Name` uses a canonical vocabulary. `ToolCall.Native` always
+preserves the original value.
 
-Inbound mappers map native names onto a canonical vocabulary via `hookkit.NormalizeToolName` (internal). `ToolCall.Name` carries the result; `ToolCall.Native` always keeps the original string.
-
-| Agent | Surface | Builtin example | Normalized | MCP example | MCP detection |
-|-------|---------|-----------------|------------|-------------|---------------|
-| Claude Code | `PreToolUse` | `Bash` | `bash` | `mcp__github__create_issue` | `mcp__` prefix → `mcp=true`, name unchanged |
-| Copilot | PascalCase `PreToolUse` | `Bash` / `bash` | `bash` | `mcp__github__create_issue` or structured MCP metadata | `mcp__` prefix or codec metadata |
-| Cursor | `preToolUse` / dedicated shell hooks | `Shell` | `bash` | `MCP:browser_navigate` | `MCP:` prefix → `mcp=true`, name unchanged |
-
-### Builtin alias examples
-
-| Native (any case where noted) | Normalized |
-|-------------------------------|------------|
+| Native examples | Canonical name |
+|---|---|
 | `Bash`, `bash`, `Shell`, `powershell` | `bash` |
 | `Edit`, `edit`, `notebookedit` | `edit` |
 | `Write`, `create` | `write` |
 | `Read`, `view` | `read` |
 | `Agent`, `task` | `task` |
-| `web_fetch` | `web_fetch` |
+| `Glob` | `glob` |
+| `Grep` | `grep` |
+| `WebFetch`, `web_fetch` | `web_fetch` |
+| `WebSearch`, `web_search` | `web_search` |
 
-Unknown names pass through unchanged with `mcp=false` unless an `mcp__` or `MCP:` prefix matches.
+Unknown names pass through unchanged. MCP detection recognizes Claude/Copilot
+`mcp__...` names and Cursor `MCP:...` names; structured dedicated MCP events
+also set `ToolCall.MCP`.
 
-### Out of scope for `NormalizeToolName`
+Dedicated Cursor events synthesize a portable tool identity:
 
-- **Copilot `preMcpToolCall`** — separate hook event with `serverName` and bare `toolName` fields, not a combined tool name string.
-- **Cursor dedicated events** (`beforeShellExecution`, `beforeMCPExecution`, …) — folded into unified `Kind` by codecs; native event name stays in `Event.Name`.
-
-## Unified event envelope
-
-Typed handlers receive kind-specific events that embed a shared envelope:
-
-- `Agent` — string dialect name (`claude.Dialect`, `copilot.Dialect`, or `cursor.Dialect`)
-- `Name` — native hook event name as received
-
-See `go doc github.com/sviatsviatsviat/wat/sdk/agnostic` for typed events (`PreToolEvent`, `StopEvent`, …) and leaf structs (`ToolCall`, `Lifecycle`, …).
-
-## Dialect identification
-
-Each per-agent SDK exports a `Dialect` string constant (`claude.Dialect` = `"claude"`, and likewise for copilot/cursor) used for process-router registration and `Envelope.Agent`. CLI and config parse agent names via `cmd/wat/internal/dialect.Parse` (aliases like `claude-code`, `gh`). Hook serve resolves dialect by walking each dialect's registered detect function (payload shape such as `cursor_version` / `conversation_id`, and Cursor also accepts a `CURSOR_VERSION` env hint).
-
-## Portable agnostic API
-
-Typed registration methods (`OnPreTool`, `OnPostTool`, `OnStop`, and others) accept only **portable** event kinds — those present on Claude Code, GitHub Copilot, and Cursor. Each kind has its own result type (`PreToolResult`, `PostToolResult`, `StopResult`, …) so hook authors can only set fields every agent can encode. Use `sdk/claude`, `sdk/copilot`, or `sdk/cursor` directly for agent-only capabilities.
-
-Observe-only kinds (`SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart`) take per-kind observe handlers that return only `error` — no hook response. Each handler receives the typed event.
-
-### Handler signatures
-
-All four SDKs use the same handler shapes. Result-producing handlers take `(ctx, event, results)`; observe-only handlers take `(ctx, event) error`.
-
-| Category | agnostic | claude / copilot / cursor |
-|---|---|---|
-| Result | `(ctx, event PreToolEvent, r PreToolResults) (PreToolResult, error)` — **normalized** event | `(ctx, event PreToolUse, r PreToolUseResults) (PreToolUseOutput, error)` — **native** typed event |
-| Observe | `(ctx, event SessionEndEvent) error` — normalized event | `(ctx, event SessionEnd) error` — native typed event |
-
-### Hook-scoped result builders
-
-Each result-producing `On*` registration injects a builder interface scoped to that hook only — one exported builder type per `On*` helper, even when method sets are identical. Shared unexported implementation is fine; shared exported interfaces are not. Examples:
-
-- `PostToolUseFailureResults` exposes only `Context` (not `Block` from post-success hooks).
-- Claude `SubagentStartResults`, `NotificationResults`, and `PreCompactResults` are separate types (not a shared `CommonResults`).
-- Cursor `BeforeReadFileResults` and `BeforeTabFileReadResults` are separate from shell/MCP `PermissionResults` where encode surfaces differ.
-
-Use builder methods for common verbs (`r.Deny`, `r.Context`, `r.FollowUp`, …). Return `nil` for no opinion (silent stdout). Set advanced fields with fluent `With*` methods on the value returned by the builder (for example `r.Allow().WithUpdatedInput(args)`). Construct results only via the injected `*Results` builders (and `With*`); host-specific wrappers live in `sdk/agnostic/internal/{claude,cursor,copilot}`. Cursor notes: `WithUpdatedInput` emits `updated_input` only for `preToolUse`; `WithUpdatedOutput` maps to `updated_mcp_tool_output` (MCP post-tool only).
-
-### Event support matrix
-
-| Unified `Kind` | Claude | Copilot | Cursor | Portable handler |
-|---|---|---|---|---|
-| `SessionStart` | yes | yes | yes | `OnSessionStart` |
-| `SessionEnd` | yes | yes | yes | `OnSessionEnd` (observe-only) |
-| `UserPrompt` | yes | yes | yes | `OnUserPrompt` (observe-only) |
-| `PreTool` | yes | yes | yes (+ dedicated pre-events) | `OnPreTool` |
-| `PostTool` | yes | yes | yes (+ dedicated post-events) | `OnPostTool` |
-| `PostToolFailure` | yes | yes | yes | `OnPostToolFailure` |
-| `SubagentStart` | yes | yes | yes | `OnSubagentStart` (observe-only) |
-| `SubagentStop` | yes | yes | yes | `OnSubagentStop` |
-| `Stop` | yes | yes | yes | `OnStop` |
-| `PreCompact` | yes | yes | yes | `OnPreCompact` (observe-only) |
-| `PermissionRequest` | yes | yes | no | no — use `OnPermissionRequest` on `sdk/claude` / `sdk/copilot` |
-| `Notification` | yes | yes | no | no — use `OnNotification` on `sdk/claude` / `sdk/copilot` |
-| `AgentError` | yes | yes | no | no — decode-only typed events (`StopFailure`, `errorOccurred`) |
-| `Other` | yes | yes | yes | no |
-
-Observe-only handlers accept decoded events but produce no hook stdout JSON.
-
-### Portable result types
-
-| Kind | Result type | Builder / fields |
-|---|---|---|
-| `PreTool` | `PreToolResult` | `Allow`/`Deny`/`Ask`; `WithUpdatedInput` |
-| `PostTool` | `PostToolResult` | `Context`; `WithUpdatedOutput` |
-| `PostToolFailure` | `PostToolFailureResult` | `Context` |
-| `Stop`, `SubagentStop` | `StopResult` | `FollowUp` |
-| `SessionStart` | `SessionStartResult` | `Context` |
-| `SessionEnd`, `UserPrompt`, `PreCompact`, `SubagentStart` | — | observe-only (no result) |
-
-Each result-producing handler receives a hook-scoped builder interface (`PreToolResults`, `PostToolResults`, `StopResults`, and others) as its third parameter. See **Hook-scoped result builders** above.
-
-### Multi-handler fold
-
-When multiple handlers are registered for the same native event, `sdk/run` folds their typed `Output` values in registration order:
-
-1. Each handler returns a typed output (or nil / zero for no opinion).
-2. Non-zero outputs combine via `Output.Merge` (event-owned rules: ranked deny > ask > allow, joined `additionalContext`, last-wins replace fields).
-3. If `Output.Stop` is true (hard deny/block, or sticky `continue: false`), later handlers are skipped. **Ask does not stop.**
-4. The final accumulator is `Encode`d once to stdout.
-
-Replace-field conflicts (`updatedInput`, env maps, and similar last-wins fields) keep the later value and print a warning to stderr (`run: <dialect>: merge: <field>: overwritten by later handler`). Ranked decisions and joined context do not warn.
-
-### Agent-only capabilities
-
-Register with the per-agent SDK when you need features outside the portable intersection:
-
-| Capability | Agents | SDK |
-|---|---|---|
-| `BlockPrompt`, `SetTitle` | Claude, Cursor (prompt) | `sdk/claude`, `sdk/cursor` |
-| `Env` | Claude (`CLAUDE_ENV_FILE`), Cursor (stdout JSON) | `sdk/claude`, `sdk/cursor` |
-| `HaltSession` | Claude (broad), Copilot (`permissionRequest` interrupt) | `sdk/claude`, `sdk/copilot` |
-| `UserMessage` | Claude (`systemMessage`), Cursor (`user_message`) | `sdk/claude`, `sdk/cursor` |
-| `PermissionRequest` handlers | Claude, Copilot | `sdk/claude`, `sdk/copilot` |
-| `Context` on `PreTool` | Claude only | `sdk/claude` |
-| `Decision` on `SubagentStart` | Cursor only | `sdk/cursor` |
-
-### Per-agent UseHooks coverage
-
-Each per-agent SDK exposes zero-arg `UseHooks` and fluent chain methods with one entry per native hook surface (or shared builder where wire encode is identical). Agnostic `UseHooks` is likewise zero-arg. Direct SDK consumers can pass registrations to `run.Serve`; same-dialect hooks merge (handlers append). A wat project instead exports them as `var Hooks = []run.Hooks{...}` from `.wat/hooks.go`; the generated bootstrap serves them and exposes their native registration manifest to `wat install`, `wat doctor`, and `wat test`. Claude-only long-tail events decode but have no dedicated portable `On*` — handle them with `sdk/claude` chain methods when available.
-
-| SDK | Chain methods | Notes |
-|---|---|---|
-| **claude** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`, `Stop`, `SubagentStop`, `SessionStart`, `SubagentStart`, `Notification`, `PreCompact`, `SessionEnd`, plus Claude-only surfaces (`Elicitation`, …) | ~18 additional Claude events (`Setup`, `TaskCreated`, …) decode as long-tail |
-| **copilot** | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `AgentStop`, `SubagentStop`, `PermissionRequest`, `SessionStart`, `SubagentStart`, `Notification`, `SessionEnd`, `UserPromptSubmitted`, `PreCompact`, `ErrorOccurred` | Full 13-event surface covered |
-| **cursor** | All 21 native events including `PreToolUse`, dedicated shell/MCP/file/tab hooks, lifecycle/telemetry observe helpers | Full 21-event surface covered |
-
-## Claude inbound mapping
-
-Portable `UseHooks().On*` handlers fan out onto `sdk/claude` via `UseHooks()` with unexported inbound mapping in `sdk/agnostic`; native decode, encode, and exit behavior stay in `sdk/claude`. Blocking is expressed via JSON fields with exit code 0 (Claude ignores exit 2 with JSON).
-
-### Event name mapping
-
-| Claude `hook_event_name` | `Kind` |
+| Cursor event | Portable tool |
 |---|---|
-| `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `SubagentStart`, `SubagentStop`, `Stop`, `PreCompact`, `Notification`, `StopFailure` | Normalized (see `go doc agnostic Kind`) |
-| All other Claude events (`Setup`, `UserPromptExpansion`, `PostToolBatch`, `PermissionDenied`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `MessageDisplay`, `InstructionsLoaded`, `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeCreate`, `WorktreeRemove`, `PostCompact`, `Elicitation`, `ElicitationResult`, …) | `KindOther` |
+| `beforeShellExecution` / `afterShellExecution` | `bash` with `ToolCall.Shell` |
+| `beforeReadFile` | `read` |
+| `afterFileEdit` | `edit` |
+| `beforeMCPExecution` / `afterMCPExecution` | Native MCP tool name with `MCP=true` |
 
-`PreToolUse` with `tool_name: "Bash"` extracts `tool_input.command` into `ToolCall.Shell`.
+Native names for these synthesized calls may be the event name rather than a
+builtin tool name. Code that needs exact host identity should use `Native` and
+`Envelope.Name`.
 
-### Encode surfaces
+## Portable result projection
 
-Portable Results wrappers delegate to `sdk/claude` `*Results` builders. Full Claude response shapes (including `BlockPrompt`, `Env`, `HaltSession`, `SetTitle`, `UserMessage`, and `PermissionRequest`) are available through `sdk/claude` directly.
+Portable builders deliberately expose the intersection of native behavior:
 
-| Event kind | Portable fields → Claude JSON |
+| Portable result | Native intent |
 |---|---|
-| PreTool | `Decision`, `Reason` → `hookSpecificOutput.permissionDecision`; `UpdatedInput` |
-| PostTool | `UpdatedOutput` → `updatedToolOutput`; `Context` → `additionalContext` |
-| PostToolFailure | `Context` → `additionalContext` |
-| Stop / SubagentStop | `FollowUp` → top-level `decision:block` + `reason` |
-| SessionStart | `Context` → `additionalContext` |
+| `PreToolResults.Allow` | Explicitly allow the call |
+| `PreToolResults.Deny(reason)` | Deny/block with agent-facing reason |
+| `PreToolResults.Ask(reason)` | Escalate where supported |
+| `PreToolResult.WithUpdatedInput` | Replace arguments where that native event supports it |
+| `PostToolResults.Context` | Add model-facing context |
+| `PostToolResult.WithUpdatedOutput` | Replace supported tool output |
+| `PostToolFailureResults.Context` | Add recovery context |
+| `StopResults.FollowUp` | Prevent completion and request more work |
+| `SessionStartResults.Context` | Add startup context |
 
-Agent-native encode surfaces (use `sdk/claude` directly):
+Known limitations are part of the contract:
 
-| Event kind | Key fields |
+- Copilot cloud-agent handling may downgrade `Ask` to a denial.
+- Cursor emits `updated_input` only for generic `preToolUse`, not for its
+  dedicated pre-tool events.
+- Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
+  where that native output field is supported.
+- Observe-only portable events never emit host JSON.
+
+Do not widen the portable interface until every dialect has a truthful mapping
+and tests for it.
+
+## Wire and process differences
+
+| Concern | Claude Code | GitHub Copilot | Cursor |
+|---|---|---|---|
+| Event-name style | PascalCase | PascalCase | camelCase |
+| Common JSON fields | Mostly snake_case with native output conventions | snake_case | snake_case/camelCase per native schema |
+| Blocking | Usually encoded in JSON output fields | JSON decision plus native exit behavior | Permission denial may use exit 2 |
+| Handler error | Exit 1 | Exit 1 | Exit 1 (host normally treats as fail-open) |
+| Session environment | `CLAUDE_ENV_FILE` for supported output | stdout JSON | stdout JSON |
+| Project config | `.claude/settings.json` matcher groups | `.github/hooks/wat.json` flat handlers | `.cursor/hooks.json` flat handlers |
+
+Output encoding belongs to the native SDK. Portable adapters must return native
+output values and must not serialize JSON themselves.
+
+## Fixture and codec expectations
+
+Codec changes require:
+
+- a representative native JSON fixture or focused payload in tests;
+- event-name peeking coverage;
+- typed decode assertions;
+- output JSON and exit-code assertions for result-producing events;
+- a missing/unknown event test;
+- portable mapping tests when the event participates in `sdk/agnostic`.
+
+Unknown event names are decode errors when decoded directly. During normal
+`run.Serve`, an event with no registered handler exits successfully before full
+decode.
+
+## Source locations
+
+| Concern | Source |
 |---|---|
-| UserPrompt | `BlockPrompt`, `Context`, `SetTitle` |
-| PermissionRequest | `Decision`, `UpdatedInput`, `HaltSession`, `Context` |
-| SessionStart | `Env` → `$CLAUDE_ENV_FILE` append |
-| Any | `HaltSession` → `continue:false`; `UserMessage` → `systemMessage` |
-
-### Exit codes
-
-| Constant | Value | When |
-|---|---|---|
-| `claude.HandlerErrorExit` | `1` | Runner should use when a handler returns an error |
-
-## Copilot inbound mapping
-
-Portable `UseHooks().On*` handlers fan out onto `sdk/copilot` via `UseHooks()` with unexported inbound mapping in `sdk/agnostic` (PascalCase `hook_event_name`, snake_case fields). Native decode stays in `sdk/copilot`.
-
-### Wire format
-
-Payloads require `hook_event_name` (for example `PreToolUse`, `Stop`). Shared fields use snake_case (`session_id`, `tool_name`, `tool_input`, …). Timestamps are RFC3339 strings.
-
-Wire `Stop` always decodes as `AgentStop`. When the host scopes the stop to a subagent, `agent_name` / `agent_display_name` are set on that payload (`AgentStop.IsSubagent`); there is no decode-time remap to `SubagentStop`. Explicit `hook_event_name: "SubagentStop"` still decodes as `SubagentStop`. Portable `OnStop` receives only agent-scoped `Stop`; portable `OnSubagentStop` receives explicit `SubagentStop` and subagent-scoped `Stop`.
-
-### Event name mapping
-
-| Copilot event | `Kind` |
-|---|---|
-| `SessionStart` | `KindSessionStart` |
-| `SessionEnd` | `KindSessionEnd` |
-| `UserPromptSubmit` | `KindUserPrompt` |
-| `PreToolUse` | `KindPreTool` |
-| `PostToolUse` | `KindPostTool` |
-| `PostToolUseFailure` | `KindPostToolFailure` |
-| `PermissionRequest` | `KindPermissionRequest` |
-| `SubagentStart` | `KindSubagentStart` |
-| `SubagentStop` | `KindSubagentStop` |
-| `Stop` | `KindStop` |
-| `PreCompact` | `KindPreCompact` |
-| `Notification` | `KindNotification` |
-| `ErrorOccurred` | `KindAgentError` |
-
-`PreToolUse` with `tool_name: "Bash"` (or `bash`) extracts shell `command` into `ToolCall.Shell`.
-
-### Encode surfaces
-
-Portable Results wrappers delegate to `sdk/copilot` `*Results` builders. Full Copilot response shapes are available through `sdk/copilot` directly.
-
-| Event kind | Portable fields → Copilot JSON | Exit code |
-|---|---|---|
-| PreTool | `Decision`, `Reason` → `permission_decision`, `permission_decision_reason`; `UpdatedInput` → `modified_args` | `0` |
-| PostTool | `UpdatedOutput` → `modified_result`; `Context` → `additional_context` | `0` |
-| Stop / SubagentStop | `FollowUp` → `decision:block` + `reason` | `0` |
-| PostToolFailure | `Context` → stdout text (recovery guidance) | `2` |
-| SessionStart | `Context` → `additional_context` | `0` |
-
-Agent-native encode surfaces (use `sdk/copilot` directly):
-
-| Event kind | Key fields | Exit code |
-|---|---|---|
-| PermissionRequest | `Decision`, `Reason`, `HaltSession` → `behavior`, `message`, `interrupt` | `2` on deny |
-| SubagentStart / Notification | `Context` → `additional_context` | `0` |
-
-### Exit codes
-
-| Constant | Value | When |
-|---|---|---|
-| `copilot.HandlerErrorExit` | `1` | Runner should use when a handler returns an error (fail-closed on PreToolUse; fail-open elsewhere) |
-| `copilot.WarnExit` | `2` | Encode returns this for documented `postToolUseFailure` context paths |
-
-## Cursor inbound mapping
-
-Portable `UseHooks().On*` handlers fan out onto `sdk/cursor` via `UseHooks()` with unexported inbound mapping in `sdk/agnostic`. Native decode stays in `sdk/cursor`.
-
-Dedicated shell, MCP, and file events are **folded** into unified pre/post tool kinds so one `KindPreTool` handler receives shell, MCP, and read events with `Tool.Shell` / `Tool.MCP` populated. The native event name stays in `Event.Name`.
-
-### Event name mapping
-
-| Cursor event | `Kind` | Folding notes |
-|---|---|---|
-| `sessionStart` | `KindSessionStart` | |
-| `sessionEnd` | `KindSessionEnd` | |
-| `beforeSubmitPrompt` | `KindUserPrompt` | |
-| `preToolUse` | `KindPreTool` | |
-| `postToolUse` | `KindPostTool` | |
-| `postToolUseFailure` | `KindPostToolFailure` | |
-| `beforeShellExecution` | `KindPreTool` | → `Tool.Name=bash`, `Tool.Shell=command` |
-| `afterShellExecution` | `KindPostTool` | → bash + terminal `output` in `Result.Text` |
-| `beforeMCPExecution` | `KindPreTool` | → `Tool.MCP=true` |
-| `afterMCPExecution` | `KindPostTool` | → MCP + `Result.Text=result_json` |
-| `beforeReadFile` | `KindPreTool` | → `Tool.Name=read`; file content in `Tool.Input` |
-| `afterFileEdit` | `KindPostTool` | → `Tool.Name=edit`; diffs in `Tool.Input` / `Result.Raw` |
-| `subagentStart` | `KindSubagentStart` | |
-| `subagentStop` | `KindSubagentStop` | `LoopCount` on `Subagent` |
-| `stop` | `KindStop` | `LoopCount` on `Turn` |
-| `preCompact` | `KindPreCompact` | |
-| `afterAgentResponse` | `KindOther` | observe-only |
-| `afterAgentThought` | `KindOther` | observe-only |
-| `beforeTabFileRead` | `KindOther` | tab surface — permission-gating only, not folded |
-| `afterTabFileEdit` | `KindOther` | tab surface — not folded |
-| `workspaceOpen` | `KindOther` | app lifecycle — not folded |
-
-`preToolUse` with `tool_name: "Shell"` extracts `tool_input.command` into `ToolCall.Shell`.
-
-### Encode surfaces
-
-Portable Results wrappers delegate to `sdk/cursor` `*Results` builders. Full Cursor response shapes are available through `sdk/cursor` directly.
-
-| Event kind | Portable fields → Cursor JSON | Exit code |
-|---|---|---|
-| PreTool / dedicated pre-events | `Decision` → `permission`; `Reason` → `agent_message`; `UpdatedInput` → `updated_input` (preToolUse only) | `2` on deny |
-| PostTool | `UpdatedOutput` → `updated_mcp_tool_output`; `Context` → `additional_context` | `0` |
-| PostToolFailure | `Context` → `additional_context` | `0` |
-| Stop / SubagentStop | `FollowUp` → `followup_message` | `0` |
-| SessionStart | `Context` → `additional_context` | `0` |
-
-Agent-native encode surfaces (use `sdk/cursor` directly):
-
-| Event kind | Key fields | Exit code |
-|---|---|---|
-| SubagentStart / `beforeTabFileRead` | `Decision`, `UserMessage`, `Reason`, `UpdatedInput` | `2` on deny |
-| UserPrompt | `BlockPrompt`, `UserMessage` → `continue:false` | `0` |
-| SessionStart | `Env` → `env` | `0` |
-| PreCompact | `UserMessage` | `0` |
-
-### Exit codes
-
-| Constant | Value | When |
-|---|---|---|
-| `cursor.HandlerErrorExit` | `1` | Runner should use when a handler returns an error under fail-open (default) |
-| `cursor.PermissionDenyExit` | `2` | Encode returns this for permission-gating deny |
-
-## Related code
-
-- Registration discovery: [`sdk/run`](../sdk/run/) (`Inspect` / `Manifest`); selective config reconciliation: [`cmd/wat/internal/installcfg`](../cmd/wat/internal/installcfg/)
-- Dialect: per-agent `Dialect` constants in [`sdk/claude`](../sdk/claude/), [`sdk/copilot`](../sdk/copilot/), [`sdk/cursor`](../sdk/cursor/); CLI name parsing in [`cmd/wat/internal/dialect`](../cmd/wat/internal/dialect/)
-- Tests: [`cmd/wat/internal/dialect`](../cmd/wat/internal/dialect/)
-- Normalization: [`internal/hookkit/toolname.go`](../internal/hookkit/toolname.go) — `NormalizeToolName`; [`sdk/agnostic/tools`](../sdk/agnostic/tools/) — `Input` with `AsBash`, `AsWrite`, and related accessors
-- Tests: [`internal/hookkit/toolname_test.go`](../internal/hookkit/toolname_test.go); [`sdk/agnostic/tools`](../sdk/agnostic/tools/) (`input_test.go`)
-- Cursor SDK: [`sdk/cursor/`](../sdk/cursor/) — typed events, package-internal encode, `UseHooks` registration into [`sdk/run`](../sdk/run/), event-bound tool input on the same package (`Input` with `AsShell`, …)
-- Tests: [`sdk/cursor/decode_test.go`](../sdk/cursor/decode_test.go) and per-hook tests under [`sdk/cursor/internal/hooks/`](../sdk/cursor/internal/hooks/)
+| Shared codec/normalization machinery | [`internal/hookkit`](../internal/hookkit/) |
+| Native event slices | [`sdk/claude/internal/hooks`](../sdk/claude/internal/hooks/), [`sdk/copilot/internal/hooks`](../sdk/copilot/internal/hooks/), [`sdk/cursor/internal/hooks`](../sdk/cursor/internal/hooks/) |
+| Native public facades and registrars | [`sdk/claude`](../sdk/claude/), [`sdk/copilot`](../sdk/copilot/), [`sdk/cursor`](../sdk/cursor/) |
+| Portable model and adapters | [`sdk/agnostic/internal`](../sdk/agnostic/internal/) |
+| Portable typed tool inputs | [`sdk/agnostic/tools`](../sdk/agnostic/tools/) |
+| Installation schemas | [`cmd/wat/internal/hostconfig`](../cmd/wat/internal/hostconfig/) |
+| End-to-end fixtures | [`testdata/fixtures`](../testdata/fixtures/) |

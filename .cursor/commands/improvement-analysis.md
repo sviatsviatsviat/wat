@@ -28,7 +28,10 @@ Review the current conversation (or the described session): corrections, fixes, 
 
 ## Reference
 
+- Architecture and extension patterns: `docs/architecture.md`
+- Public API: `docs/sdk.md`
+- CLI behavior: `docs/usage.md`
+- Contribution policy: `CONTRIBUTING.md`
 - Task planning DoD: `.cursor/skills/task-planning/SKILL.md`
-- CLI tests: `.cursor/skills/go-tests/SKILL.md`
+- Tests: `.cursor/skills/go-tests/SKILL.md`
 - CI pins: `.cursor/skills/ci-pins/SKILL.md`
-- Agent formats: `docs/agent-formats.md`

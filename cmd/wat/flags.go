@@ -19,7 +19,7 @@ func addAgentFlag(fs *flag.FlagSet, f *sharedFlags) {
 }
 
 func addEventFlag(fs *flag.FlagSet, f *sharedFlags) {
-	f.event = fs.String("event", "", "native event name (install/doctor identity; not used for decode)")
+	f.event = fs.String("event", "", "native event identity metadata (payload selects the decoded event)")
 }
 
 func addFailClosedFlag(fs *flag.FlagSet, f *sharedFlags) {

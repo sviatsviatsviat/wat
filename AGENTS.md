@@ -1,46 +1,76 @@
-## Context
+# Repository instructions
 
-**wat** is a Go monorepo (`github.com/sviatsviatsviat/wat`, Go 1.26) for hook scripts across Claude Code, GitHub Copilot, and Cursor. This is a greenfield redesign: the old `internal/*` Cursor-only layout is not preserved.
+`wat` is a Go 1.26 module (`github.com/sviatsviatsviat/wat`) for authoring and
+installing hook scripts across Claude Code, GitHub Copilot, and Cursor.
 
-**Packages:**
+Read these committed references before changing behavior:
 
-- **`cmd/wat`** — CLI entrypoint (`init`, `install`, `run`, `test`, `doctor`).
-- **`sdk/agnostic`** — Aggregated library: unified typed events/`Result`, `On*` registration that fans out onto per-agent SDK `On*` helpers. Inbound native→unified mapping and host result wrappers live in `sdk/agnostic/internal/{claude,cursor,copilot}` with shared leaf types and portable result interfaces in `sdk/agnostic/internal/model`. Depends on `sdk/claude`, `sdk/copilot`, and `sdk/cursor`.
-- **`sdk/claude`**, **`sdk/copilot`**, **`sdk/cursor`** — Per-agent SDKs; independent packages usable without `sdk/agnostic`.
-- **`internal/cmdast`** — Shell AST helpers (task 22; not present yet).
+- [Architecture](docs/architecture.md) for package ownership, dependencies, and
+  extension patterns.
+- [SDK API](docs/sdk.md) for the public author-facing contract.
+- [Using wat](docs/usage.md) for CLI behavior.
+- [Agent protocols](docs/agent-formats.md) for codec and normalization facts.
+- [Contributing](CONTRIBUTING.md) for tests, docs, changelog, commits, and CI.
 
-**Module graph:** `wat` depends on `sdk/agnostic`. Per-agent SDKs do not depend on `sdk/agnostic`.
+## Package map
 
-**Design docs:** Local-only `plan/` directory (gitignored) for task and design notes.
+- `cmd/wat`: thin CLI entrypoints; behavior lives in focused
+  `cmd/wat/internal/*` packages.
+- `sdk/run`: process dispatch and registration manifests.
+- `sdk/claude`, `sdk/copilot`, `sdk/cursor`: native protocol owners and public
+  facades.
+- `sdk/agnostic`: portable model and fan-out adapters; depends on all native
+  SDKs.
+- `sdk/agnostic/tools`: canonical portable tool names and typed inputs.
+- `internal/hookkit`: module-private codec, handler, merge, and normalization
+  machinery.
+- `testdata/fixtures`: native end-to-end hook payloads.
 
-**Development environment:** Linux Dev Container — see [.devcontainer/README.md](.devcontainer/README.md). Workspace lives on named volume `wat-workspace` at `/workspaces/wat` (no Windows bind mount).
+## Non-negotiable boundaries
 
-**Build and CI:**
+- Native SDKs must not import `sdk/agnostic`.
+- Native wire decoding, output encoding, merge, and exit behavior belong to the
+  owning native SDK.
+- Portable APIs expose only behavior all three agents can represent.
+- CLI install/test/doctor derive registered events from `run.Inspect`; do not
+  maintain a second event table.
+- Keep registration and package initialization free of external side effects.
+- CLI command files parse flags and map exit codes; inject I/O, filesystem,
+  environment, and process dependencies in internal implementations.
+- Every exported identifier has godoc. Package overviews go in `doc.go`.
+- Result/merge operations must not mutate caller-owned maps or slices.
+
+## Required verification
 
 ```bash
-go build ./cmd/wat
 go vet ./...
 go test ./...
 golangci-lint run ./...
+go build ./cmd/wat
 ```
 
-Verify locally: `go vet ./... && go test ./... && golangci-lint run ./...`
+Install the pinned linter outside the Dev Container:
 
-Install golangci-lint: `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2`
+```bash
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+```
 
-Browse API docs: `go doc github.com/sviatsviatsviat/wat/sdk/agnostic`
+Use focused package tests while iterating, then run the complete suite. New
+public behavior requires real behavior tests and documentation in the same
+change. The Linux Dev Container is the authoritative full-suite environment;
+some CLI tests rely on Unix utilities and are not Windows-hermetic.
 
-**Documentation:** User-facing behavior belongs in [docs/](docs/) and [CHANGELOG.md](CHANGELOG.md). Update those when API or CLI behavior changes in the same PR as the code.
+## Change hygiene
 
-**Dependabot:** [`.github/dependabot.yml`](.github/dependabot.yml) opens weekly PRs for GitHub Actions, Go modules, Dev Container Features, and the devcontainer base image (`.devcontainer/Dockerfile`). Keep exact pinned versions. When bumping a dependency, update every reference to **that same dependency** in the same PR (e.g. all `golangci-lint` pins: CI `version:`, README, AGENTS; all `govulncheck@` pins in workflow files). Unrelated pins do not need to move with every Action bump unless compatibility requires it.
+- User-visible CLI, SDK, hook protocol, or security behavior belongs in
+  `CHANGELOG.md`. Internal refactors, CI, tests, docs-only edits, and agent
+  tooling do not.
+- Update README/guides/godoc together when their described behavior changes.
+- Keep GitHub Actions and tool versions exactly pinned. A dependency bump
+  updates every reference to that dependency in the same change.
+- Use conventional commits with imperative subjects: `feat:`, `fix:`,
+  `refactor:`, `test:`, `docs:`, or `chore:`.
+- Pull request summaries cover the full branch and list verification.
 
-## Rules
-
-- **Layering:** Per-agent SDKs stay independent of `sdk/agnostic` (stdlib only). `sdk/agnostic` may depend on the agent SDKs and registers portable handlers onto their `On*` helpers via `sdk/agnostic/internal/{claude,cursor,copilot}` (shared leaf types in `internal/model`). Put CLI wiring in `cmd/wat`; do not reintroduce the old module-root `internal/core` + host packages layout unless a later task specifies it.
-- **Godoc:** Every exported identifier needs a godoc comment. Package overviews belong in `doc.go`. See `.cursor/rules/godoc.mdc` and the godoc skill.
-- **Tests:** Assert real behavior; no placeholder tests. See `.cursor/skills/go-tests/SKILL.md` and `.cursor/rules/go-tests.mdc`.
-- **Changelog:** User-facing functionality only (CLI, public API, hook behavior) — not scaffolding, CI, lint, or agent harness. Keep a Changelog format; **Added** for new capability; **Changed** / **Removed** only vs a published release. See the changelog skill.
-- **Version pinning:** Pin exact tool and action versions in workflows and docs; no `@latest`. Bump all references together. See **Version pinning** in `.cursor/rules/wat-core.mdc` and `.cursor/skills/ci-pins/SKILL.md`.
-- **Commits:** Conventional prefixes (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`). Imperative subject; body explains *why*. See the conventional-commits skill.
-- **Pull requests:** Summarize the full branch, not only the latest commit.
-- **Naming:** Clear identifiers (`args`, `programArgs`) over jargon (`argv`, `d`, `rest`) unless Unix argv is explicitly the topic.
+Local design notes may use the gitignored `plan/` directory, but current
+architecture and behavior must be documented in committed files.

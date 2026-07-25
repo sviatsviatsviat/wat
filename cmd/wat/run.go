@@ -16,8 +16,8 @@ func newRunCmd() *subcommandRunner {
 		name:    "run",
 		summary: "execute .wat/hooks.go on hook invocation",
 		long: "Build (if needed) and execute the user's hook script, passing stdin through untouched.\n\n" +
-			"wat run is designed for low warm-path latency: it hashes .wat/hooks.go + .wat/go.mod + wat version to\n" +
-			"compute a cache key, then executes a cached binary under .wat/.cache/ on subsequent invocations.",
+			"wat run hashes the .wat/ sources, wat and Go versions, target, and build settings to compute a cache key,\n" +
+			"then executes a cached binary under .wat/.cache/ on subsequent invocations.",
 		run: func() int {
 			cfg := hookrun.Config{FailClosed: shared.failClosedValue()}
 			return hookrun.Run(cfg, watModuleVersionFn(), hookrun.DefaultDeps(), stderr)

@@ -1,12 +1,23 @@
 # Dev Container
 
-Linux development environment for **wat** with Go 1.26 on `mcr.microsoft.com/devcontainers/go:2.1.5-1.26-bookworm`, golangci-lint 2.12.2, ripgrep (`rg`) 15.1.0, and GitHub CLI (`gh`) 2.96.0. Go comes from `Dockerfile`; the other tools are pinned Dev Container Features in `devcontainer.json`. The repo lives on a named Docker volume at `/workspaces/wat`. Only `.devcontainer/` is bind-mounted from the host so **Rebuild Container** picks up config edits from either side.
+The Dev Container is the authoritative Linux environment for wat's complete
+verification suite. It includes:
+
+- Go 1.26 from `mcr.microsoft.com/devcontainers/go:2-1.26-bookworm`;
+- golangci-lint 2.12.2;
+- ripgrep 15.1.0;
+- GitHub CLI 2.96.0.
+
+The repository lives in the named Docker volume `wat-workspace` at
+`/workspaces/wat`. Only the local `.devcontainer/` directory is bind-mounted,
+so configuration edits are visible during a rebuild without putting the Go
+workspace on a Windows bind mount.
 
 ## First-time setup
 
-1. Open this repo locally in Cursor (Windows path — used for `.devcontainer/` bind mount and rebuild).
-2. Run **Dev Containers: Rebuild and Reopen in Container** from the Command Palette.
-3. After the container starts, clone the repo inside it:
+1. Open the local checkout in an editor with Dev Containers support.
+2. Run **Dev Containers: Rebuild and Reopen in Container**.
+3. Clone the repository into the named volume:
 
 ```bash
 git clone https://github.com/sviatsviatsviat/wat.git /workspaces/wat
@@ -14,33 +25,59 @@ cd /workspaces/wat
 go mod download
 ```
 
-3. Open `/workspaces/wat` as the workspace folder if Cursor did not do so automatically.
+4. Open `/workspaces/wat` as the workspace folder if it was not selected
+   automatically.
 
-## Troubleshooting
-
-### "No remote authority found"
-
-This means Cursor is still in a **local** window — the container connection did not complete. Close the window, reopen the repo locally, then run **Dev Containers: Rebuild and Reopen in Container** again. Do not use attach/reopen commands from a window that never connected.
-
-Check **Output → Dev Containers** for build or server-install errors.
+The `postStartCommand` runs `go mod download` on later starts when `go.mod` is
+present.
 
 ## Daily workflow
 
-- **Update**: `git pull` from `/workspaces/wat`.
-- **Verify**:
+Run commands from `/workspaces/wat`:
 
 ```bash
-go vet ./... && go test ./... && golangci-lint run ./...
+git pull
+go vet ./...
+go test ./...
+golangci-lint run ./...
+go build ./cmd/wat
 ```
 
-## Dev Container config
+The Linux environment matters because some CLI tests execute Unix utilities
+such as `echo` and `sleep`.
 
-Edit `.devcontainer/` on the host or at `/workspaces/wat/.devcontainer/` in the container — they are the same files (host bind mount). Rebuild reads this folder; the rest of the repo stays on volume `wat-workspace`.
+## Updating the environment
 
-## Volume persistence
+Edit `.devcontainer/Dockerfile` or `.devcontainer/devcontainer.json` in the
+host checkout, then rebuild the container. The bind mount makes the same files
+visible at `/workspaces/wat/.devcontainer/`.
 
-The repo persists in the Docker volume `wat-workspace` across container rebuilds. Removing it is destructive:
+Keep image, Feature, and tool versions exact. When bumping a tool, update every
+reference to that same version in workflows and contributor/agent
+documentation.
+
+## Troubleshooting
+
+### No remote authority found
+
+The editor is still in a local window or the container connection did not
+complete. Reopen the local checkout and run **Rebuild and Reopen in Container**
+again. Check the editor's Dev Containers output for build or server-install
+errors.
+
+### Workspace is empty after rebuild
+
+The named volume may not contain a clone yet. Follow the first-time clone
+steps. Container rebuilds preserve `wat-workspace`; they do not populate it
+from the host checkout.
+
+## Volume lifecycle
+
+The repository persists across container rebuilds. Removing the Docker volume
+deletes that clone and all unpushed work inside it:
 
 ```bash
 docker volume rm wat-workspace
 ```
+
+Only remove the volume when that destructive reset is intentional.

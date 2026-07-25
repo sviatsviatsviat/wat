@@ -1,54 +1,40 @@
 ---
 name: conventional-commits
 description: >-
-  Draft git commit messages with conventional prefixes. Use when committing,
-  summarizing changes for commit, or the user asks for commit message help.
+  Draft intentional conventional commits for wat changes.
 ---
 
 # Conventional commits
 
-## Format
+Use:
 
-```
+```text
 <type>(<optional-scope>): <imperative subject>
 
 <optional body explaining why>
 ```
 
-## Types
+Supported types:
 
-| Prefix | Use for |
-|--------|---------|
-| `feat:` | New user-facing behavior or API |
-| `fix:` | Bug fix |
-| `refactor:` | Code change without behavior change |
-| `test:` | Tests only |
-| `docs:` | Documentation only |
-| `chore:` | Build, CI, tooling, deps |
+| Type | Use |
+|---|---|
+| `feat` | New user-visible CLI or SDK behavior |
+| `fix` | Correction to user-visible or internal behavior |
+| `refactor` | Code change without behavior change |
+| `test` | Tests only |
+| `docs` | Documentation only |
+| `chore` | Build, CI, tooling, or dependency maintenance |
 
-## Scope (optional)
+Useful scopes include `wat`, `run`, `agnostic`, `claude`, `copilot`, and
+`cursor`.
 
-Examples: `feat(wat):`, `feat(agnostic):`, `fix(cursor):`
+Use imperative mood, omit the trailing period, and keep the subject concise.
+Use the body for motivation, compatibility, or a non-obvious tradeoff.
 
-## Subject
+Examples:
 
-- Imperative mood: "add handler" not "added handler"
-- No trailing period
-- ~72 characters or less when practical
-
-## Body
-
-Explain **why** the change is needed. Reference issues or design sections when helpful.
-
-## Examples
-
-```
-feat(agnostic): add unified Event Kind constants
-
-Normalize event names across Claude, Copilot, and Cursor so one handler
-registers once in Mux.On.
-```
-
-```
-chore: wire golangci-lint and revive exported rule in CI
+```text
+feat(agnostic): add portable pre-compact hook
+fix(wat): preserve unrelated installed handlers
+docs: explain native SDK registration patterns
 ```

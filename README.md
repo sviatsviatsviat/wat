@@ -1,104 +1,128 @@
 # wat
 
-**wat** is a Go CLI and library stack for authoring hook scripts that run under Claude Code, GitHub Copilot, and Cursor. The redesign provides a unified `sdk/agnostic` library, per-agent SDKs under `sdk/`, and a `wat` command that compiles and installs user hook scripts.
+`wat` lets you write one Go hook project and run it under Claude Code, GitHub
+Copilot, and Cursor. It provides:
 
-## Build
+- a CLI that scaffolds, builds, installs, tests, and diagnoses hook projects;
+- a portable SDK for behavior shared by all three agents;
+- native SDKs for agent-specific events and response fields.
+
+The project currently requires Go 1.26.
+
+## Quick start
+
+Build and install the CLI from this checkout:
 
 ```bash
-go build ./cmd/wat
+go install ./cmd/wat
 ```
 
-On Windows the toolchain writes `wat.exe`; on Unix, `wat`. Avoid `go build -o wat` on Windows — use `./cmd/wat` or `-o wat.exe`.
+From the repository where you want hooks:
 
-## Commands
+```bash
+wat init
+wat install
+wat doctor
+```
 
-| Command | Description |
-|---------|-------------|
-| `wat init` | Scaffold a `.wat/` hook project |
-| `wat install` | Install only the native events registered by `.wat/hooks.go` |
-| `wat run` | Execute `.wat/hooks.go` on hook invocation |
-| `wat test` | Run hook script against fixture payloads |
-| `wat doctor` | Verify toolchain, script, cache, and install state |
-
-Run `wat help` for the command list or `wat <command> -h` for per-command flags.
-
-## Hook projects
-
-`wat init` creates an importable `.wat/hooks.go` package. Export one `[]run.Hooks`
-slice containing portable and/or agent-native fluent registrations:
+`wat init` creates an independent Go module in `.wat/`. Its `hooks.go` exports
+the registrations that `wat install` inspects and installs:
 
 ```go
 package hooks
 
 import (
+	"context"
+	"strings"
+
 	"github.com/sviatsviatsviat/wat/sdk/agnostic"
-	"github.com/sviatsviatsviat/wat/sdk/cursor"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// Hooks contains this project's hook registrations.
+func guardPush(ctx context.Context, event agnostic.PreToolEvent, results agnostic.PreToolResults) (agnostic.PreToolResult, error) {
+	if event.Tool != nil && strings.Contains(event.Tool.Shell, "push --force") {
+		return results.Deny("force pushes are not allowed"), nil
+	}
+	return nil, nil
+}
+
+// Hooks is the hook project's public contract with wat.
 var Hooks = []run.Hooks{
-	agnostic.UseHooks().
-		OnPreTool(preTool).
-		OnStop(stop),
-	cursor.UseHooks().
-		BeforeShellExecution(beforeShell),
+	agnostic.UseHooks().OnPreTool(guardPush),
 }
 ```
 
-`wat` generates the executable bootstrap and caches the resulting binary.
-`wat install` inspects `Hooks`, expands portable registrations to their native
-agent events, installs one entry per registered event, and removes stale
-wat-managed entries. Multiple handlers for the same native event share one
-installed entry and run in registration order.
+Returning `nil` means that a handler has no opinion. Response-producing
+handlers receive a hook-specific result builder; observe-only handlers return
+only an error.
 
-Package initialization runs when `wat install`, `wat doctor`, `wat test`, or a
-live hook loads the binary. Keep registration expressions and `init` functions
-free of external side effects; perform runtime work inside handlers.
+Test the hook without starting an agent:
 
-## Exit codes
+```bash
+wat test --agent claude --fixture path/to/pre_tool_fixture.json
+```
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `1` | Usage error (unknown command, invalid flags) |
-| `2` | `wat run --fail-closed` build failure (block/deny) |
-| `3` | Runtime failure (missing project, I/O error) |
-| `4` | `wat doctor` check failure |
+Run the command from a directory inside the target project, or set
+`WAT_PROJECT_DIR` to its root.
 
-## Test and lint
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `wat init [path]` | Create `.wat/go.mod`, `.wat/hooks.go`, and the build cache directory |
+| `wat install` | Reconcile registered native events into the selected agent configs |
+| `wat run` | Build on a cache miss, then execute the hook process against stdin |
+| `wat test` | Execute a registered hook against a JSON fixture and print a report |
+| `wat doctor` | Check Go, the hook project, cache, manifest, and installed configs |
+
+Use `wat help` and `wat <command> -h` for the exact flags.
+
+## Choose an SDK
+
+Use [`sdk/agnostic`](sdk/agnostic/) when the behavior must work across all
+agents. It normalizes lifecycle, prompt, tool, subagent, stop, and compaction
+events and maps portable results back to each native protocol.
+
+Use [`sdk/claude`](sdk/claude/), [`sdk/copilot`](sdk/copilot/), or
+[`sdk/cursor`](sdk/cursor/) when you need a native event or response field that
+cannot be represented portably. Portable and native registrations can coexist
+in the same `Hooks` slice.
+
+Use [`sdk/run`](sdk/run/) only when building a standalone hook executable or
+inspecting registrations programmatically. The `wat` CLI generates this
+bootstrap for `.wat/` projects.
+
+## Documentation
+
+| Document | Read it for |
+|---|---|
+| [Using wat](docs/usage.md) | Installation, project discovery, commands, cache behavior, exit codes, and troubleshooting |
+| [SDK API](docs/sdk.md) | Portable and native registration APIs, event/result patterns, and examples |
+| [Architecture](docs/architecture.md) | Package boundaries, request lifecycle, and implementation patterns |
+| [Agent protocols](docs/agent-formats.md) | Event coverage, tool normalization, and native protocol differences |
+| [Contributing](CONTRIBUTING.md) | Development workflow, tests, docs, commits, and pull requests |
+| [Changelog](CHANGELOG.md) | User-visible capabilities planned for the next release |
+
+Browse package documentation locally:
+
+```bash
+go doc github.com/sviatsviatsviat/wat/sdk/agnostic
+go doc github.com/sviatsviatsviat/wat/sdk/claude
+go doc github.com/sviatsviatsviat/wat/sdk/run
+```
+
+## Development
 
 ```bash
 go vet ./...
 go test ./...
 golangci-lint run ./...
+go build ./cmd/wat
 ```
 
-Install golangci-lint once:
-
-```bash
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
-```
-
-Verify: `go vet ./... && go test ./... && golangci-lint run ./...`
-
-## Dev Container
-
-Linux development environment with Go 1.26 and pinned lint tools. See [.devcontainer/README.md](.devcontainer/README.md) for setup (named volume at `/workspaces/wat`, manual `git clone`).
-
-## Documentation
-
-| Doc | Purpose |
-|-----|---------|
-| [docs/README.md](docs/README.md) | Documentation index |
-| [docs/agent-formats.md](docs/agent-formats.md) | Tool and MCP naming across agents |
-| [CHANGELOG.md](CHANGELOG.md) | Release notes |
-| [AGENTS.md](AGENTS.md) | Contributor and agent workflow conventions |
-
-Browse package docs: `go doc github.com/sviatsviatsviat/wat/sdk/agnostic`
-
-Architecture and task breakdown live in a local-only `plan/` directory (gitignored).
+The repository also provides a pinned Linux development environment in
+[`.devcontainer/`](.devcontainer/README.md).
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE).
+Apache License 2.0. See [LICENSE](LICENSE).
