@@ -53,7 +53,7 @@ func CacheWarm(deps Deps, ctx Context) []Result {
 	if ctx.WatErr != nil {
 		return nil
 	}
-	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.Command)
+	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.WriteFile, deps.Command)
 	key, err := buildcache.CacheKey(ctx.WatDir, deps.WatVersion, bc)
 	if err != nil {
 		return []Result{{

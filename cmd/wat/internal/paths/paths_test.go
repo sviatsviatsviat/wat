@@ -1,6 +1,7 @@
 package paths
 
 import (
+	"path/filepath"
 	"testing"
 
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
@@ -9,14 +10,14 @@ import (
 )
 
 func TestConfigPath(t *testing.T) {
-	root := "/project"
+	root := filepath.Join(string(filepath.Separator), "project")
 	tests := []struct {
 		dialect string
 		want    string
 	}{
-		{dialect: sdkclaude.Dialect, want: "/project/.claude/settings.json"},
-		{dialect: sdkcopilot.Dialect, want: "/project/.github/hooks/wat.json"},
-		{dialect: sdkcursor.Dialect, want: "/project/.cursor/hooks.json"},
+		{dialect: sdkclaude.Dialect, want: filepath.Join(root, ".claude", "settings.json")},
+		{dialect: sdkcopilot.Dialect, want: filepath.Join(root, ".github", "hooks", "wat.json")},
+		{dialect: sdkcursor.Dialect, want: filepath.Join(root, ".cursor", "hooks.json")},
 		{dialect: "unknown", want: ""},
 	}
 	for _, tt := range tests {

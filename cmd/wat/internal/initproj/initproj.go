@@ -58,12 +58,12 @@ func Init(root string, force bool, version string, deps Deps, out, errOut io.Wri
 		return err
 	}
 
-	if err := goModTidy(watDir, deps, out, errOut); err != nil {
-		return err
-	}
-
 	if err := deps.WriteFile(hooksPath, []byte(HooksGo), 0o600); err != nil {
 		return fmt.Errorf("write %s: %w", hooksPath, err)
+	}
+
+	if err := goModTidy(watDir, deps, out, errOut); err != nil {
+		return err
 	}
 
 	_, _ = fmt.Fprintln(out, "Initialized .wat/ hook project.")
@@ -107,7 +107,7 @@ func GoMod(version string) (string, error) {
 }
 
 // HooksGo is the default .wat/hooks.go scaffold template.
-const HooksGo = `package main
+const HooksGo = `package hooks
 
 import (
 	"context"
@@ -119,9 +119,9 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-func main() {
-	run.Serve(
-		agnostic.UseHooks().OnPreTool(func(ctx context.Context, hook agnostic.PreToolEvent, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
+// Hooks contains this project's hook registrations.
+var Hooks = []run.Hooks{
+	agnostic.UseHooks().OnPreTool(func(ctx context.Context, hook agnostic.PreToolEvent, r agnostic.PreToolResults) (agnostic.PreToolResult, error) {
 			// Guard: block force pushes, escalate other git pushes to the user.
 			// Fires on PreToolUse (Claude/Copilot) and on preToolUse /
 			// beforeShellExecution (Cursor); hook.Tool.Shell is the extracted command.
@@ -163,6 +163,5 @@ func main() {
 				}
 				return nil, nil
 			}),
-	)
 }
 `

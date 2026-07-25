@@ -15,12 +15,46 @@ On Windows the toolchain writes `wat.exe`; on Unix, `wat`. Avoid `go build -o wa
 | Command | Description |
 |---------|-------------|
 | `wat init` | Scaffold a `.wat/` hook project |
-| `wat install` | Write hook config entries pointing at `wat run` |
+| `wat install` | Install only the native events registered by `.wat/hooks.go` |
 | `wat run` | Execute `.wat/hooks.go` on hook invocation |
 | `wat test` | Run hook script against fixture payloads |
 | `wat doctor` | Verify toolchain, script, cache, and install state |
 
 Run `wat help` for the command list or `wat <command> -h` for per-command flags.
+
+## Hook projects
+
+`wat init` creates an importable `.wat/hooks.go` package. Export one `[]run.Hooks`
+slice containing portable and/or agent-native fluent registrations:
+
+```go
+package hooks
+
+import (
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
+// Hooks contains this project's hook registrations.
+var Hooks = []run.Hooks{
+	agnostic.UseHooks().
+		OnPreTool(preTool).
+		OnStop(stop),
+	cursor.UseHooks().
+		BeforeShellExecution(beforeShell),
+}
+```
+
+`wat` generates the executable bootstrap and caches the resulting binary.
+`wat install` inspects `Hooks`, expands portable registrations to their native
+agent events, installs one entry per registered event, and removes stale
+wat-managed entries. Multiple handlers for the same native event share one
+installed entry and run in registration order.
+
+Package initialization runs when `wat install`, `wat doctor`, `wat test`, or a
+live hook loads the binary. Keep registration expressions and `init` functions
+free of external side effects; perform runtime work inside handlers.
 
 ## Exit codes
 

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Importable `.wat/hooks.go` projects export `var Hooks = []run.Hooks{...}`; `wat` generates and caches the executable bootstrap, while `run.Inspect` exposes the contributed native registration manifest. `wat install` reconciles only registered events and removes stale wat-managed entries; `wat doctor` validates installed entries against the same manifest; `wat test` reports unregistered fixture events
 - Multi-handler hook responses fold via typed `Output.Merge` / `Stop` in `sdk/run` (encode once); deny/block and `continue: false` stop later handlers; Ask does not; last-wins replace-field conflicts warn on stderr
 - Claude stamps `hookEventName` from Results builders (or a fixed event constant per output type); Claude `SessionStart` `WithEnv` writes `CLAUDE_ENV_FILE` inside `sessionStartOutput.Encode`
 - `sdk/run` process lifecycle with `Serve(hooks ...Hooks)`; dialect codec and handler bag live in `internal/hookkit`; public `Hooks` / `Registry` and private dialect router live in `sdk/run`; agent and agnostic SDKs build deferred `UseHooks` registrations that `Serve` merges by dialect before auto-detect, peek, decode-once, and typed dispatch
@@ -21,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Hook output and portable result types in `sdk/agnostic` are constructed via `On*`-injected `*Results` builders (and `With*`); `nil` is the no-op; host-specific wrappers live in `sdk/agnostic/internal/{claude,cursor,copilot}` and implement interfaces from `internal/model`
 - Claude `OnElicitation`, `OnMessageDisplay`, and `OnWorktreeCreate` accept hook-scoped result builders (`ElicitationResults`, `MessageDisplayResults`, `WorktreeCreateResults`)
 - Agnostic normalized event types (`PreToolEvent`, `PostToolEvent`, `SessionEndEvent`, …) and per-kind handlers; unified signatures `(ctx, event, results)` / `(ctx, event) error`; expanded `On*` coverage (copilot 13/13, cursor 21/21, claude `OnSessionEnd`)
-- Typed `UseHooks().OnPreTool`, `OnPostTool`, `OnStop`, and related handlers plus observe-only `OnSessionEnd` with fluent chaining; hook scripts pass hooks to `run.Serve` (merges same-dialect hooks, auto-detects dialect)
+- Typed `UseHooks().OnPreTool`, `OnPostTool`, `OnStop`, and related handlers plus observe-only `OnSessionEnd` with fluent chaining; direct SDK consumers pass hooks to `run.Serve`, while wat projects export them through `Hooks`
 - Payloads must include `hook_event_name` (Claude, Copilot, and Cursor)
 - Per-agent `Dialect` string constants (`claude.Dialect`, `copilot.Dialect`, `cursor.Dialect`) for `sdk/run` registration and `Envelope.Agent`
 - `claude` package with typed Claude Code hook events, package-internal encode, `UseHooks` chain methods with hook-scoped result builders registering into `sdk/run`, and event-bound tool input on the same package (`Input` with `AsBash`, `AsWrite`, and related accessors; `Tool*` name constants)

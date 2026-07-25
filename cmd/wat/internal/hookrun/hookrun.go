@@ -28,26 +28,28 @@ type Config struct {
 
 // Deps holds injectable dependencies for Run.
 type Deps struct {
-	Getenv   func(string) string
-	Getwd    func() (string, error)
-	Stat     func(string) (os.FileInfo, error)
-	ReadDir  func(string) ([]os.DirEntry, error)
-	ReadFile func(string) ([]byte, error)
-	MkdirAll func(string, os.FileMode) error
-	Command  func(string, ...string) *exec.Cmd
-	RunCmd   func(*exec.Cmd) error
+	Getenv    func(string) string
+	Getwd     func() (string, error)
+	Stat      func(string) (os.FileInfo, error)
+	ReadDir   func(string) ([]os.DirEntry, error)
+	ReadFile  func(string) ([]byte, error)
+	MkdirAll  func(string, os.FileMode) error
+	WriteFile func(string, []byte, os.FileMode) error
+	Command   func(string, ...string) *exec.Cmd
+	RunCmd    func(*exec.Cmd) error
 }
 
 // DefaultDeps returns production dependencies backed by the OS.
 func DefaultDeps() Deps {
 	return Deps{
-		Getenv:   os.Getenv,
-		Getwd:    os.Getwd,
-		Stat:     os.Stat,
-		ReadDir:  os.ReadDir,
-		ReadFile: os.ReadFile,
-		MkdirAll: os.MkdirAll,
-		Command:  exec.Command,
+		Getenv:    os.Getenv,
+		Getwd:     os.Getwd,
+		Stat:      os.Stat,
+		ReadDir:   os.ReadDir,
+		ReadFile:  os.ReadFile,
+		MkdirAll:  os.MkdirAll,
+		WriteFile: os.WriteFile,
+		Command:   exec.Command,
 		RunCmd: func(cmd *exec.Cmd) error {
 			return cmd.Run()
 		},
@@ -66,7 +68,7 @@ func Run(cfg Config, version string, deps Deps, errOut io.Writer) int {
 		return ExitRuntimeFailure
 	}
 
-	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.Command)
+	bc := buildcache.Adapt(deps.Getenv, deps.Stat, deps.ReadDir, deps.ReadFile, deps.MkdirAll, deps.WriteFile, deps.Command)
 	binPath, err := buildcache.Ensure(watDir, version, bc, errOut)
 	if err != nil {
 		if errors.Is(err, buildcache.ErrBuildFailed) {

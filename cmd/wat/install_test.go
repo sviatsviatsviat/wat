@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +14,9 @@ import (
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/installcfg"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
+	"github.com/sviatsviatsviat/wat/sdk/copilot"
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
+	sdkrun "github.com/sviatsviatsviat/wat/sdk/run"
 )
 
 func TestInstallProject_freshInstallAll(t *testing.T) {
@@ -37,8 +41,9 @@ func TestInstallProject_freshInstallAll(t *testing.T) {
 
 	watAbs := filepath.Join(project, "bin", "wat")
 	if err := installcfg.Install(installcfg.Config{
-		Agents:  installcfg.AgentPlan{Claude: true, Copilot: true, Cursor: true},
-		WatPath: watAbs,
+		Agents:   installcfg.AgentPlan{Claude: true, Copilot: true, Cursor: true},
+		WatPath:  watAbs,
+		Manifest: installTestManifest(),
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -109,6 +114,43 @@ func TestInstallProject_freshInstallAll(t *testing.T) {
 	}
 }
 
+func TestInstallProject_discoversAuthoredHooksIntegration(t *testing.T) {
+	project := setupTestHookProject(t)
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
+	watAbs := filepath.Join(project, "bin", "wat")
+
+	if err := installcfg.Install(installcfg.Config{
+		Agents:     installcfg.AgentPlan{Cursor: true},
+		WatPath:    watAbs,
+		WatVersion: watModuleVersionFn(),
+	}, deps); err != nil {
+		t.Fatal(err)
+	}
+
+	cursorPath := filepath.Join(project, ".cursor", "hooks.json")
+	body, err := os.ReadFile(cursorPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var installed hostcursor.File
+	if err := json.Unmarshal(body, &installed); err != nil {
+		t.Fatal(err)
+	}
+	for _, event := range []string{
+		cursor.EventBeforeShellExecution,
+		cursor.EventAfterFileEdit,
+		cursor.EventStop,
+	} {
+		if len(installed.Hooks[event]) != 1 {
+			t.Fatalf("%s handlers = %d, want 1", event, len(installed.Hooks[event]))
+		}
+	}
+	if _, ok := installed.Hooks[cursor.EventSessionStart]; ok {
+		t.Fatalf("unregistered %s event was installed", cursor.EventSessionStart)
+	}
+}
+
 func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 	project := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(project, ".wat"), 0o755); err != nil {
@@ -144,8 +186,9 @@ func TestInstallProject_mergePreservesUnrelated(t *testing.T) {
 	deps.Getwd = func() (string, error) { return project, nil }
 	watAbs := filepath.Join(project, "bin", "wat")
 	if err := installcfg.Install(installcfg.Config{
-		Agents:  installcfg.AgentPlan{Cursor: true},
-		WatPath: watAbs,
+		Agents:   installcfg.AgentPlan{Cursor: true},
+		WatPath:  watAbs,
+		Manifest: installTestManifest(),
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -199,8 +242,9 @@ func TestInstallProject_reinstallReplacesWatEntries(t *testing.T) {
 	deps := installcfg.DefaultDeps()
 	deps.Getwd = func() (string, error) { return project, nil }
 	if err := installcfg.Install(installcfg.Config{
-		Agents:  installcfg.AgentPlan{Cursor: true},
-		WatPath: watAbs,
+		Agents:   installcfg.AgentPlan{Cursor: true},
+		WatPath:  watAbs,
+		Manifest: installTestManifest(),
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -242,8 +286,9 @@ func TestInstallProject_agentFiltering(t *testing.T) {
 	deps.Getwd = func() (string, error) { return project, nil }
 	watAbs := filepath.Join(project, "bin", "wat")
 	if err := installcfg.Install(installcfg.Config{
-		Agents:  installcfg.AgentPlan{Cursor: true},
-		WatPath: watAbs,
+		Agents:   installcfg.AgentPlan{Cursor: true},
+		WatPath:  watAbs,
+		Manifest: installTestManifest(),
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -256,6 +301,41 @@ func TestInstallProject_agentFiltering(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(project, ".github", "hooks", "wat.json")); err == nil {
 		t.Fatalf("copilot wat.json should not be written when installing only cursor")
+	}
+}
+
+func TestInstallProject_emptyManifestDoesNotCreateConfigs(t *testing.T) {
+	project := t.TempDir()
+	watDir := filepath.Join(project, ".wat")
+	if err := os.MkdirAll(watDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	manifest := &sdkrun.Manifest{Version: 1}
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
+	if err := installcfg.Install(installcfg.Config{
+		Agents:   installcfg.AgentPlan{Claude: true, Copilot: true, Cursor: true},
+		WatPath:  filepath.Join(project, "bin", "wat"),
+		Manifest: manifest,
+	}, deps); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, path := range []string{
+		filepath.Join(project, ".claude", "settings.json"),
+		filepath.Join(project, ".github", "hooks", "wat.json"),
+		filepath.Join(project, ".cursor", "hooks.json"),
+	} {
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("config %s was created for an empty manifest", path)
+		}
 	}
 }
 
@@ -409,8 +489,9 @@ func TestInstallProject_claudeMergePreservesUnrelated(t *testing.T) {
 	deps.Getwd = func() (string, error) { return project, nil }
 	watAbs := filepath.Join(project, "bin", "wat")
 	if err := installcfg.Install(installcfg.Config{
-		Agents:  installcfg.AgentPlan{Claude: true},
-		WatPath: watAbs,
+		Agents:   installcfg.AgentPlan{Claude: true},
+		WatPath:  watAbs,
+		Manifest: installTestManifest(),
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -473,8 +554,9 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 	deps := installcfg.DefaultDeps()
 	deps.Getwd = func() (string, error) { return project, nil }
 	if err := installcfg.Install(installcfg.Config{
-		Agents:  installcfg.AgentPlan{Claude: true},
-		WatPath: watAbs,
+		Agents:   installcfg.AgentPlan{Claude: true},
+		WatPath:  watAbs,
+		Manifest: installTestManifest(),
 	}, deps); err != nil {
 		t.Fatalf("installProject: %v", err)
 	}
@@ -498,6 +580,96 @@ func TestInstallProject_claudeReinstallReplacesWatEntries(t *testing.T) {
 	}
 	if watCount != 1 {
 		t.Fatalf("expected exactly 1 wat-managed %s handler, got %d", event, watCount)
+	}
+}
+
+func TestInstallProject_removesStaleManagedEvents(t *testing.T) {
+	project := t.TempDir()
+	watDir := filepath.Join(project, ".wat")
+	if err := os.MkdirAll(watDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "hooks.go"), []byte("package hooks\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(watDir, "go.mod"), []byte("module wat-hooks\ngo 1.26\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	watAbs := filepath.Join(project, "bin", "wat")
+	cursorPath := filepath.Join(project, ".cursor", "hooks.json")
+	if err := os.MkdirAll(filepath.Dir(cursorPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	seed := hostcursor.File{
+		Version: 1,
+		Hooks: map[string][]json.RawMessage{
+			cursor.EventPostToolUse: {
+				mustHandlerRaw(t, hostcursor.Handler{
+					Type:    hostcursor.HandlerTypeCommand,
+					Command: installcfg.WatRunCommand(filepath.Join(project, "old", "wat"), cursor.Dialect, cursor.EventPostToolUse),
+				}),
+				mustHandlerRaw(t, hostcursor.Handler{
+					Type:    hostcursor.HandlerTypeCommand,
+					Command: "echo keep-me",
+				}),
+			},
+		},
+	}
+	body, err := json.MarshalIndent(seed, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cursorPath, append(body, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	manifest := &sdkrun.Manifest{
+		Version: 1,
+		Registrations: []sdkrun.Registration{{
+			Dialect:      cursor.Dialect,
+			Event:        cursor.EventPreToolUse,
+			HandlerCount: 1,
+		}},
+	}
+	deps := installcfg.DefaultDeps()
+	deps.Getwd = func() (string, error) { return project, nil }
+	if err := installcfg.Install(installcfg.Config{
+		Agents:   installcfg.AgentPlan{Cursor: true},
+		WatPath:  watAbs,
+		Manifest: manifest,
+	}, deps); err != nil {
+		t.Fatal(err)
+	}
+
+	var got hostcursor.File
+	installed, err := os.ReadFile(cursorPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(installed, &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Hooks[cursor.EventPreToolUse]) != 1 {
+		t.Fatalf("preToolUse handlers = %d, want 1", len(got.Hooks[cursor.EventPreToolUse]))
+	}
+	staleHandlers := got.Hooks[cursor.EventPostToolUse]
+	if len(staleHandlers) != 1 {
+		t.Fatalf("postToolUse handlers = %d, want unrelated handler only", len(staleHandlers))
+	}
+	if handler := parseHandler[hostcursor.Handler](t, staleHandlers[0]); handler.Command != "echo keep-me" {
+		t.Fatalf("preserved command = %q, want echo keep-me", handler.Command)
+	}
+}
+
+func installTestManifest() *sdkrun.Manifest {
+	return &sdkrun.Manifest{
+		Version: 1,
+		Registrations: []sdkrun.Registration{
+			{Dialect: claude.Dialect, Event: claude.EventPreToolUse, HandlerCount: 1},
+			{Dialect: copilot.Dialect, Event: copilot.EventPreToolUse, HandlerCount: 1},
+			{Dialect: cursor.Dialect, Event: cursor.EventPreToolUse, HandlerCount: 1},
+		},
 	}
 }
 

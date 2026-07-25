@@ -14,14 +14,18 @@ import (
 // then os.Exit with the resulting code.
 func Serve(hooks ...Hooks) {
 	r := newRouter()
+	contribute(r, hooks)
+	code := serve(context.Background(), r, os.Stdin, os.Stdout, os.Stderr)
+	os.Exit(code)
+}
+
+func contribute(r Registry, hooks []Hooks) {
 	for _, h := range hooks {
 		if h == nil {
 			continue
 		}
 		h.Contribute(r)
 	}
-	code := serve(context.Background(), r, os.Stdin, os.Stdout, os.Stderr)
-	os.Exit(code)
 }
 
 func serve(ctx context.Context, router *router, in io.Reader, out io.Writer, errw io.Writer) int {

@@ -1,6 +1,10 @@
 package run
 
-import "github.com/sviatsviatsviat/wat/internal/hookkit"
+import (
+	"sort"
+
+	"github.com/sviatsviatsviat/wat/internal/hookkit"
+)
 
 type routerEntry struct {
 	detect  hookkit.DetectFunc
@@ -48,4 +52,25 @@ func (r *router) detect(raw []byte) (name string, d *hookkit.Dialect, ok bool) {
 		}
 	}
 	return "", nil, false
+}
+
+func (r *router) manifest() Manifest {
+	manifest := Manifest{Version: ManifestVersion}
+	for name, entry := range r.byName {
+		for _, event := range entry.dialect.EventNames() {
+			manifest.Registrations = append(manifest.Registrations, Registration{
+				Dialect:      name,
+				Event:        event,
+				HandlerCount: len(entry.dialect.HandlersFor(event)),
+			})
+		}
+	}
+	sort.Slice(manifest.Registrations, func(i, j int) bool {
+		left, right := manifest.Registrations[i], manifest.Registrations[j]
+		if left.Dialect != right.Dialect {
+			return left.Dialect < right.Dialect
+		}
+		return left.Event < right.Event
+	})
+	return manifest
 }

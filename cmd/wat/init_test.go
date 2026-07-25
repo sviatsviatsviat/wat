@@ -50,6 +50,15 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 	if !strings.Contains(string(hooks), "agnostic.UseHooks()") {
 		t.Fatalf("hooks.go missing UseHooks: %s", hooks)
 	}
+	if !strings.Contains(string(hooks), "package hooks") {
+		t.Fatalf("hooks.go is not an importable hooks package: %s", hooks)
+	}
+	if !strings.Contains(string(hooks), "var Hooks = []run.Hooks{") {
+		t.Fatalf("hooks.go missing exported Hooks registrations: %s", hooks)
+	}
+	if strings.Contains(string(hooks), "func main()") {
+		t.Fatalf("hooks.go should not define main: %s", hooks)
+	}
 	goModPath := filepath.Join(dir, ".wat", "go.mod")
 	goMod, err := os.ReadFile(goModPath)
 	if err != nil {
