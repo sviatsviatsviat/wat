@@ -17,6 +17,10 @@
 // are observe-only (Cursor Hooks docs list no consumed output fields). Rewrite
 // MCP tool output with PostToolUse. Cloud agents do not load MCP hooks.
 //
+// Live subagentStart payloads may use automatic model sentinels
+// ("", "auto", "default", "inherit") and kebab-case subagent_type values;
+// see field godoc on SubagentStart and docs/agent-formats.md.
+//
 // Tool input on PreToolUse and related events is typed as [Input] with AsShell,
 // AsRead, and related accessors (and Tool* name constants) in this package.
 //

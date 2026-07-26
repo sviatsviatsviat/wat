@@ -156,6 +156,16 @@ Known limitations are part of the contract:
   The hook is not available for Cursor cloud agents.
 - Cursor `sessionEnd` is tied to the IDE composer session and is not available
   for cloud agents. The response body is unused (observe-only).
+- Cursor `subagentStart` live payloads (observed on Cursor 3.13.x) differ from
+  the published Hooks schema examples in a few ways authors must handle:
+  - Automatic model selection is not only `"auto"`. Live `subagent_model`
+    values also include `""`, `"default"`, and `"inherit"` (case-insensitive
+    after trim). Treat those sentinels as unpinned rather than concrete IDs.
+  - A pinned Task sets both envelope `model` and `subagent_model` to the same
+    concrete ID. Equality of those fields means pinned, not inherit.
+  - `subagent_type` may arrive as kebab-case (`general-purpose`) while docs and
+    `hooks.json` matchers list camelCase (`generalPurpose`). Normalize before
+    comparing against matcher-style names.
 - Observe-only portable events never emit host JSON.
 - Portable `OnPreCompact` is observe-only and maps only shared compaction
   fields (`trigger`, plus Claude/Copilot `custom_instructions` when present).
