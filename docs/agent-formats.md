@@ -103,26 +103,6 @@ Known limitations are part of the contract:
 - Copilot cloud-agent handling may downgrade `Ask` to a denial.
 - Cursor emits `updated_input` only for generic `preToolUse`, not for its
   dedicated pre-tool events.
-- Cursor accepts `"ask"` on `preToolUse` but does not enforce it today.
-  `sdk/cursor`'s `PreToolUseResults.Ask` still encodes `"permission":"ask"` for
-  schema compatibility; prefer `Allow` or `Deny` when the host must gate the
-  tool. Dedicated Cursor events such as `beforeShellExecution` may escalate.
-- Cursor does not support `"ask"` on `subagentStart`; it is treated as
-  `"deny"`. `sdk/cursor`'s `SubagentStart` `Deny` writes `user_message` and
-  exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap
-  stdout as the message). Prefer `Deny` over `Ask` for this event.
-- Cursor `beforeReadFile` accepts `permission` allow|deny and optional
-  `user_message` only (no `"ask"`, no `agent_message`). `sdk/cursor`'s
-  `BeforeReadFile` `Deny` writes `user_message` and exits 0; `Ask` is coerced
-  to the same deny encoding. Prefer `Deny` over `Ask` for this event.
-- Cursor `beforeTabFileRead` accepts `permission` `"allow"`|`"deny"` only (no
-  ask, no `user_message` / `agent_message`). `sdk/cursor`'s `BeforeTabFileRead`
-  `Allow`/`Deny` emit that permission-only JSON with exit 0. Tab-only; not
-  available in cloud agents.
-- Cursor enforces `"ask"` on `beforeShellExecution` and `beforeMCPExecution`
-  (user approval). `sdk/cursor` `Deny` defaults to `agent_message` with exit 2;
-  use `WithUserMessage` for a client-facing message. This differs from
-  `preToolUse`, where `"ask"` is accepted by the schema but not enforced.
 - Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
   `postToolUse` for MCP tools only.
 - Cursor observe-only post-tool events (Hooks docs list no consumed output
@@ -141,6 +121,20 @@ Known limitations are part of the contract:
     `PostToolFailureResults.Context` is discarded on Cursor. Decodes
     `is_interrupt`.
 - Observe-only portable events never emit host JSON.
+
+### Cursor permission and Ask semantics
+
+Cursor permission-gating is event-specific. Use this matrix; do not assume a
+single Ask or Deny encoding across events.
+
+| Event | Schema permissions | Ask host behavior | Deny encoding (`sdk/cursor`) | Notes |
+|---|---|---|---|---|
+| `beforeShellExecution` | allow / deny / ask | **Enforced** (user approval) | `agent_message`, exit 2 by default; `WithUserMessage` for client-facing copy | Same Ask enforcement as `beforeMCPExecution` |
+| `beforeMCPExecution` | allow / deny / ask | **Enforced** (user approval) | `agent_message`, exit 2 by default; `WithUserMessage` for client-facing copy | Contrasts with `preToolUse` |
+| `preToolUse` | allow / deny / ask | **Not enforced** today | `agent_message`, exit 2 | `PreToolUseResults.Ask` still encodes `"ask"` for schema compatibility; prefer `Allow`/`Deny` to gate. Optional input `agent_message` (pre-call narrative) is decoded |
+| `beforeReadFile` | allow / deny (+ optional `user_message`) | **Coerced to deny** (no `"ask"`) | `user_message`, exit 0 (no `agent_message`) | Prefer `Deny` over `Ask` |
+| `beforeTabFileRead` | allow / deny only | **N/A** (no ask API) | permission-only JSON, exit 0 (no message fields) | Tab-only; not available in cloud agents. Chained message/`updated_input` helpers are ignored on the wire |
+| `subagentStart` | allow / deny | **Treated as deny** (no `"ask"`) | `user_message`, exit 0 (no `agent_message`) | Prefer `Deny` over `Ask`. Exit 2 would re-wrap stdout as the user message |
 
 Do not widen the portable interface until every dialect has a truthful mapping
 and tests for it.
