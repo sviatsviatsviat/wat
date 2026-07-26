@@ -124,6 +124,10 @@ and tests for it.
 | Session environment | `CLAUDE_ENV_FILE` for supported output | stdout JSON | stdout JSON |
 | Project config | `.claude/settings.json` matcher groups | `.github/hooks/wat.json` flat handlers | `.cursor/hooks.json` flat handlers |
 
+Cursor's documented common input schema includes optional `model_id` and
+`model_params` alongside the legacy `model` slug. `sdk/cursor.Envelope` decodes
+those fields (with exported `ModelParam`) so handlers do not silently lose them.
+
 Output encoding belongs to the native SDK. Portable adapters must return native
 output values and must not serialize JSON themselves.
 
