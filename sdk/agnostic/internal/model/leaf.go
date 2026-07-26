@@ -32,7 +32,8 @@ type TurnEnd struct {
 	LastAssistantMessage string
 }
 
-// CompactInfo describes context compaction events.
+// CompactInfo describes context compaction events shared across agents.
+// Cursor-only compaction metrics stay on sdk/cursor.PreCompact.
 type CompactInfo struct {
 	// Trigger is the compaction trigger reason.
 	Trigger string

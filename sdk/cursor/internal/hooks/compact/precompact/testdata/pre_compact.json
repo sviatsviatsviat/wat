@@ -1,0 +1,18 @@
+{
+  "conversation_id": "c1",
+  "generation_id": "g1",
+  "model": "default",
+  "hook_event_name": "preCompact",
+  "cursor_version": "3.13.10",
+  "workspace_roots": ["/w"],
+  "user_email": null,
+  "transcript_path": null,
+  "cwd": "/w",
+  "trigger": "auto",
+  "context_usage_percent": 85,
+  "context_tokens": 120000,
+  "context_window_size": 128000,
+  "message_count": 45,
+  "messages_to_compact": 30,
+  "is_first_compaction": true
+}
