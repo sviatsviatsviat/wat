@@ -95,7 +95,7 @@ Portable handlers fan out to native registrations for all three agents.
 | `OnSessionStart` | `SessionStartEvent` | `Context(text)` | Add startup context |
 | `OnSessionEnd` | `SessionEndEvent` | observe-only | Observe session completion |
 | `OnUserPrompt` | `UserPromptEvent` | observe-only | Observe submitted prompt text |
-| `OnPreTool` | `PreToolEvent` | `Allow`, `Deny`, `Ask`; `WithUpdatedInput` | Gate or rewrite a tool call |
+| `OnPreTool` | `PreToolEvent` | `Allow`, `Deny`, `Ask`; `WithUpdatedInput` | Gate or rewrite a tool call (`Ask` is not enforced on Cursor `preToolUse` today) |
 | `OnPostTool` | `PostToolEvent` | `Context`; `WithUpdatedOutput` | Add context or replace supported output |
 | `OnPostToolFailure` | `PostToolFailureEvent` | `Context` | Add recovery guidance |
 | `OnSubagentStart` | `SubagentStartEvent` | observe-only | Observe subagent creation |
@@ -223,6 +223,7 @@ Use `go doc` for complete event fields and builder methods:
 ```bash
 go doc github.com/sviatsviatsviat/wat/sdk/claude PreToolUse
 go doc github.com/sviatsviatsviat/wat/sdk/copilot PreToolResults
+go doc github.com/sviatsviatsviat/wat/sdk/cursor PreToolUseResults
 go doc github.com/sviatsviatsviat/wat/sdk/cursor PermissionResults
 ```
 

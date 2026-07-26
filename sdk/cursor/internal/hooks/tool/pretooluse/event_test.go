@@ -2,6 +2,7 @@ package pretooluse
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -40,9 +41,29 @@ func TestToolInput_AsShell(t *testing.T) {
 }
 
 func TestDecode_PreToolUse(t *testing.T) {
-	e := mustDecode[Event](t, `{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1"}`)
+	e := mustDecode[Event](t, `{"hook_event_name":"preToolUse","conversation_id":"c1","tool_name":"Shell","tool_input":{"command":"ls"},"tool_use_id":"t1","agent_message":"Installing dependencies..."}`)
 	if e.ShellCommand() != "ls" {
 		t.Fatalf("ShellCommand=%q", e.ShellCommand())
+	}
+	if e.AgentMessage != "Installing dependencies..." {
+		t.Fatalf("AgentMessage=%q", e.AgentMessage)
+	}
+}
+
+func TestEncode_PreToolUseAsk_schemaAcceptedNotEnforced(t *testing.T) {
+	out, code, err := results{}.Ask("confirm with user").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0", code)
+	}
+	got := string(out)
+	if !strings.Contains(got, `"permission":"ask"`) {
+		t.Fatalf("Ask must still encode schema-accepted ask: %s", got)
+	}
+	if !strings.Contains(got, `"agent_message":"confirm with user"`) {
+		t.Fatalf("missing agent_message: %s", got)
 	}
 }
 

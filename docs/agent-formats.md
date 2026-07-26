@@ -102,6 +102,10 @@ Known limitations are part of the contract:
 - Copilot cloud-agent handling may downgrade `Ask` to a denial.
 - Cursor emits `updated_input` only for generic `preToolUse`, not for its
   dedicated pre-tool events.
+- Cursor accepts `"ask"` on `preToolUse` but does not enforce it today.
+  `sdk/cursor`'s `PreToolUseResults.Ask` still encodes `"permission":"ask"` for
+  schema compatibility; prefer `Allow` or `Deny` when the host must gate the
+  tool. Dedicated Cursor events such as `beforeShellExecution` may escalate.
 - Cursor does not support `"ask"` on `subagentStart`; it is treated as
   `"deny"`. `sdk/cursor`'s `SubagentStart` `Deny` writes `user_message` and
   exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap

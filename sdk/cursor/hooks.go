@@ -94,7 +94,7 @@ func (c *hooks) BeforeSubmitPrompt(fn func(context.Context, BeforeSubmitPrompt, 
 }
 
 // PreToolUse registers a PreToolUse handler on the registrar.
-func (c *hooks) PreToolUse(fn func(context.Context, PreToolUse, PermissionResults) (PermissionOutput, error)) *hooks {
+func (c *hooks) PreToolUse(fn func(context.Context, PreToolUse, PreToolUseResults) (PermissionOutput, error)) *hooks {
 	return bind(c, fn, pretooluse.RegisterHandler)
 }
 

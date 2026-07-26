@@ -7,6 +7,18 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Cursor `PreToolUse` handlers now receive `PreToolUseResults`. `Ask` still
+  encodes `"permission":"ask"` for schema compatibility, but godoc and protocol
+  docs warn that Cursor does not enforce ask for `preToolUse` today; prefer
+  `Allow` or `Deny` when gating is required.
+
+### Added
+
+- Cursor `PreToolUse` decodes optional input `agent_message` (pre-call
+  narrative from the agent).
+
 ## [v0.1.1-alpha] - 2026-07-25
 
 ### Fixed
