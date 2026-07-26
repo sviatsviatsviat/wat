@@ -32,7 +32,7 @@ for Cursor's dedicated tool hooks.
 | `OnSessionEnd` | `SessionEnd` | `SessionEnd` | `sessionEnd` |
 | `OnUserPrompt` | `UserPromptSubmit` | `UserPromptSubmitted` | `beforeSubmitPrompt` |
 | `OnPreTool` | `PreToolUse` | `PreToolUse` | `preToolUse`, `beforeShellExecution`, `beforeMCPExecution`, `beforeReadFile` |
-| `OnPostTool` | `PostToolUse` | `PostToolUse` | `postToolUse`, `afterShellExecution`, `afterMCPExecution`, `afterFileEdit` |
+| `OnPostTool` | `PostToolUse` | `PostToolUse` | `postToolUse`, `afterMCPExecution`, `afterFileEdit` |
 | `OnPostToolFailure` | `PostToolUseFailure` | `PostToolUseFailure` | `postToolUseFailure` |
 | `OnSubagentStart` | `SubagentStart` | `SubagentStart` | `subagentStart` |
 | `OnSubagentStop` | `SubagentStop` | `SubagentStop` and subagent-scoped `AgentStop` | `subagentStop` |
@@ -72,7 +72,8 @@ Dedicated Cursor events synthesize a portable tool identity:
 
 | Cursor event | Portable tool |
 |---|---|
-| `beforeShellExecution` / `afterShellExecution` | `bash` with `ToolCall.Shell` |
+| `beforeShellExecution` | `bash` with `ToolCall.Shell` |
+| `afterShellExecution` (native observe-only) | not projected onto portable `OnPostTool` |
 | `beforeReadFile` | `read` |
 | `afterFileEdit` | `edit` |
 | `beforeMCPExecution` / `afterMCPExecution` | Native MCP tool name with `MCP=true` |
@@ -108,6 +109,9 @@ Known limitations are part of the contract:
   stdout as the message). Prefer `Deny` over `Ask` for this event.
 - Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
   where that native output field is supported.
+- Cursor `afterShellExecution` is observe-only: Hooks docs list no consumed
+  output fields. Use `sdk/cursor.AfterShellExecution` for auditing; portable
+  `OnPostTool` covers Shell via `postToolUse` instead.
 - Observe-only portable events never emit host JSON.
 
 Do not widen the portable interface until every dialect has a truthful mapping

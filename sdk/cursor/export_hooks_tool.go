@@ -27,6 +27,8 @@ type PostToolUseFailure = posttoolusefailure.Event
 type BeforeShellExecution = beforeshellexecution.Event
 
 // AfterShellExecution is the afterShellExecution hook event.
+//
+// Cursor Hooks docs document input only; registration is observe-only.
 type AfterShellExecution = aftershellexecution.Event
 
 // BeforeMCPExecution is the beforeMCPExecution hook event.

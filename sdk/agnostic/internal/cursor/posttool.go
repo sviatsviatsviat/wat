@@ -12,8 +12,10 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// RegisterPostTool registers fn on Cursor PostToolUse, AfterShellExecution,
-// AfterMCPExecution, and AfterFileEdit chains.
+// RegisterPostTool registers fn on Cursor PostToolUse, AfterMCPExecution, and
+// AfterFileEdit chains. afterShellExecution is observe-only in the Cursor SDK
+// (no host-consumed output), so portable PostTool results are not projected
+// onto it; authors that need that event use sdk/cursor.AfterShellExecution.
 func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 	if fn == nil {
 		return nil
@@ -21,9 +23,6 @@ func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 	return sdkcursor.UseHooks().PostToolUse(func(ctx context.Context, hook sdkcursor.PostToolUse, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 		return callPostTool(ctx, mapPostToolUse(hook), native, fn)
 	}).
-		AfterShellExecution(func(ctx context.Context, hook sdkcursor.AfterShellExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, mapAfterShellExecution(hook), native, fn)
-		}).
 		AfterMCPExecution(func(ctx context.Context, hook sdkcursor.AfterMCPExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 			return callPostTool(ctx, mapAfterMCPExecution(hook), native, fn)
 		}).
@@ -49,14 +48,6 @@ func mapPostToolUse(e sdkcursor.PostToolUse) *model.PostToolEvent {
 		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
 		Result:   &model.ToolResult{Text: e.ToolOutput, DurationMs: e.DurationMillis()},
-	}
-}
-
-func mapAfterShellExecution(e sdkcursor.AfterShellExecution) *model.PostToolEvent {
-	return &model.PostToolEvent{
-		Envelope: envelope(e.Envelope, e.EventName()),
-		Tool:     &model.ToolCall{Name: tools.ToolBash, Native: e.EventName(), Shell: e.Command},
-		Result:   &model.ToolResult{Text: e.Output, DurationMs: e.DurationMillis()},
 	}
 }
 

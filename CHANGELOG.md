@@ -7,6 +7,13 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Cursor `afterShellExecution` decodes `sandbox` and is observe-only: handlers
+  no longer receive `PostToolResults`, matching Cursor Hooks docs (no consumed
+  output fields). Portable `OnPostTool` no longer expands onto that event;
+  use `sdk/cursor.AfterShellExecution` for shell-after auditing.
+
 ## [v0.1.1-alpha] - 2026-07-25
 
 ### Fixed
