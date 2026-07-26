@@ -8,6 +8,10 @@ import (
 
 // Output is the response for sessionStart events.
 // Construct via Results builders and With* methods. A nil value is a no-op.
+//
+// Meaningful fields are env and additional_context. Cursor's schema also
+// accepts continue and user_message, but the host does not enforce them for
+// sessionStart, so this SDK does not expose builders for those fields.
 type Output interface {
 	hookkit.Output
 	isOutput()

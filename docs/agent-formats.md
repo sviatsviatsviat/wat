@@ -148,6 +148,12 @@ Known limitations are part of the contract:
 - Cursor `afterAgentThought` is observe-only and decodes optional
   `duration_ms` for the completed thinking block. Cursor's hooks.json
   matcher for this event is the fixed value `AgentThought`.
+- Cursor `sessionStart` is fire-and-forget: the agent loop does not wait for or
+  enforce a blocking response. The schema accepts `continue` / `user_message`,
+  but callers do not enforce them; session creation is not blocked when
+  `continue` is `false`. Meaningful outputs are `env` and `additional_context`.
+  Input may include optional `composer_mode` (`"agent"`, `"ask"`, or `"edit"`).
+  The hook is not available for Cursor cloud agents.
 - Observe-only portable events never emit host JSON.
 - Portable `OnPreCompact` is observe-only and maps only shared compaction
   fields (`trigger`, plus Claude/Copilot `custom_instructions` when present).

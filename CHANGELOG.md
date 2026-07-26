@@ -39,6 +39,10 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   observe-only and does not expose Cursor-only metrics or `user_message`.
 - Cursor `AfterAgentThought` decodes optional `duration_ms` for the completed
   thinking block. The event remains observe-only.
+- Cursor `SessionStart` decodes optional `composer_mode` (`"agent"`, `"ask"`,
+  or `"edit"`). Godoc and agent-format docs state that the hook is
+  fire-and-forget (host does not enforce `continue` / `user_message`) and is
+  not available for cloud agents.
 
 ### Changed
 
