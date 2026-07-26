@@ -24,6 +24,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   telemetry payload: `description`, `duration_ms`, `message_count`,
   `tool_call_count`, and `modified_files`, in addition to the existing
   identity, status, summary, loop, and transcript fields.
+- Cursor `AfterTabFileEdit` decodes Tab-specific edit detail (`range`,
+  `old_line`, `new_line`) via `TabEdit` / `EditRange`, while Agent
+  `AfterFileEdit` continues to use `Edit` with `old_string` / `new_string`.
 
 ### Changed
 

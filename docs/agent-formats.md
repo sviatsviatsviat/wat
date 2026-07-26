@@ -82,6 +82,13 @@ Native names for these synthesized calls may be the event name rather than a
 builtin tool name. Code that needs exact host identity should use `Native` and
 `Envelope.Name`.
 
+Cursor Tab edit hooks are native-only (`beforeTabFileRead`,
+`afterTabFileEdit`). On `afterTabFileEdit`, each edit includes `old_string`,
+`new_string`, `range` (`start_line_number`, `start_column`, `end_line_number`,
+`end_column`), `old_line`, and `new_line`. Agent `afterFileEdit` keeps the
+simpler `old_string` / `new_string` shape; `sdk/cursor` exposes that as `Edit`
+and the Tab shape as `TabEdit`.
+
 ## Portable result projection
 
 Portable builders deliberately expose the intersection of native behavior:
