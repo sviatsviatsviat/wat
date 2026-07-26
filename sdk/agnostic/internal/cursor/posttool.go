@@ -14,6 +14,10 @@ import (
 
 // RegisterPostTool registers fn on Cursor PostToolUse, AfterShellExecution,
 // AfterMCPExecution, and AfterFileEdit chains.
+//
+// AfterFileEdit is observe-only on Cursor: the host documents no output fields.
+// The portable handler still runs for edit observation, but Context and
+// WithUpdatedOutput have no host effect for that native event.
 func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 	if fn == nil {
 		return nil
@@ -27,8 +31,8 @@ func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 		AfterMCPExecution(func(ctx context.Context, hook sdkcursor.AfterMCPExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 			return callPostTool(ctx, mapAfterMCPExecution(hook), native, fn)
 		}).
-		AfterFileEdit(func(ctx context.Context, hook sdkcursor.AfterFileEdit, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, mapAfterFileEdit(hook), native, fn)
+		AfterFileEdit(func(ctx context.Context, hook sdkcursor.AfterFileEdit) error {
+			return callObservePostTool(ctx, mapAfterFileEdit(hook), fn)
 		})
 }
 
@@ -42,6 +46,11 @@ func callPostTool(ctx context.Context, ev *model.PostToolEvent, native sdkcursor
 		return nil, fmt.Errorf("cursor: PostTool result must come from the injected Results builder")
 	}
 	return nativeOut, nil
+}
+
+func callObservePostTool(ctx context.Context, ev *model.PostToolEvent, fn model.PostToolHandler) error {
+	_, err := fn(ctx, *ev, observeOnlyPostToolResults{})
+	return err
 }
 
 func mapPostToolUse(e sdkcursor.PostToolUse) *model.PostToolEvent {
@@ -129,5 +138,25 @@ func (r postToolResult) IsZero() bool { return r.native.IsZero() }
 // WithUpdatedOutput replaces tool result text when set.
 func (r postToolResult) WithUpdatedOutput(output string) model.PostToolResult {
 	r.native = r.native.WithUpdatedMCPOutput(output)
+	return r
+}
+
+// observeOnlyPostToolResults is the builder for Cursor afterFileEdit.
+// Cursor documents no host output fields for that event, so Context and
+// WithUpdatedOutput are no-ops.
+type observeOnlyPostToolResults struct{}
+
+// Context returns an empty observe-only PostTool result.
+func (observeOnlyPostToolResults) Context(string) model.PostToolResult {
+	return observeOnlyPostToolResult{}
+}
+
+type observeOnlyPostToolResult struct{}
+
+// IsZero always reports true for observe-only afterFileEdit results.
+func (observeOnlyPostToolResult) IsZero() bool { return true }
+
+// WithUpdatedOutput is a no-op for observe-only afterFileEdit results.
+func (r observeOnlyPostToolResult) WithUpdatedOutput(string) model.PostToolResult {
 	return r
 }

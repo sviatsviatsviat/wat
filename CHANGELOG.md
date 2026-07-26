@@ -7,6 +7,14 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Cursor `afterFileEdit` is observe-only, matching the Hooks docs (no documented
+  output fields). Native `AfterFileEdit` handlers no longer receive
+  `PostToolResults`; portable `OnPostTool` still delivers the edit for
+  observation, but `Context` / `WithUpdatedOutput` have no host effect for that
+  event.
+
 ## [v0.1.1-alpha] - 2026-07-25
 
 ### Fixed

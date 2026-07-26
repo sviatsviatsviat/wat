@@ -133,8 +133,10 @@ func (c *hooks) BeforeReadFile(fn func(context.Context, BeforeReadFile, BeforeRe
 	return bind(c, fn, beforereadfile.RegisterHandler)
 }
 
-// AfterFileEdit registers an AfterFileEdit handler on the registrar.
-func (c *hooks) AfterFileEdit(fn func(context.Context, AfterFileEdit, PostToolResults) (PostToolOutput, error)) *hooks {
+// AfterFileEdit registers an observe-only AfterFileEdit handler on the registrar.
+// Cursor documents no afterFileEdit output fields; use side effects such as
+// formatting the edited file on disk.
+func (c *hooks) AfterFileEdit(fn func(context.Context, AfterFileEdit) error) *hooks {
 	return bind(c, fn, afterfileedit.RegisterHandler)
 }
 
