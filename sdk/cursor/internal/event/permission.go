@@ -75,9 +75,12 @@ func (o permissionOutput) WithUpdatedInput(input map[string]any) PermissionOutpu
 type PermissionResults interface {
 	// Allow returns an allow verdict.
 	Allow() PermissionOutput
-	// Deny returns a deny verdict with an agent-facing message.
+	// Deny returns a deny verdict with an agent-facing message and typically
+	// PermissionDenyExit. Event-specific builders may use user_message and exit 0.
 	Deny(agentMessage string) PermissionOutput
-	// Ask returns an ask verdict with an agent-facing message.
+	// Ask returns an ask verdict with an agent-facing message. Enforcement is
+	// event-specific: beforeShellExecution and beforeMCPExecution escalate to the
+	// user; preToolUse accepts ask but does not enforce it today.
 	Ask(agentMessage string) PermissionOutput
 	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
 	Noop() PermissionOutput
@@ -93,12 +96,14 @@ func (permissionResults) Allow() PermissionOutput {
 	return permissionOutput{decision: DecisionAllow}
 }
 
-// Deny returns a deny verdict with an agent-facing message.
+// Deny returns a deny verdict with an agent-facing message and PermissionDenyExit.
 func (permissionResults) Deny(agentMessage string) PermissionOutput {
 	return permissionOutput{decision: DecisionDeny, agentMessage: agentMessage}
 }
 
-// Ask returns an ask verdict with an agent-facing message.
+// Ask returns an ask verdict with an agent-facing message. Cursor enforces ask on
+// beforeShellExecution and beforeMCPExecution; see those events' godoc for
+// contrast with preToolUse and subagentStart.
 func (permissionResults) Ask(agentMessage string) PermissionOutput {
 	return permissionOutput{decision: DecisionAsk, agentMessage: agentMessage}
 }
@@ -121,7 +126,9 @@ func (GateResults) Deny(agentMessage string) PermissionOutput {
 	return permissionOutput{decision: DecisionDeny, agentMessage: agentMessage}
 }
 
-// Ask returns an ask verdict with an agent-facing message.
+// Ask returns an ask verdict with an agent-facing message. Cursor enforces ask on
+// beforeShellExecution and beforeMCPExecution; see those events' godoc for
+// contrast with preToolUse and subagentStart.
 func (GateResults) Ask(agentMessage string) PermissionOutput {
 	return permissionOutput{decision: DecisionAsk, agentMessage: agentMessage}
 }

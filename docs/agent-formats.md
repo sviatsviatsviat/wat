@@ -115,6 +115,10 @@ Known limitations are part of the contract:
   ask, no `user_message` / `agent_message`). `sdk/cursor`'s `BeforeTabFileRead`
   `Allow`/`Deny` emit that permission-only JSON with exit 0. Tab-only; not
   available in cloud agents.
+- Cursor enforces `"ask"` on `beforeShellExecution` and `beforeMCPExecution`
+  (user approval). `sdk/cursor` `Deny` defaults to `agent_message` with exit 2;
+  use `WithUserMessage` for a client-facing message. This differs from
+  `preToolUse`, where `"ask"` is accepted by the schema but not enforced.
 - Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
   `postToolUse` for MCP tools only.
 - Cursor observe-only post-tool events (Hooks docs list no consumed output

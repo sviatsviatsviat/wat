@@ -55,6 +55,29 @@ func TestDecodeEncode_BeforeShellDeny(t *testing.T) {
 	}
 }
 
+func TestEncode_BeforeShellAsk_enforcedPermission(t *testing.T) {
+	out, code, err := event.NewPermissionResults().Ask("confirm force push").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0 (ask is not deny/exit 2)", code)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["permission"] != "ask" {
+		t.Fatalf("permission = %v, want ask (enforced on beforeShellExecution)", got["permission"])
+	}
+	if got["agent_message"] != "confirm force push" {
+		t.Fatalf("agent_message = %v, want confirm force push", got["agent_message"])
+	}
+	if _, ok := got["user_message"]; ok {
+		t.Fatalf("Ask default must not set user_message: %s", out)
+	}
+}
+
 func init() {
 	register(testCodec)
 }
