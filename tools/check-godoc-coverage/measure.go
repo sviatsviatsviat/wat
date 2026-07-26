@@ -55,7 +55,7 @@ func measure(root string) (Report, error) {
 		if err != nil {
 			return Report{}, fmt.Errorf("parse %s: %w", filename, err)
 		}
-		if isGenerated(file) {
+		if ast.IsGenerated(file) {
 			continue
 		}
 		rel := filename
@@ -89,18 +89,6 @@ func shouldSkipDir(name string) bool {
 
 func isSourceGoFile(name string) bool {
 	return strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, "_test.go")
-}
-
-func isGenerated(file *ast.File) bool {
-	for _, cg := range file.Comments {
-		for _, c := range cg.List {
-			text := c.Text
-			if strings.Contains(text, "Code generated") && strings.Contains(text, "DO NOT EDIT") {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func scanFile(file *ast.File, rel string, documented, total *int, missing *[]string) {
