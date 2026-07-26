@@ -42,6 +42,9 @@ Include:
 ## Definition of done
 
 - [ ] Package boundaries in `docs/architecture.md` remain valid
+- [ ] Registerable hook packages keep `RegisterHandler` in `bind.go` (never in
+      `event.go`); observe-only still has `bind.go`
+- [ ] Hook event decode avoids custom `UnmarshalJSON` for duration/presence
 - [ ] Public API has godoc and behavior tests
 - [ ] Portable behavior is tested for all three adapters and manifest expansion
 - [ ] CLI help, streams, and exit codes are tested when affected

@@ -44,7 +44,7 @@ func TestNullToNil(t *testing.T) {
 
 func TestRawObjectField(t *testing.T) {
 	t.Parallel()
-	raw := json.RawMessage(`{"tool_input":{"command":"ls"},"other":null}`)
+	raw := json.RawMessage(`{"tool_input":{"command":"ls"},"other":null,"duration":0}`)
 	got := RawObjectField(raw, "tool_input")
 	if string(got) != `{"command":"ls"}` {
 		t.Fatalf("RawObjectField = %q", got)
@@ -54,6 +54,9 @@ func TestRawObjectField(t *testing.T) {
 	}
 	if RawObjectField(raw, "other") != nil {
 		t.Fatal("null field should be nil")
+	}
+	if got := RawObjectField(raw, "duration"); string(got) != "0" {
+		t.Fatalf("explicit zero field = %q, want 0", got)
 	}
 }
 

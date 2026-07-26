@@ -20,6 +20,9 @@ type PostToolResults = model.PostToolResults
 type PostToolHandler = model.PostToolHandler
 
 // OnPostTool registers a handler for PostTool events across all agents.
+// On Cursor this expands to postToolUse, afterMCPExecution, and afterFileEdit.
+// afterMCPExecution and afterFileEdit are observe-only (no host-consumed
+// output). afterShellExecution is native observe-only and is not included.
 func (c *hooks) OnPostTool(fn PostToolHandler) *hooks {
 	if fn == nil {
 		return c

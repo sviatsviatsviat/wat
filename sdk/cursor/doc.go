@@ -8,6 +8,10 @@
 // JSON is encoded internally from Output (sealed; only this package implements
 // it). Payloads must include hook_event_name on the wire.
 //
+// AfterShellExecution, AfterMCPExecution, AfterFileEdit, and PostToolUseFailure
+// are observe-only (Cursor Hooks docs list no consumed output fields). Rewrite
+// MCP tool output with PostToolUse. Cloud agents do not load MCP hooks.
+//
 // Tool input on PreToolUse and related events is typed as [Input] with AsShell,
 // AsRead, and related accessors (and Tool* name constants) in this package.
 //

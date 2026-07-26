@@ -134,6 +134,61 @@ func TestWatTest_cursorSubagentStartModelGate(t *testing.T) {
 	}
 }
 
+// cursorPostToolUseFailureObserveHooksGo registers Cursor postToolUseFailure as
+// observe-only and a portable OnPostToolFailure that returns Context. Cursor
+// must discard that Context (stdout empty, exit 0).
+const cursorPostToolUseFailureObserveHooksGo = `package hooks
+
+import (
+	"context"
+
+	"github.com/sviatsviatsviat/wat/sdk/agnostic"
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
+var Hooks = []run.Hooks{
+	cursor.UseHooks().PostToolUseFailure(func(_ context.Context, hook cursor.PostToolUseFailure) error {
+		_ = hook.IsInterrupt
+		_ = hook.DurationMillis()
+		return nil
+	}),
+	agnostic.UseHooks().OnPostToolFailure(func(_ context.Context, _ agnostic.PostToolFailureEvent, r agnostic.PostToolFailureResults) (agnostic.PostToolFailureResult, error) {
+		return r.Context("recovery guidance Cursor must ignore"), nil
+	}),
+}
+`
+
+const cursorPostToolUseFailureObserveExpect = `{
+  "exit": 0,
+  "stdout_empty": true
+}
+`
+
+func TestWatTest_cursorPostToolUseFailureObserveOnly(t *testing.T) {
+	binary := buildWat(t)
+	project := initProjectWithReplace(t)
+
+	hooksPath := filepath.Join(project, ".wat", "hooks.go")
+	if err := os.WriteFile(hooksPath, []byte(cursorPostToolUseFailureObserveHooksGo), 0o600); err != nil {
+		t.Fatalf("write %s: %v", hooksPath, err)
+	}
+
+	expectPath := filepath.Join(t.TempDir(), "case.expect.json")
+	if err := os.WriteFile(expectPath, []byte(cursorPostToolUseFailureObserveExpect), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	stdout, stderr, code := runWat(t, binary, project, "test", "--agent", "cursor",
+		"--fixture", fixturePath(t, "cursor", "post_tool_use_failure.json"),
+		"--expect", expectPath)
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "status: pass") {
+		t.Fatalf("output missing expect pass:\n%s\n%s", stdout, stderr)
+	}
+}
+
 func TestWatTest_expectMismatch(t *testing.T) {
 	binary := buildWat(t)
 	project := initProjectWithReplace(t)

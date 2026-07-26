@@ -21,18 +21,23 @@ type PreToolUse = pretooluse.Event
 type PostToolUse = posttooluse.Event
 
 // PostToolUseFailure is the postToolUseFailure hook event.
+// Handlers are observe-only; Cursor Hooks docs list no output fields.
 type PostToolUseFailure = posttoolusefailure.Event
 
 // BeforeShellExecution is the beforeShellExecution hook event.
 type BeforeShellExecution = beforeshellexecution.Event
 
 // AfterShellExecution is the afterShellExecution hook event.
+//
+// Cursor Hooks docs document input only; registration is observe-only.
 type AfterShellExecution = aftershellexecution.Event
 
 // BeforeMCPExecution is the beforeMCPExecution hook event.
 type BeforeMCPExecution = beforemcpexecution.Event
 
 // AfterMCPExecution is the afterMCPExecution hook event.
+// Cursor documents no output fields; registration is observe-only. Cloud agents
+// do not load MCP hooks. Use PostToolUse to rewrite MCP tool output.
 type AfterMCPExecution = aftermcpexecution.Event
 
 // BeforeReadFile is the beforeReadFile hook event.
@@ -42,6 +47,7 @@ type BeforeReadFile = beforereadfile.Event
 type BeforeReadFileResults = beforereadfile.Results
 
 // AfterFileEdit is the afterFileEdit hook event.
+// Cursor documents no output fields; registration is observe-only.
 type AfterFileEdit = afterfileedit.Event
 
 // BeforeTabFileRead is the beforeTabFileRead hook event.

@@ -103,8 +103,9 @@ func (c *hooks) PostToolUse(fn func(context.Context, PostToolUse, PostToolResult
 	return bind(c, fn, posttooluse.RegisterHandler)
 }
 
-// PostToolUseFailure registers a PostToolUseFailure handler on the registrar.
-func (c *hooks) PostToolUseFailure(fn func(context.Context, PostToolUseFailure, PostToolResults) (PostToolOutput, error)) *hooks {
+// PostToolUseFailure registers an observe-only PostToolUseFailure handler on
+// the registrar. Cursor Hooks docs list no output fields for this event.
+func (c *hooks) PostToolUseFailure(fn func(context.Context, PostToolUseFailure) error) *hooks {
 	return bind(c, fn, posttoolusefailure.RegisterHandler)
 }
 
@@ -113,8 +114,9 @@ func (c *hooks) BeforeShellExecution(fn func(context.Context, BeforeShellExecuti
 	return bind(c, fn, beforeshellexecution.RegisterHandler)
 }
 
-// AfterShellExecution registers an AfterShellExecution handler on the registrar.
-func (c *hooks) AfterShellExecution(fn func(context.Context, AfterShellExecution, PostToolResults) (PostToolOutput, error)) *hooks {
+// AfterShellExecution registers an AfterShellExecution observe handler on the
+// registrar. Cursor Hooks docs list no consumed output fields for this event.
+func (c *hooks) AfterShellExecution(fn func(context.Context, AfterShellExecution) error) *hooks {
 	return bind(c, fn, aftershellexecution.RegisterHandler)
 }
 
@@ -123,8 +125,10 @@ func (c *hooks) BeforeMCPExecution(fn func(context.Context, BeforeMCPExecution, 
 	return bind(c, fn, beforemcpexecution.RegisterHandler)
 }
 
-// AfterMCPExecution registers an AfterMCPExecution handler on the registrar.
-func (c *hooks) AfterMCPExecution(fn func(context.Context, AfterMCPExecution, PostToolResults) (PostToolOutput, error)) *hooks {
+// AfterMCPExecution registers an observe-only AfterMCPExecution handler.
+// Cursor documents no output fields for this event. Rewrite MCP tool output
+// with PostToolUse (updated_mcp_tool_output). Cloud agents do not run MCP hooks.
+func (c *hooks) AfterMCPExecution(fn func(context.Context, AfterMCPExecution) error) *hooks {
 	return bind(c, fn, aftermcpexecution.RegisterHandler)
 }
 
@@ -133,8 +137,10 @@ func (c *hooks) BeforeReadFile(fn func(context.Context, BeforeReadFile, BeforeRe
 	return bind(c, fn, beforereadfile.RegisterHandler)
 }
 
-// AfterFileEdit registers an AfterFileEdit handler on the registrar.
-func (c *hooks) AfterFileEdit(fn func(context.Context, AfterFileEdit, PostToolResults) (PostToolOutput, error)) *hooks {
+// AfterFileEdit registers an observe-only AfterFileEdit handler on the registrar.
+// Cursor documents no afterFileEdit output fields; use side effects such as
+// formatting the edited file on disk.
+func (c *hooks) AfterFileEdit(fn func(context.Context, AfterFileEdit) error) *hooks {
 	return bind(c, fn, afterfileedit.RegisterHandler)
 }
 

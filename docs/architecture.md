@@ -106,23 +106,41 @@ event packages under:
 sdk/<agent>/internal/hooks/<domain>/<event>/
 ```
 
-A result-producing event normally has:
+Every **registerable** hook package has `bind.go` for `RegisterHandler`, whether
+the event is observe-only or result-emitting:
 
 | File | Role |
 |---|---|
-| `event.go` | Native input payload and `EventName` |
-| `results.go` | Hook-scoped builder interface and implementation |
-| `output.go` | Sealed output plus fluent `With*` methods |
-| `bind.go` | Typed registration into the shared dialect handler bag |
-| `event_test.go` | Decode, builder, encode, merge, and edge behavior |
+| `event.go` | Native input payload, `EventName`, and codec `register`/decode only |
+| `bind.go` | Typed `RegisterHandler` into the shared dialect handler bag |
+| `event_test.go` | Decode, registration, encode/merge (when applicable), and edge behavior |
 
-Observe-only events omit result/output code. Shared native concepts belong in
-that SDK's `internal/event`, `internal/runtime`, or `internal/tools`, then are
-aliased deliberately from the package root.
+`event.go` must not define `RegisterHandler`. Registration always lives in
+`bind.go`:
+
+- observe-only: `register(d.Codec())` then `hookkit.RegisterObserve(d, fn)`;
+- result-emitting: `register(d.Codec())` then `hookkit.RegisterWith(d, …, fn)`.
+
+Result-emitting events also have `results.go` (hook-scoped builder) and
+`output.go` (sealed output plus fluent `With*` methods). Observe-only events
+omit those files only — they still keep `bind.go`. Do not put registration in
+`event.go` for observe-only packages.
+
+Decode-time field presence and similar wire normalization belong in the codec
+`register` path (`DecodeEvent` after-callback, shared helpers such as
+`hookkit.RawObjectField`, or typed helpers like Cursor `event.DurationFields`
+with `CaptureDurationPresent` / `DurationMillis`). Do not add custom
+`UnmarshalJSON` on hook event structs for duration/presence.
+
+Shared native concepts belong in that SDK's `internal/event`,
+`internal/runtime`, or `internal/tools`, then are aliased deliberately from the
+package root.
 
 Not every decoded event must be registerable. The public `UseHooks` methods are
 the supported handler surface; exported decode-only event types can still be
-used by internal adapters or future registrations.
+used by internal adapters or future registrations. Decode-only packages may omit
+`bind.go`; every package that exports `RegisterHandler` must place it in
+`bind.go`.
 
 ### `sdk/agnostic`
 

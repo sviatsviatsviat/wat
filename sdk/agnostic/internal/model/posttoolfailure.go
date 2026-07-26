@@ -25,5 +25,7 @@ type PostToolFailureResult interface {
 // PostToolFailureResults is the hook-scoped response builder for PostToolFailure handlers.
 type PostToolFailureResults interface {
 	// Context returns recovery guidance for PostToolFailure events.
+	// On Cursor, Context is discarded because postToolUseFailure has no
+	// documented output fields.
 	Context(text string) PostToolFailureResult
 }

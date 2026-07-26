@@ -4,14 +4,13 @@ import (
 	"context"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
-	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 )
 
-// RegisterHandler registers this event handler on d.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event, event.PostToolResults) (event.PostToolOutput, error)) {
+// RegisterHandler registers an AfterShellExecution observe handler on d.
+func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
 	if fn == nil {
 		return
 	}
 	register(d.Codec())
-	hookkit.RegisterWith(d, event.NewPostToolResults(), fn)
+	hookkit.RegisterObserve(d, fn)
 }

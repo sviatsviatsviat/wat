@@ -1,4 +1,4 @@
-package afterfileedit
+package sessionend
 
 import (
 	"context"
@@ -6,8 +6,7 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// RegisterHandler registers an observe-only AfterFileEdit handler on d.
-// Cursor documents no afterFileEdit output fields; handlers return only an error.
+// RegisterHandler registers a SessionEnd observe handler on d.
 func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
 	if fn == nil {
 		return

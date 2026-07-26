@@ -33,6 +33,13 @@ func TestDecode_PostToolUse(t *testing.T) {
 	}
 }
 
+func TestDecode_PostToolUse_durationMs(t *testing.T) {
+	e := mustDecode[Event](t, `{"hook_event_name":"postToolUse","conversation_id":"c1","tool_name":"Read","tool_output":"contents","duration_ms":50}`)
+	if e.DurationMillis() != 50 {
+		t.Fatalf("DurationMillis()=%d, want 50", e.DurationMillis())
+	}
+}
+
 func init() {
 	register(testCodec)
 }

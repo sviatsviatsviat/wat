@@ -6,6 +6,9 @@ import (
 )
 
 // Event is the afterFileEdit hook event.
+//
+// Cursor documents no output fields for this event; handlers observe the edit
+// and rely on side effects (for example formatting the file on disk).
 type Event struct {
 	event.Envelope
 	// FilePath is the edited file path.

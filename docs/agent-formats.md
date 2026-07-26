@@ -32,7 +32,7 @@ for Cursor's dedicated tool hooks.
 | `OnSessionEnd` | `SessionEnd` | `SessionEnd` | `sessionEnd` |
 | `OnUserPrompt` | `UserPromptSubmit` | `UserPromptSubmitted` | `beforeSubmitPrompt` |
 | `OnPreTool` | `PreToolUse` | `PreToolUse` | `preToolUse`, `beforeShellExecution`, `beforeMCPExecution`, `beforeReadFile` |
-| `OnPostTool` | `PostToolUse` | `PostToolUse` | `postToolUse`, `afterShellExecution`, `afterMCPExecution`, `afterFileEdit` |
+| `OnPostTool` | `PostToolUse` | `PostToolUse` | `postToolUse`, `afterMCPExecution`, `afterFileEdit` |
 | `OnPostToolFailure` | `PostToolUseFailure` | `PostToolUseFailure` | `postToolUseFailure` |
 | `OnSubagentStart` | `SubagentStart` | `SubagentStart` | `subagentStart` |
 | `OnSubagentStop` | `SubagentStop` | `SubagentStop` and subagent-scoped `AgentStop` | `subagentStop` |
@@ -72,7 +72,8 @@ Dedicated Cursor events synthesize a portable tool identity:
 
 | Cursor event | Portable tool |
 |---|---|
-| `beforeShellExecution` / `afterShellExecution` | `bash` with `ToolCall.Shell` |
+| `beforeShellExecution` | `bash` with `ToolCall.Shell` |
+| `afterShellExecution` (native observe-only) | not projected onto portable `OnPostTool` |
 | `beforeReadFile` | `read` |
 | `afterFileEdit` | `edit` |
 | `beforeMCPExecution` / `afterMCPExecution` | Native MCP tool name with `MCP=true` |
@@ -106,8 +107,23 @@ Known limitations are part of the contract:
   `"deny"`. `sdk/cursor`'s `SubagentStart` `Deny` writes `user_message` and
   exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap
   stdout as the message). Prefer `Deny` over `Ask` for this event.
-- Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
-  where that native output field is supported.
+- Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
+  `postToolUse` for MCP tools only.
+- Cursor observe-only post-tool events (Hooks docs list no consumed output
+  fields):
+  - `afterFileEdit`: `OnPostTool` still expands for edit observation, but
+    portable `Context` / `WithUpdatedOutput` have no host effect. Native
+    `sdk/cursor` registration is side-effects only (for example formatters).
+  - `afterShellExecution`: not projected onto portable `OnPostTool`; use
+    `sdk/cursor.AfterShellExecution` for auditing. Shell post-tool context
+    remains via `postToolUse`. Decodes `sandbox`.
+  - `afterMCPExecution`: `OnPostTool` expands for observation, but portable
+    builders are discarded. Rewrite MCP tool output via `postToolUse`
+    (`updated_mcp_tool_output`). Cloud agents do not load
+    `beforeMCPExecution` / `afterMCPExecution`.
+  - `postToolUseFailure`: native observe handler; portable
+    `PostToolFailureResults.Context` is discarded on Cursor. Decodes
+    `is_interrupt`.
 - Observe-only portable events never emit host JSON.
 
 Do not widen the portable interface until every dialect has a truthful mapping

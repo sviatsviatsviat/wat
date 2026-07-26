@@ -12,8 +12,16 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
-// RegisterPostTool registers fn on Cursor PostToolUse, AfterShellExecution,
-// AfterMCPExecution, and AfterFileEdit chains.
+// RegisterPostTool registers fn on Cursor PostToolUse, AfterMCPExecution, and
+// AfterFileEdit chains. afterShellExecution is observe-only in the Cursor SDK
+// (no host-consumed output), so portable PostTool results are not projected
+// onto it; authors that need that event use sdk/cursor.AfterShellExecution.
+//
+// AfterFileEdit and AfterMCPExecution are observe-only on Cursor: the host
+// documents no output fields. Portable handlers still run for observation, but
+// Context and WithUpdatedOutput have no host effect for those native events.
+// Rewrite MCP tool output via the generic PostToolUse registration
+// (updated_mcp_tool_output).
 func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 	if fn == nil {
 		return nil
@@ -21,14 +29,11 @@ func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 	return sdkcursor.UseHooks().PostToolUse(func(ctx context.Context, hook sdkcursor.PostToolUse, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 		return callPostTool(ctx, mapPostToolUse(hook), native, fn)
 	}).
-		AfterShellExecution(func(ctx context.Context, hook sdkcursor.AfterShellExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, mapAfterShellExecution(hook), native, fn)
+		AfterMCPExecution(func(ctx context.Context, hook sdkcursor.AfterMCPExecution) error {
+			return callObservePostTool(ctx, mapAfterMCPExecution(hook), fn)
 		}).
-		AfterMCPExecution(func(ctx context.Context, hook sdkcursor.AfterMCPExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, mapAfterMCPExecution(hook), native, fn)
-		}).
-		AfterFileEdit(func(ctx context.Context, hook sdkcursor.AfterFileEdit, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, mapAfterFileEdit(hook), native, fn)
+		AfterFileEdit(func(ctx context.Context, hook sdkcursor.AfterFileEdit) error {
+			return callObservePostTool(ctx, mapAfterFileEdit(hook), fn)
 		})
 }
 
@@ -44,19 +49,16 @@ func callPostTool(ctx context.Context, ev *model.PostToolEvent, native sdkcursor
 	return nativeOut, nil
 }
 
+func callObservePostTool(ctx context.Context, ev *model.PostToolEvent, fn model.PostToolHandler) error {
+	_, err := fn(ctx, *ev, observeOnlyPostToolResults{})
+	return err
+}
+
 func mapPostToolUse(e sdkcursor.PostToolUse) *model.PostToolEvent {
 	return &model.PostToolEvent{
 		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
 		Result:   &model.ToolResult{Text: e.ToolOutput, DurationMs: e.DurationMillis()},
-	}
-}
-
-func mapAfterShellExecution(e sdkcursor.AfterShellExecution) *model.PostToolEvent {
-	return &model.PostToolEvent{
-		Envelope: envelope(e.Envelope, e.EventName()),
-		Tool:     &model.ToolCall{Name: tools.ToolBash, Native: e.EventName(), Shell: e.Command},
-		Result:   &model.ToolResult{Text: e.Output, DurationMs: e.DurationMillis()},
 	}
 }
 
@@ -129,5 +131,25 @@ func (r postToolResult) IsZero() bool { return r.native.IsZero() }
 // WithUpdatedOutput replaces tool result text when set.
 func (r postToolResult) WithUpdatedOutput(output string) model.PostToolResult {
 	r.native = r.native.WithUpdatedMCPOutput(output)
+	return r
+}
+
+// observeOnlyPostToolResults is the builder for Cursor afterFileEdit and
+// afterMCPExecution. Cursor documents no host output fields for those events,
+// so Context and WithUpdatedOutput are no-ops.
+type observeOnlyPostToolResults struct{}
+
+// Context returns an empty observe-only PostTool result.
+func (observeOnlyPostToolResults) Context(string) model.PostToolResult {
+	return observeOnlyPostToolResult{}
+}
+
+type observeOnlyPostToolResult struct{}
+
+// IsZero always reports true for observe-only Cursor post-tool results.
+func (observeOnlyPostToolResult) IsZero() bool { return true }
+
+// WithUpdatedOutput is a no-op for observe-only Cursor post-tool results.
+func (r observeOnlyPostToolResult) WithUpdatedOutput(string) model.PostToolResult {
 	return r
 }

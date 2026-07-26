@@ -11,6 +11,23 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 - Cursor hook `Envelope` decodes optional common-schema fields `model_id` and
   `model_params`, using the exported `ModelParam` element type.
+- Cursor `afterShellExecution` decodes `sandbox`. Cursor `postToolUseFailure`
+  decodes `is_interrupt`. `afterShellExecution`, `afterMCPExecution`,
+  `postToolUse`, and `postToolUseFailure` prefer documented `duration` via
+  `DurationMillis()` when that field is present (including explicit `0`),
+  falling back to `duration_ms` only when `duration` is absent.
+
+### Changed
+
+- Cursor post-tool events match Hooks docs observe-only contracts:
+  `afterFileEdit`, `afterShellExecution`, `afterMCPExecution`, and
+  `postToolUseFailure` no longer emit host-consumed JSON. Portable
+  `OnPostTool` still expands to `afterFileEdit` and `afterMCPExecution` for
+  observation (`Context` / `WithUpdatedOutput` are no-ops there) but no longer
+  expands to `afterShellExecution` (use `sdk/cursor.AfterShellExecution`). MCP
+  tool output rewrite stays on `postToolUse` (`updated_mcp_tool_output`).
+  Portable `OnPostToolFailure` `Context` is ignored on Cursor; Claude and
+  Copilot still apply recovery context. Cloud agents do not load MCP hooks.
 
 ## [v0.1.1-alpha] - 2026-07-25
 

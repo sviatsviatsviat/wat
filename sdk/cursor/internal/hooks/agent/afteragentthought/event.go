@@ -1,8 +1,6 @@
 package afteragentthought
 
 import (
-	"context"
-
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 )
@@ -20,13 +18,4 @@ func (Event) EventName() string { return event.AfterAgentThought }
 // register registers this hook event decoder on c.
 func register(c *hookkit.Codec) {
 	c.Register(event.AfterAgentThought, hookkit.EventDecoder[Event](c))
-}
-
-// RegisterHandler registers an observe handler on reg.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
-	if fn == nil {
-		return
-	}
-	register(d.Codec())
-	hookkit.RegisterObserve(d, fn)
 }
