@@ -1,0 +1,13 @@
+{
+  "hook_event_name": "postToolUseFailure",
+  "conversation_id": "c1",
+  "generation_id": "g1",
+  "cwd": "/project",
+  "tool_name": "Shell",
+  "tool_input": { "command": "npm test" },
+  "tool_use_id": "abc123",
+  "error_message": "Command timed out after 30s",
+  "failure_type": "timeout",
+  "duration": 5000,
+  "is_interrupt": false
+}

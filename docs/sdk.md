@@ -97,7 +97,7 @@ Portable handlers fan out to native registrations for all three agents.
 | `OnUserPrompt` | `UserPromptEvent` | observe-only | Observe submitted prompt text |
 | `OnPreTool` | `PreToolEvent` | `Allow`, `Deny`, `Ask`; `WithUpdatedInput` | Gate or rewrite a tool call |
 | `OnPostTool` | `PostToolEvent` | `Context`; `WithUpdatedOutput` | Add context or replace supported output |
-| `OnPostToolFailure` | `PostToolFailureEvent` | `Context` | Add recovery guidance |
+| `OnPostToolFailure` | `PostToolFailureEvent` | `Context` | Add recovery guidance (ignored on Cursor; see agent formats) |
 | `OnSubagentStart` | `SubagentStartEvent` | observe-only | Observe subagent creation |
 | `OnSubagentStop` | `StopEvent` | `FollowUp` | Gate subagent completion |
 | `OnStop` | `StopEvent` | `FollowUp` | Gate main-agent completion |
@@ -201,7 +201,7 @@ the supported author-facing registration surface.
 | Domain | Methods |
 |---|---|
 | Session/prompt | `SessionStart`, `SessionEnd`, `WorkspaceOpen`, `BeforeSubmitPrompt` |
-| Generic tools | `PreToolUse`, `PostToolUse`, `PostToolUseFailure` |
+| Generic tools | `PreToolUse`, `PostToolUse`, `PostToolUseFailure` (observe-only) |
 | Dedicated tools | `BeforeShellExecution`, `AfterShellExecution`, `BeforeMCPExecution`, `AfterMCPExecution`, `BeforeReadFile`, `AfterFileEdit`, `BeforeTabFileRead`, `AfterTabFileEdit` |
 | Agent/stop/compact | `SubagentStart`, `SubagentStop`, `Stop`, `AfterAgentResponse`, `AfterAgentThought`, `PreCompact` |
 

@@ -108,6 +108,9 @@ Known limitations are part of the contract:
   stdout as the message). Prefer `Deny` over `Ask` for this event.
 - Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
   where that native output field is supported.
+- Cursor `postToolUseFailure` is observe-only: Hooks docs list no output
+  fields, so `sdk/cursor` registers an observe handler and portable
+  `PostToolFailureResults.Context` is discarded for Cursor.
 - Observe-only portable events never emit host JSON.
 
 Do not widen the portable interface until every dialect has a truthful mapping

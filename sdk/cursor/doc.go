@@ -8,6 +8,9 @@
 // JSON is encoded internally from Output (sealed; only this package implements
 // it). Payloads must include hook_event_name on the wire.
 //
+// PostToolUseFailure is observe-only: Cursor Hooks docs list no output fields
+// for postToolUseFailure.
+//
 // Tool input on PreToolUse and related events is typed as [Input] with AsShell,
 // AsRead, and related accessors (and Tool* name constants) in this package.
 //

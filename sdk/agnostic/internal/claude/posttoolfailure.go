@@ -32,7 +32,11 @@ func mapPostToolUseFailure(e sdkclaude.PostToolUseFailure) *model.PostToolFailur
 	return &model.PostToolFailureEvent{
 		Envelope: envelope(e.Envelope, e.EventName()),
 		Tool:     model.NewToolCall(e.ToolName, e.ToolInput.Raw(), e.ToolUseID),
-		Result:   &model.ToolResult{Error: e.Error},
+		Result: &model.ToolResult{
+			Error:       e.Error,
+			DurationMs:  e.DurationMs,
+			IsInterrupt: e.IsInterrupt,
+		},
 	}
 }
 

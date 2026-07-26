@@ -21,6 +21,7 @@ type PreToolUse = pretooluse.Event
 type PostToolUse = posttooluse.Event
 
 // PostToolUseFailure is the postToolUseFailure hook event.
+// Handlers are observe-only; Cursor Hooks docs list no output fields.
 type PostToolUseFailure = posttoolusefailure.Event
 
 // BeforeShellExecution is the beforeShellExecution hook event.
