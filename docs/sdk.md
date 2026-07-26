@@ -96,8 +96,8 @@ Portable handlers fan out to native registrations for all three agents.
 | `OnSessionEnd` | `SessionEndEvent` | observe-only | Observe session completion |
 | `OnUserPrompt` | `UserPromptEvent` | observe-only | Observe submitted prompt text |
 | `OnPreTool` | `PreToolEvent` | `Allow`, `Deny`, `Ask`; `WithUpdatedInput` | Gate or rewrite a tool call |
-| `OnPostTool` | `PostToolEvent` | `Context`; `WithUpdatedOutput` | Add context or replace supported output (Cursor `afterFileEdit` is observe-only; builders are no-ops there) |
-| `OnPostToolFailure` | `PostToolFailureEvent` | `Context` | Add recovery guidance |
+| `OnPostTool` | `PostToolEvent` | `Context`; `WithUpdatedOutput` | Add context or replace supported output (Cursor `afterFileEdit` / `afterMCPExecution` are observe-only; builders are no-ops there) |
+| `OnPostToolFailure` | `PostToolFailureEvent` | `Context` | Add recovery guidance (ignored on Cursor; see agent formats) |
 | `OnSubagentStart` | `SubagentStartEvent` | observe-only | Observe subagent creation |
 | `OnSubagentStop` | `StopEvent` | `FollowUp` | Gate subagent completion |
 | `OnStop` | `StopEvent` | `FollowUp` | Gate main-agent completion |
@@ -201,8 +201,8 @@ the supported author-facing registration surface.
 | Domain | Methods |
 |---|---|
 | Session/prompt | `SessionStart`, `SessionEnd`, `WorkspaceOpen`, `BeforeSubmitPrompt` |
-| Generic tools | `PreToolUse`, `PostToolUse`, `PostToolUseFailure` |
-| Dedicated tools | `BeforeShellExecution`, `AfterShellExecution` (observe-only), `BeforeMCPExecution`, `AfterMCPExecution`, `BeforeReadFile`, `AfterFileEdit`, `BeforeTabFileRead`, `AfterTabFileEdit` (observe-only) |
+| Generic tools | `PreToolUse`, `PostToolUse`, `PostToolUseFailure` (observe-only) |
+| Dedicated tools | `BeforeShellExecution`, `AfterShellExecution` (observe-only), `BeforeMCPExecution`, `AfterMCPExecution` (observe-only), `BeforeReadFile`, `AfterFileEdit` (observe-only), `BeforeTabFileRead`, `AfterTabFileEdit` (observe-only) |
 | Agent/stop/compact | `SubagentStart`, `SubagentStop`, `Stop`, `AfterAgentResponse`, `AfterAgentThought`, `PreCompact` |
 
 `AfterMCPExecution` and `AfterTabFileEdit` are observe-only. Cursor documents no

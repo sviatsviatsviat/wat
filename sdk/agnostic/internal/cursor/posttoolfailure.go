@@ -2,7 +2,6 @@ package cursor
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sviatsviatsviat/wat/sdk/run"
 
@@ -11,20 +10,17 @@ import (
 )
 
 // RegisterPostToolFailure registers fn on the Cursor PostToolUseFailure chain.
+//
+// Cursor postToolUseFailure is observe-only. Portable Context results are
+// accepted by the handler signature but discarded because the host documents
+// no output fields for this event.
 func RegisterPostToolFailure(fn model.PostToolFailureHandler) run.Hooks {
 	if fn == nil {
 		return nil
 	}
-	return sdkcursor.UseHooks().PostToolUseFailure(func(ctx context.Context, hook sdkcursor.PostToolUseFailure, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-		out, err := fn(ctx, *mapPostToolUseFailure(hook), newPostToolFailureResults(native))
-		if err != nil || out == nil {
-			return nil, err
-		}
-		nativeOut, ok := unwrapPostToolFailure(out)
-		if !ok {
-			return nil, fmt.Errorf("cursor: PostToolFailure result must come from the injected Results builder")
-		}
-		return nativeOut, nil
+	return sdkcursor.UseHooks().PostToolUseFailure(func(ctx context.Context, hook sdkcursor.PostToolUseFailure) error {
+		_, err := fn(ctx, *mapPostToolUseFailure(hook), ignoredPostToolFailureResults{})
+		return err
 	})
 }
 
@@ -36,34 +32,21 @@ func mapPostToolUseFailure(e sdkcursor.PostToolUseFailure) *model.PostToolFailur
 			Error:       e.ErrorMessage,
 			FailureType: e.FailureType,
 			DurationMs:  e.DurationMillis(),
+			IsInterrupt: e.IsInterrupt,
 		},
 	}
 }
 
-func newPostToolFailureResults(native sdkcursor.PostToolResults) model.PostToolFailureResults {
-	return postToolFailureResults{native: native}
+// ignoredPostToolFailureResults satisfies the portable builder while dropping
+// Context on Cursor, where postToolUseFailure has no documented outputs.
+type ignoredPostToolFailureResults struct{}
+
+// Context returns a no-op result; Cursor ignores postToolUseFailure outputs.
+func (ignoredPostToolFailureResults) Context(string) model.PostToolFailureResult {
+	return ignoredPostToolFailureResult{}
 }
 
-func unwrapPostToolFailure(r model.PostToolFailureResult) (sdkcursor.PostToolOutput, bool) {
-	out, ok := r.(postToolFailureResult)
-	if !ok {
-		return nil, false
-	}
-	return out.native, true
-}
+type ignoredPostToolFailureResult struct{}
 
-type postToolFailureResults struct {
-	native sdkcursor.PostToolResults
-}
-
-// Context returns a context-injection result.
-func (w postToolFailureResults) Context(text string) model.PostToolFailureResult {
-	return postToolFailureResult{native: w.native.Context(text)}
-}
-
-type postToolFailureResult struct {
-	native sdkcursor.PostToolOutput
-}
-
-// IsZero reports whether the result carries no instruction.
-func (r postToolFailureResult) IsZero() bool { return r.native.IsZero() }
+// IsZero reports that the discarded Cursor result carries no instruction.
+func (ignoredPostToolFailureResult) IsZero() bool { return true }

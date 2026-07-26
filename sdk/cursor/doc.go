@@ -11,6 +11,9 @@
 // AfterMCPExecution is observe-only (Cursor documents no output fields; cloud
 // agents do not load MCP hooks). Rewrite MCP tool output with PostToolUse.
 //
+// PostToolUseFailure is observe-only: Cursor Hooks docs list no output fields
+// for postToolUseFailure.
+//
 // Tool input on PreToolUse and related events is typed as [Input] with AsShell,
 // AsRead, and related accessors (and Tool* name constants) in this package.
 //

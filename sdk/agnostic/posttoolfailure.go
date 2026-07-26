@@ -20,6 +20,7 @@ type PostToolFailureResults = model.PostToolFailureResults
 type PostToolFailureHandler = model.PostToolFailureHandler
 
 // OnPostToolFailure registers a handler for PostToolFailure events across all agents.
+// Cursor postToolUseFailure is observe-only; Context results are ignored there.
 func (c *hooks) OnPostToolFailure(fn PostToolFailureHandler) *hooks {
 	if fn == nil {
 		return c

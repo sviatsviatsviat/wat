@@ -103,8 +103,9 @@ func (c *hooks) PostToolUse(fn func(context.Context, PostToolUse, PostToolResult
 	return bind(c, fn, posttooluse.RegisterHandler)
 }
 
-// PostToolUseFailure registers a PostToolUseFailure handler on the registrar.
-func (c *hooks) PostToolUseFailure(fn func(context.Context, PostToolUseFailure, PostToolResults) (PostToolOutput, error)) *hooks {
+// PostToolUseFailure registers an observe-only PostToolUseFailure handler on
+// the registrar. Cursor Hooks docs list no output fields for this event.
+func (c *hooks) PostToolUseFailure(fn func(context.Context, PostToolUseFailure) error) *hooks {
 	return bind(c, fn, posttoolusefailure.RegisterHandler)
 }
 

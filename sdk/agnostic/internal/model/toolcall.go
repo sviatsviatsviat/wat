@@ -35,6 +35,9 @@ type ToolResult struct {
 	FailureType string
 	// DurationMs is the tool execution duration in milliseconds when available.
 	DurationMs int64
+	// IsInterrupt is true when the failure was caused by a user interrupt
+	// or cancellation, when the native payload supplies it.
+	IsInterrupt bool
 }
 
 // NewToolCall builds a ToolCall from native tool metadata and extracts a shell
