@@ -126,8 +126,8 @@ func (c *hooks) AfterShellExecution(fn func(context.Context, AfterShellExecution
 
 // BeforeMCPExecution registers a BeforeMCPExecution handler on the registrar.
 // BeforeMCPExecution ask is enforced by Cursor like BeforeShellExecution.
-// For security-critical MCP gates, set failClosed: true on the hooks.json
-// handler. Cursor defers this event for cloud agents.
+// BeforeMCPExecution should use failClosed: true on the hooks.json handler for
+// security-critical MCP gates; Cursor defers this event for cloud agents.
 func (c *hooks) BeforeMCPExecution(fn func(context.Context, BeforeMCPExecution, PermissionResults) (PermissionOutput, error)) *hooks {
 	return bind(c, fn, beforemcpexecution.RegisterHandler)
 }
