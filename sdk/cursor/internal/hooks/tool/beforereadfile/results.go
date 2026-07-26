@@ -6,10 +6,14 @@ import "github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 type Results interface {
 	// Allow returns an allow verdict.
 	Allow() event.PermissionOutput
-	// Deny returns a deny verdict with an agent-facing message.
-	Deny(agentMessage string) event.PermissionOutput
-	// Ask returns an ask verdict with an agent-facing message.
-	Ask(agentMessage string) event.PermissionOutput
+	// Deny returns a deny verdict with a user-facing message. Cursor's beforeReadFile
+	// schema accepts permission and user_message only; the message is emitted as
+	// user_message with process exit 0 so the host applies the JSON permission
+	// field instead of treating exit 2 stdout as the message body.
+	Deny(userMessage string) event.PermissionOutput
+	// Ask returns a deny-style verdict with a user-facing message. Cursor does not
+	// support "ask" on beforeReadFile; prefer Deny.
+	Ask(userMessage string) event.PermissionOutput
 	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
 	Noop() event.PermissionOutput
 	isResults()
@@ -18,3 +22,13 @@ type Results interface {
 type results struct{ event.GateResults }
 
 func (results) isResults() {}
+
+// Deny returns a beforeReadFile deny with user_message and exit 0.
+func (results) Deny(userMessage string) event.PermissionOutput {
+	return event.GateResults{}.DenyUserMessage(userMessage)
+}
+
+// Ask returns the same encoding as Deny for beforeReadFile.
+func (results) Ask(userMessage string) event.PermissionOutput {
+	return event.GateResults{}.DenyUserMessage(userMessage)
+}

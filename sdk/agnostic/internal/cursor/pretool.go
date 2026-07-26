@@ -17,8 +17,8 @@ func RegisterPreTool(fn model.PreToolHandler) run.Hooks {
 	if fn == nil {
 		return nil
 	}
-	return sdkcursor.UseHooks().PreToolUse(func(ctx context.Context, hook sdkcursor.PreToolUse, native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
-		return callPreTool(ctx, mapPreToolUse(hook), newPermissionResults(native), fn)
+	return sdkcursor.UseHooks().PreToolUse(func(ctx context.Context, hook sdkcursor.PreToolUse, native sdkcursor.PreToolUseResults) (sdkcursor.PermissionOutput, error) {
+		return callPreTool(ctx, mapPreToolUse(hook), newPreToolUseResults(native), fn)
 	}).
 		BeforeShellExecution(func(ctx context.Context, hook sdkcursor.BeforeShellExecution, native sdkcursor.PermissionResults) (sdkcursor.PermissionOutput, error) {
 			return callPreTool(ctx, mapBeforeShellExecution(hook), newPermissionResults(native), fn)
@@ -104,6 +104,10 @@ func newPermissionResults(native sdkcursor.PermissionResults) model.PreToolResul
 	return permissionResults{native: native}
 }
 
+func newPreToolUseResults(native sdkcursor.PreToolUseResults) model.PreToolResults {
+	return preToolUseResults{native: native}
+}
+
 func newBeforeReadResults(native sdkcursor.BeforeReadFileResults) model.PreToolResults {
 	return beforeReadResults{native: native}
 }
@@ -135,6 +139,26 @@ func (w permissionResults) Ask(reason string) model.PreToolResult {
 	return permissionResult{native: w.native.Ask(reason)}
 }
 
+type preToolUseResults struct {
+	native sdkcursor.PreToolUseResults
+}
+
+// Allow returns an allow verdict.
+func (w preToolUseResults) Allow() model.PreToolResult {
+	return permissionResult{native: w.native.Allow()}
+}
+
+// Deny returns a deny verdict with an agent-facing reason.
+func (w preToolUseResults) Deny(reason string) model.PreToolResult {
+	return permissionResult{native: w.native.Deny(reason)}
+}
+
+// Ask encodes Cursor preToolUse permission "ask". Cursor accepts the value but
+// does not enforce escalation for preToolUse today.
+func (w preToolUseResults) Ask(reason string) model.PreToolResult {
+	return permissionResult{native: w.native.Ask(reason)}
+}
+
 type beforeReadResults struct {
 	native sdkcursor.BeforeReadFileResults
 }
@@ -144,12 +168,12 @@ func (w beforeReadResults) Allow() model.PreToolResult {
 	return permissionResult{native: w.native.Allow()}
 }
 
-// Deny returns a deny verdict with an agent-facing reason.
+// Deny returns a deny verdict; Cursor beforeReadFile maps the reason to user_message.
 func (w beforeReadResults) Deny(reason string) model.PreToolResult {
 	return permissionResult{native: w.native.Deny(reason)}
 }
 
-// Ask returns an ask verdict with an agent-facing reason.
+// Ask returns a deny-style verdict; Cursor beforeReadFile does not support ask.
 func (w beforeReadResults) Ask(reason string) model.PreToolResult {
 	return permissionResult{native: w.native.Ask(reason)}
 }

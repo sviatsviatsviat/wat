@@ -37,9 +37,17 @@ type permissionOutput struct {
 	agentMessage string
 	updatedInput map[string]any
 	// denyExitZero, when true with DecisionDeny, encodes permission JSON with
-	// process exit 0. Used for events such as subagentStart where Cursor applies
-	// the JSON permission field and treats exit 2 as a raw-stdout deny message.
+	// process exit 0. Used for events such as subagentStart and beforeReadFile
+	// where Cursor applies the JSON permission field and treats exit 2 as a
+	// raw-stdout deny message.
 	denyExitZero bool
+	// permissionOnly, when true, encodes only the permission field. Used for
+	// events such as beforeTabFileRead whose Cursor schema is allow|deny only.
+	permissionOnly bool
+	// userMessageOnly, when true, encodes permission and user_message only.
+	// Used for events such as beforeReadFile and subagentStart whose Cursor
+	// schemas reject agent_message / updated_input even if chained via With*.
+	userMessageOnly bool
 }
 
 func (permissionOutput) isPermissionOutput() {}
@@ -71,9 +79,12 @@ func (o permissionOutput) WithUpdatedInput(input map[string]any) PermissionOutpu
 type PermissionResults interface {
 	// Allow returns an allow verdict.
 	Allow() PermissionOutput
-	// Deny returns a deny verdict with an agent-facing message.
+	// Deny returns a deny verdict with an agent-facing message and typically
+	// PermissionDenyExit. Event-specific builders may use user_message and exit 0.
 	Deny(agentMessage string) PermissionOutput
-	// Ask returns an ask verdict with an agent-facing message.
+	// Ask returns an ask verdict with an agent-facing message. Enforcement is
+	// event-specific: beforeShellExecution and beforeMCPExecution escalate to the
+	// user; preToolUse accepts ask but does not enforce it today.
 	Ask(agentMessage string) PermissionOutput
 	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
 	Noop() PermissionOutput
@@ -89,12 +100,14 @@ func (permissionResults) Allow() PermissionOutput {
 	return permissionOutput{decision: DecisionAllow}
 }
 
-// Deny returns a deny verdict with an agent-facing message.
+// Deny returns a deny verdict with an agent-facing message and PermissionDenyExit.
 func (permissionResults) Deny(agentMessage string) PermissionOutput {
 	return permissionOutput{decision: DecisionDeny, agentMessage: agentMessage}
 }
 
-// Ask returns an ask verdict with an agent-facing message.
+// Ask returns an ask verdict with an agent-facing message. Cursor enforces ask on
+// beforeShellExecution and beforeMCPExecution; see those events' godoc for
+// contrast with preToolUse and subagentStart.
 func (permissionResults) Ask(agentMessage string) PermissionOutput {
 	return permissionOutput{decision: DecisionAsk, agentMessage: agentMessage}
 }
@@ -117,7 +130,9 @@ func (GateResults) Deny(agentMessage string) PermissionOutput {
 	return permissionOutput{decision: DecisionDeny, agentMessage: agentMessage}
 }
 
-// Ask returns an ask verdict with an agent-facing message.
+// Ask returns an ask verdict with an agent-facing message. Cursor enforces ask on
+// beforeShellExecution and beforeMCPExecution; see those events' godoc for
+// contrast with preToolUse and subagentStart.
 func (GateResults) Ask(agentMessage string) PermissionOutput {
 	return permissionOutput{decision: DecisionAsk, agentMessage: agentMessage}
 }
@@ -128,13 +143,33 @@ func (GateResults) Noop() PermissionOutput {
 }
 
 // DenyUserMessage returns a deny verdict with a user-facing message and process
-// exit 0. Cursor's subagentStart schema applies permission from JSON and does not
-// use agent_message; exit 2 would re-wrap stdout as the user message.
+// exit 0. Cursor's subagentStart and beforeReadFile schemas apply permission
+// from JSON and do not use agent_message; exit 2 would re-wrap stdout as the
+// user message. Encoding omits chained agent_message / updated_input.
 func (GateResults) DenyUserMessage(userMessage string) PermissionOutput {
 	return permissionOutput{
-		decision:     DecisionDeny,
-		userMessage:  userMessage,
-		denyExitZero: true,
+		decision:        DecisionDeny,
+		userMessage:     userMessage,
+		denyExitZero:    true,
+		userMessageOnly: true,
+	}
+}
+
+// PermissionOnlyAllow returns an allow verdict that encodes only permission.
+// Cursor's beforeTabFileRead schema accepts allow|deny and no message fields.
+func (GateResults) PermissionOnlyAllow() PermissionOutput {
+	return permissionOutput{decision: DecisionAllow, permissionOnly: true}
+}
+
+// PermissionOnlyDeny returns a deny verdict that encodes only permission with
+// process exit 0. Cursor's beforeTabFileRead schema is allow|deny only; exit 0
+// lets the host apply the JSON permission field (exit 2 would treat stdout as a
+// raw deny message rather than schema JSON).
+func (GateResults) PermissionOnlyDeny() PermissionOutput {
+	return permissionOutput{
+		decision:       DecisionDeny,
+		denyExitZero:   true,
+		permissionOnly: true,
 	}
 }
 
@@ -144,14 +179,18 @@ func (o permissionOutput) Encode() ([]byte, int, error) {
 	if o.decision != "" {
 		out["permission"] = string(o.decision)
 	}
-	if o.userMessage != "" {
-		out["user_message"] = o.userMessage
-	}
-	if o.agentMessage != "" {
-		out["agent_message"] = o.agentMessage
-	}
-	if o.updatedInput != nil {
-		out["updated_input"] = o.updatedInput
+	if !o.permissionOnly {
+		if o.userMessage != "" {
+			out["user_message"] = o.userMessage
+		}
+		if !o.userMessageOnly {
+			if o.agentMessage != "" {
+				out["agent_message"] = o.agentMessage
+			}
+			if o.updatedInput != nil {
+				out["updated_input"] = o.updatedInput
+			}
+		}
 	}
 	if len(out) == 0 {
 		return nil, 0, nil
@@ -188,11 +227,13 @@ func (o permissionOutput) Merge(other hookkit.Output) (hookkit.Output, []string,
 		warnings = append(warnings, w)
 	}
 	return permissionOutput{
-		decision:     PermissionDecision(decision),
-		userMessage:  userMessage,
-		agentMessage: agentMessage,
-		updatedInput: updatedInput,
-		denyExitZero: o.denyExitZero || b.denyExitZero,
+		decision:        PermissionDecision(decision),
+		userMessage:     userMessage,
+		agentMessage:    agentMessage,
+		updatedInput:    updatedInput,
+		denyExitZero:    o.denyExitZero || b.denyExitZero,
+		permissionOnly:  o.permissionOnly || b.permissionOnly,
+		userMessageOnly: o.userMessageOnly || b.userMessageOnly,
 	}, warnings, nil
 }
 

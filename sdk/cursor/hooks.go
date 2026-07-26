@@ -94,7 +94,7 @@ func (c *hooks) BeforeSubmitPrompt(fn func(context.Context, BeforeSubmitPrompt, 
 }
 
 // PreToolUse registers a PreToolUse handler on the registrar.
-func (c *hooks) PreToolUse(fn func(context.Context, PreToolUse, PermissionResults) (PermissionOutput, error)) *hooks {
+func (c *hooks) PreToolUse(fn func(context.Context, PreToolUse, PreToolUseResults) (PermissionOutput, error)) *hooks {
 	return bind(c, fn, pretooluse.RegisterHandler)
 }
 
@@ -110,6 +110,10 @@ func (c *hooks) PostToolUseFailure(fn func(context.Context, PostToolUseFailure) 
 }
 
 // BeforeShellExecution registers a BeforeShellExecution handler on the registrar.
+// BeforeShellExecution ask is enforced by Cursor (user approval), unlike
+// PreToolUse (ask not enforced) and SubagentStart (ask treated as deny). Deny
+// defaults to agent_message and PermissionDenyExit; use WithUserMessage for a
+// client-facing message.
 func (c *hooks) BeforeShellExecution(fn func(context.Context, BeforeShellExecution, PermissionResults) (PermissionOutput, error)) *hooks {
 	return bind(c, fn, beforeshellexecution.RegisterHandler)
 }
@@ -121,6 +125,7 @@ func (c *hooks) AfterShellExecution(fn func(context.Context, AfterShellExecution
 }
 
 // BeforeMCPExecution registers a BeforeMCPExecution handler on the registrar.
+// BeforeMCPExecution ask is enforced by Cursor like BeforeShellExecution.
 func (c *hooks) BeforeMCPExecution(fn func(context.Context, BeforeMCPExecution, PermissionResults) (PermissionOutput, error)) *hooks {
 	return bind(c, fn, beforemcpexecution.RegisterHandler)
 }
@@ -175,6 +180,8 @@ func (c *hooks) AfterAgentThought(fn func(context.Context, AfterAgentThought) er
 }
 
 // BeforeTabFileRead registers a BeforeTabFileRead handler on the registrar.
+// BeforeTabFileRead responses are permission allow|deny only (Cursor Tab
+// schema; not available in cloud agents).
 func (c *hooks) BeforeTabFileRead(fn func(context.Context, BeforeTabFileRead, BeforeTabFileReadResults) (PermissionOutput, error)) *hooks {
 	return bind(c, fn, beforetabfileread.RegisterHandler)
 }

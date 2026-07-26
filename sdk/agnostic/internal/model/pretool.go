@@ -31,6 +31,8 @@ type PreToolResults interface {
 	Allow() PreToolResult
 	// Deny returns a deny verdict with an agent-facing reason.
 	Deny(reason string) PreToolResult
-	// Ask returns an escalate-to-user verdict with an agent-facing reason.
+	// Ask returns an escalate-to-user verdict with an agent-facing reason where
+	// the host supports it. On Cursor preToolUse, "ask" is accepted by the
+	// schema but not enforced today; prefer Deny when blocking is required.
 	Ask(reason string) PreToolResult
 }

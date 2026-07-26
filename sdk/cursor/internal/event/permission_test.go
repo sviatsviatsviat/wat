@@ -72,3 +72,65 @@ func TestMerge_Permission_askDoesNotStop(t *testing.T) {
 		t.Fatal("ask should not stop")
 	}
 }
+
+func TestEncode_PermissionOnly_stripsMessages(t *testing.T) {
+	t.Run("deny", func(t *testing.T) {
+		out, code, err := GateResults{}.PermissionOnlyDeny().
+			WithUserMessage("user").
+			WithAgentMessage("agent").
+			Encode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if code != 0 {
+			t.Fatalf("exit code = %d, want 0", code)
+		}
+		got := string(out)
+		if got != `{"permission":"deny"}` {
+			t.Fatalf("got %s, want permission-only deny", got)
+		}
+	})
+	t.Run("allow", func(t *testing.T) {
+		out, code, err := GateResults{}.PermissionOnlyAllow().
+			WithUserMessage("user").
+			WithAgentMessage("agent").
+			WithUpdatedInput(map[string]any{"path": "x"}).
+			Encode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if code != 0 {
+			t.Fatalf("exit code = %d, want 0", code)
+		}
+		got := string(out)
+		if got != `{"permission":"allow"}` {
+			t.Fatalf("got %s, want permission-only allow", got)
+		}
+	})
+}
+
+func TestEncode_DenyUserMessage_stripsChainedAgentFields(t *testing.T) {
+	out, code, err := GateResults{}.DenyUserMessage("blocked").
+		WithAgentMessage("agent").
+		WithUpdatedInput(map[string]any{"path": "secret"}).
+		Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0", code)
+	}
+	got := string(out)
+	if !strings.Contains(got, `"permission":"deny"`) {
+		t.Fatalf("missing permission deny: %s", got)
+	}
+	if !strings.Contains(got, `"user_message":"blocked"`) {
+		t.Fatalf("missing user_message: %s", got)
+	}
+	if strings.Contains(got, "agent_message") {
+		t.Fatalf("userMessageOnly must omit agent_message: %s", got)
+	}
+	if strings.Contains(got, "updated_input") {
+		t.Fatalf("userMessageOnly must omit updated_input: %s", got)
+	}
+}

@@ -17,6 +17,10 @@ import (
 // PreToolUse is the preToolUse hook event.
 type PreToolUse = pretooluse.Event
 
+// PreToolUseResults is the hook-scoped response builder for PreToolUse.
+// Ask is accepted by Cursor's schema but not enforced for preToolUse today.
+type PreToolUseResults = pretooluse.Results
+
 // PostToolUse is the postToolUse hook event.
 type PostToolUse = posttooluse.Event
 
@@ -25,6 +29,8 @@ type PostToolUse = posttooluse.Event
 type PostToolUseFailure = posttoolusefailure.Event
 
 // BeforeShellExecution is the beforeShellExecution hook event.
+// Cursor enforces permission allow, deny, and ask on this event (ask is real,
+// unlike preToolUse or subagentStart). Deny defaults to agent_message with exit 2.
 type BeforeShellExecution = beforeshellexecution.Event
 
 // AfterShellExecution is the afterShellExecution hook event.
@@ -44,16 +50,18 @@ type AfterMCPExecution = aftermcpexecution.Event
 type BeforeReadFile = beforereadfile.Event
 
 // BeforeReadFileResults is the hook-scoped response builder for BeforeReadFile.
+// Deny writes user_message and exits 0 (Cursor's beforeReadFile schema).
 type BeforeReadFileResults = beforereadfile.Results
 
 // AfterFileEdit is the afterFileEdit hook event.
 // Cursor documents no output fields; registration is observe-only.
 type AfterFileEdit = afterfileedit.Event
 
-// BeforeTabFileRead is the beforeTabFileRead hook event.
+// BeforeTabFileRead is the beforeTabFileRead hook event (Tab completions only).
 type BeforeTabFileRead = beforetabfileread.Event
 
 // BeforeTabFileReadResults is the hook-scoped response builder for BeforeTabFileRead.
+// Cursor accepts permission allow|deny only; there is no ask or message field.
 type BeforeTabFileReadResults = beforetabfileread.Results
 
 // AfterTabFileEdit is the afterTabFileEdit hook event.
