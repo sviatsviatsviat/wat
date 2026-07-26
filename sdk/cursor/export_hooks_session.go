@@ -6,10 +6,17 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/hooks/session/workspaceopen"
 )
 
-// SessionStart is the sessionStart hook event.
+// SessionStart is the sessionStart hook event, including optional
+// ComposerMode ("agent", "ask", or "edit").
+//
+// Cursor runs this hook as fire-and-forget and does not enforce continue or
+// user_message. It is not available for cloud agents. See the sessionstart
+// Event godoc for host semantics.
 type SessionStart = sessionstart.Event
 
-// SessionStartOutput is the response for sessionStart events.
+// SessionStartOutput is the response for sessionStart events (env and
+// additional_context). continue and user_message are not exposed because the
+// host does not enforce them.
 type SessionStartOutput = sessionstart.Output
 
 // SessionStartResults is the hook-scoped response builder for SessionStart.

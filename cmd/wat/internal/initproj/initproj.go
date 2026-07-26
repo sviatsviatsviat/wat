@@ -168,7 +168,8 @@ var starterTestdata = []starterFile{
   "user_email": null,
   "transcript_path": null,
   "cwd": "/w",
-  "is_background_agent": false
+  "is_background_agent": false,
+  "composer_mode": "agent"
 }
 `,
 	},
