@@ -50,6 +50,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Cursor `AfterAgentResponse` godoc and protocol docs state the observe-only
+  contract and that hooks.json matchers use the fixed value `AgentResponse`.
 - Cursor `Stop` / `SubagentStop` `FollowUp` godoc and protocol docs document
   `loop_count` versus hooks.json `loop_limit` (default 5; `null` unlimited),
   and that Cursor only consumes `subagentStop` `followup_message` when input

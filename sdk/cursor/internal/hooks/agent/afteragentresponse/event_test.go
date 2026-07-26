@@ -27,7 +27,16 @@ func mustDecode[E any](t *testing.T, raw string) E {
 }
 
 func TestDecode_AfterAgentResponse(t *testing.T) {
-	mustDecode[Event](t, `{"hook_event_name":"afterAgentResponse","conversation_id":"c1","text":"done"}`)
+	e := mustDecode[Event](t, `{"hook_event_name":"afterAgentResponse","conversation_id":"c1","text":"done"}`)
+	if e.EventName() != "afterAgentResponse" {
+		t.Fatalf("EventName = %q, want afterAgentResponse", e.EventName())
+	}
+	if e.ConversationID != "c1" {
+		t.Fatalf("ConversationID = %q, want c1", e.ConversationID)
+	}
+	if e.Text != "done" {
+		t.Fatalf("Text = %q, want done", e.Text)
+	}
 }
 
 func init() {

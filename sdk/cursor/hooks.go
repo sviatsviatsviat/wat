@@ -173,7 +173,8 @@ func (c *hooks) PreCompact(fn func(context.Context, PreCompact, PreCompactResult
 	return bind(c, fn, precompact.RegisterHandler)
 }
 
-// AfterAgentResponse registers an AfterAgentResponse handler on the registrar.
+// AfterAgentResponse registers an observe-only AfterAgentResponse handler.
+// Cursor's hooks.json matcher for this event is the fixed value AgentResponse.
 func (c *hooks) AfterAgentResponse(fn func(context.Context, AfterAgentResponse) error) *hooks {
 	return bind(c, fn, afteragentresponse.RegisterHandler)
 }
