@@ -32,6 +32,9 @@ jobs:
         with:
           version: v2.12.2
 
+      - name: Godoc coverage
+        run: go run ./tools/check-godoc-coverage -threshold=80 -list-missing
+
       - name: Test
         run: go test ./...
 

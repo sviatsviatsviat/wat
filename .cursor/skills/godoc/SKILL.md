@@ -9,7 +9,20 @@ description: >-
 # Godoc
 
 Every exported function, type, constant, variable, and method needs a complete
-godoc sentence beginning with its name. CI enforces this with `revive`.
+godoc sentence beginning with its name. CI enforces this with `revive`
+(`exported`) and with an 80% exported-godoc coverage gate:
+
+```bash
+go run ./tools/check-godoc-coverage -threshold=80 -list-missing
+```
+
+The coverage metric matches project rules: exported funcs, methods, types,
+consts, and vars with AST doc comments. `_test.go`, `testdata/`, and generated
+files are excluded; struct fields are not counted. Keep coverage ≥80% on every
+PR—prefer adding missing exported godoc over lowering the threshold or gaming
+excludes. CodeRabbit's PR "docstring coverage" warning is advisory (diff-scoped
+and may include unexported symbols); this tool is authoritative in CI (workflow
+step `Godoc coverage`).
 
 Put meaningful package contracts in `doc.go`. For public SDK packages, explain:
 

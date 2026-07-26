@@ -30,6 +30,7 @@ Before submitting a change:
 go vet ./...
 go test ./...
 golangci-lint run ./...
+go run ./tools/check-godoc-coverage -threshold=80
 go build ./cmd/wat
 ```
 
@@ -124,7 +125,11 @@ or be close enough to copy into `.wat/hooks.go` without hidden setup.
 
 Godoc comments are complete sentences that begin with the exported identifier.
 Package overviews belong in `doc.go`. CI enforces exported comments with
-`revive`.
+`revive` and requires exported godoc coverage ≥80% via the `Godoc coverage`
+workflow step (`go run ./tools/check-godoc-coverage -threshold=80`). Coverage
+counts exported funcs, methods, types, consts, and vars (not unexported
+helpers or struct fields). CodeRabbit's PR docstring percentage is advisory
+and may differ from this metric.
 
 ## Changelog policy
 
