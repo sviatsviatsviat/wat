@@ -18,6 +18,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   falling back to `duration_ms` only when `duration` is absent.
 - Cursor `PreToolUse` decodes optional input `agent_message` (pre-call
   narrative from the agent).
+- `sdk/cursor`'s `SubagentStop` event decodes the full native `subagentStop`
+  telemetry payload: `description`, `duration_ms`, `message_count`,
+  `tool_call_count`, and `modified_files`, in addition to the existing
+  identity, status, summary, loop, and transcript fields. Godoc and protocol
+  docs note that Cursor only consumes `followup_message` when `status` is
+  `"completed"`, and that auto follow-up caps use hooks.json `loop_limit`.
 
 ### Changed
 
