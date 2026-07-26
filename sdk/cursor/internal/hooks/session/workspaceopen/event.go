@@ -6,10 +6,9 @@ import (
 )
 
 // Event is the workspaceOpen hook event.
-//
-// workspaceOpen is an app lifecycle hook: it fires in the Cursor desktop app
-// and CLI when a workspace opens or its folders change, and is skipped when
-// there are zero workspace folders. It does not run in cloud agents.
+// Event is an app lifecycle hook: it fires in the Cursor desktop app and CLI
+// when a workspace opens or its folders change, and is skipped when there are
+// zero workspace folders. Event does not run in cloud agents.
 type Event struct {
 	event.Envelope
 }

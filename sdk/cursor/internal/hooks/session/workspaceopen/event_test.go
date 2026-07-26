@@ -37,7 +37,10 @@ func TestDecode_WorkspaceOpen(t *testing.T) {
 }
 
 func TestEncode_WorkspaceOpen_pluginPaths(t *testing.T) {
-	out, code, err := results{}.PluginPaths([]string{"/plugins/a", "/plugins/b"}).Encode()
+	paths := []string{"/plugins/a", "/plugins/b"}
+	built := results{}.PluginPaths(paths)
+	paths[0] = "/mutated"
+	out, code, err := built.Encode()
 	if err != nil || code != 0 {
 		t.Fatalf("encode: %v code=%d", err, code)
 	}
@@ -50,6 +53,20 @@ func TestEncode_WorkspaceOpen_pluginPaths(t *testing.T) {
 	want := []string{"/plugins/a", "/plugins/b"}
 	if !reflect.DeepEqual(got.PluginPaths, want) {
 		t.Fatalf("pluginPaths = %v, want %v", got.PluginPaths, want)
+	}
+
+	chainedPaths := []string{"/plugins/c"}
+	chained := results{}.Noop().WithPluginPaths(chainedPaths)
+	chainedPaths[0] = "/also-mutated"
+	out, code, err = chained.Encode()
+	if err != nil || code != 0 {
+		t.Fatalf("WithPluginPaths encode: %v code=%d", err, code)
+	}
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got.PluginPaths, []string{"/plugins/c"}) {
+		t.Fatalf("WithPluginPaths pluginPaths = %v", got.PluginPaths)
 	}
 }
 

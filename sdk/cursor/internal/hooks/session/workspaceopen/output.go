@@ -28,7 +28,7 @@ func (o output) IsZero() bool {
 
 // WithPluginPaths sets absolute plugin directories to load for the workspace.
 func (o output) WithPluginPaths(paths []string) Output {
-	o.pluginPaths = paths
+	o.pluginPaths = append([]string(nil), paths...)
 	return o
 }
 

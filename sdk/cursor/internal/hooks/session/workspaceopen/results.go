@@ -17,7 +17,7 @@ func (results) isResults() {}
 // PluginPaths returns a workspaceOpen result that loads the given absolute
 // plugin directories for the current workspace.
 func (results) PluginPaths(paths []string) Output {
-	return output{pluginPaths: paths}
+	return output{pluginPaths: append([]string(nil), paths...)}
 }
 
 // Noop returns an empty response (silent stdout).

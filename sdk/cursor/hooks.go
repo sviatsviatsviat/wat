@@ -195,8 +195,8 @@ func (c *hooks) AfterTabFileEdit(fn func(context.Context, AfterTabFileEdit) erro
 }
 
 // WorkspaceOpen registers a WorkspaceOpen handler on the registrar.
-// Handlers may return pluginPaths for the current workspace. This lifecycle
-// hook does not run in cloud agents.
+// WorkspaceOpen handlers may return pluginPaths for the current workspace.
+// WorkspaceOpen is a desktop/CLI lifecycle hook and does not run in cloud agents.
 func (c *hooks) WorkspaceOpen(fn func(context.Context, WorkspaceOpen, WorkspaceOpenResults) (WorkspaceOpenOutput, error)) *hooks {
 	return bind(c, fn, workspaceopen.RegisterHandler)
 }
