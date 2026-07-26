@@ -76,6 +76,54 @@ func TestEncode_SubagentStartDeny_userMessageExitZero(t *testing.T) {
 	}
 }
 
+func TestDecode_SubagentStart_liveDefaultSentinel(t *testing.T) {
+	ev := mustDecode[Event](t, `{
+		"hook_event_name":"subagentStart",
+		"conversation_id":"c1",
+		"model":"default",
+		"subagent_id":"sa2",
+		"subagent_type":"general-purpose",
+		"task":"find files",
+		"parent_conversation_id":"c0",
+		"tool_call_id":"tc2",
+		"subagent_model":"default",
+		"is_parallel_worker":false,
+		"git_branch":"main"
+	}`)
+	if ev.SubagentType != "general-purpose" {
+		t.Fatalf("SubagentType = %q, want general-purpose", ev.SubagentType)
+	}
+	if ev.SubagentModel != "default" {
+		t.Fatalf("SubagentModel = %q, want default", ev.SubagentModel)
+	}
+	// Live payload keeps wire casing; authors normalize for matchers.
+	if ev.Model != "default" {
+		t.Fatalf("Model = %q, want default", ev.Model)
+	}
+}
+
+func TestDecode_SubagentStart_liveSamePinned(t *testing.T) {
+	ev := mustDecode[Event](t, `{
+		"hook_event_name":"subagentStart",
+		"conversation_id":"c1",
+		"model":"composer-2.5-fast",
+		"subagent_id":"sa3",
+		"subagent_type":"general-purpose",
+		"task":"pinned probe",
+		"parent_conversation_id":"c0",
+		"tool_call_id":"tc3",
+		"subagent_model":"composer-2.5-fast",
+		"is_parallel_worker":false,
+		"git_branch":"main"
+	}`)
+	if ev.Model != ev.SubagentModel {
+		t.Fatalf("model=%q subagent_model=%q, want equal concrete pin", ev.Model, ev.SubagentModel)
+	}
+	if ev.SubagentModel == "" || ev.SubagentModel == "auto" || ev.SubagentModel == "default" || ev.SubagentModel == "inherit" {
+		t.Fatalf("same-pinned concrete ID must not look like a sentinel: %q", ev.SubagentModel)
+	}
+}
+
 func init() {
 	register(testCodec)
 }
