@@ -145,6 +145,9 @@ Known limitations are part of the contract:
 - Cursor `subagentStop` decodes the documented telemetry fields
   (`description`, `duration_ms`, `message_count`, `tool_call_count`,
   `modified_files`) in addition to identity and status fields.
+- Cursor `afterAgentThought` is observe-only and decodes optional
+  `duration_ms` for the completed thinking block. Cursor's hooks.json
+  matcher for this event is the fixed value `AgentThought`.
 - Observe-only portable events never emit host JSON.
 - Portable `OnPreCompact` is observe-only and maps only shared compaction
   fields (`trigger`, plus Claude/Copilot `custom_instructions` when present).
