@@ -45,7 +45,9 @@ subagent. The adapter routes it by its optional agent identity fields so
 
 Events not representable on every agent are native-only. Examples include
 permission requests and notifications (Claude/Copilot), Claude worktree and
-elicitation events, and Cursor workspace/tab events.
+elicitation events, and Cursor workspace/tab events. Cursor `workspaceOpen` is
+an app lifecycle hook (desktop/CLI): it can return `pluginPaths`, is skipped
+when there are zero workspace folders, and does not run in cloud agents.
 
 ## Tool-name normalization
 

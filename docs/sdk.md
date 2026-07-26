@@ -32,7 +32,9 @@ var Hooks = []run.Hooks{
 	claude.UseHooks().
 		PermissionRequest(claudePermission),
 	cursor.UseHooks().
-		WorkspaceOpen(cursorWorkspace),
+		WorkspaceOpen(func(ctx context.Context, hook cursor.WorkspaceOpen, r cursor.WorkspaceOpenResults) (cursor.WorkspaceOpenOutput, error) {
+			return r.PluginPaths([]string{"/abs/path/to/plugin"}), nil
+		}),
 }
 ```
 
@@ -222,6 +224,11 @@ input `status` is `"completed"`. Cursor caps those loops with the hooks.json
 `loop_limit` option (default `5`; `null` means unlimited). Use `LoopCount` on
 the event (starts at 0) before returning another follow-up. See
 [Agent protocols](agent-formats.md).
+
+`WorkspaceOpen` is result-capable: handlers receive `WorkspaceOpenResults` and
+may return `pluginPaths` (absolute plugin directories for the workspace). It is an
+app lifecycle hook for the Cursor desktop app and CLI, skipped when there are
+zero workspace folders, and does not run in cloud agents.
 
 ### Native constants and helpers
 
