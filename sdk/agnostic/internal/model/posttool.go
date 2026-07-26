@@ -21,7 +21,8 @@ type PostToolResult interface {
 	// IsZero reports whether the result carries no instruction.
 	IsZero() bool
 	// WithUpdatedOutput replaces tool result text when set.
-	// On Cursor this maps to updated_mcp_tool_output (MCP AfterMCP / post-tool only).
+	// On Cursor this maps to updated_mcp_tool_output on generic postToolUse for
+	// MCP tools only; dedicated afterMCPExecution is observe-only.
 	WithUpdatedOutput(output string) PostToolResult
 }
 

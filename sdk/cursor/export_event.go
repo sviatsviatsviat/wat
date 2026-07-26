@@ -35,8 +35,10 @@ type PermissionOutput = event.PermissionOutput
 // PermissionResults is the hook-scoped response builder supplied to permission On* handlers by registration.
 type PermissionResults = event.PermissionResults
 
-// PostToolOutput is the response for post-tool events.
+// PostToolOutput is the response for post-tool events that accept host JSON.
 // Construct via PostToolResults builders and With* methods. A nil value is a no-op.
+// Cursor applies updated_mcp_tool_output on postToolUse for MCP tools;
+// AfterMCPExecution is observe-only.
 type PostToolOutput = event.PostToolOutput
 
 // PostToolResults is the hook-scoped response builder supplied to On* handlers by registration.

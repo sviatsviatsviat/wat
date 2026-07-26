@@ -54,7 +54,7 @@ func TestInspect_expandsPortableHooksToNativeRegistrations(t *testing.T) {
 	}
 }
 
-func TestInspect_OnPostToolIncludesCursorAfterFileEdit(t *testing.T) {
+func TestInspect_OnPostToolIncludesCursorObserveOnlyEvents(t *testing.T) {
 	portable := agnostic.UseHooks().OnPostTool(func(context.Context, agnostic.PostToolEvent, agnostic.PostToolResults) (agnostic.PostToolResult, error) {
 		return nil, nil
 	})

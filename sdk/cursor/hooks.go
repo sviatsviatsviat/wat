@@ -124,8 +124,10 @@ func (c *hooks) BeforeMCPExecution(fn func(context.Context, BeforeMCPExecution, 
 	return bind(c, fn, beforemcpexecution.RegisterHandler)
 }
 
-// AfterMCPExecution registers an AfterMCPExecution handler on the registrar.
-func (c *hooks) AfterMCPExecution(fn func(context.Context, AfterMCPExecution, PostToolResults) (PostToolOutput, error)) *hooks {
+// AfterMCPExecution registers an observe-only AfterMCPExecution handler.
+// Cursor documents no output fields for this event. Rewrite MCP tool output
+// with PostToolUse (updated_mcp_tool_output). Cloud agents do not run MCP hooks.
+func (c *hooks) AfterMCPExecution(fn func(context.Context, AfterMCPExecution) error) *hooks {
 	return bind(c, fn, aftermcpexecution.RegisterHandler)
 }
 

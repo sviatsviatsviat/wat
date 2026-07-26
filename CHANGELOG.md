@@ -23,6 +23,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   no longer receive `PostToolResults`, matching Cursor Hooks docs (no consumed
   output fields). Portable `OnPostTool` no longer expands onto that event;
   use `sdk/cursor.AfterShellExecution` for shell-after auditing.
+- Cursor `AfterMCPExecution` is observe-only: Cursor Hooks docs list no output
+  fields for this event. Rewrite MCP tool output with `PostToolUse`
+  (`updated_mcp_tool_output`). Cloud agents do not load MCP hooks.
 
 ## [v0.1.1-alpha] - 2026-07-25
 
