@@ -1,13 +1,28 @@
 package event
 
+// ModelParam is a selected model parameter on Cursor hook payloads
+// (for example thinking, context, or effort).
+type ModelParam struct {
+	// ID is the parameter identifier.
+	ID string `json:"id"`
+	// Value is the parameter value.
+	Value string `json:"value"`
+}
+
 // Envelope holds fields shared by every Cursor hook event payload.
 type Envelope struct {
 	// ConversationID is the Cursor conversation identifier.
 	ConversationID string `json:"conversation_id"`
 	// GenerationID is the generation identifier for the current turn.
 	GenerationID string `json:"generation_id"`
-	// Model is the model name when present on the wire.
+	// Model is the legacy model slug configured for the composer that
+	// triggered the hook.
 	Model string `json:"model"`
+	// ModelID is the structured model identifier when available.
+	ModelID string `json:"model_id"`
+	// ModelParams lists selected model parameters such as thinking, context,
+	// or effort.
+	ModelParams []ModelParam `json:"model_params"`
 	// HookEventName is the native hook event name when present on the wire.
 	HookEventName string `json:"hook_event_name"`
 	// CursorVersion is the Cursor application version.

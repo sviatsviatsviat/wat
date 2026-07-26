@@ -7,6 +7,9 @@ import (
 // Envelope holds fields shared by every Cursor hook event payload.
 type Envelope = event.Envelope
 
+// ModelParam is a selected model parameter on Cursor hook payloads.
+type ModelParam = event.ModelParam
+
 // Attachment is a file or rule attachment on prompt and read-file events.
 type Attachment = event.Attachment
 

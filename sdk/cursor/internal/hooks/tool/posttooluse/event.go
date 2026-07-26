@@ -7,6 +7,9 @@ import (
 )
 
 // Event is the postToolUse hook event.
+//
+// Cursor Hooks docs document tool fields plus duration in milliseconds.
+// Outputs may include additional_context and updated_mcp_tool_output.
 type Event struct {
 	event.Envelope
 	// ToolName is the tool name.
@@ -15,23 +18,26 @@ type Event struct {
 	ToolInput tools.Input `json:"-"`
 	// ToolUseID is the tool use identifier.
 	ToolUseID string `json:"tool_use_id"`
-	// ToolOutput is the tool output text.
+	// ToolOutput is the tool output text (JSON-stringified result payload).
 	ToolOutput string `json:"tool_output"`
-	// Duration is the execution duration in milliseconds.
+	// Duration is the Cursor Hooks docs duration field in milliseconds.
 	Duration int64 `json:"duration"`
-	// DurationMs is an alternate duration field in milliseconds.
+	// DurationMs is an alternate duration field some payloads may use.
 	DurationMs int64 `json:"duration_ms"`
 }
 
 // EventName returns the canonical hook event name.
 func (Event) EventName() string { return event.PostToolUse }
 
-// DurationMillis returns the execution duration in milliseconds.
+// DurationMillis returns the tool execution duration in milliseconds.
+// Prefer this helper over reading Duration or DurationMs directly: Cursor
+// Hooks docs use `duration`, and DurationMillis falls back to `duration_ms`
+// when `duration` is zero so alternate wire forms still decode.
 func (e Event) DurationMillis() int64 {
-	if e.DurationMs != 0 {
-		return e.DurationMs
+	if e.Duration != 0 {
+		return e.Duration
 	}
-	return e.Duration
+	return e.DurationMs
 }
 
 // register registers this hook event decoder on c.

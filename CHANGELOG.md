@@ -7,6 +7,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Cursor hook `Envelope` decodes documented common-schema fields `model_id` and
+  `model_params`. `postToolUse` documents `DurationMillis()` as the canonical
+  duration accessor (`duration`, with `duration_ms` fallback).
+
 ## [v0.1.1-alpha] - 2026-07-25
 
 ### Fixed

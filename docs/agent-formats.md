@@ -124,6 +124,14 @@ and tests for it.
 | Session environment | `CLAUDE_ENV_FILE` for supported output | stdout JSON | stdout JSON |
 | Project config | `.claude/settings.json` matcher groups | `.github/hooks/wat.json` flat handlers | `.cursor/hooks.json` flat handlers |
 
+Cursor's documented common input schema includes `model_id` and
+`model_params` alongside the legacy `model` slug. `sdk/cursor.Envelope`
+decodes those fields so handlers do not silently lose them.
+
+For Cursor `postToolUse`, Hooks docs use `duration` (milliseconds). The event
+also accepts alternate `duration_ms` payloads; prefer
+`PostToolUse.DurationMillis()` over reading either field directly.
+
 Output encoding belongs to the native SDK. Portable adapters must return native
 output values and must not serialize JSON themselves.
 
