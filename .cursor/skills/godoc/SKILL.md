@@ -9,13 +9,33 @@ description: >-
 # Godoc
 
 Every exported function, type, constant, variable, and method needs a complete
-godoc sentence beginning with its name. CI enforces this with golangci-lint
-revive `exported` (public API only). Unexported helpers and ordinary test
-callbacks do not need docstrings for CI.
+godoc sentence whose **first word/phrase is the declaration name**.
 
-Ignore CodeRabbit's private/unexported docstring coverage percentage. That
-metric is not a merge gate and must not drive documentation of private code.
-Prefer fixing missing exported godoc over chasing CodeRabbit coverage noise.
+```go
+// Foo returns the canonical name.   // good (funcs/methods/vars/consts)
+// This function returns the name.   // bad — lead with Foo
+// The Foo type holds config.        // OK for types (article + name)
+// A Foo is a config handle.         // OK for types (optional article + name)
+// The FooMethod does work.          // bad on methods — no leading article
+```
+
+Do not start with filler such as `This`, `For`, `Returns`, or `Provides`
+without the identifier. Types may use an optional leading `A`/`An`/`The`
+when the type name follows immediately; funcs, methods, vars, and consts
+must begin with the declaration name (no article). Later sentences in the
+same comment block may start freely; only the opening sentence is
+constrained.
+
+CI enforces this with golangci-lint:
+
+- revive `exported` — missing exported comments and lead-name form
+  (`comment on exported … should be of the form "Name …"`)
+- staticcheck `ST1020` (funcs/methods), `ST1021` (types), `ST1022` (vars/consts)
+
+Unexported helpers and ordinary test callbacks do not need docstrings for CI.
+Run `golangci-lint run ./...` locally so lead-name mistakes fail before
+CodeRabbit. Ignore CodeRabbit's private/unexported docstring coverage
+percentage; that metric is not a merge gate.
 
 Put meaningful package contracts in `doc.go`. For public SDK packages, explain:
 

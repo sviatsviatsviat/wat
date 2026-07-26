@@ -37,9 +37,13 @@ Use the committed documentation as the source of truth:
 ## Public changes
 
 Ship tests, godoc, guides, and changelog updates with public behavior. Every
-exported identifier needs godoc (enforced by golangci-lint revive `exported`).
-Ignore CodeRabbit private/unexported docstring coverage %. Keep registrations
-and package initialization free of external side effects.
+exported identifier needs godoc whose first word/phrase is the declaration
+name (`// Foo does ...`). Types may use an optional leading `A`/`An`/`The`
+when the identifier follows immediately; funcs/methods/vars/consts must
+begin with the name. Enforced by golangci-lint revive `exported` and
+staticcheck `ST1020`/`ST1021`/`ST1022`. Ignore CodeRabbit private/unexported
+docstring coverage %. Keep registrations and package initialization free of
+external side effects.
 
 ## Version pinning
 

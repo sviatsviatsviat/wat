@@ -17,6 +17,21 @@ linters:
     gosec:
       severity: medium
       confidence: medium
+    # Lead-name godoc: exported comments must begin with the identifier
+    # (optional leading article for types). Enforced by:
+    #   - revive rule "exported" (missing docs + "should be of the form X ...")
+    #   - staticcheck ST1020 (funcs), ST1021 (types), ST1022 (vars/consts)
+    # golangci-lint defaults disable ST1020–ST1022; re-enable them here.
+    # Never add exclusions.presets: [comments] — it silences both checks.
+    staticcheck:
+      checks:
+        - all
+        - "-ST1000"
+        - "-ST1003"
+        - "-ST1016"
+        - ST1020
+        - ST1021
+        - ST1022
     revive:
       rules:
         - name: exported

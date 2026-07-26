@@ -70,6 +70,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   docs warn that Cursor does not enforce ask for `preToolUse` today; prefer
   `Allow` or `Deny` when gating is required. Protocol docs also clarify that
   Cursor enforces `"ask"` on `beforeShellExecution` and `beforeMCPExecution`.
+- Cursor `BeforeMCPExecution` godoc, examples, and guides document the
+  recommended `failClosed: true` hooks.json setting for security-critical MCP
+  gates, the cloud-agent deferral, and `url` versus `command` wire variants.
 
 ### Fixed
 

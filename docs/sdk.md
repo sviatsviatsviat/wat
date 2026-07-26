@@ -220,6 +220,11 @@ the supported author-facing registration surface.
 list no consumed output. Rewrite MCP tool output with `PostToolUse`
 (`updated_mcp_tool_output`). Cloud agents do not load MCP hooks.
 
+`BeforeMCPExecution` payloads include `tool_name` and `tool_input` plus either
+`url` (remote MCP) or `command` (stdio MCP). Prefer `failClosed: true` in
+`hooks.json` for security-critical MCP gates; Cursor defers this event for
+cloud agents.
+
 Cursor `AfterFileEdit` uses `[]Edit` (`old_string` / `new_string`). Cursor
 `AfterTabFileEdit` uses `[]TabEdit`, which adds Tab-specific `range`,
 `old_line`, and `new_line` fields from the native payload.
