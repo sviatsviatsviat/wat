@@ -7,6 +7,17 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Cursor hook `Envelope` decodes optional common-schema `model_id` and
+  `model_params` (exported as `ModelParam`).
+
+### Changed
+
+- Cursor `Stop` / `FollowUp` godoc and protocol docs document
+  `loop_count` versus hooks.json `loop_limit` (default 5; `null` unlimited)
+  for auto follow-up loops.
+
 ## [v0.1.1-alpha] - 2026-07-25
 
 ### Fixed

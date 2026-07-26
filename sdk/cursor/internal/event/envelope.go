@@ -6,8 +6,13 @@ type Envelope struct {
 	ConversationID string `json:"conversation_id"`
 	// GenerationID is the generation identifier for the current turn.
 	GenerationID string `json:"generation_id"`
-	// Model is the model name when present on the wire.
+	// Model is the legacy model slug when present on the wire.
 	Model string `json:"model"`
+	// ModelID is the structured model identifier when available.
+	ModelID string `json:"model_id"`
+	// ModelParams lists selected model parameters when present (for example
+	// thinking, context, or effort).
+	ModelParams []ModelParam `json:"model_params"`
 	// HookEventName is the native hook event name when present on the wire.
 	HookEventName string `json:"hook_event_name"`
 	// CursorVersion is the Cursor application version.
@@ -22,4 +27,12 @@ type Envelope struct {
 	Cwd string `json:"cwd"`
 	// SessionID is a fallback session identifier when conversation_id is absent.
 	SessionID string `json:"session_id"`
+}
+
+// ModelParam is a selected model parameter from Cursor's common hook schema.
+type ModelParam struct {
+	// ID is the parameter identifier (for example thinking, context, or effort).
+	ID string `json:"id"`
+	// Value is the parameter value.
+	Value string `json:"value"`
 }
