@@ -2,6 +2,7 @@ package posttoolusefailure
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
@@ -32,6 +33,41 @@ type Event struct {
 	// IsInterrupt is true when the failure was caused by a user interrupt
 	// or cancellation.
 	IsInterrupt bool `json:"is_interrupt"`
+
+	durationPresent bool
+}
+
+// UnmarshalJSON decodes the event and records whether the documented duration
+// field was present so DurationMillis can distinguish explicit 0 from absent.
+func (e *Event) UnmarshalJSON(data []byte) error {
+	type wire struct {
+		event.Envelope
+		ToolName     string `json:"tool_name"`
+		ToolUseID    string `json:"tool_use_id"`
+		ErrorMessage string `json:"error_message"`
+		FailureType  string `json:"failure_type"`
+		Duration     *int64 `json:"duration"`
+		DurationMs   int64  `json:"duration_ms"`
+		IsInterrupt  bool   `json:"is_interrupt"`
+	}
+	var w wire
+	if err := json.Unmarshal(data, &w); err != nil {
+		return err
+	}
+	*e = Event{
+		Envelope:     w.Envelope,
+		ToolName:     w.ToolName,
+		ToolUseID:    w.ToolUseID,
+		ErrorMessage: w.ErrorMessage,
+		FailureType:  w.FailureType,
+		DurationMs:   w.DurationMs,
+		IsInterrupt:  w.IsInterrupt,
+	}
+	if w.Duration != nil {
+		e.durationPresent = true
+		e.Duration = *w.Duration
+	}
+	return nil
 }
 
 // EventName returns the canonical hook event name.
@@ -40,9 +76,9 @@ func (Event) EventName() string { return event.PostToolUseFailure }
 // DurationMillis returns the failure duration in milliseconds.
 // Prefer this helper over reading Duration or DurationMs directly: Cursor
 // Hooks docs use `duration`, and DurationMillis falls back to `duration_ms`
-// when `duration` is zero so alternate wire forms still decode.
+// only when `duration` is absent so an explicit `duration: 0` still wins.
 func (e Event) DurationMillis() int64 {
-	if e.Duration != 0 {
+	if e.durationPresent {
 		return e.Duration
 	}
 	return e.DurationMs

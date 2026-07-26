@@ -13,7 +13,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `model_params`, using the exported `ModelParam` element type.
 - Cursor `afterShellExecution` decodes `sandbox`. Cursor `postToolUseFailure`
   decodes `is_interrupt`. Both prefer documented `duration` via
-  `DurationMillis()` (falling back to `duration_ms`).
+  `DurationMillis()` when that field is present (including explicit `0`),
+  falling back to `duration_ms` only when `duration` is absent.
 
 ### Changed
 
