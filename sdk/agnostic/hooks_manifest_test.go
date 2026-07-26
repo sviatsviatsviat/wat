@@ -63,7 +63,6 @@ func TestInspect_OnPostToolIncludesCursorAfterFileEdit(t *testing.T) {
 	want := []string{
 		cursor.EventAfterFileEdit,
 		cursor.EventAfterMCPExecution,
-		cursor.EventAfterShellExecution,
 		cursor.EventPostToolUse,
 	}
 	if !reflect.DeepEqual(got, want) {

@@ -202,7 +202,7 @@ the supported author-facing registration surface.
 |---|---|
 | Session/prompt | `SessionStart`, `SessionEnd`, `WorkspaceOpen`, `BeforeSubmitPrompt` |
 | Generic tools | `PreToolUse`, `PostToolUse`, `PostToolUseFailure` |
-| Dedicated tools | `BeforeShellExecution`, `AfterShellExecution`, `BeforeMCPExecution`, `AfterMCPExecution`, `BeforeReadFile`, `AfterFileEdit`, `BeforeTabFileRead`, `AfterTabFileEdit` |
+| Dedicated tools | `BeforeShellExecution`, `AfterShellExecution` (observe-only), `BeforeMCPExecution`, `AfterMCPExecution`, `BeforeReadFile`, `AfterFileEdit`, `BeforeTabFileRead`, `AfterTabFileEdit` (observe-only) |
 | Agent/stop/compact | `SubagentStart`, `SubagentStop`, `Stop`, `AfterAgentResponse`, `AfterAgentThought`, `PreCompact` |
 
 ### Native constants and helpers

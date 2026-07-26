@@ -19,6 +19,10 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `PostToolResults`; portable `OnPostTool` still delivers the edit for
   observation, but `Context` / `WithUpdatedOutput` have no host effect for that
   event.
+- Cursor `afterShellExecution` decodes `sandbox` and is observe-only: handlers
+  no longer receive `PostToolResults`, matching Cursor Hooks docs (no consumed
+  output fields). Portable `OnPostTool` no longer expands onto that event;
+  use `sdk/cursor.AfterShellExecution` for shell-after auditing.
 
 ## [v0.1.1-alpha] - 2026-07-25
 

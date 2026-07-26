@@ -113,8 +113,9 @@ func (c *hooks) BeforeShellExecution(fn func(context.Context, BeforeShellExecuti
 	return bind(c, fn, beforeshellexecution.RegisterHandler)
 }
 
-// AfterShellExecution registers an AfterShellExecution handler on the registrar.
-func (c *hooks) AfterShellExecution(fn func(context.Context, AfterShellExecution, PostToolResults) (PostToolOutput, error)) *hooks {
+// AfterShellExecution registers an AfterShellExecution observe handler on the
+// registrar. Cursor Hooks docs list no consumed output fields for this event.
+func (c *hooks) AfterShellExecution(fn func(context.Context, AfterShellExecution) error) *hooks {
 	return bind(c, fn, aftershellexecution.RegisterHandler)
 }
 
