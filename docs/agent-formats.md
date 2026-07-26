@@ -120,6 +120,13 @@ Known limitations are part of the contract:
   - `postToolUseFailure`: native observe handler; portable
     `PostToolFailureResults.Context` is discarded on Cursor. Decodes
     `is_interrupt`.
+- Cursor `subagentStop` decodes the documented telemetry fields
+  (`description`, `duration_ms`, `message_count`, `tool_call_count`,
+  `modified_files`) in addition to identity and status fields.
+  `StopResults.FollowUp` still emits `followup_message`, but Cursor only
+  consumes that message when the input `status` is `"completed"`. Auto
+  follow-up caps are configured with the hooks.json `loop_limit` handler
+  option (default 5), not an SDK input or output field.
 - Observe-only portable events never emit host JSON.
 
 ### Cursor permission and Ask semantics

@@ -210,6 +210,12 @@ the supported author-facing registration surface.
 list no consumed output. Rewrite MCP tool output with `PostToolUse`
 (`updated_mcp_tool_output`). Cloud agents do not load MCP hooks.
 
+`SubagentStop` decodes Cursor's documented telemetry fields (`description`,
+`duration_ms`, `message_count`, `tool_call_count`, `modified_files`).
+`StopResults.FollowUp` emits `followup_message`; Cursor only consumes it when
+the input `status` is `"completed"`. Auto follow-up caps use hooks.json
+`loop_limit`. See [Agent protocols](agent-formats.md).
+
 ### Native constants and helpers
 
 Each native package exports:
