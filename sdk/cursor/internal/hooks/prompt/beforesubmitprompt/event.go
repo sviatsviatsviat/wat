@@ -5,7 +5,10 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 )
 
-// Event is the beforeSubmitPrompt hook event.
+// Event is the beforeSubmitPrompt hook event. Cursor calls it after the user
+// hits send and before the backend request. In hooks.json, matchers for this
+// event are matched against the value UserPromptSubmit (a config filter string,
+// not the wire hook_event_name).
 type Event struct {
 	event.Envelope
 	// Prompt is the user prompt about to be submitted.

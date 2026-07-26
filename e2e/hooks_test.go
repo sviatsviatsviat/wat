@@ -189,6 +189,56 @@ func TestWatTest_cursorPostToolUseFailureObserveOnly(t *testing.T) {
 	}
 }
 
+// cursorBeforeSubmitPromptBlockHooksGo registers a Cursor beforeSubmitPrompt
+// handler that always blocks, exercising continue:false + exit 0 (not exit 2).
+const cursorBeforeSubmitPromptBlockHooksGo = `package hooks
+
+import (
+	"context"
+
+	"github.com/sviatsviatsviat/wat/sdk/cursor"
+	"github.com/sviatsviatsviat/wat/sdk/run"
+)
+
+var Hooks = []run.Hooks{
+	cursor.UseHooks().BeforeSubmitPrompt(func(_ context.Context, _ cursor.BeforeSubmitPrompt, r cursor.BeforeSubmitPromptResults) (cursor.BeforeSubmitPromptOutput, error) {
+		return r.Block("wat blocked this prompt submission."), nil
+	}),
+}
+`
+
+const cursorBeforeSubmitPromptBlockExpect = `{
+  "exit": 0,
+  "stdout_contains": ["\"continue\":false", "wat blocked this prompt submission"]
+}
+`
+
+func TestWatTest_cursorBeforeSubmitPromptBlock(t *testing.T) {
+	binary := buildWat(t)
+	project := initProjectWithReplace(t)
+
+	hooksPath := filepath.Join(project, ".wat", "hooks.go")
+	if err := os.WriteFile(hooksPath, []byte(cursorBeforeSubmitPromptBlockHooksGo), 0o600); err != nil {
+		t.Fatalf("write %s: %v", hooksPath, err)
+	}
+
+	expectPath := filepath.Join(t.TempDir(), "case.expect.json")
+	if err := os.WriteFile(expectPath, []byte(cursorBeforeSubmitPromptBlockExpect), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	fixture := fixturePath(t, "cursor", "before_submit_prompt.json")
+	stdout, stderr, code := runWat(t, binary, project, "test", "--agent", "cursor", "--fixture", fixture, "--expect", expectPath)
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "status: pass") {
+		t.Fatalf("output missing expect pass:\n%s\n%s", stdout, stderr)
+	}
+	if !strings.Contains(stdout, "exit:   0") {
+		t.Fatalf("output missing exit 0:\n%s", stdout)
+	}
+}
+
 func TestWatTest_expectMismatch(t *testing.T) {
 	binary := buildWat(t)
 	project := initProjectWithReplace(t)

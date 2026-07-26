@@ -248,6 +248,9 @@ Cursor `PreCompact` decodes the full documented compaction metrics and exposes
 be blocked. See [Agent protocols](agent-formats.md) for how this narrows
 relative to portable `OnPreCompact`.
 
+`BeforeSubmitPrompt` `Block` encodes `continue: false` with exit 0 (not exit
+2). In `hooks.json`, matchers for this event use `UserPromptSubmit`.
+
 ### Native constants and helpers
 
 Each native package exports:
