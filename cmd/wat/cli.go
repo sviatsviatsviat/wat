@@ -36,6 +36,7 @@ var subcommands = []subcommand{
 	{name: "run", summary: "execute .wat/hooks.go on hook invocation", newCmd: newRunCmd},
 	{name: "test", summary: "run hook script against fixture payloads", newCmd: newTestCmd},
 	{name: "doctor", summary: "verify toolchain, script, cache, and install state", newCmd: newDoctorCmd},
+	{name: "version", summary: "print the wat module / CLI version", newCmd: newVersionCmd},
 }
 
 func run(args []string) int {
@@ -51,6 +52,8 @@ func run(args []string) int {
 			return exitOK
 		}
 		return subcommandHelp(args[1])
+	case "-version", "--version":
+		return runVersion()
 	}
 
 	for i := range subcommands {
