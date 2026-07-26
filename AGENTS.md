@@ -42,6 +42,8 @@ Read these committed references before changing behavior:
 - CLI command files parse flags and map exit codes; inject I/O, filesystem,
   environment, and process dependencies in internal implementations.
 - Every exported identifier has godoc. Package overviews go in `doc.go`.
+  CI enforces this via golangci-lint revive `exported` (public API only).
+  Ignore CodeRabbit private/unexported docstring coverage %; it is not a gate.
 - Result/merge operations must not mutate caller-owned maps or slices.
 
 ## Required verification

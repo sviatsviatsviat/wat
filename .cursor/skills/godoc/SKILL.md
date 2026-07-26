@@ -9,7 +9,13 @@ description: >-
 # Godoc
 
 Every exported function, type, constant, variable, and method needs a complete
-godoc sentence beginning with its name. CI enforces this with `revive`.
+godoc sentence beginning with its name. CI enforces this with golangci-lint
+revive `exported` (public API only). Unexported helpers and ordinary test
+callbacks do not need docstrings for CI.
+
+Ignore CodeRabbit's private/unexported docstring coverage percentage. That
+metric is not a merge gate and must not drive documentation of private code.
+Prefer fixing missing exported godoc over chasing CodeRabbit coverage noise.
 
 Put meaningful package contracts in `doc.go`. For public SDK packages, explain:
 

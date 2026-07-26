@@ -124,7 +124,8 @@ or be close enough to copy into `.wat/hooks.go` without hidden setup.
 
 Godoc comments are complete sentences that begin with the exported identifier.
 Package overviews belong in `doc.go`. CI enforces exported comments with
-`revive`.
+golangci-lint revive `exported` (public API only). Ignore CodeRabbit
+private/unexported docstring coverage %; it is not a gate.
 
 ## Changelog policy
 
