@@ -6,12 +6,17 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// PostToolOutput is the response for post-tool events.
+// PostToolOutput is the response for post-tool events that accept host JSON.
 // Construct via PostToolResults builders and With* methods. A nil value is a no-op.
+//
+// Cursor applies updated_mcp_tool_output and additional_context on generic
+// postToolUse. Dedicated afterMCPExecution is observe-only and does not honor
+// these fields.
 type PostToolOutput interface {
 	hookkit.Output
 	isPostToolOutput()
 	// WithUpdatedMCPOutput replaces MCP tool output when set.
+	// Cursor honors this on postToolUse for MCP tools only.
 	WithUpdatedMCPOutput(output any) PostToolOutput
 	// WithAdditionalContext injects model context.
 	WithAdditionalContext(text string) PostToolOutput
@@ -30,6 +35,7 @@ func (o postToolOutput) IsZero() bool {
 }
 
 // WithUpdatedMCPOutput replaces MCP tool output when set.
+// Cursor honors this on postToolUse for MCP tools only, not afterMCPExecution.
 func (o postToolOutput) WithUpdatedMCPOutput(output any) PostToolOutput {
 	o.updatedMCPOutput = output
 	return o

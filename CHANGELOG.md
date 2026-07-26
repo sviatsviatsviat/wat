@@ -7,6 +7,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Cursor `AfterMCPExecution` is observe-only: Cursor Hooks docs list no output
+  fields for this event. Rewrite MCP tool output with `PostToolUse`
+  (`updated_mcp_tool_output`). Cloud agents do not load MCP hooks.
+
 ## [v0.1.1-alpha] - 2026-07-25
 
 ### Fixed

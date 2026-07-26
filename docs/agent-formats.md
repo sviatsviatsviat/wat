@@ -106,8 +106,10 @@ Known limitations are part of the contract:
   `"deny"`. `sdk/cursor`'s `SubagentStart` `Deny` writes `user_message` and
   exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap
   stdout as the message). Prefer `Deny` over `Ask` for this event.
-- Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
-  where that native output field is supported.
+- Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
+  `postToolUse` for MCP tools only. Dedicated `afterMCPExecution` is
+  observe-only (Cursor documents no output fields). Cloud agents do not load
+  `beforeMCPExecution` / `afterMCPExecution`.
 - Observe-only portable events never emit host JSON.
 
 Do not widen the portable interface until every dialect has a truthful mapping

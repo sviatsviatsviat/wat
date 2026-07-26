@@ -33,6 +33,8 @@ type AfterShellExecution = aftershellexecution.Event
 type BeforeMCPExecution = beforemcpexecution.Event
 
 // AfterMCPExecution is the afterMCPExecution hook event.
+// Cursor documents no output fields; registration is observe-only. Cloud agents
+// do not load MCP hooks. Use PostToolUse to rewrite MCP tool output.
 type AfterMCPExecution = aftermcpexecution.Event
 
 // BeforeReadFile is the beforeReadFile hook event.

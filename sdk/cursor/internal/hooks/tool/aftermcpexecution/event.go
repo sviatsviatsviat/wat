@@ -1,12 +1,18 @@
 package aftermcpexecution
 
 import (
+	"context"
+
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/tools"
 )
 
 // Event is the afterMCPExecution hook event.
+//
+// Cursor Hooks docs list input fields only (tool_name, tool_input, result_json,
+// duration); there are no host-honored output fields. Handlers are observe-only.
+// Cloud agents do not load beforeMCPExecution / afterMCPExecution hooks.
 type Event struct {
 	event.Envelope
 	// ToolName is the native tool name (typically MCP:<tool>).
@@ -39,4 +45,13 @@ func register(c *hookkit.Codec) {
 			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
 		})
 	})
+}
+
+// RegisterHandler registers an observe-only AfterMCPExecution handler on d.
+func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
+	if fn == nil {
+		return
+	}
+	register(d.Codec())
+	hookkit.RegisterObserve(d, fn)
 }

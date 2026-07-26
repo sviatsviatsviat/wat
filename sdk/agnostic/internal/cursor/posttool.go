@@ -14,6 +14,10 @@ import (
 
 // RegisterPostTool registers fn on Cursor PostToolUse, AfterShellExecution,
 // AfterMCPExecution, and AfterFileEdit chains.
+//
+// AfterMCPExecution is observe-only: Cursor documents no output fields for that
+// event, so portable Context / WithUpdatedOutput from that path are discarded.
+// Rewrite MCP tool output via the generic postToolUse registration.
 func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 	if fn == nil {
 		return nil
@@ -24,8 +28,9 @@ func RegisterPostTool(fn model.PostToolHandler) run.Hooks {
 		AfterShellExecution(func(ctx context.Context, hook sdkcursor.AfterShellExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 			return callPostTool(ctx, mapAfterShellExecution(hook), native, fn)
 		}).
-		AfterMCPExecution(func(ctx context.Context, hook sdkcursor.AfterMCPExecution, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
-			return callPostTool(ctx, mapAfterMCPExecution(hook), native, fn)
+		AfterMCPExecution(func(ctx context.Context, hook sdkcursor.AfterMCPExecution) error {
+			_, err := fn(ctx, *mapAfterMCPExecution(hook), discardPostToolResults{})
+			return err
 		}).
 		AfterFileEdit(func(ctx context.Context, hook sdkcursor.AfterFileEdit, native sdkcursor.PostToolResults) (sdkcursor.PostToolOutput, error) {
 			return callPostTool(ctx, mapAfterFileEdit(hook), native, fn)
@@ -129,5 +134,31 @@ func (r postToolResult) IsZero() bool { return r.native.IsZero() }
 // WithUpdatedOutput replaces tool result text when set.
 func (r postToolResult) WithUpdatedOutput(output string) model.PostToolResult {
 	r.native = r.native.WithUpdatedMCPOutput(output)
+	return r
+}
+
+// discardPostToolResults is used for observe-only afterMCPExecution: portable
+// builders are accepted so handlers keep one signature, but host JSON is never
+// emitted from that native event.
+type discardPostToolResults struct{}
+
+// Context returns a discarded context-injection result.
+func (discardPostToolResults) Context(text string) model.PostToolResult {
+	return discardPostToolResult{text: text}
+}
+
+type discardPostToolResult struct {
+	text   string
+	output string
+}
+
+// IsZero reports whether the discarded result carries no instruction.
+func (r discardPostToolResult) IsZero() bool {
+	return r.text == "" && r.output == ""
+}
+
+// WithUpdatedOutput records an updated output that will not be emitted.
+func (r discardPostToolResult) WithUpdatedOutput(output string) model.PostToolResult {
+	r.output = output
 	return r
 }
