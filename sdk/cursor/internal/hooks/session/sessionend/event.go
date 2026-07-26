@@ -15,13 +15,13 @@ type Event struct {
 	// Reason is how the session ended (for example completed, aborted, error,
 	// window_close, or user_close).
 	Reason string `json:"reason"`
-	// DurationMs is the total session duration in milliseconds.
+	// DurationMs is the total session duration in milliseconds when present.
 	DurationMs int64 `json:"duration_ms"`
 	// IsBackgroundAgent reports whether this was a background agent session.
 	IsBackgroundAgent bool `json:"is_background_agent"`
-	// FinalStatus is the final status of the session.
+	// FinalStatus is the final status of the session when present.
 	FinalStatus string `json:"final_status"`
-	// ErrorMessage is the error details when Reason is "error".
+	// ErrorMessage is the error details when Reason is "error" (optional).
 	ErrorMessage string `json:"error_message"`
 }
 
