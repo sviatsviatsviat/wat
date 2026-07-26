@@ -145,6 +145,9 @@ Known limitations are part of the contract:
 - Cursor `subagentStop` decodes the documented telemetry fields
   (`description`, `duration_ms`, `message_count`, `tool_call_count`,
   `modified_files`) in addition to identity and status fields.
+- Cursor `afterAgentResponse` is observe-only (no host-consumed output).
+  Cursor's hooks.json matcher for this event is the fixed value
+  `AgentResponse`.
 - Cursor `afterAgentThought` is observe-only and decodes optional
   `duration_ms` for the completed thinking block. Cursor's hooks.json
   matcher for this event is the fixed value `AgentThought`.

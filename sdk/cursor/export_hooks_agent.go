@@ -36,7 +36,8 @@ type SubagentStartResults = subagentstart.Results
 // modified_files) documented in Cursor Hooks.
 type SubagentStop = subagentstop.Event
 
-// AfterAgentResponse is the afterAgentResponse hook event.
+// AfterAgentResponse is the afterAgentResponse hook event (observe-only).
+// Cursor's hooks.json matcher for this event is the fixed value AgentResponse.
 type AfterAgentResponse = afteragentresponse.Event
 
 // AfterAgentThought is the afterAgentThought hook event (observe-only).
