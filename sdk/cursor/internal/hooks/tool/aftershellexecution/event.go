@@ -30,11 +30,14 @@ type Event struct {
 func (Event) EventName() string { return event.AfterShellExecution }
 
 // DurationMillis returns the execution duration in milliseconds.
+// Prefer this helper over reading Duration or DurationMs directly: Cursor
+// Hooks docs use `duration`, and DurationMillis falls back to `duration_ms`
+// when `duration` is zero so alternate wire forms still decode.
 func (e Event) DurationMillis() int64 {
-	if e.DurationMs != 0 {
-		return e.DurationMs
+	if e.Duration != 0 {
+		return e.Duration
 	}
-	return e.Duration
+	return e.DurationMs
 }
 
 // register registers this hook event decoder on c.

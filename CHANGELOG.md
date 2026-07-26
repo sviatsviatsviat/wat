@@ -12,8 +12,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - Cursor hook `Envelope` decodes optional common-schema fields `model_id` and
   `model_params`, using the exported `ModelParam` element type.
 - Cursor `afterShellExecution` decodes `sandbox`. Cursor `postToolUseFailure`
-  decodes `is_interrupt` and prefers documented `duration` via
-  `DurationMillis()`.
+  decodes `is_interrupt`. Both prefer documented `duration` via
+  `DurationMillis()` (falling back to `duration_ms`).
 
 ### Changed
 
