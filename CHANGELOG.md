@@ -9,6 +9,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `wat version` (and root `-version` / `--version`) prints the module version
+  string used for `wat init` pinning and the hook build cache key.
 - Cursor hook `Envelope` decodes optional common-schema fields `model_id` and
   `model_params`, using the exported `ModelParam` element type.
 - Cursor `afterShellExecution` decodes `sandbox`. Cursor `postToolUseFailure`

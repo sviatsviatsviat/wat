@@ -31,6 +31,16 @@ func TestWat_usage(t *testing.T) {
 			wantOutput: "doctor",
 		},
 		{
+			name:       "help_lists_version",
+			args:       []string{"help"},
+			wantOutput: "version",
+		},
+		{
+			name:       "version_help",
+			args:       []string{"version", "-h"},
+			wantOutput: "module version",
+		},
+		{
 			name:       "no_args",
 			args:       nil,
 			wantErr:    true,
@@ -152,6 +162,30 @@ func TestWat_usage(t *testing.T) {
 			}
 			if !strings.Contains(stdout.String(), tt.wantOutput) {
 				t.Fatalf("stdout missing %q:\n%s", tt.wantOutput, stdout.String())
+			}
+		})
+	}
+}
+
+func TestWat_version(t *testing.T) {
+	binary := buildWat(t)
+
+	for _, args := range [][]string{{"version"}, {"--version"}} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			cmd := exec.Command(binary, args...)
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			err := cmd.Run()
+			if err != nil {
+				t.Fatalf("unexpected error: %v\nstdout:\n%s\nstderr:\n%s", err, stdout.String(), stderr.String())
+			}
+			got := strings.TrimSpace(stdout.String())
+			if got != "v0.0.0-e2e-000000000000" {
+				t.Fatalf("stdout = %q, want %q", got, "v0.0.0-e2e-000000000000")
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("stderr = %q, want empty", stderr.String())
 			}
 		})
 	}

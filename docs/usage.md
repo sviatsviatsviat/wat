@@ -22,7 +22,23 @@ Check the available commands with:
 wat help
 wat init -h
 wat install -h
+wat version
 ```
+
+## Print the CLI version
+
+```bash
+wat version
+```
+
+`wat version` prints the same module version string that `wat init` pins in
+`.wat/go.mod` and that the hook build cache key includes. Root flags
+`-version` and `--version` are aliases.
+
+Tagged installs print the release tag (for example `v0.1.1-alpha`). Local
+builds with Go VCS stamping print a pseudo-version
+`v0.0.0-<timestamp>-<revision>`. Builds without module or VCS version
+information exit `3` with an error on stderr.
 
 ## Project discovery
 
@@ -221,7 +237,7 @@ codes remain agent-specific.
 | `0` | Successful CLI operation or hook execution; or a matching `wat test` expect run |
 | `1` | Invalid CLI usage; hook build failure in default mode; hook runtime/protocol error; or `wat test` expect mismatch |
 | `2` | `wat run --fail-closed` build failure, or a native host denial that uses exit 2 |
-| `3` | CLI runtime failure such as missing project, unreadable fixture, or failed install |
+| `3` | CLI runtime failure such as missing project, unreadable fixture, failed install, or missing version build info |
 | `4` | At least one `wat doctor` check failed |
 
 For `wat test` without an expect document, a successfully executed fixture

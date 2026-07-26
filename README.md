@@ -72,6 +72,7 @@ Run the command from a directory inside the target project, or set
 | `wat run` | Build on a cache miss, then execute the hook process against stdin |
 | `wat test` | Run a fixture (optional expect sidecar) and print a report |
 | `wat doctor` | Check Go, the hook project, cache, manifest, and installed configs |
+| `wat version` | Print the module / CLI version (same string used for init and cache) |
 
 Use `wat help` and `wat <command> -h` for the exact flags.
 
