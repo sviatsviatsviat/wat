@@ -89,3 +89,29 @@ func TestEncode_PermissionOnly_stripsMessages(t *testing.T) {
 		t.Fatalf("got %s, want permission-only deny", got)
 	}
 }
+
+func TestEncode_DenyUserMessage_stripsChainedAgentFields(t *testing.T) {
+	out, code, err := GateResults{}.DenyUserMessage("blocked").
+		WithAgentMessage("agent").
+		WithUpdatedInput(map[string]any{"path": "secret"}).
+		Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0", code)
+	}
+	got := string(out)
+	if !strings.Contains(got, `"permission":"deny"`) {
+		t.Fatalf("missing permission deny: %s", got)
+	}
+	if !strings.Contains(got, `"user_message":"blocked"`) {
+		t.Fatalf("missing user_message: %s", got)
+	}
+	if strings.Contains(got, "agent_message") {
+		t.Fatalf("userMessageOnly must omit agent_message: %s", got)
+	}
+	if strings.Contains(got, "updated_input") {
+		t.Fatalf("userMessageOnly must omit updated_input: %s", got)
+	}
+}

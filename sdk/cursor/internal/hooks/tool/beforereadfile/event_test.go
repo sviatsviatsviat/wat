@@ -74,6 +74,29 @@ func TestEncode_BeforeReadFileAsk_coercesToDenyUserMessage(t *testing.T) {
 	}
 }
 
+func TestEncode_BeforeReadFileDeny_stripsChainedAgentFields(t *testing.T) {
+	out, code, err := results{}.Deny("sensitive").
+		WithAgentMessage("agent").
+		WithUpdatedInput(map[string]any{"path": "secret"}).
+		Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0", code)
+	}
+	got := string(out)
+	if !strings.Contains(got, `"user_message":"sensitive"`) {
+		t.Fatalf("missing user_message: %s", got)
+	}
+	if strings.Contains(got, "agent_message") {
+		t.Fatalf("beforeReadFile must omit chained agent_message: %s", got)
+	}
+	if strings.Contains(got, "updated_input") {
+		t.Fatalf("beforeReadFile must omit chained updated_input: %s", got)
+	}
+}
+
 func init() {
 	register(testCodec)
 }
