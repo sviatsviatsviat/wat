@@ -24,19 +24,12 @@ func (d *DurationFields) CaptureDurationPresent(raw []byte) {
 // DurationMillis returns the Hooks-documented duration when present on the
 // wire (including explicit 0), otherwise DurationMs.
 // Prefer this helper over reading Duration or DurationMs directly.
-func (d DurationFields) DurationMillis() int64 {
-	return PreferDurationField(d.Duration, d.DurationMs, d.present)
-}
-
-// PreferDurationField returns the Hooks-documented duration when present on the
-// wire (including explicit 0), otherwise durationMs.
 //
-// Callers that must honor explicit duration: 0 should set durationPresent from
-// the DecodeEvent after-callback (for example via CaptureDurationPresent), not
-// via a custom Event.UnmarshalJSON.
-func PreferDurationField(duration, durationMs int64, durationPresent bool) int64 {
-	if durationPresent {
-		return duration
+// Call CaptureDurationPresent from the DecodeEvent after-callback so an
+// explicit duration: 0 is distinguished from an absent duration key.
+func (d DurationFields) DurationMillis() int64 {
+	if d.present {
+		return d.Duration
 	}
-	return durationMs
+	return d.DurationMs
 }
