@@ -53,3 +53,20 @@ func TestInspect_expandsPortableHooksToNativeRegistrations(t *testing.T) {
 		t.Fatalf("beforeShellExecution handler count = %d, want 2", beforeShellHandlers)
 	}
 }
+
+func TestInspect_OnPostToolIncludesCursorAfterFileEdit(t *testing.T) {
+	portable := agnostic.UseHooks().OnPostTool(func(context.Context, agnostic.PostToolEvent, agnostic.PostToolResults) (agnostic.PostToolResult, error) {
+		return nil, nil
+	})
+	manifest := run.Inspect(portable)
+	got := manifest.EventsFor(cursor.Dialect)
+	want := []string{
+		cursor.EventAfterFileEdit,
+		cursor.EventAfterMCPExecution,
+		cursor.EventAfterShellExecution,
+		cursor.EventPostToolUse,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("EventsFor(cursor) = %v, want %v", got, want)
+	}
+}

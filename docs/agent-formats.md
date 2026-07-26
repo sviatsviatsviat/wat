@@ -108,6 +108,11 @@ Known limitations are part of the contract:
   stdout as the message). Prefer `Deny` over `Ask` for this event.
 - Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
   where that native output field is supported.
+- Cursor `afterFileEdit` is observe-only: the host documents no output fields.
+  `OnPostTool` still expands to it for edit observation, but portable
+  `Context` / `WithUpdatedOutput` have no host effect for that native event.
+  Native `sdk/cursor` registration is observe-only (side effects such as
+  formatters).
 - Observe-only portable events never emit host JSON.
 
 Do not widen the portable interface until every dialect has a truthful mapping

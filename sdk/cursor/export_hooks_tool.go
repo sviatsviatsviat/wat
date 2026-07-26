@@ -42,6 +42,7 @@ type BeforeReadFile = beforereadfile.Event
 type BeforeReadFileResults = beforereadfile.Results
 
 // AfterFileEdit is the afterFileEdit hook event.
+// Cursor documents no output fields; registration is observe-only.
 type AfterFileEdit = afterfileedit.Event
 
 // BeforeTabFileRead is the beforeTabFileRead hook event.
