@@ -17,6 +17,10 @@ import (
 // PreToolUse is the preToolUse hook event.
 type PreToolUse = pretooluse.Event
 
+// PreToolUseResults is the hook-scoped response builder for PreToolUse.
+// Ask is accepted by Cursor's schema but not enforced for preToolUse today.
+type PreToolUseResults = pretooluse.Results
+
 // PostToolUse is the postToolUse hook event.
 type PostToolUse = posttooluse.Event
 

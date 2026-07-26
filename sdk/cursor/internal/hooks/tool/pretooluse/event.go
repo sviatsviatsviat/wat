@@ -15,6 +15,8 @@ type Event struct {
 	ToolInput tools.Input `json:"-"`
 	// ToolUseID is the tool use identifier.
 	ToolUseID string `json:"tool_use_id"`
+	// AgentMessage is the pre-call narrative from the agent when present.
+	AgentMessage string `json:"agent_message"`
 }
 
 // EventName returns the canonical hook event name.

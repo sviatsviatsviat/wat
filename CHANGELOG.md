@@ -16,6 +16,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `postToolUse`, and `postToolUseFailure` prefer documented `duration` via
   `DurationMillis()` when that field is present (including explicit `0`),
   falling back to `duration_ms` only when `duration` is absent.
+- Cursor `PreToolUse` decodes optional input `agent_message` (pre-call
+  narrative from the agent).
 
 ### Changed
 
@@ -28,6 +30,11 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   tool output rewrite stays on `postToolUse` (`updated_mcp_tool_output`).
   Portable `OnPostToolFailure` `Context` is ignored on Cursor; Claude and
   Copilot still apply recovery context. Cloud agents do not load MCP hooks.
+- Cursor `PreToolUse` handlers now receive `PreToolUseResults`. `Ask` still
+  encodes `"permission":"ask"` for schema compatibility, but godoc and protocol
+  docs warn that Cursor does not enforce ask for `preToolUse` today; prefer
+  `Allow` or `Deny` when gating is required. Protocol docs also clarify that
+  Cursor enforces `"ask"` on `beforeShellExecution` and `beforeMCPExecution`.
 
 ### Fixed
 
