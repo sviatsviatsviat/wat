@@ -109,6 +109,10 @@ func (c *hooks) PostToolUseFailure(fn func(context.Context, PostToolUseFailure, 
 }
 
 // BeforeShellExecution registers a BeforeShellExecution handler on the registrar.
+// PermissionResults.Ask is enforced by Cursor on this event (user approval),
+// unlike PreToolUse (ask not enforced) and SubagentStart (ask treated as deny).
+// Deny defaults to agent_message and PermissionDenyExit; use WithUserMessage for
+// a client-facing message.
 func (c *hooks) BeforeShellExecution(fn func(context.Context, BeforeShellExecution, PermissionResults) (PermissionOutput, error)) *hooks {
 	return bind(c, fn, beforeshellexecution.RegisterHandler)
 }

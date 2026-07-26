@@ -106,6 +106,10 @@ Known limitations are part of the contract:
   `"deny"`. `sdk/cursor`'s `SubagentStart` `Deny` writes `user_message` and
   exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap
   stdout as the message). Prefer `Deny` over `Ask` for this event.
+- Cursor enforces `"ask"` on `beforeShellExecution` and `beforeMCPExecution`
+  (user approval). `sdk/cursor` `Deny` defaults to `agent_message` with exit 2;
+  use `WithUserMessage` for a client-facing message. This differs from
+  `preToolUse`, where `"ask"` is accepted by the schema but not enforced.
 - Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
   where that native output field is supported.
 - Observe-only portable events never emit host JSON.

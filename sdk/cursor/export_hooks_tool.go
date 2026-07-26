@@ -24,6 +24,8 @@ type PostToolUse = posttooluse.Event
 type PostToolUseFailure = posttoolusefailure.Event
 
 // BeforeShellExecution is the beforeShellExecution hook event.
+// Cursor enforces permission allow, deny, and ask on this event (ask is real,
+// unlike preToolUse or subagentStart). Deny defaults to agent_message with exit 2.
 type BeforeShellExecution = beforeshellexecution.Event
 
 // AfterShellExecution is the afterShellExecution hook event.

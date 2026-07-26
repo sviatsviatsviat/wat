@@ -30,6 +30,7 @@ const (
 type PermissionOutput = event.PermissionOutput
 
 // PermissionResults is the hook-scoped response builder supplied to permission On* handlers by registration.
+// Ask enforcement is event-specific; see BeforeShellExecution for an event where ask is real.
 type PermissionResults = event.PermissionResults
 
 // PostToolOutput is the response for post-tool events.

@@ -6,6 +6,13 @@ import (
 )
 
 // Event is the beforeShellExecution hook event.
+//
+// Permission responses use allow, deny, or ask. Unlike preToolUse (where ask is
+// accepted by the schema but not enforced) and subagentStart (where ask is
+// treated as deny), Cursor enforces ask on this event and escalates to the user.
+// Deny writes agent_message by default and exits with PermissionDenyExit (2);
+// chain WithUserMessage for a client-facing message. Prefer Deny when blocking
+// without prompting, and Ask when the host should request approval.
 type Event struct {
 	event.Envelope
 	// Command is the shell command about to run.
