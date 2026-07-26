@@ -43,6 +43,10 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   or `"edit"`). Godoc and agent-format docs state that the hook is
   fire-and-forget (host does not enforce `continue` / `user_message`) and is
   not available for cloud agents.
+- `sdk/cursor`'s `SessionEnd` event decodes the full native `sessionEnd`
+  payload: `duration_ms`, `final_status`, and `error_message`, in addition to
+  the existing `reason` and `is_background_agent` fields. The event remains
+  observe-only.
 
 ### Changed
 

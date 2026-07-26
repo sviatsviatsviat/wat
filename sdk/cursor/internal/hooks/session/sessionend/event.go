@@ -6,12 +6,23 @@ import (
 )
 
 // Event is the sessionEnd hook event.
+//
+// sessionEnd is fire-and-forget: handlers observe only and the host ignores
+// any response body. Cursor documents this hook for IDE composer sessions; it
+// is not available for cloud agents.
 type Event struct {
 	event.Envelope
-	// Reason is the session end reason.
+	// Reason is how the session ended (for example completed, aborted, error,
+	// window_close, or user_close).
 	Reason string `json:"reason"`
-	// IsBackgroundAgent reports whether this is a background agent session.
+	// DurationMs is the total session duration in milliseconds.
+	DurationMs int64 `json:"duration_ms"`
+	// IsBackgroundAgent reports whether this was a background agent session.
 	IsBackgroundAgent bool `json:"is_background_agent"`
+	// FinalStatus is the final status of the session.
+	FinalStatus string `json:"final_status"`
+	// ErrorMessage is the error details when Reason is "error".
+	ErrorMessage string `json:"error_message"`
 }
 
 // EventName returns the canonical hook event name.

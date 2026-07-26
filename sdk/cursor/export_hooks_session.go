@@ -22,7 +22,7 @@ type SessionStartOutput = sessionstart.Output
 // SessionStartResults is the hook-scoped response builder for SessionStart.
 type SessionStartResults = sessionstart.Results
 
-// SessionEnd is the sessionEnd hook event.
+// SessionEnd is the sessionEnd hook event (observe-only; response unused).
 type SessionEnd = sessionend.Event
 
 // WorkspaceOpen is the workspaceOpen hook event.
