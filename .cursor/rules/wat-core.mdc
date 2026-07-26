@@ -26,6 +26,13 @@ Use the committed documentation as the source of truth:
   three native SDKs.
 - `internal/hookkit` is module-private machinery, not a public convenience API.
 - Install/test/doctor get registration identity from `run.Inspect`.
+- Every registerable hook package has `bind.go` for `RegisterHandler`
+  (observe-only → `RegisterObserve`; result-emitting → `RegisterWith`).
+  `event.go` holds types and codec register/decode only — never
+  `RegisterHandler`. Observe-only omits `results.go`/`output.go`, not `bind.go`.
+- No custom `UnmarshalJSON` on hook event structs for duration/presence; use
+  `DecodeEvent` after-callbacks and helpers (e.g. `RawObjectField`,
+  `PreferDurationField`).
 
 ## Public changes
 

@@ -1,9 +1,6 @@
 package aftershellexecution
 
 import (
-	"context"
-	"encoding/json"
-
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/event"
 )
@@ -29,35 +26,6 @@ type Event struct {
 	durationPresent bool
 }
 
-// UnmarshalJSON decodes the event and records whether the documented duration
-// field was present so DurationMillis can distinguish explicit 0 from absent.
-func (e *Event) UnmarshalJSON(data []byte) error {
-	type wire struct {
-		event.Envelope
-		Command    string `json:"command"`
-		Output     string `json:"output"`
-		Duration   *int64 `json:"duration"`
-		DurationMs int64  `json:"duration_ms"`
-		Sandbox    bool   `json:"sandbox"`
-	}
-	var w wire
-	if err := json.Unmarshal(data, &w); err != nil {
-		return err
-	}
-	*e = Event{
-		Envelope:   w.Envelope,
-		Command:    w.Command,
-		Output:     w.Output,
-		DurationMs: w.DurationMs,
-		Sandbox:    w.Sandbox,
-	}
-	if w.Duration != nil {
-		e.durationPresent = true
-		e.Duration = *w.Duration
-	}
-	return nil
-}
-
 // EventName returns the canonical hook event name.
 func (Event) EventName() string { return event.AfterShellExecution }
 
@@ -66,22 +34,14 @@ func (Event) EventName() string { return event.AfterShellExecution }
 // Hooks docs use `duration`, and DurationMillis falls back to `duration_ms`
 // only when `duration` is absent so an explicit `duration: 0` still wins.
 func (e Event) DurationMillis() int64 {
-	if e.durationPresent {
-		return e.Duration
-	}
-	return e.DurationMs
+	return event.PreferDurationField(e.Duration, e.DurationMs, e.durationPresent)
 }
 
 // register registers this hook event decoder on c.
 func register(c *hookkit.Codec) {
-	c.Register(event.AfterShellExecution, hookkit.EventDecoder[Event](c))
-}
-
-// RegisterHandler registers an AfterShellExecution observe handler on d.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
-	if fn == nil {
-		return
-	}
-	register(d.Codec())
-	hookkit.RegisterObserve(d, fn)
+	c.Register(event.AfterShellExecution, func(raw []byte) (hookkit.Event, error) {
+		return hookkit.DecodeEvent(c, raw, func(e *Event, raw []byte) {
+			e.durationPresent = hookkit.RawObjectField(raw, "duration") != nil
+		})
+	})
 }

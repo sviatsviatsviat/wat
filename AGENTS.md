@@ -43,6 +43,12 @@ Read these committed references before changing behavior:
   environment, and process dependencies in internal implementations.
 - Every exported identifier has godoc. Package overviews go in `doc.go`.
 - Result/merge operations must not mutate caller-owned maps or slices.
+- Registerable hook packages always put `RegisterHandler` in `bind.go`
+  (observe-only: `RegisterObserve`; result-emitting: `RegisterWith`). `event.go`
+  is types + codec register/decode only — never registration. Observe-only
+  packages omit `results.go`/`output.go`, not `bind.go`.
+- Do not add custom `UnmarshalJSON` on hook event structs for duration or field
+  presence; use `DecodeEvent` after-callbacks and shared helpers instead.
 
 ## Required verification
 

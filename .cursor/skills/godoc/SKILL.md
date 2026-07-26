@@ -18,6 +18,11 @@ Put meaningful package contracts in `doc.go`. For public SDK packages, explain:
 - how outputs are constructed and what nil means;
 - whether the package is portable, native, or a process boundary.
 
+For native hook packages under `sdk/<agent>/internal/hooks/`, keep layout
+comments consistent with [docs/architecture.md](../../../docs/architecture.md):
+`RegisterHandler` lives in `bind.go` for both observe-only and result-emitting
+events; `event.go` is types + codec register/decode only.
+
 Document native limitations and side effects where callers choose behavior,
 such as output exit codes or environment-file writes. Do not expose internal
 layout details in symbol comments unless callers need them.

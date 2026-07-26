@@ -44,6 +44,47 @@ func TestDecode_AfterMCPExecution(t *testing.T) {
 	}
 }
 
+func TestDurationMillis_PrefersDurationOverDurationMs(t *testing.T) {
+	e := mustDecode[Event](t, `{
+		"hook_event_name":"afterMCPExecution",
+		"conversation_id":"c1",
+		"tool_name":"MCP:x",
+		"result_json":"{}",
+		"duration":100,
+		"duration_ms":999
+	}`)
+	if e.DurationMillis() != 100 {
+		t.Fatalf("DurationMillis()=%d, want documented duration field 100", e.DurationMillis())
+	}
+}
+
+func TestDurationMillis_ExplicitZeroBeatsDurationMs(t *testing.T) {
+	e := mustDecode[Event](t, `{
+		"hook_event_name":"afterMCPExecution",
+		"conversation_id":"c1",
+		"tool_name":"MCP:x",
+		"result_json":"{}",
+		"duration":0,
+		"duration_ms":999
+	}`)
+	if e.DurationMillis() != 0 {
+		t.Fatalf("DurationMillis()=%d, want explicit duration 0", e.DurationMillis())
+	}
+}
+
+func TestDurationMillis_FallsBackToDurationMs(t *testing.T) {
+	e := mustDecode[Event](t, `{
+		"hook_event_name":"afterMCPExecution",
+		"conversation_id":"c1",
+		"tool_name":"MCP:x",
+		"result_json":"{}",
+		"duration_ms":50
+	}`)
+	if e.DurationMillis() != 50 {
+		t.Fatalf("DurationMillis()=%d, want 50", e.DurationMillis())
+	}
+}
+
 func TestRegisterHandler_observeOnly(t *testing.T) {
 	d := hookkit.NewDialect(testCodec)
 	called := false
