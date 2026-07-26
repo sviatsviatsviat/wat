@@ -53,7 +53,9 @@ type Handler struct {
 	// set. Cursor defaults to 5 when omitted; authors configure this in
 	// hooks.json (native null means unlimited; this field cannot encode null).
 	LoopLimit int `json:"loop_limit,omitempty"`
-	// FailClosed makes handler errors fail-closed when set.
+	// FailClosed makes handler errors fail-closed when set. Cursor docs recommend
+	// true for security-critical beforeMCPExecution hooks so crash, timeout, or
+	// invalid JSON blocks the tool instead of allowing it through.
 	FailClosed bool `json:"failClosed,omitempty"`
 }
 

@@ -39,6 +39,9 @@ type BeforeShellExecution = beforeshellexecution.Event
 type AfterShellExecution = aftershellexecution.Event
 
 // BeforeMCPExecution is the beforeMCPExecution hook event.
+// Wire payloads include tool_name and tool_input plus either url (remote) or
+// command (stdio). Prefer failClosed: true in hooks.json for security-critical
+// MCP gates; this event is deferred / not available for cloud agents.
 type BeforeMCPExecution = beforemcpexecution.Event
 
 // AfterMCPExecution is the afterMCPExecution hook event.

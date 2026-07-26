@@ -142,6 +142,10 @@ Known limitations are part of the contract:
   - `postToolUseFailure`: native observe handler; portable
     `PostToolFailureResults.Context` is discarded on Cursor. Decodes
     `is_interrupt`.
+- Cursor `beforeMCPExecution` is deferred / not available for cloud agents.
+  Cursor defaults to fail-open on hook failure; set `failClosed: true` on the
+  `hooks.json` handler for security-critical MCP gates. Wire payloads include
+  `tool_name` / `tool_input` plus either `url` (remote) or `command` (stdio).
 - Cursor `subagentStop` decodes the documented telemetry fields
   (`description`, `duration_ms`, `message_count`, `tool_call_count`,
   `modified_files`) in addition to identity and status fields.

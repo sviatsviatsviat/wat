@@ -6,7 +6,15 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/tools"
 )
 
-// Event is the beforeMCPExecution hook event.
+// Event is the beforeMCPExecution hook event. Cursor calls it before an MCP
+// tool runs so authors can allow, deny, or ask. The wire payload includes
+// tool_name and tool_input plus either url (remote MCP server) or command
+// (stdio MCP server).
+//
+// Cursor's default hook failure policy is fail-open. For security-critical
+// MCP gates, set failClosed: true on the hooks.json handler so crash, timeout,
+// or invalid JSON blocks the tool instead of allowing it. This event is
+// deferred / not available for cloud agents per Cursor Hooks docs.
 type Event struct {
 	event.Envelope
 	// ToolName is the native tool name (typically MCP:<tool>).

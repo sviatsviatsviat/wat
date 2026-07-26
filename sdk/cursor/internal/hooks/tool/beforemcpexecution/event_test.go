@@ -28,10 +28,94 @@ func mustDecode[E any](t *testing.T, raw string) E {
 	return typed
 }
 
-func TestDecode_BeforeMCPExecution(t *testing.T) {
-	e := mustDecode[Event](t, `{"hook_event_name":"beforeMCPExecution","conversation_id":"c1","tool_name":"MCP:browser_navigate","tool_input":"{}","url":"https://mcp.example/mcp"}`)
-	if e.URL != "https://mcp.example/mcp" {
-		t.Fatalf("URL=%q", e.URL)
+func TestDecode_BeforeMCPExecution_URLAndCommand(t *testing.T) {
+	tests := []struct {
+		name        string
+		raw         string
+		wantURL     string
+		wantCommand string
+		wantTool    string
+		wantModelID string
+	}{
+		{
+			name: "url_remote_server",
+			raw: `{
+				"hook_event_name":"beforeMCPExecution",
+				"conversation_id":"c1",
+				"generation_id":"g1",
+				"model":"gpt-5",
+				"model_id":"gpt-5-high",
+				"model_params":[{"id":"effort","value":"high"}],
+				"cursor_version":"1.7.2",
+				"workspace_roots":["/w"],
+				"cwd":"/w",
+				"tool_name":"MCP:browser_navigate",
+				"tool_input":"{\"url\":\"https://example.com\"}",
+				"url":"https://mcp.example/mcp"
+			}`,
+			wantURL:     "https://mcp.example/mcp",
+			wantCommand: "",
+			wantTool:    "MCP:browser_navigate",
+			wantModelID: "gpt-5-high",
+		},
+		{
+			name: "command_stdio_server",
+			raw: `{
+				"hook_event_name":"beforeMCPExecution",
+				"conversation_id":"c1",
+				"generation_id":"g1",
+				"model":"gpt-5",
+				"model_id":"gpt-5-high",
+				"cursor_version":"1.7.2",
+				"workspace_roots":["/w"],
+				"cwd":"/w",
+				"tool_name":"MCP:list_resources",
+				"tool_input":"{}",
+				"command":"npx @example/mcp-server"
+			}`,
+			wantURL:     "",
+			wantCommand: "npx @example/mcp-server",
+			wantTool:    "MCP:list_resources",
+			wantModelID: "gpt-5-high",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := mustDecode[Event](t, tt.raw)
+			if e.URL != tt.wantURL {
+				t.Fatalf("URL = %q, want %q", e.URL, tt.wantURL)
+			}
+			if e.Command != tt.wantCommand {
+				t.Fatalf("Command = %q, want %q", e.Command, tt.wantCommand)
+			}
+			if e.ToolName != tt.wantTool {
+				t.Fatalf("ToolName = %q, want %q", e.ToolName, tt.wantTool)
+			}
+			if e.ModelID != tt.wantModelID {
+				t.Fatalf("ModelID = %q, want %q", e.ModelID, tt.wantModelID)
+			}
+			if !e.ToolInput.HasRaw() {
+				t.Fatal("ToolInput missing raw payload")
+			}
+		})
+	}
+}
+
+func TestEncode_BeforeMCPExecutionDeny(t *testing.T) {
+	out, code, err := event.NewPermissionResults().Deny("mcp blocked").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.PermissionDenyExit {
+		t.Fatalf("exit code = %d, want %d", code, event.PermissionDenyExit)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["permission"] != "deny" || got["agent_message"] != "mcp blocked" {
+		t.Fatalf("bad output: %s", out)
 	}
 }
 
