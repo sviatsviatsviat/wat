@@ -39,5 +39,7 @@ type SubagentStop = subagentstop.Event
 // AfterAgentResponse is the afterAgentResponse hook event.
 type AfterAgentResponse = afteragentresponse.Event
 
-// AfterAgentThought is the afterAgentThought hook event.
+// AfterAgentThought is the afterAgentThought hook event (observe-only).
+// DurationMs carries the optional thinking-block duration from the wire.
+// Cursor's hooks.json matcher for this event is the fixed value AgentThought.
 type AfterAgentThought = afteragentthought.Event
