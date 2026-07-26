@@ -123,12 +123,14 @@ types, events, packages, or commands as if they exist. Examples should compile
 or be close enough to copy into `.wat/hooks.go` without hidden setup.
 
 Godoc comments are complete sentences that begin with the exported identifier
-(`// Foo does ...`, not `// This function ...`). Package overviews belong in
-`doc.go`. CI enforces missing docs and lead-name form with golangci-lint
-revive `exported` and staticcheck `ST1020`/`ST1021`/`ST1022` (public API only).
-Do not add the golangci-lint `comments` exclusion preset — it silences those
-checks. Ignore CodeRabbit private/unexported docstring coverage %; it is not a
-gate.
+(`// Foo does ...`, not `// This function ...`). Types may use an optional
+leading `A`/`An`/`The` when the identifier follows immediately
+(`// The Foo type ...` is fine); funcs, methods, vars, and consts must begin
+with the name (no article). Package overviews belong in `doc.go`. CI enforces
+missing docs and lead-name form with golangci-lint revive `exported` and
+staticcheck `ST1020`/`ST1021`/`ST1022` (public API only). Do not add the
+golangci-lint `comments` exclusion preset — it silences those checks. Ignore
+CodeRabbit private/unexported docstring coverage %; it is not a gate.
 
 ## Changelog policy
 

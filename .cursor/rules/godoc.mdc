@@ -10,11 +10,12 @@ Follow [.cursor/skills/godoc/SKILL.md](../skills/godoc/SKILL.md).
 
 - Every exported `func`, `type`, `const`, `var`, and method needs a godoc comment.
 - **Non-negotiable lead name:** the first word/phrase of the comment is the
-  declaration name (`// Foo does ...`), not `This`/`The`/`For`/etc. without that
-  name. Wrong: `// This function does ...`, `// The Foo type ...` (lead with
-  `Foo`, not a detour). Types may use an optional leading article (`// A Foo
-  is ...` / `// An Foo ...` / `// The Foo ...`) only when the identifier follows
-  immediately.
+  declaration name (`// Foo does ...`), not filler (`This`/`For`/etc.) without
+  that name. Wrong: `// This function does ...`. Types may use an optional
+  leading article (`// A Foo is ...` / `// An Option ...` / `// The Foo ...`,
+  including `// The Foo type ...`) only when the identifier follows
+  immediately. Funcs, methods, vars, and consts must begin with the name (no
+  article).
 - Package-level overview goes in `doc.go` when it helps readers.
 - CI fails on violations via golangci-lint revive `exported` and staticcheck
   `ST1020`/`ST1021`/`ST1022` (public API). Unexported helpers do not need godoc

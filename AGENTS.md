@@ -42,12 +42,14 @@ Read these committed references before changing behavior:
 - CLI command files parse flags and map exit codes; inject I/O, filesystem,
   environment, and process dependencies in internal implementations.
 - Every exported identifier has godoc whose first word/phrase is the
-  declaration name (`// Foo does ...`, not `// This function ...` / not
-  `// The Foo type ...` without leading `Foo`). Package overviews go in
-  `doc.go`. CI enforces lead-name via golangci-lint revive `exported` and
-  staticcheck `ST1020`/`ST1021`/`ST1022` (public API only) — fix before
-  CodeRabbit. Ignore CodeRabbit private/unexported docstring coverage %; it
-  is not a gate.
+  declaration name (`// Foo does ...`, not `// This function ...`). Types
+  may use an optional leading `A`/`An`/`The` only when the identifier
+  follows immediately (`// The Foo type ...` is OK; `// This type ...` is
+  not). Funcs, methods, vars, and consts must begin with the name (no
+  article). Package overviews go in `doc.go`. CI enforces lead-name via
+  golangci-lint revive `exported` and staticcheck `ST1020`/`ST1021`/`ST1022`
+  (public API only) — fix before CodeRabbit. Ignore CodeRabbit
+  private/unexported docstring coverage %; it is not a gate.
 - Result/merge operations must not mutate caller-owned maps or slices.
 - Registerable hook packages always put `RegisterHandler` in `bind.go`
   (observe-only: `RegisterObserve`; result-emitting: `RegisterWith`). `event.go`

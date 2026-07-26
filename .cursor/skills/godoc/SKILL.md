@@ -12,16 +12,19 @@ Every exported function, type, constant, variable, and method needs a complete
 godoc sentence whose **first word/phrase is the declaration name**.
 
 ```go
-// Foo returns the canonical name.   // good
+// Foo returns the canonical name.   // good (funcs/methods/vars/consts)
 // This function returns the name.   // bad — lead with Foo
-// The Foo type holds config.        // bad — lead with Foo (not "The Foo type")
+// The Foo type holds config.        // OK for types (article + name)
 // A Foo is a config handle.         // OK for types (optional article + name)
+// The FooMethod does work.          // bad on methods — no leading article
 ```
 
-Do not start with filler such as `This`, `The`, `For`, `Returns`, or
-`Provides` unless the identifier immediately follows (types may use
-`A`/`An`/`The` + name). Later sentences in the same comment block may start
-freely; only the opening sentence is constrained.
+Do not start with filler such as `This`, `For`, `Returns`, or `Provides`
+without the identifier. Types may use an optional leading `A`/`An`/`The`
+when the type name follows immediately; funcs, methods, vars, and consts
+must begin with the declaration name (no article). Later sentences in the
+same comment block may start freely; only the opening sentence is
+constrained.
 
 CI enforces this with golangci-lint:
 
