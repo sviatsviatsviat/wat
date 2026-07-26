@@ -178,7 +178,8 @@ func (c *hooks) AfterAgentResponse(fn func(context.Context, AfterAgentResponse) 
 	return bind(c, fn, afteragentresponse.RegisterHandler)
 }
 
-// AfterAgentThought registers an AfterAgentThought handler on the registrar.
+// AfterAgentThought registers an observe-only AfterAgentThought handler.
+// Cursor's hooks.json matcher for this event is the fixed value AgentThought.
 func (c *hooks) AfterAgentThought(fn func(context.Context, AfterAgentThought) error) *hooks {
 	return bind(c, fn, afteragentthought.RegisterHandler)
 }

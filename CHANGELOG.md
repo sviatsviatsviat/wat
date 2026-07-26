@@ -37,6 +37,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `is_first_compaction`, in addition to `trigger`. Observational
   `user_message` output is unchanged. Portable `OnPreCompact` remains
   observe-only and does not expose Cursor-only metrics or `user_message`.
+- Cursor `AfterAgentThought` decodes optional `duration_ms` for the completed
+  thinking block. The event remains observe-only.
 
 ### Changed
 
@@ -68,7 +70,6 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - Cursor `BeforeTabFileRead` `Allow`/`Deny` emit `permission` allow|deny only
   with exit 0 (no ask, no `user_message` / `agent_message`), matching Cursor's
   beforeTabFileRead schema.
-
 
 ## [v0.1.1-alpha] - 2026-07-25
 
