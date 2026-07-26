@@ -37,8 +37,9 @@ type permissionOutput struct {
 	agentMessage string
 	updatedInput map[string]any
 	// denyExitZero, when true with DecisionDeny, encodes permission JSON with
-	// process exit 0. Used for events such as subagentStart where Cursor applies
-	// the JSON permission field and treats exit 2 as a raw-stdout deny message.
+	// process exit 0. Used for events such as subagentStart and beforeReadFile
+	// where Cursor applies the JSON permission field and treats exit 2 as a
+	// raw-stdout deny message.
 	denyExitZero bool
 }
 
@@ -128,8 +129,9 @@ func (GateResults) Noop() PermissionOutput {
 }
 
 // DenyUserMessage returns a deny verdict with a user-facing message and process
-// exit 0. Cursor's subagentStart schema applies permission from JSON and does not
-// use agent_message; exit 2 would re-wrap stdout as the user message.
+// exit 0. Cursor's subagentStart and beforeReadFile schemas apply permission
+// from JSON and do not use agent_message; exit 2 would re-wrap stdout as the
+// user message.
 func (GateResults) DenyUserMessage(userMessage string) PermissionOutput {
 	return permissionOutput{
 		decision:     DecisionDeny,

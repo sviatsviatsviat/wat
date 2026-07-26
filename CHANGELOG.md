@@ -29,6 +29,13 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   Portable `OnPostToolFailure` `Context` is ignored on Cursor; Claude and
   Copilot still apply recovery context. Cloud agents do not load MCP hooks.
 
+### Fixed
+
+- Cursor `BeforeReadFile` `Deny` emits `permission` + `user_message` with exit 0
+  (no `agent_message` / exit 2), matching Cursor's beforeReadFile schema.
+  `Ask` is coerced to the same deny encoding because the host does not support
+  `"ask"` on this event.
+
 ## [v0.1.1-alpha] - 2026-07-25
 
 ### Fixed

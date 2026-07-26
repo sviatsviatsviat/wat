@@ -107,6 +107,10 @@ Known limitations are part of the contract:
   `"deny"`. `sdk/cursor`'s `SubagentStart` `Deny` writes `user_message` and
   exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap
   stdout as the message). Prefer `Deny` over `Ask` for this event.
+- Cursor `beforeReadFile` accepts `permission` allow|deny and optional
+  `user_message` only (no `"ask"`, no `agent_message`). `sdk/cursor`'s
+  `BeforeReadFile` `Deny` writes `user_message` and exits 0; `Ask` is coerced
+  to the same deny encoding. Prefer `Deny` over `Ask` for this event.
 - Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
   `postToolUse` for MCP tools only.
 - Cursor observe-only post-tool events (Hooks docs list no consumed output

@@ -44,6 +44,7 @@ type AfterMCPExecution = aftermcpexecution.Event
 type BeforeReadFile = beforereadfile.Event
 
 // BeforeReadFileResults is the hook-scoped response builder for BeforeReadFile.
+// Deny writes user_message and exits 0 (Cursor's beforeReadFile schema).
 type BeforeReadFileResults = beforereadfile.Results
 
 // AfterFileEdit is the afterFileEdit hook event.
