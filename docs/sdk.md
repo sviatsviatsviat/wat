@@ -205,6 +205,12 @@ the supported author-facing registration surface.
 | Dedicated tools | `BeforeShellExecution`, `AfterShellExecution`, `BeforeMCPExecution`, `AfterMCPExecution`, `BeforeReadFile`, `AfterFileEdit`, `BeforeTabFileRead`, `AfterTabFileEdit` |
 | Agent/stop/compact | `SubagentStart`, `SubagentStop`, `Stop`, `AfterAgentResponse`, `AfterAgentThought`, `PreCompact` |
 
+`SubagentStop` decodes Cursor's documented telemetry fields (`description`,
+`duration_ms`, `message_count`, `tool_call_count`, `modified_files`).
+`StopResults.FollowUp` emits `followup_message`; Cursor only consumes it when
+the input `status` is `"completed"`. Auto follow-up caps use hooks.json
+`loop_limit`. See [Agent protocols](agent-formats.md).
+
 ### Native constants and helpers
 
 Each native package exports:
