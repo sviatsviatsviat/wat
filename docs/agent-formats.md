@@ -146,6 +146,14 @@ Known limitations are part of the contract:
   (`description`, `duration_ms`, `message_count`, `tool_call_count`,
   `modified_files`) in addition to identity and status fields.
 - Observe-only portable events never emit host JSON.
+- Portable `OnPreCompact` is observe-only and maps only shared compaction
+  fields (`trigger`, plus Claude/Copilot `custom_instructions` when present).
+  Cursor's native `preCompact` also carries compaction metrics
+  (`context_usage_percent`, `context_tokens`, `context_window_size`,
+  `message_count`, `messages_to_compact`, `is_first_compaction`) and may emit
+  an observational `user_message` via `sdk/cursor`'s `PreCompact` /
+  `UserMessage`. Those Cursor-only inputs and the `user_message` output stay
+  on the native SDK; they are not part of the portable contract.
 
 ### Cursor permission and Ask semantics
 

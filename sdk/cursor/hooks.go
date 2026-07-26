@@ -168,6 +168,7 @@ func (c *hooks) Stop(fn func(context.Context, Stop, StopResults) (StopOutput, er
 }
 
 // PreCompact registers a PreCompact handler on the registrar.
+// Handlers may return Results.UserMessage; compaction itself cannot be blocked.
 func (c *hooks) PreCompact(fn func(context.Context, PreCompact, PreCompactResults) (PreCompactOutput, error)) *hooks {
 	return bind(c, fn, precompact.RegisterHandler)
 }

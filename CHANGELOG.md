@@ -31,6 +31,13 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   directories to load for the workspace). This is a desktop/CLI lifecycle hook and
   does not run in cloud agents.
 
+- `sdk/cursor`'s `PreCompact` event decodes the full native `preCompact`
+  compaction metrics: `context_usage_percent`, `context_tokens`,
+  `context_window_size`, `message_count`, `messages_to_compact`, and
+  `is_first_compaction`, in addition to `trigger`. Observational
+  `user_message` output is unchanged. Portable `OnPreCompact` remains
+  observe-only and does not expose Cursor-only metrics or `user_message`.
+
 ### Changed
 
 - Cursor `Stop` / `SubagentStop` `FollowUp` godoc and protocol docs document
@@ -61,6 +68,7 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - Cursor `BeforeTabFileRead` `Allow`/`Deny` emit `permission` allow|deny only
   with exit 0 (no ask, no `user_message` / `agent_message`), matching Cursor's
   beforeTabFileRead schema.
+
 
 ## [v0.1.1-alpha] - 2026-07-25
 

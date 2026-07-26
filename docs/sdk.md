@@ -105,6 +105,14 @@ Portable handlers fan out to native registrations for all three agents.
 | `OnStop` | `StopEvent` | `FollowUp` | Gate main-agent completion |
 | `OnPreCompact` | `PreCompactEvent` | observe-only | Observe context compaction |
 
+Portable `OnPreCompact` stays observe-only even though Cursor's native
+`preCompact` can return an optional observational `user_message`. Use
+`cursor.UseHooks().PreCompact` with `Results.UserMessage` when that host
+message is required. Cursor-only compaction metrics
+(`context_usage_percent`, `context_tokens`, `context_window_size`,
+`message_count`, `messages_to_compact`, `is_first_compaction`) are likewise
+available only on the native Cursor event, not on portable `Compact`.
+
 ### Normalized event shape
 
 Every portable event embeds a shared envelope:
@@ -229,6 +237,11 @@ the event (starts at 0) before returning another follow-up. See
 may return `pluginPaths` (absolute plugin directories for the workspace). It is an
 app lifecycle hook for the Cursor desktop app and CLI, skipped when there are
 zero workspace folders, and does not run in cloud agents.
+
+Cursor `PreCompact` decodes the full documented compaction metrics and exposes
+`UserMessage` for an optional observational stdout message. Compaction cannot
+be blocked. See [Agent protocols](agent-formats.md) for how this narrows
+relative to portable `OnPreCompact`.
 
 ### Native constants and helpers
 
