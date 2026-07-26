@@ -43,7 +43,7 @@ func buildWat(t *testing.T) string {
 		}
 		watBinaryPath = filepath.Join(dir, name)
 		cmd := exec.Command("go", "build", "-buildvcs=true",
-			"-ldflags", "-X main.versionOverride=v0.0.0-e2e-000000000000",
+			"-ldflags", "-X github.com/sviatsviatsviat/wat/cmd/wat/internal/modver.Override=v0.0.0-e2e-000000000000",
 			"-o", watBinaryPath, "./cmd/wat")
 		cmd.Dir = root
 		var out []byte
