@@ -10,7 +10,7 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Cursor hook `Envelope` decodes optional common-schema fields `model_id` and
-  `model_params` (exported as `ModelParam`).
+  `model_params`, using the exported `ModelParam` element type.
 
 ## [v0.1.1-alpha] - 2026-07-25
 
