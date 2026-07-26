@@ -8,6 +8,9 @@ import (
 
 // Output is the response for stop and subagentStop events.
 // Construct via Results builders. A nil value is a no-op.
+//
+// A non-empty followup_message is encoded with exit 0. Cursor submits that
+// text as the next user message, subject to hooks.json loop_limit.
 type Output interface {
 	hookkit.Output
 	isOutput()

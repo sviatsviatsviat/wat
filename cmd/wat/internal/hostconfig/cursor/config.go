@@ -49,7 +49,9 @@ type Handler struct {
 	Matcher string `json:"matcher,omitempty"`
 	// Timeout is the handler timeout in seconds.
 	Timeout int `json:"timeout,omitempty"`
-	// LoopLimit is the maximum stop-loop iterations when set.
+	// LoopLimit is the per-script auto follow-up cap for stop/subagentStop when
+	// set. Cursor defaults to 5 when omitted; authors configure this in
+	// hooks.json (native null means unlimited; this field cannot encode null).
 	LoopLimit int `json:"loop_limit,omitempty"`
 	// FailClosed makes handler errors fail-closed when set.
 	FailClosed bool `json:"failClosed,omitempty"`
