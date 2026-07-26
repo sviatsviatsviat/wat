@@ -205,6 +205,12 @@ the supported author-facing registration surface.
 | Dedicated tools | `BeforeShellExecution`, `AfterShellExecution`, `BeforeMCPExecution`, `AfterMCPExecution`, `BeforeReadFile`, `AfterFileEdit`, `BeforeTabFileRead`, `AfterTabFileEdit` |
 | Agent/stop/compact | `SubagentStart`, `SubagentStop`, `Stop`, `AfterAgentResponse`, `AfterAgentThought`, `PreCompact` |
 
+Cursor `Stop` / `SubagentStop` `FollowUp` auto-submits a next user message.
+Cursor caps those loops with the hooks.json `loop_limit` option (default `5`;
+`null` means unlimited). Use `LoopCount` on the event (starts at 0) before
+returning another follow-up. The shared Cursor `Envelope` also decodes optional
+`model_id` and `model_params` from the common hook schema.
+
 ### Native constants and helpers
 
 Each native package exports:

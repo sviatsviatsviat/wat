@@ -22,7 +22,9 @@ type Subagent struct {
 type TurnEnd struct {
 	// Status is the turn-end status when provided.
 	Status string
-	// LoopCount is the stop loop count when available.
+	// LoopCount is how many automatic stop follow-ups have already run when
+	// available (Cursor starts at 0; Cursor caps further FollowUp emits with
+	// hooks.json loop_limit).
 	LoopCount int
 	// StopHookActive is true when a stop hook is already active (Claude).
 	StopHookActive bool

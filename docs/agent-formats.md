@@ -97,6 +97,16 @@ Portable builders deliberately expose the intersection of native behavior:
 | `StopResults.FollowUp` | Prevent completion and request more work |
 | `SessionStartResults.Context` | Add startup context |
 
+Cursor `stop` / `subagentStop` follow-up loops:
+
+- `FollowUp` encodes non-empty `followup_message` with exit 0; Cursor
+  auto-submits that text as the next user message.
+- Input `loop_count` is how many automatic follow-ups the same script has
+  already triggered for the conversation (starts at 0).
+- Cursor enforces a per-script `loop_limit` from `hooks.json` (default `5`;
+  `null` means unlimited). Authors should check `loop_count` before emitting
+  another follow-up.
+
 Known limitations are part of the contract:
 
 - Copilot cloud-agent handling may downgrade `Ask` to a denial.

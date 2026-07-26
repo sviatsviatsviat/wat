@@ -6,11 +6,19 @@ import (
 )
 
 // Event is the stop hook event.
+//
+// Status is completed, aborted, or error. LoopCount is how many times this stop
+// hook has already triggered an automatic follow-up for the conversation
+// (starts at 0). Cursor caps auto follow-ups per script with the hooks.json
+// loop_limit option (default 5; null means unlimited). Authors that return
+// FollowUp should consult LoopCount against that budget.
 type Event struct {
 	event.Envelope
-	// Status is the stop status.
+	// Status is the stop status: completed, aborted, or error.
 	Status string `json:"status"`
-	// LoopCount is the stop-loop iteration count.
+	// LoopCount is how many automatic follow-ups this stop hook has already
+	// triggered for the conversation (starts at 0). See the Event comment for
+	// the hooks.json loop_limit interaction.
 	LoopCount int `json:"loop_count"`
 }
 
