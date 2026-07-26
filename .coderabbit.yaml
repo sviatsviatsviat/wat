@@ -7,15 +7,14 @@ reviews:
         For Go, require godoc on exported funcs, methods, types, consts, and
         vars (complete sentences starting with the identifier). Unexported
         helpers and _test.go callbacks do not need docstrings. Prefer fixing
-        missing exported godoc over adding noise to private code.
+        missing exported godoc over adding noise to private code. Do not treat
+        private/unexported docstring coverage as a review gate.
   pre_merge_checks:
     docstrings:
-      # CodeRabbit scores the PR diff and may count unexported symbols.
-      # Repository CI ("Godoc coverage" in .github/workflows/ci.yml) is the
-      # source of truth: exported identifiers ≥80% via
-      # tools/check-godoc-coverage.
-      mode: "warning"
-      threshold: 80
+      # CodeRabbit's docstring coverage metric scores the PR diff and may count
+      # unexported symbols; it cannot be scoped to exported-only. Disable it.
+      # Public API godoc is enforced by golangci-lint revive `exported`.
+      mode: "off"
 code_generation:
   docstrings:
     path_instructions:

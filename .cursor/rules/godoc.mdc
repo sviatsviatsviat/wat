@@ -11,10 +11,9 @@ Follow [.cursor/skills/godoc/SKILL.md](../skills/godoc/SKILL.md).
 - Every exported `func`, `type`, `const`, `var`, and method needs a godoc comment.
 - Comments are complete sentences starting with the name of the thing described.
 - Package-level overview goes in `doc.go` when it helps readers.
-- CI fails on undocumented exports (`revive` `exported`) and when exported
-  godoc coverage is below 80% (step `Godoc coverage` →
-  `go run ./tools/check-godoc-coverage -threshold=80`).
-- Coverage counts exported funcs/methods/types/consts/vars only (not fields or
-  unexported helpers). Prefer documenting real public API over excluding paths.
+- CI fails on undocumented exports via golangci-lint revive `exported` (public
+  API only). Unexported helpers do not need godoc for CI.
+- Ignore CodeRabbit private/unexported docstring coverage %; it is not a gate
+  and must not drive PR changes.
 
 Browse locally: `go doc github.com/sviatsviatsviat/wat/<package>`

@@ -30,10 +30,9 @@ Use the committed documentation as the source of truth:
 ## Public changes
 
 Ship tests, godoc, guides, and changelog updates with public behavior. Every
-exported identifier needs godoc. Keep exported godoc coverage ≥80%
-(`go run ./tools/check-godoc-coverage -threshold=80`; CI step `Godoc
-coverage`). Keep registrations and package initialization free of external
-side effects.
+exported identifier needs godoc (enforced by golangci-lint revive `exported`).
+Ignore CodeRabbit private/unexported docstring coverage %. Keep registrations
+and package initialization free of external side effects.
 
 ## Version pinning
 
