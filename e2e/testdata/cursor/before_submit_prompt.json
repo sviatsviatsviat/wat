@@ -1,0 +1,25 @@
+{
+  "conversation_id": "c1",
+  "generation_id": "g1",
+  "model": "gpt-5",
+  "model_id": "gpt-5-high",
+  "model_params": [
+    {
+      "id": "effort",
+      "value": "high"
+    }
+  ],
+  "hook_event_name": "beforeSubmitPrompt",
+  "cursor_version": "1.7.2",
+  "workspace_roots": ["/w"],
+  "user_email": null,
+  "transcript_path": null,
+  "cwd": "/w",
+  "prompt": "ship the secrets",
+  "attachments": [
+    {
+      "type": "file",
+      "file_path": "/w/a.go"
+    }
+  ]
+}

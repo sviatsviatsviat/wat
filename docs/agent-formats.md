@@ -173,6 +173,11 @@ Known limitations are part of the contract:
   - `subagent_type` may arrive as kebab-case (`general-purpose`) while docs and
     `hooks.json` matchers list camelCase (`generalPurpose`). Normalize before
     comparing against matcher-style names.
+- Cursor `beforeSubmitPrompt` blocks via JSON `continue: false` (and optional
+  `user_message`) with process exit 0. Exit 2 is not the control channel for
+  this event. In `.cursor/hooks.json`, matchers for `beforeSubmitPrompt` are
+  matched against the value `UserPromptSubmit` (a config filter string, not the
+  wire `hook_event_name`).
 - Observe-only portable events never emit host JSON.
 - Portable `OnPreCompact` is observe-only and maps only shared compaction
   fields (`trigger`, plus Claude/Copilot `custom_instructions` when present).
@@ -206,7 +211,7 @@ and tests for it.
 |---|---|---|---|
 | Event-name style | PascalCase | PascalCase | camelCase |
 | Common JSON fields | Mostly snake_case with native output conventions | snake_case | snake_case/camelCase per native schema |
-| Blocking | Usually encoded in JSON output fields | JSON decision plus native exit behavior | Permission denial may use exit 2 |
+| Blocking | Usually encoded in JSON output fields | JSON decision plus native exit behavior | Permission denial may use exit 2; `beforeSubmitPrompt` uses `continue` JSON with exit 0 |
 | Handler error | Exit 1 | Exit 1 | Exit 1 (host normally treats as fail-open) |
 | Session environment | `CLAUDE_ENV_FILE` for supported output | stdout JSON | stdout JSON |
 | Project config | `.claude/settings.json` matcher groups | `.github/hooks/wat.json` flat handlers | `.cursor/hooks.json` flat handlers |

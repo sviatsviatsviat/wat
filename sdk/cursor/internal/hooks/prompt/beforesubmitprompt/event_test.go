@@ -31,8 +31,11 @@ func mustDecode[E any](t *testing.T, raw string) E {
 
 func TestEncode_BeforeSubmitPromptBlock(t *testing.T) {
 	out, code, err := results{}.Block("blocked").Encode()
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
+	if err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	if code != 0 {
+		t.Fatalf("Block exit code = %d, want 0 (continue JSON, not exit 2)", code)
 	}
 	var got map[string]any
 	if err := json.Unmarshal(out, &got); err != nil {
@@ -44,9 +47,29 @@ func TestEncode_BeforeSubmitPromptBlock(t *testing.T) {
 }
 
 func TestDecode_BeforeSubmitPrompt(t *testing.T) {
-	e := mustDecode[Event](t, `{"hook_event_name":"beforeSubmitPrompt","conversation_id":"c1","prompt":"hello"}`)
+	e := mustDecode[Event](t, `{
+		"hook_event_name":"beforeSubmitPrompt",
+		"conversation_id":"c1",
+		"generation_id":"g1",
+		"model":"gpt-5",
+		"model_id":"gpt-5-high",
+		"model_params":[{"id":"effort","value":"high"}],
+		"cursor_version":"1.7.2",
+		"workspace_roots":["/w"],
+		"prompt":"hello",
+		"attachments":[{"type":"file","file_path":"/w/a.go"}]
+	}`)
 	if e.Prompt != "hello" {
-		t.Fatal("bad prompt")
+		t.Fatalf("Prompt = %q, want hello", e.Prompt)
+	}
+	if e.ModelID != "gpt-5-high" {
+		t.Fatalf("ModelID = %q, want gpt-5-high", e.ModelID)
+	}
+	if len(e.ModelParams) != 1 || e.ModelParams[0].ID != "effort" || e.ModelParams[0].Value != "high" {
+		t.Fatalf("ModelParams = %#v", e.ModelParams)
+	}
+	if len(e.Attachments) != 1 || e.Attachments[0].Type != "file" || e.Attachments[0].FilePath != "/w/a.go" {
+		t.Fatalf("Attachments = %#v", e.Attachments)
 	}
 }
 

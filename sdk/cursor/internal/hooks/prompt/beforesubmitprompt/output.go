@@ -8,6 +8,8 @@ import (
 
 // Output is the response for beforeSubmitPrompt events.
 // Construct via Results builders and With* methods. A nil value is a no-op.
+// Blocking is expressed as continue:false (optionally with user_message) and
+// process exit 0; Cursor does not use exit 2 as the control channel for this event.
 type Output interface {
 	hookkit.Output
 	isOutput()

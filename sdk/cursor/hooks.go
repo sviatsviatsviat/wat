@@ -89,6 +89,8 @@ func (c *hooks) SessionEnd(fn func(context.Context, SessionEnd) error) *hooks {
 }
 
 // BeforeSubmitPrompt registers a BeforeSubmitPrompt handler on the registrar.
+// BeforeSubmitPrompt blocks with continue:false and exit 0 (not exit 2);
+// hooks.json matchers use the value UserPromptSubmit.
 func (c *hooks) BeforeSubmitPrompt(fn func(context.Context, BeforeSubmitPrompt, BeforeSubmitPromptResults) (BeforeSubmitPromptOutput, error)) *hooks {
 	return bind(c, fn, beforesubmitprompt.RegisterHandler)
 }
