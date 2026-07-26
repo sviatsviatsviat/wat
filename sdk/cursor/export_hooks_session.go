@@ -19,4 +19,13 @@ type SessionStartResults = sessionstart.Results
 type SessionEnd = sessionend.Event
 
 // WorkspaceOpen is the workspaceOpen hook event.
+//
+// workspaceOpen is an app lifecycle hook for the Cursor desktop app and CLI.
+// It does not run in cloud agents.
 type WorkspaceOpen = workspaceopen.Event
+
+// WorkspaceOpenOutput is the response for workspaceOpen events.
+type WorkspaceOpenOutput = workspaceopen.Output
+
+// WorkspaceOpenResults is the hook-scoped response builder for WorkspaceOpen.
+type WorkspaceOpenResults = workspaceopen.Results

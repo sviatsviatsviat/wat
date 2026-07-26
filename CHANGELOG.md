@@ -27,6 +27,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - Cursor `AfterTabFileEdit` decodes Tab-specific edit detail (`range`,
   `old_line`, `new_line`) via `TabEdit` / `EditRange`, while Agent
   `AfterFileEdit` continues to use `Edit` with `old_string` / `new_string`.
+- Cursor `WorkspaceOpen` handlers can return `pluginPaths` (absolute plugin
+  directories to load for the workspace). This is a desktop/CLI lifecycle hook and
+  does not run in cloud agents.
 
 ### Changed
 

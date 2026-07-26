@@ -6,11 +6,11 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// RegisterHandler registers a WorkspaceOpen observe handler on d.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
+// RegisterHandler registers this event handler on d.
+func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event, Results) (Output, error)) {
 	if fn == nil {
 		return
 	}
 	register(d.Codec())
-	hookkit.RegisterObserve(d, fn)
+	hookkit.RegisterWith(d, Results(results{}), fn)
 }
