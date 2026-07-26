@@ -210,7 +210,7 @@ the supported author-facing registration surface.
 
 | Domain | Methods |
 |---|---|
-| Session/prompt | `SessionStart` (optional `ComposerMode`; fire-and-forget / non-blocking), `SessionEnd`, `WorkspaceOpen`, `BeforeSubmitPrompt` |
+| Session/prompt | `SessionStart` (optional `ComposerMode`; fire-and-forget / non-blocking), `SessionEnd` (observe-only; `DurationMs` / `FinalStatus` / optional `ErrorMessage`; IDE-only), `WorkspaceOpen`, `BeforeSubmitPrompt` |
 | Generic tools | `PreToolUse`, `PostToolUse`, `PostToolUseFailure` (observe-only) |
 | Dedicated tools | `BeforeShellExecution`, `AfterShellExecution` (observe-only), `BeforeMCPExecution`, `AfterMCPExecution` (observe-only), `BeforeReadFile`, `AfterFileEdit` (observe-only), `BeforeTabFileRead`, `AfterTabFileEdit` (observe-only) |
 | Agent/stop/compact | `SubagentStart`, `SubagentStop`, `Stop`, `AfterAgentResponse`, `AfterAgentThought`, `PreCompact` |

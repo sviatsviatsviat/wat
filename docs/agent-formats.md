@@ -154,6 +154,8 @@ Known limitations are part of the contract:
   `continue` is `false`. Meaningful outputs are `env` and `additional_context`.
   Input may include optional `composer_mode` (`"agent"`, `"ask"`, or `"edit"`).
   The hook is not available for Cursor cloud agents.
+- Cursor `sessionEnd` is tied to the IDE composer session and is not available
+  for cloud agents. The response body is unused (observe-only).
 - Observe-only portable events never emit host JSON.
 - Portable `OnPreCompact` is observe-only and maps only shared compaction
   fields (`trigger`, plus Claude/Copilot `custom_instructions` when present).

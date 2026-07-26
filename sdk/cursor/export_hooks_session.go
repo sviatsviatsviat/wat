@@ -22,7 +22,12 @@ type SessionStartOutput = sessionstart.Output
 // SessionStartResults is the hook-scoped response builder for SessionStart.
 type SessionStartResults = sessionstart.Results
 
-// SessionEnd is the sessionEnd hook event.
+// SessionEnd is the sessionEnd hook event, including duration_ms,
+// final_status, and optional error_message.
+//
+// Cursor runs this hook as fire-and-forget and ignores the response body. It
+// is not available for cloud agents. See the sessionend Event godoc for host
+// semantics.
 type SessionEnd = sessionend.Event
 
 // WorkspaceOpen is the workspaceOpen hook event.
