@@ -6,6 +6,10 @@ import (
 )
 
 // Event is the beforeTabFileRead hook event.
+//
+// Tab (inline completions) only; Cursor does not run this hook in cloud agents.
+// Input is file_path and content (no attachments). Output is permission
+// allow|deny only — see [Results].
 type Event struct {
 	event.Envelope
 	// FilePath is the file path being read.

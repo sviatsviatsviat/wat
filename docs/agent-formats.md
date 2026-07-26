@@ -111,6 +111,10 @@ Known limitations are part of the contract:
   `user_message` only (no `"ask"`, no `agent_message`). `sdk/cursor`'s
   `BeforeReadFile` `Deny` writes `user_message` and exits 0; `Ask` is coerced
   to the same deny encoding. Prefer `Deny` over `Ask` for this event.
+- Cursor `beforeTabFileRead` accepts `permission` `"allow"`|`"deny"` only (no
+  ask, no `user_message` / `agent_message`). `sdk/cursor`'s `BeforeTabFileRead`
+  `Allow`/`Deny` emit that permission-only JSON with exit 0. Tab-only; not
+  available in cloud agents.
 - Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
   `postToolUse` for MCP tools only.
 - Cursor observe-only post-tool events (Hooks docs list no consumed output

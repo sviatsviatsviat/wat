@@ -35,6 +35,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   (no `agent_message` / exit 2), matching Cursor's beforeReadFile schema.
   `Ask` is coerced to the same deny encoding because the host does not support
   `"ask"` on this event.
+- Cursor `BeforeTabFileRead` `Allow`/`Deny` emit `permission` allow|deny only
+  with exit 0 (no ask, no `user_message` / `agent_message`), matching Cursor's
+  beforeTabFileRead schema.
 
 ## [v0.1.1-alpha] - 2026-07-25
 
