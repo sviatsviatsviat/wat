@@ -21,12 +21,14 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - `sdk/cursor`'s `SubagentStop` event decodes the full native `subagentStop`
   telemetry payload: `description`, `duration_ms`, `message_count`,
   `tool_call_count`, and `modified_files`, in addition to the existing
-  identity, status, summary, loop, and transcript fields. Godoc and protocol
-  docs note that Cursor only consumes `followup_message` when `status` is
-  `"completed"`, and that auto follow-up caps use hooks.json `loop_limit`.
+  identity, status, summary, loop, and transcript fields.
 
 ### Changed
 
+- Cursor `Stop` / `SubagentStop` `FollowUp` godoc and protocol docs document
+  `loop_count` versus hooks.json `loop_limit` (default 5; `null` unlimited),
+  and that Cursor only consumes `subagentStop` `followup_message` when input
+  `status` is `"completed"`.
 - Cursor post-tool events match Hooks docs observe-only contracts:
   `afterFileEdit`, `afterShellExecution`, `afterMCPExecution`, and
   `postToolUseFailure` no longer emit host-consumed JSON. Portable

@@ -98,6 +98,19 @@ Portable builders deliberately expose the intersection of native behavior:
 | `StopResults.FollowUp` | Prevent completion and request more work |
 | `SessionStartResults.Context` | Add startup context |
 
+Cursor `stop` / `subagentStop` follow-up loops:
+
+- `FollowUp` encodes non-empty `followup_message` with exit 0; Cursor
+  auto-submits that text as the next user message.
+- For `subagentStop`, Cursor only consumes `followup_message` when the input
+  `status` is `"completed"`. For `stop`, a non-empty message is always
+  eligible.
+- Input `loop_count` is how many automatic follow-ups the same script has
+  already triggered for the conversation (starts at 0).
+- Cursor enforces a per-script `loop_limit` from `hooks.json` (default `5`;
+  `null` means unlimited). Authors should check `loop_count` before emitting
+  another follow-up. That option is install config, not an SDK field.
+
 Known limitations are part of the contract:
 
 - Copilot cloud-agent handling may downgrade `Ask` to a denial.
@@ -123,10 +136,6 @@ Known limitations are part of the contract:
 - Cursor `subagentStop` decodes the documented telemetry fields
   (`description`, `duration_ms`, `message_count`, `tool_call_count`,
   `modified_files`) in addition to identity and status fields.
-  `StopResults.FollowUp` still emits `followup_message`, but Cursor only
-  consumes that message when the input `status` is `"completed"`. Auto
-  follow-up caps are configured with the hooks.json `loop_limit` handler
-  option (default 5), not an SDK input or output field.
 - Observe-only portable events never emit host JSON.
 
 ### Cursor permission and Ask semantics

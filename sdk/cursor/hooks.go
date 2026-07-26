@@ -160,6 +160,10 @@ func (c *hooks) SubagentStop(fn func(context.Context, SubagentStop, StopResults)
 }
 
 // Stop registers a Stop handler on the registrar.
+//
+// Handlers may return FollowUp to auto-submit a next user message. Cursor
+// limits those loops with hooks.json loop_limit (default 5; null unlimited);
+// Stop.LoopCount reports how many follow-ups have already run.
 func (c *hooks) Stop(fn func(context.Context, Stop, StopResults) (StopOutput, error)) *hooks {
 	return bind(c, fn, stopevent.RegisterHandler)
 }

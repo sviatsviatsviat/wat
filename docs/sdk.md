@@ -212,9 +212,12 @@ list no consumed output. Rewrite MCP tool output with `PostToolUse`
 
 `SubagentStop` decodes Cursor's documented telemetry fields (`description`,
 `duration_ms`, `message_count`, `tool_call_count`, `modified_files`).
-`StopResults.FollowUp` emits `followup_message`; Cursor only consumes it when
-the input `status` is `"completed"`. Auto follow-up caps use hooks.json
-`loop_limit`. See [Agent protocols](agent-formats.md).
+Cursor `Stop` / `SubagentStop` `FollowUp` auto-submits a next user message
+(`followup_message`); for `subagentStop`, Cursor only consumes it when the
+input `status` is `"completed"`. Cursor caps those loops with the hooks.json
+`loop_limit` option (default `5`; `null` means unlimited). Use `LoopCount` on
+the event (starts at 0) before returning another follow-up. See
+[Agent protocols](agent-formats.md).
 
 ### Native constants and helpers
 

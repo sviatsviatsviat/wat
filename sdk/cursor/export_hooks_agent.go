@@ -8,15 +8,20 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/cursor/internal/hooks/agent/subagentstop"
 )
 
-// Stop is the stop hook event.
+// Stop is the stop hook event (status, loop_count, and shared envelope fields).
+//
+// Cursor caps FollowUp auto-submits per script with hooks.json loop_limit
+// (default 5; null means unlimited). Use Stop.LoopCount to stay within that
+// budget before returning FollowUp.
 type Stop = stopevent.Event
 
 // StopOutput is the response for stop and subagentStop events.
+// Non-empty FollowUp encodes followup_message with exit 0.
 type StopOutput = stopevent.Output
 
 // StopResults is the hook-scoped response builder for Stop and SubagentStop.
-// FollowUp emits followup_message; for subagentStop Cursor only consumes it
-// when the input status is "completed". Loop caps use hooks.json loop_limit.
+// FollowUp auto-submits a user message; for subagentStop Cursor only consumes
+// it when the input status is "completed". See Stop for loop_limit semantics.
 type StopResults = stopevent.Results
 
 // SubagentStart is the subagentStart hook event.
