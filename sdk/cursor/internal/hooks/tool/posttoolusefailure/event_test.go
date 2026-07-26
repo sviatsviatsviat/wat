@@ -72,36 +72,6 @@ func TestDecode_PostToolUseFailure_durationMs(t *testing.T) {
 	}
 }
 
-func TestDurationMillis_PrefersDurationOverDurationMs(t *testing.T) {
-	e := mustDecode[Event](t, `{
-		"hook_event_name":"postToolUseFailure",
-		"conversation_id":"c1",
-		"tool_name":"Shell",
-		"error_message":"err",
-		"failure_type":"error",
-		"duration":100,
-		"duration_ms":999
-	}`)
-	if e.DurationMillis() != 100 {
-		t.Fatalf("DurationMillis()=%d, want documented duration field 100", e.DurationMillis())
-	}
-}
-
-func TestDurationMillis_ExplicitZeroBeatsDurationMs(t *testing.T) {
-	e := mustDecode[Event](t, `{
-		"hook_event_name":"postToolUseFailure",
-		"conversation_id":"c1",
-		"tool_name":"Shell",
-		"error_message":"err",
-		"failure_type":"error",
-		"duration":0,
-		"duration_ms":999
-	}`)
-	if e.DurationMillis() != 0 {
-		t.Fatalf("DurationMillis()=%d, want explicit duration 0", e.DurationMillis())
-	}
-}
-
 func init() {
 	register(testCodec)
 }

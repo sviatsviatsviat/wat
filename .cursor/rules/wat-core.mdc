@@ -32,7 +32,7 @@ Use the committed documentation as the source of truth:
   `RegisterHandler`. Observe-only omits `results.go`/`output.go`, not `bind.go`.
 - No custom `UnmarshalJSON` on hook event structs for duration/presence; use
   `DecodeEvent` after-callbacks and helpers (e.g. `RawObjectField`,
-  `PreferDurationField`).
+  `DurationFields`, `PreferDurationField`).
 
 ## Public changes
 

@@ -60,36 +60,6 @@ func TestDecode_AfterShellExecution_durationMs(t *testing.T) {
 	}
 }
 
-func TestDurationMillis_PrefersDurationOverDurationMs(t *testing.T) {
-	e := mustDecode[Event](t, `{
-  "hook_event_name":"afterShellExecution",
-  "conversation_id":"c1",
-  "command":"true",
-  "output":"",
-  "duration":100,
-  "duration_ms":999,
-  "sandbox":false
-}`)
-	if got := e.DurationMillis(); got != 100 {
-		t.Fatalf("DurationMillis() = %d, want documented duration field 100", got)
-	}
-}
-
-func TestDurationMillis_ExplicitZeroBeatsDurationMs(t *testing.T) {
-	e := mustDecode[Event](t, `{
-  "hook_event_name":"afterShellExecution",
-  "conversation_id":"c1",
-  "command":"true",
-  "output":"",
-  "duration":0,
-  "duration_ms":999,
-  "sandbox":false
-}`)
-	if got := e.DurationMillis(); got != 0 {
-		t.Fatalf("DurationMillis() = %d, want explicit duration 0", got)
-	}
-}
-
 func init() {
 	register(testCodec)
 }

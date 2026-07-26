@@ -128,9 +128,9 @@ omit those files only — they still keep `bind.go`. Do not put registration in
 
 Decode-time field presence and similar wire normalization belong in the codec
 `register` path (`DecodeEvent` after-callback, shared helpers such as
-`hookkit.RawObjectField`, or typed helpers like Cursor
-`event.PreferDurationField`). Do not add custom `UnmarshalJSON` on hook event
-structs for duration/presence.
+`hookkit.RawObjectField`, or typed helpers like Cursor `event.DurationFields`
+and `event.PreferDurationField`). Do not add custom `UnmarshalJSON` on hook
+event structs for duration/presence.
 
 Shared native concepts belong in that SDK's `internal/event`,
 `internal/runtime`, or `internal/tools`, then are aliased deliberately from the
