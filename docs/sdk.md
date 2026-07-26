@@ -205,9 +205,10 @@ the supported author-facing registration surface.
 | Dedicated tools | `BeforeShellExecution`, `AfterShellExecution` (observe-only), `BeforeMCPExecution`, `AfterMCPExecution` (observe-only), `BeforeReadFile`, `AfterFileEdit` (observe-only), `BeforeTabFileRead`, `AfterTabFileEdit` (observe-only) |
 | Agent/stop/compact | `SubagentStart`, `SubagentStop`, `Stop`, `AfterAgentResponse`, `AfterAgentThought`, `PreCompact` |
 
-`AfterMCPExecution` and `AfterTabFileEdit` are observe-only. Cursor documents no
-output fields for `afterMCPExecution`; rewrite MCP tool output with
-`PostToolUse` (`updated_mcp_tool_output`). Cloud agents do not load MCP hooks.
+`AfterShellExecution`, `AfterMCPExecution`, `AfterFileEdit`,
+`PostToolUseFailure`, and `AfterTabFileEdit` are observe-only where Hooks docs
+list no consumed output. Rewrite MCP tool output with `PostToolUse`
+(`updated_mcp_tool_output`). Cloud agents do not load MCP hooks.
 
 ### Native constants and helpers
 

@@ -108,20 +108,22 @@ Known limitations are part of the contract:
   exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap
   stdout as the message). Prefer `Deny` over `Ask` for this event.
 - Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
-  `postToolUse` for MCP tools only. Dedicated `afterMCPExecution` is
-  observe-only (Cursor documents no output fields). Cloud agents do not load
-  `beforeMCPExecution` / `afterMCPExecution`.
-- Cursor `afterFileEdit` is observe-only: the host documents no output fields.
-  `OnPostTool` still expands to it for edit observation, but portable
-  `Context` / `WithUpdatedOutput` have no host effect for that native event.
-  Native `sdk/cursor` registration is observe-only (side effects such as
-  formatters).
-- Cursor `afterShellExecution` is observe-only: Hooks docs list no consumed
-  output fields. Use `sdk/cursor.AfterShellExecution` for auditing; portable
-  `OnPostTool` covers Shell via `postToolUse` instead.
-- Cursor `postToolUseFailure` is observe-only: Hooks docs list no output
-  fields, so `sdk/cursor` registers an observe handler and portable
-  `PostToolFailureResults.Context` is discarded for Cursor.
+  `postToolUse` for MCP tools only.
+- Cursor observe-only post-tool events (Hooks docs list no consumed output
+  fields):
+  - `afterFileEdit`: `OnPostTool` still expands for edit observation, but
+    portable `Context` / `WithUpdatedOutput` have no host effect. Native
+    `sdk/cursor` registration is side-effects only (for example formatters).
+  - `afterShellExecution`: not projected onto portable `OnPostTool`; use
+    `sdk/cursor.AfterShellExecution` for auditing. Shell post-tool context
+    remains via `postToolUse`. Decodes `sandbox`.
+  - `afterMCPExecution`: `OnPostTool` expands for observation, but portable
+    builders are discarded. Rewrite MCP tool output via `postToolUse`
+    (`updated_mcp_tool_output`). Cloud agents do not load
+    `beforeMCPExecution` / `afterMCPExecution`.
+  - `postToolUseFailure`: native observe handler; portable
+    `PostToolFailureResults.Context` is discarded on Cursor. Decodes
+    `is_interrupt`.
 - Observe-only portable events never emit host JSON.
 
 Do not widen the portable interface until every dialect has a truthful mapping
