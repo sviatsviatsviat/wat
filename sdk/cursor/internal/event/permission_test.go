@@ -72,3 +72,20 @@ func TestMerge_Permission_askDoesNotStop(t *testing.T) {
 		t.Fatal("ask should not stop")
 	}
 }
+
+func TestEncode_PermissionOnly_stripsMessages(t *testing.T) {
+	out, code, err := GateResults{}.PermissionOnlyDeny().
+		WithUserMessage("user").
+		WithAgentMessage("agent").
+		Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0", code)
+	}
+	got := string(out)
+	if got != `{"permission":"deny"}` {
+		t.Fatalf("got %s, want permission-only deny", got)
+	}
+}

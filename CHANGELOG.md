@@ -7,6 +7,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Cursor `BeforeTabFileRead` `Allow`/`Deny` emit `permission` allow|deny only
+  with exit 0 (no ask, no `user_message` / `agent_message`), matching Cursor's
+  beforeTabFileRead schema.
+
 ## [v0.1.1-alpha] - 2026-07-25
 
 ### Fixed

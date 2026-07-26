@@ -169,6 +169,7 @@ func (c *hooks) AfterAgentThought(fn func(context.Context, AfterAgentThought) er
 }
 
 // BeforeTabFileRead registers a BeforeTabFileRead handler on the registrar.
+// Responses are permission allow|deny only (Cursor Tab schema; not cloud agents).
 func (c *hooks) BeforeTabFileRead(fn func(context.Context, BeforeTabFileRead, BeforeTabFileReadResults) (PermissionOutput, error)) *hooks {
 	return bind(c, fn, beforetabfileread.RegisterHandler)
 }

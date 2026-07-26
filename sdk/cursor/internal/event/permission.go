@@ -40,6 +40,9 @@ type permissionOutput struct {
 	// process exit 0. Used for events such as subagentStart where Cursor applies
 	// the JSON permission field and treats exit 2 as a raw-stdout deny message.
 	denyExitZero bool
+	// permissionOnly, when true, encodes only the permission field. Used for
+	// events such as beforeTabFileRead whose Cursor schema is allow|deny only.
+	permissionOnly bool
 }
 
 func (permissionOutput) isPermissionOutput() {}
@@ -138,20 +141,40 @@ func (GateResults) DenyUserMessage(userMessage string) PermissionOutput {
 	}
 }
 
+// PermissionOnlyAllow returns an allow verdict that encodes only permission.
+// Cursor's beforeTabFileRead schema accepts allow|deny and no message fields.
+func (GateResults) PermissionOnlyAllow() PermissionOutput {
+	return permissionOutput{decision: DecisionAllow, permissionOnly: true}
+}
+
+// PermissionOnlyDeny returns a deny verdict that encodes only permission with
+// process exit 0. Cursor's beforeTabFileRead schema is allow|deny only; exit 0
+// lets the host apply the JSON permission field (exit 2 would treat stdout as a
+// raw deny message rather than schema JSON).
+func (GateResults) PermissionOnlyDeny() PermissionOutput {
+	return permissionOutput{
+		decision:       DecisionDeny,
+		denyExitZero:   true,
+		permissionOnly: true,
+	}
+}
+
 // Encode renders this output as Cursor stdout JSON.
 func (o permissionOutput) Encode() ([]byte, int, error) {
 	out := map[string]any{}
 	if o.decision != "" {
 		out["permission"] = string(o.decision)
 	}
-	if o.userMessage != "" {
-		out["user_message"] = o.userMessage
-	}
-	if o.agentMessage != "" {
-		out["agent_message"] = o.agentMessage
-	}
-	if o.updatedInput != nil {
-		out["updated_input"] = o.updatedInput
+	if !o.permissionOnly {
+		if o.userMessage != "" {
+			out["user_message"] = o.userMessage
+		}
+		if o.agentMessage != "" {
+			out["agent_message"] = o.agentMessage
+		}
+		if o.updatedInput != nil {
+			out["updated_input"] = o.updatedInput
+		}
 	}
 	if len(out) == 0 {
 		return nil, 0, nil
@@ -188,11 +211,12 @@ func (o permissionOutput) Merge(other hookkit.Output) (hookkit.Output, []string,
 		warnings = append(warnings, w)
 	}
 	return permissionOutput{
-		decision:     PermissionDecision(decision),
-		userMessage:  userMessage,
-		agentMessage: agentMessage,
-		updatedInput: updatedInput,
-		denyExitZero: o.denyExitZero || b.denyExitZero,
+		decision:       PermissionDecision(decision),
+		userMessage:    userMessage,
+		agentMessage:   agentMessage,
+		updatedInput:   updatedInput,
+		denyExitZero:   o.denyExitZero || b.denyExitZero,
+		permissionOnly: o.permissionOnly || b.permissionOnly,
 	}, warnings, nil
 }
 

@@ -106,6 +106,10 @@ Known limitations are part of the contract:
   `"deny"`. `sdk/cursor`'s `SubagentStart` `Deny` writes `user_message` and
   exits 0 so Cursor applies the JSON permission field (exit 2 would re-wrap
   stdout as the message). Prefer `Deny` over `Ask` for this event.
+- Cursor `beforeTabFileRead` accepts `permission` `"allow"`|`"deny"` only (no
+  ask, no `user_message` / `agent_message`). `sdk/cursor`'s `BeforeTabFileRead`
+  `Allow`/`Deny` emit that permission-only JSON with exit 0. Tab-only; not
+  available in cloud agents.
 - Cursor `WithUpdatedOutput` maps to updated MCP output and is meaningful only
   where that native output field is supported.
 - Observe-only portable events never emit host JSON.

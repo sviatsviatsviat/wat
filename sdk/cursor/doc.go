@@ -3,10 +3,11 @@
 // github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Permission-gating events typically return exit code 2 on deny. SubagentStart
-// deny uses exit 0 with permission JSON so Cursor applies the schema field.
-// Handler errors exit 1 under Cursor's default fail-open policy. Hook stdout
-// JSON is encoded internally from Output (sealed; only this package implements
-// it). Payloads must include hook_event_name on the wire.
+// and BeforeTabFileRead deny use exit 0 with permission JSON so Cursor applies
+// the schema field. BeforeTabFileRead encodes allow|deny only (no ask or
+// message fields). Handler errors exit 1 under Cursor's default fail-open
+// policy. Hook stdout JSON is encoded internally from Output (sealed; only this
+// package implements it). Payloads must include hook_event_name on the wire.
 //
 // Tool input on PreToolUse and related events is typed as [Input] with AsShell,
 // AsRead, and related accessors (and Tool* name constants) in this package.

@@ -44,10 +44,11 @@ type BeforeReadFileResults = beforereadfile.Results
 // AfterFileEdit is the afterFileEdit hook event.
 type AfterFileEdit = afterfileedit.Event
 
-// BeforeTabFileRead is the beforeTabFileRead hook event.
+// BeforeTabFileRead is the beforeTabFileRead hook event (Tab completions only).
 type BeforeTabFileRead = beforetabfileread.Event
 
 // BeforeTabFileReadResults is the hook-scoped response builder for BeforeTabFileRead.
+// Cursor accepts permission allow|deny only; there is no ask or message field.
 type BeforeTabFileReadResults = beforetabfileread.Results
 
 // AfterTabFileEdit is the afterTabFileEdit hook event.
