@@ -144,12 +144,12 @@ func (w beforeReadResults) Allow() model.PreToolResult {
 	return permissionResult{native: w.native.Allow()}
 }
 
-// Deny returns a deny verdict with an agent-facing reason.
+// Deny returns a deny verdict; Cursor beforeReadFile maps the reason to user_message.
 func (w beforeReadResults) Deny(reason string) model.PreToolResult {
 	return permissionResult{native: w.native.Deny(reason)}
 }
 
-// Ask returns an ask verdict with an agent-facing reason.
+// Ask returns a deny-style verdict; Cursor beforeReadFile does not support ask.
 func (w beforeReadResults) Ask(reason string) model.PreToolResult {
 	return permissionResult{native: w.native.Ask(reason)}
 }
