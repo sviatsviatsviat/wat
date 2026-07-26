@@ -10,8 +10,8 @@ type Event struct {
 	event.Envelope
 	// FilePath is the edited file path.
 	FilePath string `json:"file_path"`
-	// Edits are the applied edits.
-	Edits []event.Edit `json:"edits"`
+	// Edits are the applied Tab edits, including range and line context.
+	Edits []event.TabEdit `json:"edits"`
 }
 
 // EventName returns the canonical hook event name.

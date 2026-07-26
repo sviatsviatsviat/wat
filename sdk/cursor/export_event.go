@@ -13,8 +13,17 @@ type ModelParam = event.ModelParam
 // Attachment is a file or rule attachment on prompt and read-file events.
 type Attachment = event.Attachment
 
-// Edit is a single file edit on afterFileEdit and afterTabFileEdit events.
+// Edit is a single file edit on afterFileEdit events.
 type Edit = event.Edit
+
+// EditRange is the character range of a Tab edit on afterTabFileEdit events.
+type EditRange = event.EditRange
+
+// TabEdit is a single file edit on afterTabFileEdit events.
+//
+// Unlike [Edit], Tab edits include precise range and line context from Cursor's
+// Tab completion hooks.
+type TabEdit = event.TabEdit
 
 // PermissionDecision is a permission verdict label on permission-gating events.
 type PermissionDecision = event.PermissionDecision

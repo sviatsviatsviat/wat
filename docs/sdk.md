@@ -210,6 +210,10 @@ the supported author-facing registration surface.
 list no consumed output. Rewrite MCP tool output with `PostToolUse`
 (`updated_mcp_tool_output`). Cloud agents do not load MCP hooks.
 
+Cursor `AfterFileEdit` uses `[]Edit` (`old_string` / `new_string`). Cursor
+`AfterTabFileEdit` uses `[]TabEdit`, which adds Tab-specific `range`,
+`old_line`, and `new_line` fields from the native payload.
+
 `SubagentStop` decodes Cursor's documented telemetry fields (`description`,
 `duration_ms`, `message_count`, `tool_call_count`, `modified_files`).
 Cursor `Stop` / `SubagentStop` `FollowUp` auto-submits a next user message
