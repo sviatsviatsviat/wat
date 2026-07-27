@@ -132,6 +132,15 @@ Decode-time field presence and similar wire normalization belong in the codec
 with `CaptureDurationPresent` / `DurationMillis`). Do not add custom
 `UnmarshalJSON` on hook event structs for duration/presence.
 
+Repeated wire shapes on events should live as embedded reusable structs in that
+SDK's `internal/event` (same pattern as Cursor `DurationFields`):
+
+- `ToolFields` + `BindToolInput` on tool-invocation events (all three natives);
+- Copilot `AgentIdentity`, Cursor `SubagentFields`, Claude `StopActiveFields`
+  for repeated identity / stop-continuation clusters;
+- shared context-only outputs such as Claude `CommonOutput` /
+  `ContextOutput` and Copilot `ContextOutput` / `ContextResult`.
+
 Shared native concepts belong in that SDK's `internal/event`,
 `internal/runtime`, or `internal/tools`, then are aliased deliberately from the
 package root.

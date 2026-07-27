@@ -10,12 +10,7 @@ import (
 
 // Call is one tool invocation entry in a PostToolBatch event.
 type Call struct {
-	// ToolName is the tool name.
-	ToolName string `json:"tool_name"`
-	// ToolInput is the typed tool input for ToolName.
-	ToolInput tools.Input `json:"-"`
-	// ToolUseID is the tool use identifier.
-	ToolUseID string `json:"tool_use_id"`
+	event.ToolFields
 	// ToolResponse is the tool response JSON (string or content-block array).
 	ToolResponse json.RawMessage `json:"tool_response"`
 }

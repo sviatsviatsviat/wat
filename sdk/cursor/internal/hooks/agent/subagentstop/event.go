@@ -14,14 +14,9 @@ import (
 // hooks.json loop_limit handler option, not an SDK input or output field.
 type Event struct {
 	event.Envelope
-	// SubagentID is the subagent identifier when present.
-	SubagentID string `json:"subagent_id"`
-	// SubagentType is the subagent type (generalPurpose, explore, shell, …).
-	SubagentType string `json:"subagent_type"`
+	event.SubagentFields
 	// Status is the subagent stop status: "completed", "error", or "aborted".
 	Status string `json:"status"`
-	// Task is the task description given to the subagent.
-	Task string `json:"task"`
 	// Description is a short description of the subagent's purpose.
 	Description string `json:"description"`
 	// Summary is the output summary from the subagent.

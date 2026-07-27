@@ -3,18 +3,12 @@ package pretooluse
 import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
-	"github.com/sviatsviatsviat/wat/sdk/claude/internal/tools"
 )
 
 // Event is the PreToolUse hook event.
 type Event struct {
 	event.Envelope
-	// ToolName is the tool name (matcher field).
-	ToolName string `json:"tool_name"`
-	// ToolInput is the typed tool input for ToolName.
-	ToolInput tools.Input `json:"-"`
-	// ToolUseID is the tool use identifier.
-	ToolUseID string `json:"tool_use_id"`
+	event.ToolFields
 }
 
 // EventName returns the hook event name.
@@ -24,7 +18,7 @@ func (Event) EventName() string { return event.PreToolUse }
 func register(c *hookkit.Codec) {
 	c.Register(event.PreToolUse, func(raw []byte) (hookkit.Event, error) {
 		return hookkit.DecodeEvent(c, raw, func(e *Event, raw []byte) {
-			e.ToolInput = tools.NewInputFromPayload(e.ToolName, raw, "tool_input")
+			e.BindToolInput(raw)
 		})
 	})
 }
