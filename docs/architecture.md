@@ -73,8 +73,10 @@ contribute native handlers to a sealed registry.
 ```text
 contribute registrations
   -> read stdin
-  -> detect dialect
-  -> peek hook_event_name
+  -> optional --agent/--event argv hints
+  -> detect dialect (skipped when --agent set)
+  -> peek hook_event_name (skipped when --event set)
+  -> warn on hint vs payload disagreement
   -> find handlers
   -> decode once
   -> invoke and merge in order

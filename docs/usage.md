@@ -128,9 +128,11 @@ wat run --agent <dialect> --event <native-event>
 ```
 
 `wat run` passes stdin, stdout, and stderr through to the generated hook
-binary. `--agent` and `--event` identify the managed config entry for install
-and doctor checks; the runtime decoder selects the dialect and event from the
-payload itself.
+binary, and forwards `--agent` / `--event` as argv so `run.Serve` can force
+dialect and event selection. When those flags are omitted, Serve detects the
+dialect from the payload and peeks `hook_event_name`. Hint vs payload
+disagreements warn on stderr and still use the hint. The same flags also
+identify managed config entries for install and doctor.
 
 On a cache miss, wat builds a bootstrap that imports `.wat/hooks.go` and calls
 `run.Serve(Hooks...)`. The cache key includes all files under `.wat/` except
@@ -151,10 +153,11 @@ operation.
 wat test --agent <dialect> --fixture <file|-> [--expect <file>] [--verbose]
 ```
 
-`--agent` and `--fixture` are required. A fixture must be non-empty JSON with a
-registered native `hook_event_name`. The accepted `--event` flag does not
-override the fixture; event identity is read from its payload. Use `-` to read
-the fixture from stdin:
+`--agent` and `--fixture` are required. A fixture must be non-empty JSON. Event
+identity comes from `--event` when set, otherwise from the fixture’s
+`hook_event_name` (required when `--event` is omitted). Optional `--event` is
+forwarded to the hooks binary as a dispatch hint (same as `wat run`). Use `-`
+to read the fixture from stdin:
 
 ```bash
 Get-Content fixture.json | wat test --agent cursor --fixture -

@@ -6,7 +6,9 @@ the native agent documentation or the typed SDK godoc.
 
 ## Dialect detection and event identity
 
-All supported payloads must include `hook_event_name`.
+When `--event` is absent, supported payloads must include `hook_event_name`.
+When `wat run` (or the hooks binary) is invoked with `--event`, Serve selects
+that event without peeking; missing `hook_event_name` is allowed.
 
 | Dialect | Detection signals used by wat |
 |---|---|
@@ -18,8 +20,12 @@ Each native SDK exports its string `Dialect` constant. Portable event
 `Envelope.Agent` uses that value, while `Envelope.Name` preserves the native
 event name.
 
-The installed `wat run --agent ... --event ...` flags identify managed config
-entries. Runtime dispatch still trusts the payload detected by `sdk/run`.
+Installed `wat run --agent ... --event ...` flags identify managed config
+entries and are forwarded to the hooks binary as dispatch hints: `--agent`
+skips dialect detection, `--event` skips `hook_event_name` peek. If a hint
+disagrees with the payload, Serve warns on stderr and continues with the hint.
+`wat doctor` warns when a command’s flags disagree with the native config map
+key or agent file.
 
 ## Portable registration expansion
 
