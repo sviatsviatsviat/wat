@@ -8,7 +8,7 @@ hook project.
 `wat` and generated hook projects require Go 1.26. Install the CLI with:
 
 ```bash
-go install github.com/sviatsviatsviat/wat/cmd/wat@v0.1.1-alpha
+go install github.com/sviatsviatsviat/wat/cmd/wat@v0.2.0-alpha
 ```
 
 From a repository checkout, `go install ./cmd/wat` also works. The executable
@@ -35,7 +35,7 @@ wat version
 `.wat/go.mod` and that the hook build cache key includes. Root flags
 `-version` and `--version` are aliases.
 
-Tagged installs print the release tag (for example `v0.1.1-alpha`). Local
+Tagged installs print the release tag (for example `v0.2.0-alpha`). Local
 builds with Go VCS stamping print a pseudo-version
 `v0.0.0-<timestamp>-<revision>`. Builds without module or VCS version
 information exit `3` with an error on stderr.

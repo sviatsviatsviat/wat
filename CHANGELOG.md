@@ -7,6 +7,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [v0.2.0-alpha] - 2026-07-27
+
 ### Added
 
 - `wat run --agent` / `--event` are forwarded to the hooks binary as dispatch
