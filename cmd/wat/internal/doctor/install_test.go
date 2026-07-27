@@ -69,6 +69,42 @@ func TestAgentInstall_results(t *testing.T) {
 		if !hasMessageContaining(results, "unregistered --event") {
 			t.Fatalf("expected unregistered event message, got %#v", results)
 		}
+		if !hasMessageContaining(results, `hooks["PreToolUse"] has --event "NotARealEvent"`) {
+			t.Fatalf("expected slot mismatch Warn, got %#v", results)
+		}
+	})
+
+	t.Run("event-slot-mismatch", func(t *testing.T) {
+		body := []byte(`{
+			"hooks": {
+				"SessionStart": [{
+					"hooks": [{"type":"command","command":"/usr/bin/wat run --agent claude --event PreToolUse"}]
+				}]
+			}
+		}`)
+		deps := Deps{ReadFile: func(string) ([]byte, error) { return body, nil }}
+		results := agentInstall(deps, "claude", claudePath, watAbs, expected)
+		if !hasMessageContaining(results, `hooks["SessionStart"] has --event "PreToolUse"`) {
+			t.Fatalf("expected event slot Warn, got %#v", results)
+		}
+		if statusCount(results, Fail) != 0 {
+			t.Fatalf("slot mismatch must not Fail when event is registered, got %#v", results)
+		}
+	})
+
+	t.Run("agent-slot-mismatch", func(t *testing.T) {
+		body := []byte(`{
+			"hooks": {
+				"PreToolUse": [{
+					"hooks": [{"type":"command","command":"/usr/bin/wat run --agent cursor --event PreToolUse"}]
+				}]
+			}
+		}`)
+		deps := Deps{ReadFile: func(string) ([]byte, error) { return body, nil }}
+		results := agentInstall(deps, "claude", claudePath, watAbs, expected)
+		if !hasMessageContaining(results, `hooks["PreToolUse"] has --agent "cursor"`) {
+			t.Fatalf("expected agent slot Warn, got %#v", results)
+		}
 	})
 }
 
@@ -90,8 +126,8 @@ func TestCollectWatCommands(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(cmds) != 1 || !strings.Contains(cmds[0], "PreToolUse") {
-			t.Fatalf("cmds = %v", cmds)
+		if len(cmds) != 1 || cmds[0].configEvent != "PreToolUse" || !strings.Contains(cmds[0].command, "PreToolUse") {
+			t.Fatalf("cmds = %#v", cmds)
 		}
 	})
 
@@ -119,8 +155,8 @@ func TestCollectWatCommands(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(cmds) != 1 {
-			t.Fatalf("cmds = %v", cmds)
+		if len(cmds) != 1 || cmds[0].configEvent != "preToolUse" {
+			t.Fatalf("cmds = %#v", cmds)
 		}
 	})
 
@@ -139,8 +175,8 @@ func TestCollectWatCommands(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(cmds) != 1 {
-			t.Fatalf("cmds = %v", cmds)
+		if len(cmds) != 1 || cmds[0].configEvent != "preToolUse" {
+			t.Fatalf("cmds = %#v", cmds)
 		}
 	})
 }
@@ -170,8 +206,8 @@ func TestFlatWatCommands_filters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cmds) != 1 || cmds[0] != "wat run --agent copilot --event preToolUse" {
-		t.Fatalf("cmds = %v", cmds)
+	if len(cmds) != 1 || cmds[0].configEvent != "preToolUse" || cmds[0].command != "wat run --agent copilot --event preToolUse" {
+		t.Fatalf("cmds = %#v", cmds)
 	}
 }
 

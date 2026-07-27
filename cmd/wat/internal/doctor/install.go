@@ -121,8 +121,8 @@ func agentInstall(deps Deps, agent, path, watAbs string, expected []string) []Re
 		}}
 	}
 
-	for _, cmd := range commands {
-		if r, ok := validateWatCommand(cmd); !ok {
+	for _, entry := range commands {
+		if r, ok := validateWatCommand(entry.command); !ok {
 			results = append(results, Result{
 				Group:   "install",
 				Status:  Fail,
@@ -131,8 +131,24 @@ func agentInstall(deps Deps, agent, path, watAbs string, expected []string) []Re
 			})
 			continue
 		}
-		_, event, _ := installcfg.ParseWatRunFlags(cmd)
-		if installcfg.IsWatManagedAgentCommand(cmd, agent, watAbs) &&
+		parsedAgent, event, _ := installcfg.ParseWatRunFlags(entry.command)
+		if parsedAgent != agent {
+			results = append(results, Result{
+				Group:   "install",
+				Status:  Warn,
+				Message: fmt.Sprintf("%s: hooks[%q] has --agent %q", agent, entry.configEvent, parsedAgent),
+				Fix:     fmt.Sprintf("run wat install --agent %s", agent),
+			})
+		}
+		if event != entry.configEvent {
+			results = append(results, Result{
+				Group:   "install",
+				Status:  Warn,
+				Message: fmt.Sprintf("%s: hooks[%q] has --event %q", agent, entry.configEvent, event),
+				Fix:     fmt.Sprintf("run wat install --agent %s", agent),
+			})
+		}
+		if installcfg.IsWatManagedAgentCommand(entry.command, agent, watAbs) &&
 			!slices.Contains(expected, event) {
 			results = append(results, Result{
 				Group:   "install",
@@ -145,8 +161,8 @@ func agentInstall(deps Deps, agent, path, watAbs string, expected []string) []Re
 
 	for _, event := range expected {
 		count := 0
-		for _, cmd := range commands {
-			if installcfg.IsWatManagedCommand(cmd, agent, event, watAbs) {
+		for _, entry := range commands {
+			if installcfg.IsWatManagedCommand(entry.command, agent, event, watAbs) {
 				count++
 			}
 		}
@@ -213,15 +229,15 @@ func readInstallJSON(deps Deps, path string, dest any) error {
 	return nil
 }
 
-func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
+func collectWatCommands(deps Deps, agent, path string) ([]installedCommand, error) {
 	switch agent {
 	case "claude":
 		var settings claude.Settings
 		if err := readInstallJSON(deps, path, &settings); err != nil {
 			return nil, err
 		}
-		var cmds []string
-		for _, groups := range settings.Hooks {
+		var cmds []installedCommand
+		for event, groups := range settings.Hooks {
 			for _, g := range groups {
 				for _, raw := range g.Hooks {
 					h, err := hookconfig.ParseHandler[claude.Handler](raw)
@@ -230,7 +246,7 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 					}
 					if h.Type == "" || h.Type == "command" {
 						if strings.Contains(h.Command, "run --agent ") {
-							cmds = append(cmds, h.Command)
+							cmds = append(cmds, installedCommand{configEvent: event, command: h.Command})
 						}
 					}
 				}
@@ -246,11 +262,17 @@ func collectWatCommands(deps Deps, agent, path string) ([]string, error) {
 	}
 }
 
+// installedCommand pairs a native config map key with its wat run command.
+type installedCommand struct {
+	configEvent string
+	command     string
+}
+
 type flatHooksConfig interface {
 	HooksMap() map[string][]json.RawMessage
 }
 
-func collectFlatWatCommands[F flatHooksConfig](deps Deps, path string, parseCommand func(json.RawMessage) (string, bool)) ([]string, error) {
+func collectFlatWatCommands[F flatHooksConfig](deps Deps, path string, parseCommand func(json.RawMessage) (string, bool)) ([]installedCommand, error) {
 	var f F
 	if err := readInstallJSON(deps, path, &f); err != nil {
 		return nil, err
@@ -258,13 +280,13 @@ func collectFlatWatCommands[F flatHooksConfig](deps Deps, path string, parseComm
 	return flatWatCommands(f.HooksMap(), parseCommand)
 }
 
-func flatWatCommands(hooks map[string][]json.RawMessage, getCommand func(json.RawMessage) (string, bool)) ([]string, error) {
-	var cmds []string
-	for _, handlers := range hooks {
+func flatWatCommands(hooks map[string][]json.RawMessage, getCommand func(json.RawMessage) (string, bool)) ([]installedCommand, error) {
+	var cmds []installedCommand
+	for event, handlers := range hooks {
 		for _, raw := range handlers {
 			c, ok := getCommand(raw)
 			if ok && strings.Contains(c, "run --agent ") {
-				cmds = append(cmds, c)
+				cmds = append(cmds, installedCommand{configEvent: event, command: c})
 			}
 		}
 	}
