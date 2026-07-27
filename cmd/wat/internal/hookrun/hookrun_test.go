@@ -6,19 +6,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookrun"
 )
-
-type fakeFileInfo struct{}
-
-func (fakeFileInfo) Name() string       { return "x" }
-func (fakeFileInfo) Size() int64        { return 1 }
-func (fakeFileInfo) Mode() os.FileMode  { return 0o644 }
-func (fakeFileInfo) ModTime() time.Time { return time.Now() }
-func (fakeFileInfo) IsDir() bool        { return false }
-func (fakeFileInfo) Sys() any           { return nil }
 
 func TestHintArgs(t *testing.T) {
 	t.Parallel()

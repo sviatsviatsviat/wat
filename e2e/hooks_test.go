@@ -259,3 +259,67 @@ func TestWatTest_expectMismatch(t *testing.T) {
 		t.Fatalf("stdout missing fail status:\n%s", stdout)
 	}
 }
+
+func TestWatRun_dispatchHints(t *testing.T) {
+	binary := buildWat(t)
+	project := initProjectWithReplace(t)
+
+	t.Run("matching", func(t *testing.T) {
+		stdin := strings.NewReader(`{
+  "session_id": "s1",
+  "transcript_path": "/tmp/t.jsonl",
+  "cwd": "/w",
+  "permission_mode": "default",
+  "hook_event_name": "SessionStart",
+  "source": "startup"
+}`)
+		stdout, stderr, code := runWatWithStdin(t, binary, project, stdin, "run", "--agent", "claude", "--event", "SessionStart")
+		if code != 0 {
+			t.Fatalf("exit = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+		}
+		if !strings.Contains(stdout, "wat hooks are active") {
+			t.Fatalf("stdout = %q", stdout)
+		}
+		if strings.Contains(stderr, "disagrees") {
+			t.Fatalf("unexpected warning: %q", stderr)
+		}
+	})
+
+	t.Run("missing_name_with_event", func(t *testing.T) {
+		stdin := strings.NewReader(`{
+  "session_id": "s1",
+  "transcript_path": "/tmp/t.jsonl",
+  "cwd": "/w",
+  "permission_mode": "default",
+  "source": "startup"
+}`)
+		stdout, stderr, code := runWatWithStdin(t, binary, project, stdin, "run", "--agent", "claude", "--event", "SessionStart")
+		if code != 0 {
+			t.Fatalf("exit = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+		}
+		if !strings.Contains(stdout, "wat hooks are active") {
+			t.Fatalf("stdout = %q", stdout)
+		}
+	})
+
+	t.Run("mismatch_warns", func(t *testing.T) {
+		stdin := strings.NewReader(`{
+  "session_id": "s1",
+  "transcript_path": "/tmp/t.jsonl",
+  "cwd": "/w",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "source": "startup"
+}`)
+		stdout, stderr, code := runWatWithStdin(t, binary, project, stdin, "run", "--agent", "claude", "--event", "SessionStart")
+		if code != 0 {
+			t.Fatalf("exit = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+		}
+		if !strings.Contains(stdout, "wat hooks are active") {
+			t.Fatalf("stdout = %q", stdout)
+		}
+		if !strings.Contains(stderr, `--event "SessionStart" disagrees with hook_event_name "PreToolUse"`) {
+			t.Fatalf("stderr = %q", stderr)
+		}
+	})
+}
