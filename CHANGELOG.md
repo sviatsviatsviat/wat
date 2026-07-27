@@ -10,11 +10,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `wat run --agent` / `--event` are forwarded to the hooks binary as dispatch
-  hints: when set, Serve skips dialect detection and/or `hook_event_name` peek
-  and uses the hint. Missing `hook_event_name` is allowed when `--event` is
-  present. Hint vs payload disagreements warn on stderr and do not fail the
-  run. `wat doctor` warns when a wat run command’s flags disagree with the
-  native hook config map key or agent file.
+  hints: when set, Serve selects dialect/event from the hint (not from
+  detection / `hook_event_name` peek) and may still inspect the payload only to
+  warn on disagreements. Missing `hook_event_name` is allowed when `--event` is
+  present. Mismatches do not fail the run. `wat test` forwards the same flags.
+  `wat doctor` warns when a wat run command’s flags disagree with the native
+  hook config map key or agent file.
 - `wat version` (and root `-version` / `--version`) prints the module version
   string used for `wat init` pinning and the hook build cache key.
 - Cursor hook `Envelope` decodes optional common-schema fields `model_id` and

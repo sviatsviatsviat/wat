@@ -21,9 +21,10 @@ Each native SDK exports its string `Dialect` constant. Portable event
 event name.
 
 Installed `wat run --agent ... --event ...` flags identify managed config
-entries and are forwarded to the hooks binary as dispatch hints: `--agent`
-skips dialect detection, `--event` skips `hook_event_name` peek. If a hint
-disagrees with the payload, Serve warns on stderr and continues with the hint.
+entries and are forwarded to the hooks binary as dispatch hints: `--agent` /
+`--event` select dialect and event without using payload detection or
+`hook_event_name` peek for that choice. Serve may still inspect the payload
+only to warn when a hint disagrees; mismatches do not fail the run.
 `wat doctor` warns when a command’s flags disagree with the native config map
 key or agent file.
 

@@ -105,6 +105,9 @@ func TestAgentInstall_results(t *testing.T) {
 		if !hasMessageContaining(results, `hooks["PreToolUse"] has --agent "cursor"`) {
 			t.Fatalf("expected agent slot Warn, got %#v", results)
 		}
+		if statusCount(results, Fail) != 0 {
+			t.Fatalf("agent slot mismatch must not Fail, got %#v", results)
+		}
 	})
 }
 

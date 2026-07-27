@@ -74,9 +74,9 @@ contribute native handlers to a sealed registry.
 contribute registrations
   -> read stdin
   -> optional --agent/--event argv hints
-  -> detect dialect (skipped when --agent set)
-  -> peek hook_event_name (skipped when --event set)
-  -> warn on hint vs payload disagreement
+  -> select dialect (hint, else detect)
+  -> select event (hint, else peek hook_event_name)
+  -> warn-only payload inspection when a hint disagrees
   -> find handlers
   -> decode once
   -> invoke and merge in order
