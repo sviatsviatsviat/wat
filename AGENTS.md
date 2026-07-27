@@ -10,6 +10,7 @@ Read these committed references before changing behavior:
 - [SDK API](docs/sdk.md) for the public author-facing contract.
 - [Using wat](docs/usage.md) for CLI behavior.
 - [Agent protocols](docs/agent-formats.md) for codec and normalization facts.
+- [Cursor protocols](docs/agents/cursor.md) for Cursor-native host behavior.
 - [Contributing](CONTRIBUTING.md) for tests, docs, changelog, commits, and CI.
 
 ## Package map
@@ -41,22 +42,17 @@ Read these committed references before changing behavior:
 - Keep registration and package initialization free of external side effects.
 - CLI command files parse flags and map exit codes; inject I/O, filesystem,
   environment, and process dependencies in internal implementations.
-- Every exported identifier has godoc whose first word/phrase is the
-  declaration name (`// Foo does ...`, not `// This function ...`). Types
-  may use an optional leading `A`/`An`/`The` only when the identifier
-  follows immediately (`// The Foo type ...` is OK; `// This type ...` is
-  not). Funcs, methods, vars, and consts must begin with the name (no
-  article). Package overviews go in `doc.go`. CI enforces lead-name via
-  golangci-lint revive `exported` and staticcheck `ST1020`/`ST1021`/`ST1022`
-  (public API only) — fix before CodeRabbit. Ignore CodeRabbit
-  private/unexported docstring coverage %; it is not a gate.
+- Every exported identifier has lead-name godoc; package overviews go in
+  `doc.go`. Follow [Contributing](CONTRIBUTING.md#documentation-and-godoc) for
+  the canonical rule and enforced checks.
 - Result/merge operations must not mutate caller-owned maps or slices.
 - Registerable hook packages always put `RegisterHandler` in `bind.go`
   (observe-only: `RegisterObserve`; result-emitting: `RegisterWith`). `event.go`
   is types + codec register/decode only — never registration. Observe-only
   packages omit `results.go`/`output.go`, not `bind.go`.
 - Do not add custom `UnmarshalJSON` on hook event structs for duration or field
-  presence; use `DecodeEvent` after-callbacks and shared helpers instead.
+  presence; follow
+  [Native hook layout](CONTRIBUTING.md#native-hook-layout).
 
 ## Required verification
 

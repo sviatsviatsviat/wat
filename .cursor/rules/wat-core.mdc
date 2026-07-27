@@ -13,6 +13,7 @@ Use the committed documentation as the source of truth:
 - [Using wat](../../docs/usage.md): CLI behavior and exit codes.
 - [Agent protocols](../../docs/agent-formats.md): native mapping and
   normalization.
+- [Cursor protocols](../../docs/agents/cursor.md): Cursor-native host behavior.
 - [Contributing](../../CONTRIBUTING.md): tests, documentation, changelog,
   versions, commits, and pull requests.
 - [AGENTS.md](../../AGENTS.md): concise non-negotiable rules.
@@ -30,20 +31,17 @@ Use the committed documentation as the source of truth:
   (observe-only → `RegisterObserve`; result-emitting → `RegisterWith`).
   `event.go` holds types and codec register/decode only — never
   `RegisterHandler`. Observe-only omits `results.go`/`output.go`, not `bind.go`.
-- No custom `UnmarshalJSON` on hook event structs for duration/presence; use
-  `DecodeEvent` after-callbacks and helpers (e.g. `RawObjectField`,
-  `DurationFields`, `CaptureDurationPresent`, `DurationMillis`).
+- Follow
+  [Native hook layout](../../CONTRIBUTING.md#native-hook-layout) for codec
+  normalization and field-presence handling.
 
 ## Public changes
 
 Ship tests, godoc, guides, and changelog updates with public behavior. Every
-exported identifier needs godoc whose first word/phrase is the declaration
-name (`// Foo does ...`). Types may use an optional leading `A`/`An`/`The`
-when the identifier follows immediately; funcs/methods/vars/consts must
-begin with the name. Enforced by golangci-lint revive `exported` and
-staticcheck `ST1020`/`ST1021`/`ST1022`. Ignore CodeRabbit private/unexported
-docstring coverage %. Keep registrations and package initialization free of
-external side effects.
+exported identifier needs lead-name godoc; follow
+[CONTRIBUTING.md](../../CONTRIBUTING.md#documentation-and-godoc) for the
+canonical rule. Keep registrations and package initialization free of external
+side effects.
 
 ## Version pinning
 

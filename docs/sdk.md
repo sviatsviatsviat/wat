@@ -32,9 +32,7 @@ var Hooks = []run.Hooks{
 	claude.UseHooks().
 		PermissionRequest(claudePermission),
 	cursor.UseHooks().
-		WorkspaceOpen(func(ctx context.Context, hook cursor.WorkspaceOpen, r cursor.WorkspaceOpenResults) (cursor.WorkspaceOpenOutput, error) {
-			return r.PluginPaths([]string{"/abs/path/to/plugin"}), nil
-		}),
+		WorkspaceOpen(cursorWorkspace),
 }
 ```
 
@@ -105,13 +103,10 @@ Portable handlers fan out to native registrations for all three agents.
 | `OnStop` | `StopEvent` | `FollowUp` | Gate main-agent completion |
 | `OnPreCompact` | `PreCompactEvent` | observe-only | Observe context compaction |
 
-Portable `OnPreCompact` stays observe-only even though Cursor's native
-`preCompact` can return an optional observational `user_message`. Use
-`cursor.UseHooks().PreCompact` with `Results.UserMessage` when that host
-message is required. Cursor-only compaction metrics
-(`context_usage_percent`, `context_tokens`, `context_window_size`,
-`message_count`, `messages_to_compact`, `is_first_compaction`) are likewise
-available only on the native Cursor event, not on portable `Compact`.
+Portable `OnPreCompact` stays observe-only even though Cursor's native event
+has additional metrics and observational output. Use the
+[Cursor protocol reference](agents/cursor.md#portable-projection-boundaries)
+when native compaction behavior is required.
 
 ### Normalized event shape
 
@@ -210,46 +205,15 @@ the supported author-facing registration surface.
 
 | Domain | Methods |
 |---|---|
-| Session/prompt | `SessionStart` (optional `ComposerMode`; fire-and-forget / non-blocking), `SessionEnd` (observe-only; `DurationMs` / `FinalStatus` / optional `ErrorMessage`; IDE-only), `WorkspaceOpen`, `BeforeSubmitPrompt` |
+| Session/prompt | `SessionStart`, `SessionEnd`, `WorkspaceOpen`, `BeforeSubmitPrompt` |
 | Generic tools | `PreToolUse`, `PostToolUse`, `PostToolUseFailure` (observe-only) |
 | Dedicated tools | `BeforeShellExecution`, `AfterShellExecution` (observe-only), `BeforeMCPExecution`, `AfterMCPExecution` (observe-only), `BeforeReadFile`, `AfterFileEdit` (observe-only), `BeforeTabFileRead`, `AfterTabFileEdit` (observe-only) |
 | Agent/stop/compact | `SubagentStart`, `SubagentStop`, `Stop`, `AfterAgentResponse`, `AfterAgentThought`, `PreCompact` |
 
-`AfterShellExecution`, `AfterMCPExecution`, `AfterFileEdit`,
-`PostToolUseFailure`, and `AfterTabFileEdit` are observe-only where Hooks docs
-list no consumed output. Rewrite MCP tool output with `PostToolUse`
-(`updated_mcp_tool_output`). Cloud agents do not load MCP hooks.
-
-`BeforeMCPExecution` payloads include `tool_name` and `tool_input` plus either
-`url` (remote MCP) or `command` (stdio MCP). Prefer `failClosed: true` in
-`hooks.json` for security-critical MCP gates; Cursor defers this event for
-cloud agents.
-
-Cursor `AfterFileEdit` uses `[]Edit` (`old_string` / `new_string`). Cursor
-`AfterTabFileEdit` uses `[]TabEdit`, which adds Tab-specific `range`,
-`old_line`, and `new_line` fields from the native payload.
-
-`SubagentStop` decodes Cursor's documented telemetry fields (`description`,
-`duration_ms`, `message_count`, `tool_call_count`, `modified_files`).
-Cursor `Stop` / `SubagentStop` `FollowUp` auto-submits a next user message
-(`followup_message`); for `subagentStop`, Cursor only consumes it when the
-input `status` is `"completed"`. Cursor caps those loops with the hooks.json
-`loop_limit` option (default `5`; `null` means unlimited). Use `LoopCount` on
-the event (starts at 0) before returning another follow-up. See
-[Agent protocols](agent-formats.md).
-
-`WorkspaceOpen` is result-capable: handlers receive `WorkspaceOpenResults` and
-may return `pluginPaths` (absolute plugin directories for the workspace). It is an
-app lifecycle hook for the Cursor desktop app and CLI, skipped when there are
-zero workspace folders, and does not run in cloud agents.
-
-Cursor `PreCompact` decodes the full documented compaction metrics and exposes
-`UserMessage` for an optional observational stdout message. Compaction cannot
-be blocked. See [Agent protocols](agent-formats.md) for how this narrows
-relative to portable `OnPreCompact`.
-
-`BeforeSubmitPrompt` `Block` encodes `continue: false` with exit 0 (not exit
-2). In `hooks.json`, matchers for this event use `UserPromptSubmit`.
+Cursor permissions, observe-only events, cloud availability, matcher values,
+payload details, and portable projection limits are event-specific. See the
+[Cursor protocol reference](agents/cursor.md) instead of inferring behavior
+from the method names alone.
 
 ### Native constants and helpers
 

@@ -45,9 +45,9 @@ subagent. The adapter routes it by its optional agent identity fields so
 
 Events not representable on every agent are native-only. Examples include
 permission requests and notifications (Claude/Copilot), Claude worktree and
-elicitation events, and Cursor workspace/tab events. Cursor `workspaceOpen` is
-an app lifecycle hook (desktop/CLI): it can return `pluginPaths`, is skipped
-when there are zero workspace folders, and does not run in cloud agents.
+elicitation events, and Cursor workspace/tab events. See the
+[Cursor protocol reference](agents/cursor.md) for its native-only lifecycle,
+permission, and Tab behavior.
 
 ## Tool-name normalization
 
@@ -84,13 +84,6 @@ Native names for these synthesized calls may be the event name rather than a
 builtin tool name. Code that needs exact host identity should use `Native` and
 `Envelope.Name`.
 
-Cursor Tab edit hooks are native-only (`beforeTabFileRead`,
-`afterTabFileEdit`). On `afterTabFileEdit`, each edit includes `old_string`,
-`new_string`, `range` (`start_line_number`, `start_column`, `end_line_number`,
-`end_column`), `old_line`, and `new_line`. Agent `afterFileEdit` keeps the
-simpler `old_string` / `new_string` shape; `sdk/cursor` exposes that as `Edit`
-and the Tab shape as `TabEdit`.
-
 ## Portable result projection
 
 Portable builders deliberately expose the intersection of native behavior:
@@ -107,19 +100,6 @@ Portable builders deliberately expose the intersection of native behavior:
 | `StopResults.FollowUp` | Prevent completion and request more work |
 | `SessionStartResults.Context` | Add startup context |
 
-Cursor `stop` / `subagentStop` follow-up loops:
-
-- `FollowUp` encodes non-empty `followup_message` with exit 0; Cursor
-  auto-submits that text as the next user message.
-- For `subagentStop`, Cursor only consumes `followup_message` when the input
-  `status` is `"completed"`. For `stop`, a non-empty message is always
-  eligible.
-- Input `loop_count` is how many automatic follow-ups the same script has
-  already triggered for the conversation (starts at 0).
-- Cursor enforces a per-script `loop_limit` from `hooks.json` (default `5`;
-  `null` means unlimited). Authors should check `loop_count` before emitting
-  another follow-up. That option is install config, not an SDK field.
-
 Known limitations are part of the contract:
 
 - Copilot cloud-agent handling may downgrade `Ask` to a denial.
@@ -127,80 +107,16 @@ Known limitations are part of the contract:
   dedicated pre-tool events.
 - Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
   `postToolUse` for MCP tools only.
-- Cursor observe-only post-tool events (Hooks docs list no consumed output
-  fields):
-  - `afterFileEdit`: `OnPostTool` still expands for edit observation, but
-    portable `Context` / `WithUpdatedOutput` have no host effect. Native
-    `sdk/cursor` registration is side-effects only (for example formatters).
-  - `afterShellExecution`: not projected onto portable `OnPostTool`; use
-    `sdk/cursor.AfterShellExecution` for auditing. Shell post-tool context
-    remains via `postToolUse`. Decodes `sandbox`.
-  - `afterMCPExecution`: `OnPostTool` expands for observation, but portable
-    builders are discarded. Rewrite MCP tool output via `postToolUse`
-    (`updated_mcp_tool_output`). Cloud agents do not load
-    `beforeMCPExecution` / `afterMCPExecution`.
-  - `postToolUseFailure`: native observe handler; portable
-    `PostToolFailureResults.Context` is discarded on Cursor. Decodes
-    `is_interrupt`.
-- Cursor `beforeMCPExecution` is deferred / not available for cloud agents.
-  Cursor defaults to fail-open on hook failure; set `failClosed: true` on the
-  `hooks.json` handler for security-critical MCP gates. Wire payloads include
-  `tool_name` / `tool_input` plus either `url` (remote) or `command` (stdio).
-- Cursor `subagentStop` decodes the documented telemetry fields
-  (`description`, `duration_ms`, `message_count`, `tool_call_count`,
-  `modified_files`) in addition to identity and status fields.
-- Cursor `afterAgentResponse` is observe-only (no host-consumed output).
-  Cursor's hooks.json matcher for this event is the fixed value
-  `AgentResponse`.
-- Cursor `afterAgentThought` is observe-only and decodes optional
-  `duration_ms` for the completed thinking block. Cursor's hooks.json
-  matcher for this event is the fixed value `AgentThought`.
-- Cursor `sessionStart` is fire-and-forget: the agent loop does not wait for or
-  enforce a blocking response. The schema accepts `continue` / `user_message`,
-  but callers do not enforce them; session creation is not blocked when
-  `continue` is `false`. Meaningful outputs are `env` and `additional_context`.
-  Input may include optional `composer_mode` (`"agent"`, `"ask"`, or `"edit"`).
-  The hook is not available for Cursor cloud agents.
-- Cursor `sessionEnd` is tied to the IDE composer session and is not available
-  for cloud agents. The response body is unused (observe-only).
-- Cursor `subagentStart` live payloads (observed on Cursor 3.13.x) differ from
-  the published Hooks schema examples in a few ways authors must handle:
-  - Automatic model selection is not only `"auto"`. Live `subagent_model`
-    values also include `""`, `"default"`, and `"inherit"` (case-insensitive
-    after trim). Treat those sentinels as unpinned rather than concrete IDs.
-  - A pinned Task sets both envelope `model` and `subagent_model` to the same
-    concrete ID. Equality of those fields means pinned, not inherit.
-  - `subagent_type` may arrive as kebab-case (`general-purpose`) while docs and
-    `hooks.json` matchers list camelCase (`generalPurpose`). Normalize before
-    comparing against matcher-style names.
-- Cursor `beforeSubmitPrompt` blocks via JSON `continue: false` (and optional
-  `user_message`) with process exit 0. Exit 2 is not the control channel for
-  this event. In `.cursor/hooks.json`, matchers for `beforeSubmitPrompt` are
-  matched against the value `UserPromptSubmit` (a config filter string, not the
-  wire `hook_event_name`).
+- Cursor observe-only post-tool events discard portable results, and
+  `afterShellExecution` is not projected onto portable `OnPostTool`.
 - Observe-only portable events never emit host JSON.
 - Portable `OnPreCompact` is observe-only and maps only shared compaction
-  fields (`trigger`, plus Claude/Copilot `custom_instructions` when present).
-  Cursor's native `preCompact` also carries compaction metrics
-  (`context_usage_percent`, `context_tokens`, `context_window_size`,
-  `message_count`, `messages_to_compact`, `is_first_compaction`) and may emit
-  an observational `user_message` via `sdk/cursor`'s `PreCompact` /
-  `UserMessage`. Those Cursor-only inputs and the `user_message` output stay
-  on the native SDK; they are not part of the portable contract.
+  fields. Cursor-only metrics and native output remain in `sdk/cursor`.
 
-### Cursor permission and Ask semantics
-
-Cursor permission-gating is event-specific. Use this matrix; do not assume a
-single Ask or Deny encoding across events.
-
-| Event | Schema permissions | Ask host behavior | Deny encoding (`sdk/cursor`) | Notes |
-|---|---|---|---|---|
-| `beforeShellExecution` | allow / deny / ask | **Enforced** (user approval) | `agent_message`, exit 2 by default; `WithUserMessage` for client-facing copy | Same Ask enforcement as `beforeMCPExecution` |
-| `beforeMCPExecution` | allow / deny / ask | **Enforced** (user approval) | `agent_message`, exit 2 by default; `WithUserMessage` for client-facing copy | Contrasts with `preToolUse` |
-| `preToolUse` | allow / deny / ask | **Not enforced** today | `agent_message`, exit 2 | `PreToolUseResults.Ask` still encodes `"ask"` for schema compatibility; prefer `Allow`/`Deny` to gate. Optional input `agent_message` (pre-call narrative) is decoded |
-| `beforeReadFile` | allow / deny (+ optional `user_message`) | **Coerced to deny** (no `"ask"`) | `user_message`, exit 0 (no `agent_message`) | Prefer `Deny` over `Ask` |
-| `beforeTabFileRead` | allow / deny only | **N/A** (no ask API) | permission-only JSON, exit 0 (no message fields) | Tab-only; not available in cloud agents. Chained message/`updated_input` helpers are ignored on the wire |
-| `subagentStart` | allow / deny | **Treated as deny** (no `"ask"`) | `user_message`, exit 0 (no `agent_message`) | Prefer `Deny` over `Ask`. Exit 2 would re-wrap stdout as the user message |
+For the complete event-by-event Cursor behavior—including observe-only
+handlers, permission encodings, matcher values, cloud availability, follow-up
+loops, and live payload differences—use the
+[Cursor protocol reference](agents/cursor.md).
 
 Do not widen the portable interface until every dialect has a truthful mapping
 and tests for it.
@@ -215,10 +131,6 @@ and tests for it.
 | Handler error | Exit 1 | Exit 1 | Exit 1 (host normally treats as fail-open) |
 | Session environment | `CLAUDE_ENV_FILE` for supported output | stdout JSON | stdout JSON |
 | Project config | `.claude/settings.json` matcher groups | `.github/hooks/wat.json` flat handlers | `.cursor/hooks.json` flat handlers |
-
-Cursor's documented common input schema includes optional `model_id` and
-`model_params` alongside the legacy `model` slug. `sdk/cursor.Envelope` decodes
-those fields (with exported `ModelParam`) so handlers do not silently lose them.
 
 Output encoding belongs to the native SDK. Portable adapters must return native
 output values and must not serialize JSON themselves.
