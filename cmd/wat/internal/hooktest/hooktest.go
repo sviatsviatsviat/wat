@@ -13,6 +13,7 @@ import (
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/buildcache"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/dialect"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookmanifest"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookrun"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/project"
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	sdkclaude "github.com/sviatsviatsviat/wat/sdk/claude"
@@ -201,7 +202,7 @@ func loadFixture(deps Deps, path string, stdin io.Reader) ([]byte, error) {
 }
 
 func execHookBinary(binPath string, payload []byte, agent, event string, deps Deps) (hookStdout, hookStderr []byte, exitCode int, err error) {
-	cmd := deps.Command(binPath, hintArgs(agent, event)...)
+	cmd := deps.Command(binPath, hookrun.HintArgs(agent, event)...)
 	cmd.Stdin = bytes.NewReader(payload)
 	var outBuf, errBuf bytes.Buffer
 	cmd.Stdout = &outBuf
@@ -215,17 +216,6 @@ func execHookBinary(binPath string, payload []byte, agent, event string, deps De
 		return nil, nil, 0, runErr
 	}
 	return outBuf.Bytes(), errBuf.Bytes(), ExitOK, nil
-}
-
-func hintArgs(agent, event string) []string {
-	var args []string
-	if agent != "" {
-		args = append(args, "--agent", agent)
-	}
-	if event != "" {
-		args = append(args, "--event", event)
-	}
-	return args
 }
 
 // WriteReport writes the fixture/hook summary report.
