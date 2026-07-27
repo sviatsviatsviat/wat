@@ -15,11 +15,11 @@ type sharedFlags struct {
 }
 
 func addAgentFlag(fs *flag.FlagSet, f *sharedFlags) {
-	f.agent = fs.String("agent", "", "agent dialect (claude, copilot, cursor)")
+	f.agent = fs.String("agent", "", "agent dialect dispatch hint (claude, copilot, cursor)")
 }
 
 func addEventFlag(fs *flag.FlagSet, f *sharedFlags) {
-	f.event = fs.String("event", "", "native event identity metadata (payload selects the decoded event)")
+	f.event = fs.String("event", "", "native event dispatch hint (skips hook_event_name peek when set)")
 }
 
 func addFailClosedFlag(fs *flag.FlagSet, f *sharedFlags) {
@@ -31,6 +31,13 @@ func (f *sharedFlags) agentValue() string {
 		return ""
 	}
 	return *f.agent
+}
+
+func (f *sharedFlags) eventValue() string {
+	if f == nil || f.event == nil {
+		return ""
+	}
+	return *f.event
 }
 
 func (f *sharedFlags) failClosedValue() bool {

@@ -29,8 +29,12 @@ const (
 
 // Config holds options for Run.
 type Config struct {
-	// Agent is the required agent dialect for the fixture report.
+	// Agent is the required agent dialect for the fixture report and is
+	// forwarded to the hooks binary as --agent.
 	Agent string
+	// Event is an optional dispatch hint forwarded as --event. When set it
+	// selects the reported event when the fixture omits hook_event_name.
+	Event string
 	// Fixture is a path to fixture JSON, or "-" for stdin.
 	Fixture string
 	// Expect is an optional path to an expect JSON document. When empty, Run
@@ -105,7 +109,7 @@ func Run(cfg Config, version string, deps Deps, stdin io.Reader, errOut io.Write
 		return ExitRuntimeFailure
 	}
 
-	info, err := ResolveFixture(cfg.Agent, payload)
+	info, err := ResolveFixture(cfg.Agent, cfg.Event, payload)
 	if err != nil {
 		_, _ = fmt.Fprintf(errOut, "wat test: %v\n", err)
 		return ExitRuntimeFailure
@@ -125,7 +129,7 @@ func Run(cfg Config, version string, deps Deps, stdin io.Reader, errOut io.Write
 		return ExitRuntimeFailure
 	}
 
-	hookStdout, hookStderr, hookExit, err := execHookBinary(binPath, payload, deps)
+	hookStdout, hookStderr, hookExit, err := execHookBinary(binPath, payload, cfg.Agent, cfg.Event, deps)
 	if err != nil {
 		_, _ = fmt.Fprintf(errOut, "wat test: exec %s: %v\n", binPath, err)
 		return ExitRuntimeFailure
@@ -159,15 +163,21 @@ func Run(cfg Config, version string, deps Deps, stdin io.Reader, errOut io.Write
 }
 
 // ResolveFixture peeks hook_event_name and validates the agent dialect.
-func ResolveFixture(agentFlag string, payload []byte) (FixtureInfo, error) {
+// When eventHint is non-empty it becomes the resolved event (even if the
+// fixture omits or disagrees with hook_event_name).
+func ResolveFixture(agentFlag, eventHint string, payload []byte) (FixtureInfo, error) {
 	agentDialect := dialect.Parse(agentFlag)
 	if agentDialect == "" {
 		return FixtureInfo{}, fmt.Errorf("unknown dialect (pass --agent)")
 	}
 
-	event, err := hookkit.PeekHookEventName(payload)
+	peeked, err := hookkit.PeekHookEventName(payload)
 	if err != nil {
 		return FixtureInfo{}, fmt.Errorf("decode: %w", err)
+	}
+	event := eventHint
+	if event == "" {
+		event = peeked
 	}
 	if event == "" {
 		return FixtureInfo{}, fmt.Errorf("decode: hook_event_name is required")
@@ -190,8 +200,8 @@ func loadFixture(deps Deps, path string, stdin io.Reader) ([]byte, error) {
 	return deps.ReadFile(path)
 }
 
-func execHookBinary(binPath string, payload []byte, deps Deps) (hookStdout, hookStderr []byte, exitCode int, err error) {
-	cmd := deps.Command(binPath)
+func execHookBinary(binPath string, payload []byte, agent, event string, deps Deps) (hookStdout, hookStderr []byte, exitCode int, err error) {
+	cmd := deps.Command(binPath, hintArgs(agent, event)...)
 	cmd.Stdin = bytes.NewReader(payload)
 	var outBuf, errBuf bytes.Buffer
 	cmd.Stdout = &outBuf
@@ -205,6 +215,17 @@ func execHookBinary(binPath string, payload []byte, deps Deps) (hookStdout, hook
 		return nil, nil, 0, runErr
 	}
 	return outBuf.Bytes(), errBuf.Bytes(), ExitOK, nil
+}
+
+func hintArgs(agent, event string) []string {
+	var args []string
+	if agent != "" {
+		args = append(args, "--agent", agent)
+	}
+	if event != "" {
+		args = append(args, "--event", event)
+	}
+	return args
 }
 
 // WriteReport writes the fixture/hook summary report.
