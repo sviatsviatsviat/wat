@@ -11,10 +11,7 @@ import (
 // expecting a separate SubagentStop wire name.
 type Event struct {
 	event.Envelope
-	// AgentName is the subagent name when the stop is subagent-scoped.
-	AgentName string `json:"agent_name"`
-	// AgentDisplayName is the subagent display name when present.
-	AgentDisplayName string `json:"agent_display_name"`
+	event.AgentIdentity
 	// StopReason is the stop reason.
 	StopReason string `json:"stop_reason"`
 }
@@ -25,16 +22,6 @@ func (Event) EventName() string { return event.AgentStop }
 // IsSubagent reports whether this Stop payload is scoped to a subagent.
 func (e Event) IsSubagent() bool {
 	return e.AgentName != "" || e.AgentDisplayName != ""
-}
-
-// Name returns the agent name when present.
-func (e Event) Name() string {
-	return e.AgentName
-}
-
-// DisplayName returns the agent display name when present.
-func (e Event) DisplayName() string {
-	return e.AgentDisplayName
 }
 
 // Reason returns the stop reason.

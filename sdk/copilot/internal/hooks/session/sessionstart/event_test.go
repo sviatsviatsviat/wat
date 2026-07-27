@@ -42,9 +42,12 @@ func TestMerge_SessionStart_contextJoins(t *testing.T) {
 	if len(warnings) != 0 {
 		t.Fatalf("warnings = %v", warnings)
 	}
-	out := merged.(output)
-	if out.additionalContext != "one\n\ntwo" {
-		t.Fatalf("context = %q", out.additionalContext)
+	raw, code, err := merged.Encode()
+	if err != nil || code != 0 {
+		t.Fatal(err, code)
+	}
+	if !strings.Contains(string(raw), `"additional_context":"one\n\ntwo"`) {
+		t.Fatalf("encoded = %s", raw)
 	}
 	if merged.Stop() {
 		t.Fatal("context should not stop")

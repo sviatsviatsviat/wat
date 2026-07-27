@@ -8,15 +8,7 @@ import (
 // Event is the subagentStart hook event.
 type Event struct {
 	event.Envelope
-	// SubagentID is the subagent identifier.
-	SubagentID string `json:"subagent_id"`
-	// SubagentType is the subagent type. Official Hooks docs and hooks.json
-	// matchers list camelCase values such as generalPurpose; live Cursor
-	// payloads may use kebab-case such as general-purpose. Normalize before
-	// comparing against matcher-style names.
-	SubagentType string `json:"subagent_type"`
-	// Task is the subagent task description.
-	Task string `json:"task"`
+	event.SubagentFields
 	// ParentConversationID is the parent conversation identifier.
 	ParentConversationID string `json:"parent_conversation_id"`
 	// ToolCallID is the tool call identifier that spawned this subagent.

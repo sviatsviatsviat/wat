@@ -8,10 +8,7 @@ import (
 // Event is the SubagentStop hook event.
 type Event struct {
 	event.Envelope
-	// StopHookActive is true when a stop hook already forced continuation.
-	StopHookActive bool `json:"stop_hook_active"`
-	// LastAssistantMessage is the final assistant text of the turn.
-	LastAssistantMessage string `json:"last_assistant_message"`
+	event.StopActiveFields
 	// AgentTranscriptPath is the subagent transcript path when provided.
 	AgentTranscriptPath string `json:"agent_transcript_path,omitempty"`
 }

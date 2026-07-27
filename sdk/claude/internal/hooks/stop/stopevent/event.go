@@ -8,10 +8,7 @@ import (
 // Event is the Stop hook event.
 type Event struct {
 	event.Envelope
-	// StopHookActive is true when a stop hook already forced continuation.
-	StopHookActive bool `json:"stop_hook_active"`
-	// LastAssistantMessage is the final assistant text of the turn.
-	LastAssistantMessage string `json:"last_assistant_message"`
+	event.StopActiveFields
 }
 
 // EventName returns the hook event name.
