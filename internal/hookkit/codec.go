@@ -46,6 +46,15 @@ func (c *Codec) Decode(raw []byte) (Event, error) {
 	if err != nil {
 		return nil, err
 	}
+	return c.DecodeAs(raw, name)
+}
+
+// DecodeAs looks up a registered decoder by name and runs it without peeking
+// hook_event_name. Empty name or an unregistered name returns an error.
+func (c *Codec) DecodeAs(raw []byte, name string) (Event, error) {
+	if name == "" {
+		return nil, fmt.Errorf("%s: decode: empty hook event name", c.dialect)
+	}
 	fn, ok := c.m[name]
 	if !ok {
 		return nil, fmt.Errorf("%s: decode: unknown hook event %s", c.dialect, name)

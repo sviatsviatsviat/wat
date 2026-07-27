@@ -48,6 +48,35 @@ func TestCodec(t *testing.T) {
 	}
 }
 
+func TestCodec_DecodeAs(t *testing.T) {
+	t.Parallel()
+	c := NewCodec("test", errors.New("empty"), errors.New("decode"), errors.New("name required"))
+	c.Register("Known", func(raw []byte) (Event, error) {
+		if len(raw) == 0 {
+			return nil, errors.New("empty raw")
+		}
+		return namedEvent("Known"), nil
+	})
+
+	got, err := c.DecodeAs([]byte(`{}`), "Known")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.EventName() != "Known" {
+		t.Fatalf("got = %v", got)
+	}
+
+	_, err = c.DecodeAs([]byte(`{}`), "")
+	if err == nil || !strings.Contains(err.Error(), "empty hook event name") {
+		t.Fatalf("empty name: %v", err)
+	}
+
+	_, err = c.DecodeAs([]byte(`{}`), "Missing")
+	if err == nil || !strings.Contains(err.Error(), "unknown hook event") {
+		t.Fatalf("unknown: %v", err)
+	}
+}
+
 func TestCodec_RegisterKeepsFirst(t *testing.T) {
 	t.Parallel()
 	c := NewCodec("test", errors.New("empty"), errors.New("decode"), errors.New("name required"))
