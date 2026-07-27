@@ -17,6 +17,12 @@ type testEvent struct {
 
 func (testEvent) EventName() string { return "TestEvent" }
 
+type forcedEvt struct {
+	raw string
+}
+
+func (forcedEvt) EventName() string { return "Forced" }
+
 type emptyOutput struct{}
 
 func (emptyOutput) IsZero() bool { return true }
@@ -108,7 +114,7 @@ func TestServe_DecodesOnce(t *testing.T) {
 		}))
 	}
 
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent","ok":true}`), &bytes.Buffer{}, &bytes.Buffer{})
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent","ok":true}`), &bytes.Buffer{}, &bytes.Buffer{}, serveHints{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -123,7 +129,7 @@ func TestServe_DecodesOnce(t *testing.T) {
 func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 	var decodeCalls atomic.Int32
 	r, _ := newTestRouter("empty", "NoHandlers", &decodeCalls)
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &bytes.Buffer{})
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &bytes.Buffer{}, serveHints{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -143,7 +149,7 @@ func TestServe_FoldsOutputsEncodeOnce(t *testing.T) {
 	}))
 
 	var stdout, stderr bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &stderr)
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &stderr, serveHints{})
 	if code != 2 {
 		t.Fatalf("exit = %d, want 2", code)
 	}
@@ -171,7 +177,7 @@ func TestServe_StopSkipsLaterHandlers(t *testing.T) {
 	}))
 
 	var stdout bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &bytes.Buffer{})
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &bytes.Buffer{}, serveHints{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -193,11 +199,134 @@ func TestServe_MergeTypeMismatch(t *testing.T) {
 	}))
 
 	var stderr bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &bytes.Buffer{}, &stderr)
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &bytes.Buffer{}, &stderr, serveHints{})
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
 	}
 	if !strings.Contains(stderr.String(), "merge type mismatch") {
 		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestServe_EventHintSkipsPeek(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	r := newRouter()
+	c := hookkit.NewCodec("hint", fmt.Errorf("empty"), fmt.Errorf("decode"), fmt.Errorf("name required"))
+	c.Register("Forced", func(raw []byte) (hookkit.Event, error) {
+		return forcedEvt{raw: string(raw)}, nil
+	})
+	d := r.Ensure("hint", func([]byte) bool { return true }, c)
+	d.Register(hookkit.Handler(func(_ context.Context, hook forcedEvt) (emptyOutput, error) {
+		calls.Add(1)
+		if !strings.Contains(hook.raw, `"other":true`) {
+			t.Errorf("raw = %q", hook.raw)
+		}
+		return emptyOutput{}, nil
+	}))
+
+	var stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"other":true}`), &bytes.Buffer{}, &stderr, serveHints{event: "Forced"})
+	if code != 0 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("handler calls = %d, want 1", calls.Load())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+}
+
+func TestServe_EventHintMismatchWarns(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	r := newRouter()
+	c := hookkit.NewCodec("hint", fmt.Errorf("empty"), fmt.Errorf("decode"), fmt.Errorf("name required"))
+	c.Register("Forced", func(raw []byte) (hookkit.Event, error) {
+		return forcedEvt{raw: string(raw)}, nil
+	})
+	d := r.Ensure("hint", func([]byte) bool { return true }, c)
+	d.Register(hookkit.Handler(func(context.Context, forcedEvt) (emptyOutput, error) {
+		calls.Add(1)
+		return emptyOutput{}, nil
+	}))
+
+	var stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"Other"}`), &bytes.Buffer{}, &stderr, serveHints{event: "Forced"})
+	if code != 0 {
+		t.Fatalf("exit = %d", code)
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("handler calls = %d, want 1", calls.Load())
+	}
+	if !strings.Contains(stderr.String(), `--event "Forced" disagrees with hook_event_name "Other"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestServe_AgentHintLookup(t *testing.T) {
+	t.Parallel()
+	r := newRouter()
+	c := hookkit.NewCodec("forced", fmt.Errorf("empty"), fmt.Errorf("decode"), fmt.Errorf("name required"))
+	c.Register("TestEvent", func(raw []byte) (hookkit.Event, error) {
+		return testEvent{raw: string(raw)}, nil
+	})
+	var detectHits atomic.Int32
+	d := r.Ensure("forced", func([]byte) bool {
+		detectHits.Add(1)
+		return false
+	}, c)
+	var calls atomic.Int32
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (emptyOutput, error) {
+		calls.Add(1)
+		return emptyOutput{}, nil
+	}))
+	// A second dialect that would match detection if hint were absent.
+	other := hookkit.NewCodec("other", fmt.Errorf("empty"), fmt.Errorf("decode"), fmt.Errorf("name required"))
+	other.Register("TestEvent", func(raw []byte) (hookkit.Event, error) {
+		return testEvent{raw: string(raw)}, nil
+	})
+	r.Ensure("other", func([]byte) bool { return true }, other)
+
+	var stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &bytes.Buffer{}, &stderr, serveHints{agent: "forced"})
+	if code != 0 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("handler calls = %d, want 1", calls.Load())
+	}
+	if !strings.Contains(stderr.String(), `--agent "forced" disagrees with detected dialect "other"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestServe_UnknownAgentHint(t *testing.T) {
+	t.Parallel()
+	r, _ := newTestRouter("only", "TestEvent", nil)
+	var stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &bytes.Buffer{}, &stderr, serveHints{agent: "missing"})
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `unknown dialect "missing"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestParseServeHints(t *testing.T) {
+	t.Parallel()
+	got := parseServeHints([]string{"--agent", "claude", "--event", "PreToolUse"})
+	if got.agent != "claude" || got.event != "PreToolUse" {
+		t.Fatalf("got = %#v", got)
+	}
+	got = parseServeHints([]string{"--event", "SessionStart"})
+	if got.agent != "" || got.event != "SessionStart" {
+		t.Fatalf("got = %#v", got)
+	}
+	got = parseServeHints(nil)
+	if got != (serveHints{}) {
+		t.Fatalf("got = %#v", got)
 	}
 }

@@ -9,5 +9,8 @@
 // manifest without invoking them.
 //
 // Dialect is auto-detected from the payload (and Cursor may also match via
-// CURSOR_VERSION). Payloads must include hook_event_name on the wire.
+// CURSOR_VERSION) unless --agent is passed on the process argv. Event selection
+// peeks hook_event_name unless --event is passed; with --event, missing
+// hook_event_name is allowed. Hint vs payload disagreements warn on stderr and
+// still use the hint.
 package run
