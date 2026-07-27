@@ -15,6 +15,7 @@ func TestResolveFixture(t *testing.T) {
 	tests := []struct {
 		name        string
 		agent       string
+		eventHint   string
 		payload     string
 		wantDialect string
 		wantEvent   string
@@ -25,6 +26,22 @@ func TestResolveFixture(t *testing.T) {
 			agent:   "copilot",
 			payload: `{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`,
 			wantErr: "event name",
+		},
+		{
+			name:        "event_hint_allows_missing_name",
+			agent:       "copilot",
+			eventHint:   "sessionStart",
+			payload:     `{"session_id":"s1","timestamp":"2026-07-12T10:00:00Z","cwd":"/w"}`,
+			wantDialect: "copilot",
+			wantEvent:   "sessionStart",
+		},
+		{
+			name:        "event_hint_overrides_payload_name",
+			agent:       "claude",
+			eventHint:   "SessionStart",
+			payload:     `{"hook_event_name":"PreToolUse","session_id":"s1"}`,
+			wantDialect: sdkclaude.Dialect,
+			wantEvent:   "SessionStart",
 		},
 		{
 			name:        "claude_pre_tool_use",
@@ -42,7 +59,7 @@ func TestResolveFixture(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			info, err := ResolveFixture(tt.agent, []byte(tt.payload))
+			info, err := ResolveFixture(tt.agent, tt.eventHint, []byte(tt.payload))
 			if tt.wantErr != "" {
 				if err == nil {
 					t.Fatal("expected error")

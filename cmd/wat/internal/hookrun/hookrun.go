@@ -22,6 +22,10 @@ const (
 
 // Config holds options for Run.
 type Config struct {
+	// Agent is forwarded to the hooks binary as --agent when non-empty.
+	Agent string
+	// Event is forwarded to the hooks binary as --event when non-empty.
+	Event string
 	// FailClosed maps build failures to ExitFailClosed when true.
 	FailClosed bool
 }
@@ -81,7 +85,7 @@ func Run(cfg Config, version string, deps Deps, errOut io.Writer) int {
 		return ExitRuntimeFailure
 	}
 
-	cmd := deps.Command(binPath)
+	cmd := deps.Command(binPath, HintArgs(cfg.Agent, cfg.Event)...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -95,4 +99,16 @@ func Run(cfg Config, version string, deps Deps, errOut io.Writer) int {
 		return ExitRuntimeFailure
 	}
 	return ExitOK
+}
+
+// HintArgs builds --agent/--event argv for the hooks binary.
+func HintArgs(agent, event string) []string {
+	var args []string
+	if agent != "" {
+		args = append(args, "--agent", agent)
+	}
+	if event != "" {
+		args = append(args, "--event", event)
+	}
+	return args
 }

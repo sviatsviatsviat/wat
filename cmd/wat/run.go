@@ -17,9 +17,15 @@ func newRunCmd() *subcommandRunner {
 		summary: "execute .wat/hooks.go on hook invocation",
 		long: "Build (if needed) and execute the user's hook script, passing stdin through untouched.\n\n" +
 			"wat run hashes the .wat/ sources, wat and Go versions, target, and build settings to compute a cache key,\n" +
-			"then executes a cached binary under .wat/.cache/ on subsequent invocations.",
+			"then executes a cached binary under .wat/.cache/ on subsequent invocations.\n\n" +
+			"Installed commands pass --agent and --event; wat forwards them to the hooks binary so Serve can\n" +
+			"skip dialect detection and hook_event_name peek. Payload disagreements warn on stderr.",
 		run: func() int {
-			cfg := hookrun.Config{FailClosed: shared.failClosedValue()}
+			cfg := hookrun.Config{
+				Agent:      shared.agentValue(),
+				Event:      shared.eventValue(),
+				FailClosed: shared.failClosedValue(),
+			}
 			return hookrun.Run(cfg, watModuleVersionFn(), hookrun.DefaultDeps(), stderr)
 		},
 		fs:     fs,
