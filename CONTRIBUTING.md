@@ -61,8 +61,29 @@ registered native events.
 - Preserve native input while normalizing portable fields.
 - Add behavior tests for decode, builder, merge, encode, exit code, and adapter
   mapping as applicable.
-- Update [SDK API](docs/sdk.md), [Agent protocols](docs/agent-formats.md), and
-  the changelog in the same change.
+- Update [SDK API](docs/sdk.md), cross-agent
+  [Agent protocols](docs/agent-formats.md), the relevant native guide such as
+  [Cursor protocols](docs/agents/cursor.md), and the changelog in the same
+  change.
+
+#### Native hook layout
+
+Every registerable package under `sdk/<agent>/internal/hooks/` puts
+`RegisterHandler` in `bind.go`, whether the event is observe-only or
+result-emitting:
+
+- `event.go` owns the native input, `EventName`, and codec registration/decode;
+- `bind.go` calls `register(d.Codec())`, then `hookkit.RegisterObserve` or
+  `hookkit.RegisterWith`;
+- result-emitting events also have `results.go` and `output.go`;
+- observe-only events omit result/output files, not `bind.go`.
+
+Decode-time field presence and similar normalization use the codec
+`DecodeEvent` after-callback and shared helpers such as
+`hookkit.RawObjectField`. Typed duration handling uses
+`event.DurationFields`, `CaptureDurationPresent`, and `DurationMillis`. Do not
+add custom `UnmarshalJSON` methods to hook event structs for duration or field
+presence.
 
 ### CLI changes
 

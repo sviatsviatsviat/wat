@@ -28,9 +28,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `old_line`, `new_line`) via `TabEdit` / `EditRange`, while Agent
   `AfterFileEdit` continues to use `Edit` with `old_string` / `new_string`.
 - Cursor `WorkspaceOpen` handlers can return `pluginPaths` (absolute plugin
-  directories to load for the workspace). This is a desktop/CLI lifecycle hook and
-  does not run in cloud agents.
-
+  directories to load for the workspace). This is a desktop/CLI lifecycle hook
+  and does not run in cloud agents.
 - `sdk/cursor`'s `PreCompact` event decodes the full native `preCompact`
   compaction metrics: `context_usage_percent`, `context_tokens`,
   `context_window_size`, `message_count`, `messages_to_compact`, and
@@ -40,9 +39,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - Cursor `AfterAgentThought` decodes optional `duration_ms` for the completed
   thinking block. The event remains observe-only.
 - Cursor `SessionStart` decodes optional `composer_mode` (`"agent"`, `"ask"`,
-  or `"edit"`). Godoc and agent-format docs state that the hook is
-  fire-and-forget (host does not enforce `continue` / `user_message`) and is
-  not available for cloud agents.
+  or `"edit"`). The hook is fire-and-forget (the host does not enforce
+  `continue` / `user_message`) and is not available for cloud agents.
 - `sdk/cursor`'s `SessionEnd` event decodes the full native `sessionEnd`
   payload: `duration_ms`, `final_status`, and `error_message`, in addition to
   the existing `reason` and `is_background_agent` fields. The event remains
@@ -50,32 +48,26 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Cursor `AfterAgentResponse` godoc and protocol docs state the observe-only
-  contract and that hooks.json matchers use the fixed value `AgentResponse`.
-- Cursor `BeforeSubmitPrompt` docs and godoc state that blocking uses JSON
-  `continue: false` with exit 0 (not exit 2), and that `hooks.json` matchers
-  use the value `UserPromptSubmit`.
-- Cursor `Stop` / `SubagentStop` `FollowUp` godoc and protocol docs document
-  `loop_count` versus hooks.json `loop_limit` (default 5; `null` unlimited),
-  and that Cursor only consumes `subagentStop` `followup_message` when input
-  `status` is `"completed"`.
-- Cursor post-tool events match Hooks docs observe-only contracts:
-  `afterFileEdit`, `afterShellExecution`, `afterMCPExecution`, and
-  `postToolUseFailure` no longer emit host-consumed JSON. Portable
-  `OnPostTool` still expands to `afterFileEdit` and `afterMCPExecution` for
-  observation (`Context` / `WithUpdatedOutput` are no-ops there) but no longer
-  expands to `afterShellExecution` (use `sdk/cursor.AfterShellExecution`). MCP
-  tool output rewrite stays on `postToolUse` (`updated_mcp_tool_output`).
-  Portable `OnPostToolFailure` `Context` is ignored on Cursor; Claude and
-  Copilot still apply recovery context. Cloud agents do not load MCP hooks.
+- Cursor `AfterFileEdit`, `AfterShellExecution`, `AfterMCPExecution`, and
+  `PostToolUseFailure` handlers are now observe-only. Existing handlers must
+  migrate from `(context.Context, Event, PostToolResults) (PostToolOutput,
+  error)` to `(context.Context, Event) error`. These events no longer emit
+  host-consumed JSON.
+- Cursor `WorkspaceOpen` handlers are now result-producing. Existing
+  `(context.Context, WorkspaceOpen) error` handlers must accept
+  `WorkspaceOpenResults` and return `(WorkspaceOpenOutput, error)`.
+- Portable `OnPostTool` still expands to `afterFileEdit` and
+  `afterMCPExecution` for observation (`Context` / `WithUpdatedOutput` are
+  no-ops there), but no longer expands to `afterShellExecution`; use
+  `sdk/cursor.AfterShellExecution` for native auditing. MCP tool output rewrite
+  stays on `postToolUse` (`updated_mcp_tool_output`). Portable
+  `OnPostToolFailure` context is ignored on Cursor; Claude and Copilot still
+  apply it.
 - Cursor `PreToolUse` handlers now receive `PreToolUseResults`. `Ask` still
-  encodes `"permission":"ask"` for schema compatibility, but godoc and protocol
-  docs warn that Cursor does not enforce ask for `preToolUse` today; prefer
-  `Allow` or `Deny` when gating is required. Protocol docs also clarify that
-  Cursor enforces `"ask"` on `beforeShellExecution` and `beforeMCPExecution`.
-- Cursor `BeforeMCPExecution` godoc, examples, and guides document the
-  recommended `failClosed: true` hooks.json setting for security-critical MCP
-  gates, the cloud-agent deferral, and `url` versus `command` wire variants.
+  encodes `"permission":"ask"` for schema compatibility, but Cursor does not
+  enforce ask for `preToolUse` today; prefer `Allow` or `Deny` when gating is
+  required. Cursor does enforce `"ask"` on `beforeShellExecution` and
+  `beforeMCPExecution`.
 
 ### Fixed
 

@@ -45,7 +45,8 @@ Put meaningful package contracts in `doc.go`. For public SDK packages, explain:
 - whether the package is portable, native, or a process boundary.
 
 For native hook packages under `sdk/<agent>/internal/hooks/`, keep layout
-comments consistent with [docs/architecture.md](../../../docs/architecture.md):
+comments consistent with
+[CONTRIBUTING.md](../../../CONTRIBUTING.md#native-hook-layout):
 `RegisterHandler` lives in `bind.go` for both observe-only and result-emitting
 events; `event.go` is types + codec register/decode only.
 
