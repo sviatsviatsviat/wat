@@ -17,7 +17,7 @@ func newVersionCmd() *subcommandRunner {
 		name:    "version",
 		summary: "print the wat module / CLI version",
 		long: "Print the same module version string used by wat init (go.mod pin) and the hook build cache key.\n\n" +
-			"Tagged installs print the release tag (for example v0.1.1-alpha). Local builds with VCS\n" +
+			"Tagged installs print the release tag (for example v0.2.0-alpha). Local builds with VCS\n" +
 			"stamping print a pseudo-version. Builds without module or VCS version information fail.",
 		fs: fs,
 		run: func() int {
