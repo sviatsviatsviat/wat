@@ -54,6 +54,14 @@ func (r *router) detect(raw []byte) (name string, d *hookkit.Dialect, ok bool) {
 	return "", nil, false
 }
 
+func (r *router) lookup(name string) (*hookkit.Dialect, bool) {
+	e, ok := r.byName[name]
+	if !ok || e.dialect == nil {
+		return nil, false
+	}
+	return e.dialect, true
+}
+
 func (r *router) manifest() Manifest {
 	manifest := Manifest{Version: ManifestVersion}
 	for name, entry := range r.byName {

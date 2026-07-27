@@ -59,7 +59,7 @@ func TestContribute_MergesSameDialectHooks(t *testing.T) {
 	h1.Contribute(router)
 	h2.Contribute(router)
 
-	code := serve(context.Background(), router, strings.NewReader(`{"hook_event_name":"MergeTest"}`), &bytes.Buffer{}, &bytes.Buffer{})
+	code := serve(context.Background(), router, strings.NewReader(`{"hook_event_name":"MergeTest"}`), &bytes.Buffer{}, &bytes.Buffer{}, serveHints{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
