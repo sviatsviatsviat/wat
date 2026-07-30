@@ -174,8 +174,8 @@ and tests for it.
 |---|---|---|---|
 | Event-name style | PascalCase | PascalCase | camelCase |
 | Common JSON fields | Mostly snake_case with native output conventions | snake_case | snake_case/camelCase per native schema |
-| Blocking | Usually encoded in JSON output fields; `WorktreeCreate` uses plain-path stdout and any non-zero exit | JSON decision plus native exit behavior | Permission denial may use exit 2; `beforeSubmitPrompt` uses `continue` JSON with exit 0 |
-| Handler error | Exit 1 | Exit 1 | Exit 1 (host normally treats as fail-open) |
+| Blocking | Usually JSON decision fields with exit 0; TeammateIdle/Task* `Block` uses exit 2 + stderr; `WorktreeCreate` uses plain-path stdout | JSON decision plus native exit behavior | Permission denial may use exit 2; `beforeSubmitPrompt` uses `continue` JSON with exit 0 |
+| Handler error | Exit 1 (Claude fail-open except WorktreeCreate) | Exit 1 | Exit 1 (host normally treats as fail-open) |
 | Session environment | `CLAUDE_ENV_FILE` for supported output | stdout JSON | stdout JSON |
 | Project config | `.claude/settings.json` matcher groups | `.github/hooks/wat.json` flat handlers | `.cursor/hooks.json` flat handlers |
 
