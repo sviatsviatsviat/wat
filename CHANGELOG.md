@@ -22,6 +22,13 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `event`, `ConfigChange` decodes optional `file_path`, and `PostCompact`
   decodes `compact_summary`.
 
+### Fixed
+
+- Copilot `AgentStop` decodes `stop_hook_active` (including subagent-scoped
+  Stop) so FollowUp handlers can detect an already-forced continuation and
+  avoid runaway loops. Portable `OnStop` / `OnSubagentStop` expose the flag on
+  `Turn.StopHookActive`.
+
 ## [v0.2.0-alpha] - 2026-07-27
 
 ### Added

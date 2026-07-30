@@ -18,7 +18,8 @@ const copilotVSCodeStop = `{
   "timestamp": "2026-07-12T10:00:00Z",
   "cwd": "/w",
   "transcript_path": "/tmp/t",
-  "stop_reason": "end_turn"
+  "stop_reason": "end_turn",
+  "stop_hook_active": false
 }`
 
 func TestDecode_VSCodeStop(t *testing.T) {
@@ -41,6 +42,9 @@ func TestDecode_VSCodeStop(t *testing.T) {
 	}
 	if stop.TranscriptPath != "/tmp/t" {
 		t.Fatalf("TranscriptPath=%q", stop.TranscriptPath)
+	}
+	if stop.StopHookActive {
+		t.Fatalf("StopHookActive=%v, want false", stop.StopHookActive)
 	}
 }
 
@@ -88,18 +92,29 @@ func TestDecode_AgentStop(t *testing.T) {
 		t.Fatal(err)
 	}
 	e := ev.(Event)
-	if e.Reason() != "end_turn" || e.IsSubagent() {
+	if e.Reason() != "end_turn" || e.IsSubagent() || e.StopHookActive {
 		t.Fatalf("AgentStop=%+v", e)
 	}
 }
 
 func TestDecode_AgentStopWithAgentScope(t *testing.T) {
-	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"task","stop_reason":"end_turn"}`))
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","agent_name":"task","stop_reason":"end_turn","stop_hook_active":true}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	e := ev.(Event)
-	if !e.IsSubagent() || e.Name() != "task" {
+	if !e.IsSubagent() || e.Name() != "task" || !e.StopHookActive {
+		t.Fatalf("AgentStop=%+v", e)
+	}
+}
+
+func TestDecode_AgentStopStopHookActive(t *testing.T) {
+	ev, err := testCodec.Decode([]byte(`{"hook_event_name":"Stop","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","transcript_path":"/t","stop_reason":"end_turn","stop_hook_active":true}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := ev.(Event)
+	if !e.StopHookActive || e.Reason() != "end_turn" || e.IsSubagent() {
 		t.Fatalf("AgentStop=%+v", e)
 	}
 }

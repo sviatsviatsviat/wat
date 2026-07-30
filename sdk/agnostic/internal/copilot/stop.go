@@ -55,7 +55,10 @@ func callStop(ctx context.Context, ev *model.StopEvent, native sdkcopilot.StopRe
 func mapAgentStop(e sdkcopilot.AgentStop) *model.StopEvent {
 	return &model.StopEvent{
 		Envelope: envelope(e.Envelope, e.EventName()),
-		Turn:     &model.TurnEnd{Status: e.Reason()},
+		Turn: &model.TurnEnd{
+			Status:         e.Reason(),
+			StopHookActive: e.StopHookActive,
+		},
 	}
 }
 
@@ -70,7 +73,10 @@ func mapAgentStopAsSubagent(e sdkcopilot.AgentStop) *model.StopEvent {
 			Type:   typ,
 			Status: e.Reason(),
 		},
-		Turn: &model.TurnEnd{Status: e.Reason()},
+		Turn: &model.TurnEnd{
+			Status:         e.Reason(),
+			StopHookActive: e.StopHookActive,
+		},
 	}
 }
 

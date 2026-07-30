@@ -9,11 +9,18 @@ import (
 // When the host scopes the stop to a subagent, AgentName and/or AgentDisplayName
 // are set; hook authors should check IsSubagent (or those fields) rather than
 // expecting a separate SubagentStop wire name.
+//
+// Check StopHookActive before returning FollowUp: when true, a prior stop hook
+// already forced continuation for this turn, and another FollowUp risks a loop.
+// Copilot also caps consecutive block decisions; prefer gating on this flag.
 type Event struct {
 	event.Envelope
 	event.AgentIdentity
 	// StopReason is the stop reason.
 	StopReason string `json:"stop_reason"`
+	// StopHookActive is true when a prior stop-hook block already forced this
+	// turn to continue. Gate FollowUp on this flag to avoid runaway loops.
+	StopHookActive bool `json:"stop_hook_active"`
 }
 
 // EventName returns the canonical hook event name.

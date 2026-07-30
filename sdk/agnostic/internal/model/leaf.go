@@ -26,7 +26,9 @@ type TurnEnd struct {
 	// available (Cursor starts at 0; Cursor caps further FollowUp emits with
 	// hooks.json loop_limit).
 	LoopCount int
-	// StopHookActive is true when a stop hook is already active (Claude).
+	// StopHookActive is true when a stop hook already forced continuation
+	// (Claude Stop/SubagentStop; Copilot AgentStop including subagent-scoped
+	// Stop). Gate FollowUp on this flag to avoid runaway loops.
 	StopHookActive bool
 	// LastAssistantMessage is the last assistant message when provided.
 	LastAssistantMessage string
