@@ -25,13 +25,51 @@ func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
 	}
 }
 
-func TestEncode_PermissionRequestAsk(t *testing.T) {
+func TestEncode_PermissionRequestAsk_softDenyNotUserPrompt(t *testing.T) {
+	// Ask must not encode a confirmation / "ask" decision: Copilot's
+	// permissionRequest schema is allow|deny only. Soft deny is behavior deny
+	// with exit 0; Noop/empty stdout is the fall-through to user prompting.
 	out, code, err := results{}.Ask("needs user confirmation").Encode()
-	if err != nil || code != 0 {
-		t.Fatalf("encode: %v code=%d", err, code)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(string(out), `"behavior":"deny"`) {
-		t.Fatalf("bad output: %s", out)
+	if code != 0 {
+		t.Fatalf("Ask soft deny code=%d, want 0 (not WarnExit)", code)
+	}
+	got := string(out)
+	if !strings.Contains(got, `"behavior":"deny"`) {
+		t.Fatalf("Ask must encode soft deny: %s", got)
+	}
+	if strings.Contains(got, `"ask"`) {
+		t.Fatalf("Ask must not encode ask on the wire: %s", got)
+	}
+	if !strings.Contains(got, `"message":"needs user confirmation"`) {
+		t.Fatalf("Ask must keep message: %s", got)
+	}
+	if (results{}).Ask("x").Stop() {
+		t.Fatal("Ask soft deny must not Stop remaining handlers")
+	}
+
+	denyOut, denyCode, err := results{}.Deny("blocked").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if denyCode != event.WarnExit {
+		t.Fatalf("Deny code=%d, want WarnExit %d", denyCode, event.WarnExit)
+	}
+	if !strings.Contains(string(denyOut), `"behavior":"deny"`) {
+		t.Fatalf("Deny must encode deny: %s", denyOut)
+	}
+	if !(results{}).Deny("blocked").Stop() {
+		t.Fatal("hard Deny must Stop remaining handlers")
+	}
+
+	noopOut, noopCode, err := results{}.Noop().Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if noopCode != 0 || len(noopOut) != 0 {
+		t.Fatalf("Noop must be empty stdout exit 0, got code=%d out=%q", noopCode, noopOut)
 	}
 }
 

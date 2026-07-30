@@ -9,6 +9,11 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Copilot `PermissionRequest.Ask` is documented as a soft deny
+  (`behavior:"deny"`, exit 0), not a user-confirmation prompt. Prefer `Deny` to
+  block or `Noop`/nil to fall through to the host permission UI. Cloud agents do
+  not apply `permissionRequest` (use `PreToolUse`); cloud `PreToolUse` ask is
+  treated as deny; command-hook timeouts remain fail-open.
 - Claude `TaskCreated` / `TaskCompleted` decode flat `task_id`, `task_subject`,
   and related task fields instead of a nested `task` blob. `StopFailure`
   decodes `error`, `error_details`, and `last_assistant_message`.

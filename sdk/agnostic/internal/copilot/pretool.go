@@ -61,7 +61,8 @@ func (w preToolResults) Deny(reason string) model.PreToolResult {
 	return preToolResult{native: w.native.Deny(reason)}
 }
 
-// Ask returns an ask verdict with an agent-facing reason.
+// Ask returns an ask verdict with an agent-facing reason. Under Copilot cloud
+// agent, ask is treated as deny.
 func (w preToolResults) Ask(reason string) model.PreToolResult {
 	return preToolResult{native: w.native.Ask(reason)}
 }
