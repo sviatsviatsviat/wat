@@ -62,8 +62,13 @@ const (
 type CommonOutput = event.CommonOutput
 
 // DecisionOutput is a response for Claude events that accept decision:"block"
-// plus optional additionalContext (PostToolBatch and similar).
+// plus optional additionalContext (UserPromptExpansion, PreCompact, PostToolBatch,
+// ConfigChange, and similar).
 type DecisionOutput = event.DecisionOutput
+
+// ExitBlockOutput is a response for TeammateIdle, TaskCreated, and TaskCompleted.
+// Block uses Claude exit 2; continue:false stops the teammate entirely.
+type ExitBlockOutput = event.ExitBlockOutput
 
 // Claude Code hook_event_name values for config keys and stdin payloads.
 const (

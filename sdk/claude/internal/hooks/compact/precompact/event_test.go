@@ -1,6 +1,7 @@
 package precompact
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -13,6 +14,19 @@ var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runti
 
 func TestDecode_PreCompact(t *testing.T) {
 	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"PreCompact","trigger":"manual","custom_instructions":"keep tests"}`, event.PreCompact)
+}
+
+func TestEncode_PreCompactBlock(t *testing.T) {
+	out, code, err := results{}.Block("do not compact").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d, want %d", code, event.SuccessExit)
+	}
+	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "do not compact") {
+		t.Fatalf("got %s", out)
+	}
 }
 
 func init() {

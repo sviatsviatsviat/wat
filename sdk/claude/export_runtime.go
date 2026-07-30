@@ -21,4 +21,10 @@ var (
 const SuccessExit = event.SuccessExit
 
 // HandlerErrorExit is exit code 1 for mux processing failures (read/decode/handler/encode/write errors).
+// Claude treats exit 1 as fail-open for most events; WorktreeCreate fails on any non-zero exit.
 const HandlerErrorExit = event.HandlerErrorExit
+
+// BlockExit is exit code 2 for TeammateIdle / TaskCreated / TaskCompleted Block builders.
+// Claude feeds stderr to the model and ignores stdout JSON. Other Claude denies use
+// exit 0 with JSON decision fields instead.
+const BlockExit = event.BlockExit

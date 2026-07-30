@@ -31,3 +31,8 @@ func (results) Block(reason string) Output {
 func FailureContext(text string) Output {
 	return output{eventName: event.PostToolUseFailure, additionalContext: text}
 }
+
+// FailureBlock returns a PostToolUseFailure-stamped block result.
+func FailureBlock(reason string) Output {
+	return output{eventName: event.PostToolUseFailure, block: true, reason: reason}
+}

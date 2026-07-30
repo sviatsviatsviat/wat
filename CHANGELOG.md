@@ -14,9 +14,13 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeRemove` (observe-only),
   `PostCompact` (observe-only), `ElicitationResult`, and `StopFailure`
   (observe-only). Install/doctor/`run.Inspect` advertise these when handlers
-  are registered. `PostToolBatch` Context/Block builders return shared
-  `DecisionOutput` (JSON `decision:"block"` on exit 0) instead of a
-  per-event output copy.
+  are registered.
+- Claude `UserPromptExpansion`, `PreCompact`, `PostToolUseFailure`,
+  `PostToolBatch`, and `ConfigChange` expose event-scoped `Block` builders that
+  encode JSON `decision:"block"` with exit 0 (`DecisionOutput`). `TeammateIdle` /
+  `TaskCreated` / `TaskCompleted` `Block` uses Claude exit 2 with stderr
+  feedback (`continue:false` still stops the teammate). Handler errors remain
+  exit 1 (fail-open for most events). See `docs/agents/claude.md`.
 
 ### Fixed
 

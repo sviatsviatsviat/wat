@@ -11,5 +11,8 @@ type PreCompact = precompact.Event
 // PreCompactResults is the hook-scoped response builder for PreCompact.
 type PreCompactResults = precompact.Results
 
+// PreCompactOutput is the response for PreCompact events.
+type PreCompactOutput = DecisionOutput
+
 // PostCompact is the PostCompact hook event.
 type PostCompact = postcompact.Event

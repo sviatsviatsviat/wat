@@ -1,6 +1,7 @@
 package userpromptexpansion
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -13,6 +14,19 @@ var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runti
 
 func TestDecode_UserPromptExpansion(t *testing.T) {
 	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"UserPromptExpansion","expansion_type":"slash_command","command_name":"foo"}`, event.UserPromptExpansion)
+}
+
+func TestEncode_UserPromptExpansionBlock(t *testing.T) {
+	out, code, err := results{}.Block("blocked expansion").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d, want %d", code, event.SuccessExit)
+	}
+	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "blocked expansion") {
+		t.Fatalf("got %s", out)
+	}
 }
 
 func init() {

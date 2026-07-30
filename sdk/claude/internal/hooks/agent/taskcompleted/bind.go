@@ -8,7 +8,7 @@ import (
 )
 
 // RegisterHandler registers this event handler on d.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event, Results) (event.CommonOutput, error)) {
+func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event, Results) (event.ExitBlockOutput, error)) {
 	if fn == nil {
 		return
 	}

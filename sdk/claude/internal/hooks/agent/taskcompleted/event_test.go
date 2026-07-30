@@ -38,6 +38,19 @@ func TestDecode_TaskCompleted(t *testing.T) {
 	}
 }
 
+func TestEncode_TaskCompletedBlock(t *testing.T) {
+	out, code, err := results{}.Block("not done").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.BlockExit {
+		t.Fatalf("exit = %d, want %d", code, event.BlockExit)
+	}
+	if string(out) != "not done" {
+		t.Fatalf("body = %q", out)
+	}
+}
+
 func init() {
 	register(testCodec)
 }
