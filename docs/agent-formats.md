@@ -157,8 +157,13 @@ Known limitations are part of the contract:
 
 For the complete event-by-event Cursor behavior—including observe-only
 handlers, permission encodings, matcher values, cloud availability, follow-up
-loops, and live payload differences—use the
-[Cursor protocol reference](agents/cursor.md).
+loops, and live payload differences—use the native guides:
+- [Copilot protocol reference](agents/copilot.md)
+- [Cursor protocol reference](agents/cursor.md)
+
+For Copilot-native permission encodings, cloud-agent constraints, and
+timeout fail-open policy, use the
+[GitHub Copilot protocol reference](agents/copilot.md).
 
 Do not widen the portable interface until every dialect has a truthful mapping
 and tests for it.
