@@ -36,6 +36,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   Handlers decode `prompt` / `transformed_prompt` and may rewrite model-facing
   content with `modified_transformed_prompt` (mutation-only; cannot block).
 
+- Claude `Stop` and `SubagentStop` decode `background_tasks` and
+  `session_crons` (Claude Code v2.1.145+) so handlers can distinguish a finished
+  turn from a pause waiting on background work or session crons. Exported as
+  `BackgroundTask` / `SessionCron` on the Claude SDK; portable stop events do
+  not project these Claude-only inputs.
+
 ### Fixed
 
 - Copilot `PermissionRequest.Ask` is documented as a soft deny
