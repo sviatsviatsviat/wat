@@ -25,6 +25,10 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   Stop) so FollowUp handlers can detect an already-forced continuation and
   avoid runaway loops. Portable `OnStop` / `OnSubagentStop` expose the flag on
   `Turn.StopHookActive`.
+- Claude `WorktreeCreate` encodes `Path` as plain stdout text for command hooks
+  (the transport wat installs). JSON `hookSpecificOutput.worktreePath` was
+  incorrect for that transport and could prevent the host from using the
+  returned directory.
 
 ## [v0.2.0-alpha] - 2026-07-27
 

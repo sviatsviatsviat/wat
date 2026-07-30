@@ -152,6 +152,7 @@ func (c *hooks) MessageDisplay(fn func(context.Context, MessageDisplay, MessageD
 }
 
 // WorktreeCreate registers a WorktreeCreate handler on the registrar.
+// Path results encode as plain stdout for command hooks; see docs/agents/claude.md.
 func (c *hooks) WorktreeCreate(fn func(context.Context, WorktreeCreate, WorktreeCreateResults) (WorktreeCreateOutput, error)) *hooks {
 	return bind(c, fn, worktreecreate.RegisterHandler)
 }
