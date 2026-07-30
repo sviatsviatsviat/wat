@@ -12,8 +12,9 @@
 //   - Most denies use JSON decision fields (or permissionDecision / action) with
 //     SuccessExit (0). Claude only applies JSON on exit 0.
 //   - TeammateIdle, TaskCreated, and TaskCompleted Block builders use BlockExit
-//     (2); run.Serve writes the reason to stderr for Claude. WithContinue(false)
-//     stops the teammate entirely and is a different control.
+//     (2); the encoded reason is marked for stderr (Claude ignores stdout on
+//     exit 2). WithContinue(false) stops the teammate entirely and is a
+//     different control.
 //   - Handler errors use HandlerErrorExit (1). Claude treats exit 1 as fail-open
 //     for most events; WorktreeCreate fails on any non-zero exit.
 //

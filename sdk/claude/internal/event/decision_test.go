@@ -70,7 +70,8 @@ func TestDecisionOutput_MergeBlockWins(t *testing.T) {
 }
 
 func TestExitBlockOutput_Block(t *testing.T) {
-	out, code, err := BlockExitBlock(TeammateIdle, "keep working").Encode()
+	block := BlockExitBlock(TeammateIdle, "keep working").(exitBlockOutput)
+	out, code, err := block.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,15 +81,22 @@ func TestExitBlockOutput_Block(t *testing.T) {
 	if string(out) != "keep working" {
 		t.Fatalf("stdout body = %q", out)
 	}
+	if !block.BodyOnStderr() {
+		t.Fatal("BlockExit body should report BodyOnStderr")
+	}
 }
 
 func TestExitBlockOutput_Context(t *testing.T) {
-	out, code, err := ContextExitBlock(TaskCreated, "logged").Encode()
+	ctxOut := ContextExitBlock(TaskCreated, "logged").(exitBlockOutput)
+	out, code, err := ctxOut.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if code != SuccessExit {
 		t.Fatalf("exit = %d, want %d", code, SuccessExit)
+	}
+	if ctxOut.BodyOnStderr() {
+		t.Fatal("JSON context must not report BodyOnStderr")
 	}
 	var got map[string]any
 	if err := json.Unmarshal(out, &got); err != nil {
