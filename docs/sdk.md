@@ -202,10 +202,16 @@ plain worktree path on stdout, not JSON `hookSpecificOutput`.
 
 | Domain | Methods |
 |---|---|
-| Session/prompt | `SessionStart`, `SessionEnd`, `UserPromptSubmitted` |
+| Session/prompt | `SessionStart`, `SessionEnd`, `UserPromptSubmitted`, `UserPromptTransformed` |
 | Tool/permission | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` |
 | Agent/stop | `SubagentStart`, `SubagentStop`, `AgentStop` |
 | Other | `PreCompact`, `Notification`, `ErrorOccurred` |
+
+Copilot install keys, `--event` hints, and `hook_event_name` use PascalCase
+wire strings from the `Event*` constants (for example `UserPromptSubmit` and
+`Stop`, not the Go method names). Ask/cloud constraints, protocol-surface
+split, and stop loops are event-specific — see the
+[Copilot protocol reference](agents/copilot.md).
 
 Copilot install keys, `--event` hints, and `hook_event_name` use PascalCase
 wire strings from the `Event*` constants (for example `UserPromptSubmit` and
