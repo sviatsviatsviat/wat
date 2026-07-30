@@ -3,9 +3,10 @@
 // github.com/sviatsviatsviat/wat/sdk/run.
 //
 // Handlers build responses with hook-scoped *Results builders (and With* for
-// advanced fields). A nil return is a silent no-op. Hook stdout JSON is encoded
-// internally from Output (sealed; only this package implements it). Blocking is
-// expressed via output fields; handler errors exit 1.
+// advanced fields). A nil return is a silent no-op. Hook stdout is encoded
+// internally from Output (sealed; only this package implements it), usually as
+// JSON. WorktreeCreate is an exception: command hooks print a plain path.
+// Blocking is expressed via output fields; handler errors exit 1.
 //
 // Tool input on PreToolUse and related events is typed as [Input] with AsBash,
 // AsWrite, and related accessors (and Tool* name constants) in this package.
