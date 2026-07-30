@@ -12,8 +12,20 @@ import (
 // CwdChanged is the CwdChanged hook event.
 type CwdChanged = cwdchanged.Event
 
+// CwdChangedOutput is the response for CwdChanged events.
+type CwdChangedOutput = cwdchanged.Output
+
+// CwdChangedResults is the hook-scoped response builder for CwdChanged.
+type CwdChangedResults = cwdchanged.Results
+
 // FileChanged is the FileChanged hook event.
 type FileChanged = filechanged.Event
+
+// FileChangedOutput is the response for FileChanged events.
+type FileChangedOutput = filechanged.Output
+
+// FileChangedResults is the hook-scoped response builder for FileChanged.
+type FileChangedResults = filechanged.Results
 
 // WorktreeCreate is the WorktreeCreate hook event.
 type WorktreeCreate = worktreecreate.Event
@@ -32,3 +44,9 @@ type InstructionsLoaded = instructionsloaded.Event
 
 // ConfigChange is the ConfigChange hook event.
 type ConfigChange = configchange.Event
+
+// ConfigChangeOutput is the response for ConfigChange events.
+type ConfigChangeOutput = configchange.Output
+
+// ConfigChangeResults is the hook-scoped response builder for ConfigChange.
+type ConfigChangeResults = configchange.Results

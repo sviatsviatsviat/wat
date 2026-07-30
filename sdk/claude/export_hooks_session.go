@@ -20,3 +20,9 @@ type SessionEnd = sessionend.Event
 
 // Setup is the Setup hook event.
 type Setup = setup.Event
+
+// SetupOutput is the response for Setup events.
+type SetupOutput = setup.Output
+
+// SetupResults is the hook-scoped response builder for Setup.
+type SetupResults = setup.Results
