@@ -16,6 +16,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   last non-empty value across handlers. `AgentStop` remains FollowUp-only.
   Portable `OnSubagentStop` maps the message onto `Turn.LastAssistantMessage`
   / `Subagent.Summary` and still exposes only `FollowUp`.
+- Copilot `UserPromptTransformed` is registerable via `UseHooks().UserPromptTransformed`.
+  Handlers decode `prompt` / `transformed_prompt` and may rewrite model-facing
+  content with `modified_transformed_prompt` (mutation-only; cannot block).
 
 ### Fixed
 

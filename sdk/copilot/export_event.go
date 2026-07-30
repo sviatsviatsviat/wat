@@ -30,17 +30,18 @@ type ErrorDetail = event.ErrorDetail
 
 // Canonical PascalCase GitHub Copilot hook event names for config keys and mux dispatch.
 const (
-	EventSessionStart        = event.SessionStart
-	EventSessionEnd          = event.SessionEnd
-	EventUserPromptSubmitted = event.UserPromptSubmitted
-	EventPreToolUse          = event.PreToolUse
-	EventPostToolUse         = event.PostToolUse
-	EventPostToolUseFailure  = event.PostToolUseFailure
-	EventPermissionRequest   = event.PermissionRequest
-	EventSubagentStart       = event.SubagentStart
-	EventSubagentStop        = event.SubagentStop
-	EventAgentStop           = event.AgentStop
-	EventPreCompact          = event.PreCompact
-	EventNotification        = event.Notification
-	EventErrorOccurred       = event.ErrorOccurred
+	EventSessionStart          = event.SessionStart
+	EventSessionEnd            = event.SessionEnd
+	EventUserPromptSubmitted   = event.UserPromptSubmitted
+	EventUserPromptTransformed = event.UserPromptTransformed
+	EventPreToolUse            = event.PreToolUse
+	EventPostToolUse           = event.PostToolUse
+	EventPostToolUseFailure    = event.PostToolUseFailure
+	EventPermissionRequest     = event.PermissionRequest
+	EventSubagentStart         = event.SubagentStart
+	EventSubagentStop          = event.SubagentStop
+	EventAgentStop             = event.AgentStop
+	EventPreCompact            = event.PreCompact
+	EventNotification          = event.Notification
+	EventErrorOccurred         = event.ErrorOccurred
 )

@@ -202,7 +202,7 @@ plain worktree path on stdout, not JSON `hookSpecificOutput`.
 
 | Domain | Methods |
 |---|---|
-| Session/prompt | `SessionStart`, `SessionEnd`, `UserPromptSubmitted` |
+| Session/prompt | `SessionStart`, `SessionEnd`, `UserPromptSubmitted`, `UserPromptTransformed` |
 | Tool/permission | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` |
 | Agent/stop | `SubagentStart`, `SubagentStop`, `AgentStop` |
 | Other | `PreCompact`, `Notification`, `ErrorOccurred` |

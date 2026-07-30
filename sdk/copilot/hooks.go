@@ -11,6 +11,7 @@ import (
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/compact/precompact"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/errors/erroroccurred"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/prompt/userpromptsubmitted"
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/prompt/userprompttransformed"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/session/sessionend"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/session/sessionstart"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/hooks/tool/permissionrequest"
@@ -75,6 +76,11 @@ func (c *hooks) SessionEnd(fn func(context.Context, SessionEnd) error) *hooks {
 // UserPromptSubmitted registers a UserPromptSubmitted handler on the registrar.
 func (c *hooks) UserPromptSubmitted(fn func(context.Context, UserPromptSubmitted) error) *hooks {
 	return bind(c, fn, userpromptsubmitted.RegisterHandler)
+}
+
+// UserPromptTransformed registers a UserPromptTransformed handler on the registrar.
+func (c *hooks) UserPromptTransformed(fn func(context.Context, UserPromptTransformed, UserPromptTransformedResults) (UserPromptTransformedOutput, error)) *hooks {
+	return bind(c, fn, userprompttransformed.RegisterHandler)
 }
 
 // PreToolUse registers a PreToolUse handler on the registrar.
