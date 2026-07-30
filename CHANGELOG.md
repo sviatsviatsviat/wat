@@ -21,9 +21,6 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   mode/url/id fields. `WorktreeCreate` decodes `name`. `FileChanged` decodes
   `event`, `ConfigChange` decodes optional `file_path`, and `PostCompact`
   decodes `compact_summary`.
-
-### Fixed
-
 - Copilot `AgentStop` decodes `stop_hook_active` (including subagent-scoped
   Stop) so FollowUp handlers can detect an already-forced continuation and
   avoid runaway loops. Portable `OnStop` / `OnSubagentStop` expose the flag on
