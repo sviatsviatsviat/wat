@@ -9,6 +9,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Claude `UseHooks` registration for previously decode-only events: `Setup`,
+  `InstructionsLoaded` (observe-only), `PostToolBatch`, `TeammateIdle`,
+  `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeRemove` (observe-only),
+  `PostCompact` (observe-only), `ElicitationResult`, and `StopFailure`
+  (observe-only). Install/doctor/`run.Inspect` advertise these when handlers
+  are registered.
 - Copilot `SubagentStop` decodes `last_assistant_message` (full final subagent
   response text) and exposes dedicated `SubagentStopResults` /
   `SubagentStopOutput` with `FollowUp` and `ModifiedResponse` (host field

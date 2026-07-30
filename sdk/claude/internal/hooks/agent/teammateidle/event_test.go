@@ -1,6 +1,7 @@
 package teammateidle
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -13,6 +14,21 @@ var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runti
 
 func TestDecode_TeammateIdle(t *testing.T) {
 	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"TeammateIdle"}`, event.TeammateIdle)
+
+	out, code, err := results{}.Context("").WithContinue(false).WithStopReason("done").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d", code)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["continue"] != false || got["stopReason"] != "done" {
+		t.Fatalf("got %s", out)
+	}
 }
 
 func init() {

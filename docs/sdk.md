@@ -184,16 +184,15 @@ The following are the currently registerable fluent methods.
 
 | Domain | Methods |
 |---|---|
-| Session/prompt | `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `UserPromptExpansion` |
-| Tool/permission | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied` |
-| Agent/task/stop | `SubagentStart`, `SubagentStop`, `TaskCreated`, `TaskCompleted`, `Stop` |
-| UI/compact/workspace | `Notification`, `MessageDisplay`, `PreCompact`, `WorktreeCreate`, `Elicitation` |
+| Session/prompt | `SessionStart`, `SessionEnd`, `Setup`, `UserPromptSubmit`, `UserPromptExpansion` |
+| Tool/permission | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PostToolBatch`, `PermissionRequest`, `PermissionDenied` |
+| Agent/task/stop | `SubagentStart`, `SubagentStop`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `Stop`, `StopFailure` (observe-only) |
+| UI/compact/workspace | `Notification`, `MessageDisplay`, `PreCompact`, `PostCompact` (observe-only), `WorktreeCreate`, `WorktreeRemove` (observe-only), `Elicitation`, `ElicitationResult`, `InstructionsLoaded` (observe-only), `ConfigChange`, `CwdChanged`, `FileChanged` |
 
-Claude also exports typed decode models for additional native events that do
-not yet have `UseHooks` registration methods. Treat the fluent method list as
-the supported author-facing registration surface. Block/exit policy,
-WorktreeCreate path return, and stop-loop fields are event-specific — see the
-[Claude protocol reference](agents/claude.md).
+Claude also exports typed decode models for every native event name. Treat the
+fluent method list as the supported author-facing registration surface.
+Block/exit policy, WorktreeCreate path return, and stop-loop fields are
+event-specific — see the [Claude protocol reference](agents/claude.md).
 
 `WorktreeCreate` is special: command hooks (what wat installs) must print a
 plain worktree path on stdout, not JSON `hookSpecificOutput`.
@@ -209,7 +208,7 @@ plain worktree path on stdout, not JSON `hookSpecificOutput`.
 
 Copilot install keys, `--event` hints, and `hook_event_name` use PascalCase
 wire strings from the `Event*` constants (for example `UserPromptSubmit` and
-`Stop`, not the Go method names). 
+`Stop`, not the Go method names).
 Copilot `SubagentStop` decodes `last_assistant_message` and uses
 `SubagentStopResults` (`FollowUp`, `ModifiedResponse`). `AgentStop` remains a
 separate wire path (`StopResults.FollowUp` only), including VS Code-style Stop

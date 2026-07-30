@@ -31,3 +31,6 @@ type TaskCompletedResults = taskcompleted.Results
 
 // TeammateIdle is the TeammateIdle hook event.
 type TeammateIdle = teammateidle.Event
+
+// TeammateIdleResults is the hook-scoped response builder for TeammateIdle.
+type TeammateIdleResults = teammateidle.Results
