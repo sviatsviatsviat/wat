@@ -84,6 +84,14 @@ const (
 // Effort carries effort metadata on hook events.
 type Effort = event.Effort
 
+// BackgroundTask describes one in-flight background task on Stop and
+// SubagentStop events (Claude Code v2.1.145+).
+type BackgroundTask = event.BackgroundTask
+
+// SessionCron describes one session-scoped scheduled wakeup on Stop and
+// SubagentStop events (Claude Code v2.1.145+).
+type SessionCron = event.SessionCron
+
 // Envelope holds fields shared by every Claude Code hook event payload.
 type Envelope = event.Envelope
 

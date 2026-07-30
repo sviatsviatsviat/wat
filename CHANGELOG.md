@@ -26,6 +26,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   shape: add/replace/remove rules, setMode, add/removeDirectories). Echoing a
   suggestion applies that "always allow" option without prompting.
 
+- Claude `Stop` and `SubagentStop` decode `background_tasks` and
+  `session_crons` (Claude Code v2.1.145+) so handlers can distinguish a finished
+  turn from a pause waiting on background work or session crons. Exported as
+  `BackgroundTask` / `SessionCron` on the Claude SDK; portable stop events do
+  not project these Claude-only inputs.
+
 ### Fixed
 
 - Claude `TaskCreated` / `TaskCompleted` decode flat `task_id`, `task_subject`,

@@ -199,6 +199,10 @@ fluent method list as the supported author-facing registration surface.
 `WorktreeCreate` is special: command hooks (what wat installs) must print a
 plain worktree path on stdout, not JSON `hookSpecificOutput`.
 
+`Stop` / `SubagentStop` decode Claude-only `background_tasks` and
+`session_crons` (see [Claude Code protocol reference](agents/claude.md)).
+Portable `OnStop` / `OnSubagentStop` do not project those fields.
+
 ### GitHub Copilot
 
 | Domain | Methods |
