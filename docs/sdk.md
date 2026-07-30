@@ -103,10 +103,12 @@ Portable handlers fan out to native registrations for all three agents.
 | `OnStop` | `StopEvent` | `FollowUp` | Gate main-agent completion |
 | `OnPreCompact` | `PreCompactEvent` | observe-only | Observe context compaction |
 
-Portable `OnPreCompact` stays observe-only even though Cursor's native event
-has additional metrics and observational output. Use the
-[Cursor protocol reference](agents/cursor.md#portable-projection-boundaries)
-when native compaction behavior is required.
+Portable `OnPreCompact` stays observe-only even though some native events have
+additional metrics or observational output. Use the native protocol references
+when host-specific compaction behavior is required:
+[Claude](agents/claude.md#portable-projection-boundaries),
+[Copilot](agents/copilot.md#portable-projection-boundaries),
+[Cursor](agents/cursor.md#portable-projection-boundaries).
 
 ### Normalized event shape
 
@@ -190,7 +192,9 @@ The following are the currently registerable fluent methods.
 
 Claude also exports typed decode models for additional native events that do
 not yet have `UseHooks` registration methods. Treat the fluent method list as
-the supported author-facing registration surface.
+the supported author-facing registration surface. Block/exit policy,
+WorktreeCreate path return, and stop-loop fields are event-specific — see the
+[Claude protocol reference](agents/claude.md).
 
 ### GitHub Copilot
 
@@ -200,6 +204,12 @@ the supported author-facing registration surface.
 | Tool/permission | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` |
 | Agent/stop | `SubagentStart`, `SubagentStop`, `AgentStop` |
 | Other | `PreCompact`, `Notification`, `ErrorOccurred` |
+
+Copilot install keys, `--event` hints, and `hook_event_name` use PascalCase
+wire strings from the `Event*` constants (for example `UserPromptSubmit` and
+`Stop`, not the Go method names). Ask/cloud constraints, protocol-surface
+split, and stop loops are event-specific — see the
+[Copilot protocol reference](agents/copilot.md).
 
 ### Cursor
 

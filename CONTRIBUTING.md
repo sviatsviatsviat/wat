@@ -63,6 +63,8 @@ registered native events.
   mapping as applicable.
 - Update [SDK API](docs/sdk.md), cross-agent
   [Agent protocols](docs/agent-formats.md), the relevant native guide such as
+  [Claude protocols](docs/agents/claude.md),
+  [Copilot protocols](docs/agents/copilot.md), or
   [Cursor protocols](docs/agents/cursor.md), and the changelog in the same
   change.
 

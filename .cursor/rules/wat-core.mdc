@@ -13,6 +13,10 @@ Use the committed documentation as the source of truth:
 - [Using wat](../../docs/usage.md): CLI behavior and exit codes.
 - [Agent protocols](../../docs/agent-formats.md): native mapping and
   normalization.
+- [Claude protocols](../../docs/agents/claude.md): Claude Code-native host
+  behavior.
+- [Copilot protocols](../../docs/agents/copilot.md): Copilot-native host
+  behavior.
 - [Cursor protocols](../../docs/agents/cursor.md): Cursor-native host behavior.
 - [Contributing](../../CONTRIBUTING.md): tests, documentation, changelog,
   versions, commits, and pull requests.

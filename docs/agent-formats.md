@@ -53,8 +53,10 @@ subagent. The adapter routes it by its optional agent identity fields so
 Events not representable on every agent are native-only. Examples include
 permission requests and notifications (Claude/Copilot), Claude worktree and
 elicitation events, and Cursor workspace/tab events. See the
-[Cursor protocol reference](agents/cursor.md) for its native-only lifecycle,
-permission, and Tab behavior.
+[Claude protocol reference](agents/claude.md),
+[Copilot protocol reference](agents/copilot.md), and
+[Cursor protocol reference](agents/cursor.md) for each host's native-only
+lifecycle, permission, and constraint details.
 
 ## Tool-name normalization
 
@@ -120,10 +122,13 @@ Known limitations are part of the contract:
 - Portable `OnPreCompact` is observe-only and maps only shared compaction
   fields. Cursor-only metrics and native output remain in `sdk/cursor`.
 
-For the complete event-by-event Cursor behavior—including observe-only
-handlers, permission encodings, matcher values, cloud availability, follow-up
-loops, and live payload differences—use the
-[Cursor protocol reference](agents/cursor.md).
+For complete event-by-event host behavior—including observe-only handlers,
+permission encodings, exit policy, cloud availability, follow-up loops, and
+payload differences—use the native guides:
+
+- [Claude protocol reference](agents/claude.md)
+- [Copilot protocol reference](agents/copilot.md)
+- [Cursor protocol reference](agents/cursor.md)
 
 Do not widen the portable interface until every dialect has a truthful mapping
 and tests for it.
@@ -140,7 +145,10 @@ and tests for it.
 | Project config | `.claude/settings.json` matcher groups | `.github/hooks/wat.json` flat handlers | `.cursor/hooks.json` flat handlers |
 
 Output encoding belongs to the native SDK. Portable adapters must return native
-output values and must not serialize JSON themselves.
+output values and must not serialize JSON themselves. For host-specific exit,
+permission, and path-return footguns, prefer the
+[Claude](agents/claude.md), [Copilot](agents/copilot.md), and
+[Cursor](agents/cursor.md) protocol references.
 
 ## Fixture and codec expectations
 
