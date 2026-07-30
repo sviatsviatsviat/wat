@@ -12,7 +12,30 @@ import (
 var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_TaskCompleted(t *testing.T) {
-	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"TaskCompleted","task":{"id":"t1"}}`, event.TaskCompleted)
+	ev := mustDecode[Event](t, `{
+		"session_id":"s",
+		"hook_event_name":"TaskCompleted",
+		"task_id":"task-001",
+		"task_subject":"Implement user authentication",
+		"task_description":"Add login and signup endpoints",
+		"teammate_name":"implementer",
+		"team_name":"session-a1b2c3d4"
+	}`, event.TaskCompleted)
+	if ev.TaskID != "task-001" {
+		t.Fatalf("TaskID = %q", ev.TaskID)
+	}
+	if ev.TaskSubject != "Implement user authentication" {
+		t.Fatalf("TaskSubject = %q", ev.TaskSubject)
+	}
+	if ev.TaskDescription != "Add login and signup endpoints" {
+		t.Fatalf("TaskDescription = %q", ev.TaskDescription)
+	}
+	if ev.TeammateName != "implementer" {
+		t.Fatalf("TeammateName = %q", ev.TeammateName)
+	}
+	if ev.TeamName != "session-a1b2c3d4" {
+		t.Fatalf("TeamName = %q", ev.TeamName)
+	}
 }
 
 func init() {

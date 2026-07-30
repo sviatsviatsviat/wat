@@ -11,11 +11,10 @@ import (
 // Event is the ElicitationResult hook event.
 type Event struct {
 	event.Envelope
-	// ServerName is the MCP server name.
-	ServerName string `json:"server_name"`
+	event.ElicitationFields
 	// Action is the user action (accept, decline, cancel).
 	Action string `json:"action"`
-	// Content is the response content JSON.
+	// Content is the response content JSON when provided.
 	Content json.RawMessage `json:"content"`
 }
 

@@ -12,7 +12,13 @@ import (
 var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_ConfigChange(t *testing.T) {
-	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"ConfigChange","source":"user_settings"}`, event.ConfigChange)
+	ev := mustDecode[Event](t, `{"session_id":"s","hook_event_name":"ConfigChange","source":"user_settings","file_path":"/Users/me/.claude/settings.json"}`, event.ConfigChange)
+	if ev.Source != "user_settings" {
+		t.Fatalf("Source = %q", ev.Source)
+	}
+	if ev.FilePath != "/Users/me/.claude/settings.json" {
+		t.Fatalf("FilePath = %q", ev.FilePath)
+	}
 }
 
 func init() {

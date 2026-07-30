@@ -8,6 +8,8 @@ import (
 // Event is the WorktreeCreate hook event.
 type Event struct {
 	event.Envelope
+	// Name is the slug identifier for the new worktree.
+	Name string `json:"name"`
 }
 
 // EventName returns the hook event name.

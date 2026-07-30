@@ -8,10 +8,12 @@ import (
 // Event is the StopFailure hook event.
 type Event struct {
 	event.Envelope
-	// ErrorType is the error category (rate_limit, overloaded, …).
-	ErrorType string `json:"error_type"`
-	// Message is the error message when provided.
-	Message string `json:"message"`
+	// Error is the error category used for matcher filtering (rate_limit, overloaded, …).
+	Error string `json:"error"`
+	// ErrorDetails holds additional error detail when available.
+	ErrorDetails string `json:"error_details"`
+	// LastAssistantMessage is the rendered API error text shown in the conversation.
+	LastAssistantMessage string `json:"last_assistant_message"`
 }
 
 // EventName returns the hook event name.

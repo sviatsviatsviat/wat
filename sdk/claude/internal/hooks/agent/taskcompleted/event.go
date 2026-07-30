@@ -1,8 +1,6 @@
 package taskcompleted
 
 import (
-	"encoding/json"
-
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
@@ -11,8 +9,7 @@ import (
 // Event is the TaskCompleted hook event.
 type Event struct {
 	event.Envelope
-	// Task is the task payload JSON.
-	Task json.RawMessage `json:"task"`
+	event.TaskFields
 }
 
 // EventName returns the hook event name.

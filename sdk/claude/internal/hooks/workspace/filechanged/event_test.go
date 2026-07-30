@@ -12,9 +12,12 @@ import (
 var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_FileChanged(t *testing.T) {
-	ev := mustDecode[Event](t, `{"session_id":"s","hook_event_name":"FileChanged","file_path":"/f.go"}`, event.FileChanged)
-	if ev.FilePath != "/f.go" {
+	ev := mustDecode[Event](t, `{"session_id":"s","hook_event_name":"FileChanged","file_path":"/Users/my-project/.envrc","event":"change"}`, event.FileChanged)
+	if ev.FilePath != "/Users/my-project/.envrc" {
 		t.Fatalf("FilePath = %q", ev.FilePath)
+	}
+	if ev.Change != "change" {
+		t.Fatalf("Change = %q", ev.Change)
 	}
 }
 
