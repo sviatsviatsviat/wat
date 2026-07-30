@@ -123,7 +123,7 @@ func (c *hooks) PostToolUseFailure(fn func(context.Context, PostToolUseFailure, 
 }
 
 // PostToolBatch registers a PostToolBatch handler on the registrar.
-func (c *hooks) PostToolBatch(fn func(context.Context, PostToolBatch, PostToolBatchResults) (PostToolBatchOutput, error)) *hooks {
+func (c *hooks) PostToolBatch(fn func(context.Context, PostToolBatch, PostToolBatchResults) (DecisionOutput, error)) *hooks {
 	return bind(c, fn, posttoolbatch.RegisterHandler)
 }
 

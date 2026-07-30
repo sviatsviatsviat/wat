@@ -14,7 +14,7 @@ func TestUseHooks_registersPreviouslyDecodeOnlyEvents(t *testing.T) {
 			return nil, nil
 		}).
 		InstructionsLoaded(func(context.Context, claude.InstructionsLoaded) error { return nil }).
-		PostToolBatch(func(context.Context, claude.PostToolBatch, claude.PostToolBatchResults) (claude.PostToolBatchOutput, error) {
+		PostToolBatch(func(context.Context, claude.PostToolBatch, claude.PostToolBatchResults) (claude.DecisionOutput, error) {
 			return nil, nil
 		}).
 		TeammateIdle(func(context.Context, claude.TeammateIdle, claude.TeammateIdleResults) (claude.CommonOutput, error) {
