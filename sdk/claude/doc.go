@@ -21,5 +21,9 @@
 // Tool input on PreToolUse and related events is typed as [Input] with AsBash,
 // AsWrite, and related accessors (and Tool* name constants) in this package.
 //
+// PermissionRequest may carry permission_suggestions; allow responses can
+// apply matching updatedPermissions via WithUpdatedPermissions using
+// [PermissionUpdate] entries.
+//
 // See ExampleUseHooks in example_test.go for a minimal handler.
 package claude

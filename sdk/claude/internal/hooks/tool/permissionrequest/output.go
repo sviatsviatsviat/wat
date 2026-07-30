@@ -13,6 +13,10 @@ type Output interface {
 	isOutput()
 	// WithUpdatedInput replaces tool arguments when set.
 	WithUpdatedInput(input map[string]any) Output
+	// WithUpdatedPermissions applies permission update entries on allow.
+	// Entries match the permission_suggestions shape; a common pattern is to
+	// echo a suggestion from the event. The slice is cloned.
+	WithUpdatedPermissions(updates []event.PermissionUpdate) Output
 	// WithInterrupt stops the session when true.
 	WithInterrupt(v bool) Output
 	// WithAdditionalContext injects model context.
@@ -31,11 +35,12 @@ type Output interface {
 
 type output struct {
 	event.Common
-	behavior          string
-	updatedInput      map[string]any
-	message           string
-	interrupt         bool
-	additionalContext string
+	behavior           string
+	updatedInput       map[string]any
+	updatedPermissions []event.PermissionUpdate
+	message            string
+	interrupt          bool
+	additionalContext  string
 }
 
 func (output) isOutput() {}
@@ -43,12 +48,19 @@ func (output) isOutput() {}
 // IsZero reports whether this hook response is empty.
 func (o output) IsZero() bool {
 	return o.Common.IsZero() && o.behavior == "" && o.updatedInput == nil &&
-		o.message == "" && !o.interrupt && o.additionalContext == ""
+		o.updatedPermissions == nil && o.message == "" && !o.interrupt &&
+		o.additionalContext == ""
 }
 
 // WithUpdatedInput replaces tool arguments when set.
 func (o output) WithUpdatedInput(input map[string]any) Output {
 	o.updatedInput = input
+	return o
+}
+
+// WithUpdatedPermissions applies permission update entries on allow.
+func (o output) WithUpdatedPermissions(updates []event.PermissionUpdate) Output {
+	o.updatedPermissions = event.ClonePermissionUpdates(updates)
 	return o
 }
 
@@ -101,6 +113,9 @@ func (o output) encodeInto(top, hso map[string]any) {
 		if o.updatedInput != nil {
 			dec["updatedInput"] = o.updatedInput
 		}
+		if o.behavior == "allow" && o.updatedPermissions != nil {
+			dec["updatedPermissions"] = o.updatedPermissions
+		}
 		if o.message != "" {
 			dec["message"] = o.message
 		}
@@ -135,17 +150,33 @@ func (o output) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	if w != "" {
 		warnings = append(warnings, w)
 	}
+	updatedPermissions, w := takeLastPermissionUpdates(o.updatedPermissions, b.updatedPermissions)
+	if w != "" {
+		warnings = append(warnings, w)
+	}
 	return output{
-		Common:            mergedCommon,
-		behavior:          behavior,
-		updatedInput:      updatedInput,
-		message:           message,
-		interrupt:         o.interrupt || b.interrupt,
-		additionalContext: hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
+		Common:             mergedCommon,
+		behavior:           behavior,
+		updatedInput:       updatedInput,
+		updatedPermissions: updatedPermissions,
+		message:            message,
+		interrupt:          o.interrupt || b.interrupt,
+		additionalContext:  hookkit.JoinContextStrings(o.additionalContext, b.additionalContext),
 	}, warnings, nil
 }
 
 // Stop reports whether remaining handlers should be skipped.
 func (o output) Stop() bool {
 	return o.Common.Stop() || o.behavior == "deny"
+}
+
+func takeLastPermissionUpdates(dst, src []event.PermissionUpdate) ([]event.PermissionUpdate, string) {
+	if src == nil {
+		return dst, ""
+	}
+	cloned := event.ClonePermissionUpdates(src)
+	if dst != nil {
+		return cloned, hookkit.OverwriteWarning("updatedPermissions")
+	}
+	return cloned, ""
 }

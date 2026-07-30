@@ -16,6 +16,8 @@ const (
 	PermissionDontAsk PermissionMode = "dontAsk"
 	// PermissionBypassPermissions bypasses permission checks.
 	PermissionBypassPermissions PermissionMode = "bypassPermissions"
+	// PermissionManual is a Claude Code alias for default (v2.1.200+).
+	PermissionManual PermissionMode = "manual"
 )
 
 // EffortLevel is the effort level on hook events.

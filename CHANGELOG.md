@@ -21,6 +21,10 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `TaskCreated` / `TaskCompleted` `Block` uses Claude exit 2 with stderr
   feedback (`continue:false` still stops the teammate). Handler errors remain
   exit 1 (fail-open for most events). See `docs/agents/claude.md`.
+- Claude `PermissionRequest` decodes optional `permission_suggestions` and can
+  return `updatedPermissions` on allow via `WithUpdatedPermissions` (same entry
+  shape: add/replace/remove rules, setMode, add/removeDirectories). Echoing a
+  suggestion applies that "always allow" option without prompting.
 - Copilot `SubagentStop` decodes `last_assistant_message` (full final subagent
   response text) and exposes dedicated `SubagentStopResults` /
   `SubagentStopOutput` with `FollowUp` and `ModifiedResponse` (host field

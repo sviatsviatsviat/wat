@@ -139,6 +139,8 @@ On Claude and Copilot stop events, check `Turn.StopHookActive` (native
 
 Known limitations are part of the contract:
 
+- Claude `PermissionRequest` suggestions and `updatedPermissions` are
+  Claude-native only (`sdk/claude`). There is no portable projection.
 - Copilot cloud-agent handling treats `PreToolUse` `"ask"` as a denial (no
   user). Native Copilot `PermissionRequest.Ask` is a soft deny
   (`behavior:"deny"`, exit 0), not a confirmation UI; use `Noop` to fall
