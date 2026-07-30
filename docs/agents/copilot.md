@@ -40,6 +40,10 @@ wat’s Copilot dialect today:
 | [VS Code agent-customization hooks](https://code.visualstudio.com/docs/agent-customization/hooks) **`hookSpecificOutput`** wrapper | Divergent preview wire (nested `hookSpecificOutput`). Not a second `sdk/copilot` dialect |
 | Ad-hoc casing aliases (`preToolUse` ↔ `PreToolUse` decode) | Deferred optional enhancement; authors must use PascalCase / snake_case |
 
+Do not assume that a sample that “works in Copilot CLI docs” or “works in VS
+Code hooks docs” will decode or install under wat without matching the table
+above.
+
 The hooks reference labels PascalCase + snake_case “VS Code compatible.” That
 name means the Copilot extension-style **flat** stdin fields—not the separate
 VS Code agent-customization output envelope built around `hookSpecificOutput`.
