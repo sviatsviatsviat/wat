@@ -196,6 +196,8 @@ Claude-native and is not part of the portable API.
 
 Claude also exports typed decode models for every native event name. Treat the
 fluent method list as the supported author-facing registration surface.
+Block/exit policy, WorktreeCreate path return, and stop-loop fields are
+event-specific — see the [Claude protocol reference](agents/claude.md).
 
 `WorktreeCreate` is special: command hooks (what wat installs) must print a
 plain worktree path on stdout, not JSON `hookSpecificOutput`.

@@ -99,6 +99,7 @@ bootstrap for `.wat/` projects.
 | [SDK API](docs/sdk.md) | Portable and native registration APIs, event/result patterns, and examples |
 | [Architecture](docs/architecture.md) | Package boundaries, request lifecycle, and implementation patterns |
 | [Agent protocols](docs/agent-formats.md) | Event coverage, tool normalization, and native protocol differences |
+| [Claude protocols](docs/agents/claude.md) | Claude event capabilities, block/exit policy, WorktreeCreate, and stop loops |
 | [Copilot protocols](docs/agents/copilot.md) | Copilot wire surface, Ask/cloud constraints, and stop loops |
 | [Cursor protocols](docs/agents/cursor.md) | Cursor event capabilities, permissions, host constraints, and payload details |
 | [Contributing](CONTRIBUTING.md) | Development workflow, tests, docs, commits, and pull requests |
