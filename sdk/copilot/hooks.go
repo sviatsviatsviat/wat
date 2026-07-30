@@ -103,7 +103,7 @@ func (c *hooks) SubagentStart(fn func(context.Context, SubagentStart, SubagentSt
 }
 
 // SubagentStop registers a SubagentStop handler on the registrar.
-func (c *hooks) SubagentStop(fn func(context.Context, SubagentStop, StopResults) (StopOutput, error)) *hooks {
+func (c *hooks) SubagentStop(fn func(context.Context, SubagentStop, SubagentStopResults) (SubagentStopOutput, error)) *hooks {
 	return bind(c, fn, subagentstop.RegisterHandler)
 }
 

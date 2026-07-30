@@ -26,7 +26,7 @@ func (results) Noop() Output {
 	return output{}
 }
 
-// NewResults returns a Results builder for handlers outside this package (e.g. SubagentStop).
+// NewResults returns a Results builder for AgentStop handlers.
 func NewResults() Results {
 	return results{}
 }

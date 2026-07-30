@@ -33,3 +33,18 @@ func TestMapAgentStopAsSubagent_StopHookActive(t *testing.T) {
 		t.Fatalf("Subagent=%+v", ev.Subagent)
 	}
 }
+
+func TestMapSubagentStop_LastAssistantMessage(t *testing.T) {
+	hook := sdkcopilot.SubagentStop{
+		StopReason:           "end_turn",
+		LastAssistantMessage: "full final subagent response",
+	}
+	hook.AgentName = "task"
+	ev := mapSubagentStop(hook)
+	if ev.Turn == nil || ev.Turn.Status != "end_turn" || ev.Turn.LastAssistantMessage != "full final subagent response" {
+		t.Fatalf("Turn=%+v", ev.Turn)
+	}
+	if ev.Subagent == nil || ev.Subagent.Type != "task" || ev.Subagent.Summary != "full final subagent response" {
+		t.Fatalf("Subagent=%+v", ev.Subagent)
+	}
+}

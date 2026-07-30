@@ -57,6 +57,23 @@ Copilot `AgentStop` (including subagent-scoped Stop) also decodes
 do not document this field today. Copilot additionally caps consecutive block
 continuations after several iterations. See the
 
+Keep the Copilot wire split intact:
+
+- Explicit `hook_event_name: "SubagentStop"` decodes as `sdk/copilot.SubagentStop`
+  and carries `last_assistant_message` (full final subagent response text; the
+  VS Code name for camelCase `response`). Native handlers use
+  `SubagentStopResults` (`FollowUp` / `ModifiedResponse`).
+- VS Code-style `hook_event_name: "Stop"` payloads with `agent_name` /
+  `agent_display_name` still decode as `AgentStop` (`IsSubagent`); they do not
+  become `SubagentStop` and do not expose `modifiedResponse`. Use
+  `StopResults.FollowUp` there.
+
+`modifiedResponse` is Copilot-native on `SubagentStop` only: a `block`
+decision wins over a rewrite, and rewrites do not compose across handlers
+(last non-empty rewrite wins; each handler still sees the original response).
+Portable `OnSubagentStop` maps the message onto `Turn.LastAssistantMessage` /
+`Subagent.Summary` and still exposes only `FollowUp`.
+
 Events not representable on every agent are native-only. Examples include
 permission requests and notifications (Claude/Copilot), Claude worktree and
 elicitation events, and Cursor workspace/tab events. See the
