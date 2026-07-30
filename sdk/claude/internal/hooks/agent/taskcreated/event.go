@@ -9,16 +9,7 @@ import (
 // Event is the TaskCreated hook event.
 type Event struct {
 	event.Envelope
-	// TaskID is the identifier of the task being created.
-	TaskID string `json:"task_id"`
-	// TaskSubject is the title of the task.
-	TaskSubject string `json:"task_subject"`
-	// TaskDescription is the detailed task description when provided.
-	TaskDescription string `json:"task_description"`
-	// TeammateName is the teammate creating the task when provided.
-	TeammateName string `json:"teammate_name"`
-	// TeamName is the session-derived team name when provided (deprecated by Claude Code).
-	TeamName string `json:"team_name"`
+	event.TaskFields
 }
 
 // EventName returns the hook event name.
