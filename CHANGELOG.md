@@ -14,7 +14,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeRemove` (observe-only),
   `PostCompact` (observe-only), `ElicitationResult`, and `StopFailure`
   (observe-only). Install/doctor/`run.Inspect` advertise these when handlers
-  are registered.
+  are registered. `PostToolBatch` Context/Block builders return shared
+  `DecisionOutput` (JSON `decision:"block"` on exit 0) instead of a
+  per-event output copy.
 
 ### Fixed
 

@@ -61,6 +61,10 @@ const (
 // CommonOutput is a shared-fields-only response for events that only accept those fields.
 type CommonOutput = event.CommonOutput
 
+// DecisionOutput is a response for Claude events that accept decision:"block"
+// plus optional additionalContext (PostToolBatch and similar).
+type DecisionOutput = event.DecisionOutput
+
 // Claude Code hook_event_name values for config keys and stdin payloads.
 const (
 	EventSessionStart        = event.SessionStart
