@@ -1,6 +1,7 @@
 package elicitationresult
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -35,6 +36,27 @@ func TestDecode_ElicitationResult(t *testing.T) {
 	}
 	if string(ev.Content) != `{"username":"alice"}` {
 		t.Fatalf("Content = %s", ev.Content)
+	}
+}
+
+func TestEncode_Decline(t *testing.T) {
+	out, code, err := results{}.Decline().Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d", code)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	hso, ok := got["hookSpecificOutput"].(map[string]any)
+	if !ok || hso["hookEventName"] != event.ElicitationResult || hso["action"] != "decline" {
+		t.Fatalf("got %s", out)
+	}
+	if !(results{}.Decline().Stop()) {
+		t.Fatal("decline should stop")
 	}
 }
 

@@ -16,3 +16,9 @@ type ElicitationResults = elicitation.Results
 
 // ElicitationResult is the ElicitationResult hook event.
 type ElicitationResult = elicitationresult.Event
+
+// ElicitationResultOutput is the response for ElicitationResult events.
+type ElicitationResultOutput = elicitationresult.Output
+
+// ElicitationResultResults is the hook-scoped response builder for ElicitationResult.
+type ElicitationResultResults = elicitationresult.Results

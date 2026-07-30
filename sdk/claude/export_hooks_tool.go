@@ -39,6 +39,12 @@ type PostToolBatch = posttoolbatch.Event
 // PostToolBatchCall is one tool invocation entry in a PostToolBatch event.
 type PostToolBatchCall = posttoolbatch.Call
 
+// PostToolBatchOutput is the response for PostToolBatch events.
+type PostToolBatchOutput = posttoolbatch.Output
+
+// PostToolBatchResults is the hook-scoped response builder for PostToolBatch.
+type PostToolBatchResults = posttoolbatch.Results
+
 // PermissionRequest is the PermissionRequest hook event.
 type PermissionRequest = permissionrequest.Event
 

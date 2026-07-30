@@ -7,6 +7,15 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Claude `UseHooks` registration for previously decode-only events: `Setup`,
+  `InstructionsLoaded` (observe-only), `PostToolBatch`, `TeammateIdle`,
+  `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeRemove` (observe-only),
+  `PostCompact` (observe-only), `ElicitationResult`, and `StopFailure`
+  (observe-only). Install/doctor/`run.Inspect` advertise these when handlers
+  are registered.
+
 ### Fixed
 
 - Claude `TaskCreated` / `TaskCompleted` decode flat `task_id`, `task_subject`,

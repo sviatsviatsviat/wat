@@ -183,14 +183,13 @@ The following are the currently registerable fluent methods.
 
 | Domain | Methods |
 |---|---|
-| Session/prompt | `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `UserPromptExpansion` |
-| Tool/permission | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied` |
-| Agent/task/stop | `SubagentStart`, `SubagentStop`, `TaskCreated`, `TaskCompleted`, `Stop` |
-| UI/compact/workspace | `Notification`, `MessageDisplay`, `PreCompact`, `WorktreeCreate`, `Elicitation` |
+| Session/prompt | `SessionStart`, `SessionEnd`, `Setup`, `UserPromptSubmit`, `UserPromptExpansion` |
+| Tool/permission | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PostToolBatch`, `PermissionRequest`, `PermissionDenied` |
+| Agent/task/stop | `SubagentStart`, `SubagentStop`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `Stop`, `StopFailure` (observe-only) |
+| UI/compact/workspace | `Notification`, `MessageDisplay`, `PreCompact`, `PostCompact` (observe-only), `WorktreeCreate`, `WorktreeRemove` (observe-only), `Elicitation`, `ElicitationResult`, `InstructionsLoaded` (observe-only), `ConfigChange`, `CwdChanged`, `FileChanged` |
 
-Claude also exports typed decode models for additional native events that do
-not yet have `UseHooks` registration methods. Treat the fluent method list as
-the supported author-facing registration surface.
+Claude also exports typed decode models for every native event name. Treat the
+fluent method list as the supported author-facing registration surface.
 
 `WorktreeCreate` is special: command hooks (what wat installs) must print a
 plain worktree path on stdout, not JSON `hookSpecificOutput`.
@@ -203,6 +202,7 @@ plain worktree path on stdout, not JSON `hookSpecificOutput`.
 | Tool/permission | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` |
 | Agent/stop | `SubagentStart`, `SubagentStop`, `AgentStop` |
 | Other | `PreCompact`, `Notification`, `ErrorOccurred` |
+
 
 ### Cursor
 

@@ -1,6 +1,7 @@
 package configchange
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -18,6 +19,23 @@ func TestDecode_ConfigChange(t *testing.T) {
 	}
 	if ev.FilePath != "/Users/me/.claude/settings.json" {
 		t.Fatalf("FilePath = %q", ev.FilePath)
+	}
+}
+
+func TestEncode_Block(t *testing.T) {
+	out, code, err := results{}.Block("needs approval").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d", code)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["decision"] != "block" || got["reason"] != "needs approval" {
+		t.Fatalf("got %s", out)
 	}
 }
 
