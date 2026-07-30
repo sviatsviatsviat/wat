@@ -188,6 +188,11 @@ The following are the currently registerable fluent methods.
 | Agent/task/stop | `SubagentStart`, `SubagentStop`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `Stop`, `StopFailure` (observe-only) |
 | UI/compact/workspace | `Notification`, `MessageDisplay`, `PreCompact`, `PostCompact` (observe-only), `WorktreeCreate`, `WorktreeRemove` (observe-only), `Elicitation`, `ElicitationResult`, `InstructionsLoaded` (observe-only), `ConfigChange`, `CwdChanged`, `FileChanged` |
 
+Claude `PermissionRequest` may include `permission_suggestions` (always-allow
+options). On allow, `WithUpdatedPermissions` can echo those entries (or other
+`PermissionUpdate` values) as `updatedPermissions`. This surface is
+Claude-native and is not part of the portable API.
+
 Claude also exports typed decode models for every native event name. Treat the
 fluent method list as the supported author-facing registration surface.
 

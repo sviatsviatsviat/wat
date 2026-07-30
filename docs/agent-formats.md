@@ -109,6 +109,8 @@ Portable builders deliberately expose the intersection of native behavior:
 
 Known limitations are part of the contract:
 
+- Claude `PermissionRequest` suggestions and `updatedPermissions` are
+  Claude-native only (`sdk/claude`). There is no portable projection.
 - Copilot cloud-agent handling may downgrade `Ask` to a denial.
 - Cursor emits `updated_input` only for generic `preToolUse`, not for its
   dedicated pre-tool events.

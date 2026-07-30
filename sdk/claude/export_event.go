@@ -20,7 +20,50 @@ const (
 	PermissionDontAsk = event.PermissionDontAsk
 	// PermissionBypassPermissions bypasses permission checks.
 	PermissionBypassPermissions = event.PermissionBypassPermissions
+	// PermissionManual is a Claude Code alias for default (v2.1.200+).
+	PermissionManual = event.PermissionManual
 )
+
+// PermissionUpdateType is the discriminator for a permission update entry.
+type PermissionUpdateType = event.PermissionUpdateType
+
+const (
+	// PermissionUpdateAddRules adds permission rules.
+	PermissionUpdateAddRules = event.PermissionUpdateAddRules
+	// PermissionUpdateReplaceRules replaces rules of a given behavior at a destination.
+	PermissionUpdateReplaceRules = event.PermissionUpdateReplaceRules
+	// PermissionUpdateRemoveRules removes matching rules of a given behavior.
+	PermissionUpdateRemoveRules = event.PermissionUpdateRemoveRules
+	// PermissionUpdateSetMode changes the permission mode.
+	PermissionUpdateSetMode = event.PermissionUpdateSetMode
+	// PermissionUpdateAddDirectories adds working directories.
+	PermissionUpdateAddDirectories = event.PermissionUpdateAddDirectories
+	// PermissionUpdateRemoveDirectories removes working directories.
+	PermissionUpdateRemoveDirectories = event.PermissionUpdateRemoveDirectories
+)
+
+// PermissionDestination controls where a permission update is written.
+type PermissionDestination = event.PermissionDestination
+
+const (
+	// PermissionDestinationSession keeps the update in memory for the session.
+	PermissionDestinationSession = event.PermissionDestinationSession
+	// PermissionDestinationLocalSettings writes to .claude/settings.local.json.
+	PermissionDestinationLocalSettings = event.PermissionDestinationLocalSettings
+	// PermissionDestinationProjectSettings writes to .claude/settings.json.
+	PermissionDestinationProjectSettings = event.PermissionDestinationProjectSettings
+	// PermissionDestinationUserSettings writes to ~/.claude/settings.json.
+	PermissionDestinationUserSettings = event.PermissionDestinationUserSettings
+)
+
+// PermissionRule is one tool rule inside an add/replace/removeRules update.
+type PermissionRule = event.PermissionRule
+
+// PermissionUpdate is one Claude permission update / suggestion entry.
+//
+// PermissionRequest input uses these as permission_suggestions. Allow
+// responses may echo them via WithUpdatedPermissions.
+type PermissionUpdate = event.PermissionUpdate
 
 // EffortLevel is the effort level on hook events.
 type EffortLevel = event.EffortLevel
