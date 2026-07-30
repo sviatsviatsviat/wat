@@ -1,8 +1,6 @@
 package taskcompleted
 
 import (
-	"encoding/json"
-
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
@@ -11,8 +9,16 @@ import (
 // Event is the TaskCompleted hook event.
 type Event struct {
 	event.Envelope
-	// Task is the task payload JSON.
-	Task json.RawMessage `json:"task"`
+	// TaskID is the identifier of the task being completed.
+	TaskID string `json:"task_id"`
+	// TaskSubject is the title of the task.
+	TaskSubject string `json:"task_subject"`
+	// TaskDescription is the detailed task description when provided.
+	TaskDescription string `json:"task_description"`
+	// TeammateName is the teammate completing the task when provided.
+	TeammateName string `json:"teammate_name"`
+	// TeamName is the session-derived team name when provided (deprecated by Claude Code).
+	TeamName string `json:"team_name"`
 }
 
 // EventName returns the hook event name.

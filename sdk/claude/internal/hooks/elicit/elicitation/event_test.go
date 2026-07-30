@@ -13,7 +13,45 @@ import (
 var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_Elicitation(t *testing.T) {
-	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"Elicitation","server_name":"srv","message":"confirm?"}`, event.Elicitation)
+	ev := mustDecode[Event](t, `{
+		"session_id":"s",
+		"hook_event_name":"Elicitation",
+		"mcp_server_name":"my-mcp-server",
+		"message":"Please provide your credentials",
+		"mode":"form",
+		"elicitation_id":"elicit-123",
+		"requested_schema":{"type":"object","properties":{"username":{"type":"string"}}}
+	}`, event.Elicitation)
+	if ev.MCPServerName != "my-mcp-server" {
+		t.Fatalf("MCPServerName = %q", ev.MCPServerName)
+	}
+	if ev.Message != "Please provide your credentials" {
+		t.Fatalf("Message = %q", ev.Message)
+	}
+	if ev.Mode != "form" {
+		t.Fatalf("Mode = %q", ev.Mode)
+	}
+	if ev.ElicitationID != "elicit-123" {
+		t.Fatalf("ElicitationID = %q", ev.ElicitationID)
+	}
+	if len(ev.RequestedSchema) == 0 {
+		t.Fatal("RequestedSchema is empty")
+	}
+
+	urlEv := mustDecode[Event](t, `{
+		"session_id":"s",
+		"hook_event_name":"Elicitation",
+		"mcp_server_name":"my-mcp-server",
+		"message":"Please authenticate",
+		"mode":"url",
+		"url":"https://auth.example.com/login"
+	}`, event.Elicitation)
+	if urlEv.Mode != "url" {
+		t.Fatalf("Mode = %q", urlEv.Mode)
+	}
+	if urlEv.URL != "https://auth.example.com/login" {
+		t.Fatalf("URL = %q", urlEv.URL)
+	}
 
 	out, code, err := results{}.Accept().WithContent(map[string]any{"answer": "yes"}).Encode()
 	if err != nil {

@@ -7,6 +7,16 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Claude `TaskCreated` / `TaskCompleted` decode flat `task_id`, `task_subject`,
+  and related task fields instead of a nested `task` blob. `StopFailure`
+  decodes `error`, `error_details`, and `last_assistant_message`.
+  `Elicitation` / `ElicitationResult` use `mcp_server_name` and optional
+  mode/url/id fields. `WorktreeCreate` decodes `name`. `FileChanged` decodes
+  `event`, `ConfigChange` decodes optional `file_path`, and `PostCompact`
+  decodes `compact_summary`.
+
 ## [v0.2.0-alpha] - 2026-07-27
 
 ### Added

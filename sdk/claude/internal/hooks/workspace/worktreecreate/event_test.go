@@ -13,7 +13,10 @@ import (
 var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_WorktreeCreate(t *testing.T) {
-	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"WorktreeCreate"}`, event.WorktreeCreate)
+	ev := mustDecode[Event](t, `{"session_id":"s","hook_event_name":"WorktreeCreate","name":"feature-auth"}`, event.WorktreeCreate)
+	if ev.Name != "feature-auth" {
+		t.Fatalf("Name = %q", ev.Name)
+	}
 
 	out, code, err := results{}.Path("/tmp/wt").Encode()
 	if err != nil {

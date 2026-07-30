@@ -10,6 +10,8 @@ type Event struct {
 	event.Envelope
 	// Source is the config source that changed.
 	Source string `json:"source"`
+	// FilePath is the path of the changed configuration file when provided.
+	FilePath string `json:"file_path"`
 }
 
 // EventName returns the hook event name.

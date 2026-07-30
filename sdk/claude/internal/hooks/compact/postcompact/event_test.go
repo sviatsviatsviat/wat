@@ -12,7 +12,18 @@ import (
 var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_PostCompact(t *testing.T) {
-	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"PostCompact","trigger":"auto"}`, event.PostCompact)
+	ev := mustDecode[Event](t, `{
+		"session_id":"s",
+		"hook_event_name":"PostCompact",
+		"trigger":"manual",
+		"compact_summary":"Summary of the compacted conversation..."
+	}`, event.PostCompact)
+	if ev.Trigger != "manual" {
+		t.Fatalf("Trigger = %q", ev.Trigger)
+	}
+	if ev.CompactSummary != "Summary of the compacted conversation..." {
+		t.Fatalf("CompactSummary = %q", ev.CompactSummary)
+	}
 }
 
 func init() {

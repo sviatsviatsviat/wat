@@ -10,12 +10,18 @@ import (
 // Event is the Elicitation hook event.
 type Event struct {
 	event.Envelope
-	// ServerName is the MCP server name.
-	ServerName string `json:"server_name"`
-	// Message is the elicitation message.
+	// MCPServerName is the MCP server requesting input.
+	MCPServerName string `json:"mcp_server_name"`
+	// Message is the elicitation prompt shown to the user.
 	Message string `json:"message"`
-	// Schema is the requested input schema JSON.
-	Schema json.RawMessage `json:"requested_schema"`
+	// Mode is the elicitation mode when provided ("form" or "url").
+	Mode string `json:"mode"`
+	// URL is the browser authentication URL for url-mode elicitation.
+	URL string `json:"url"`
+	// ElicitationID is the elicitation request identifier when provided.
+	ElicitationID string `json:"elicitation_id"`
+	// RequestedSchema is the requested form input schema JSON when provided.
+	RequestedSchema json.RawMessage `json:"requested_schema"`
 }
 
 // EventName returns the hook event name.

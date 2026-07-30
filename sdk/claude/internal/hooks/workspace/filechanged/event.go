@@ -8,8 +8,10 @@ import (
 // Event is the FileChanged hook event.
 type Event struct {
 	event.Envelope
-	// FilePath is the changed file path.
+	// FilePath is the absolute path of the changed file.
 	FilePath string `json:"file_path"`
+	// Change is what happened to the file ("change", "add", or "unlink").
+	Change string `json:"event"`
 }
 
 // EventName returns the hook event name.

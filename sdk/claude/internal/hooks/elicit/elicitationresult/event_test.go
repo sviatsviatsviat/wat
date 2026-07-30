@@ -12,7 +12,30 @@ import (
 var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_ElicitationResult(t *testing.T) {
-	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"ElicitationResult","server_name":"srv","action":"accept"}`, event.ElicitationResult)
+	ev := mustDecode[Event](t, `{
+		"session_id":"s",
+		"hook_event_name":"ElicitationResult",
+		"mcp_server_name":"my-mcp-server",
+		"action":"accept",
+		"content":{"username":"alice"},
+		"mode":"form",
+		"elicitation_id":"elicit-123"
+	}`, event.ElicitationResult)
+	if ev.MCPServerName != "my-mcp-server" {
+		t.Fatalf("MCPServerName = %q", ev.MCPServerName)
+	}
+	if ev.Action != "accept" {
+		t.Fatalf("Action = %q", ev.Action)
+	}
+	if ev.Mode != "form" {
+		t.Fatalf("Mode = %q", ev.Mode)
+	}
+	if ev.ElicitationID != "elicit-123" {
+		t.Fatalf("ElicitationID = %q", ev.ElicitationID)
+	}
+	if string(ev.Content) != `{"username":"alice"}` {
+		t.Fatalf("Content = %s", ev.Content)
+	}
 }
 
 func init() {

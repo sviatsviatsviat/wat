@@ -12,7 +12,22 @@ import (
 var testCodec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
 func TestDecode_Failure(t *testing.T) {
-	mustDecode[Event](t, `{"session_id":"s","hook_event_name":"StopFailure","error_type":"rate_limit","message":"slow down"}`, event.StopFailure)
+	ev := mustDecode[Event](t, `{
+		"session_id":"s",
+		"hook_event_name":"StopFailure",
+		"error":"rate_limit",
+		"error_details":"429 Too Many Requests",
+		"last_assistant_message":"API Error: Rate limit reached"
+	}`, event.StopFailure)
+	if ev.Error != "rate_limit" {
+		t.Fatalf("Error = %q", ev.Error)
+	}
+	if ev.ErrorDetails != "429 Too Many Requests" {
+		t.Fatalf("ErrorDetails = %q", ev.ErrorDetails)
+	}
+	if ev.LastAssistantMessage != "API Error: Rate limit reached" {
+		t.Fatalf("LastAssistantMessage = %q", ev.LastAssistantMessage)
+	}
 }
 
 func init() {
