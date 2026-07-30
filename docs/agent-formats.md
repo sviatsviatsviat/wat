@@ -50,6 +50,13 @@ Copilot's `AgentStop` wire event can describe either the main agent or a
 subagent. The adapter routes it by its optional agent identity fields so
 `OnStop` and `OnSubagentStop` do not both handle the same payload.
 
+Copilot `AgentStop` (including subagent-scoped Stop) also decodes
+`stop_hook_active`. When that flag is true, a prior stop-hook `decision:
+"block"` already forced continuation for the turn; authors must gate
+`FollowUp` on it to avoid runaway loops. Explicit `SubagentStop` wire events
+do not document this field today. Copilot additionally caps consecutive block
+continuations after several iterations. See the
+
 Events not representable on every agent are native-only. Examples include
 permission requests and notifications (Claude/Copilot), Claude worktree and
 elicitation events, and Cursor workspace/tab events. See the
@@ -106,6 +113,11 @@ Portable builders deliberately expose the intersection of native behavior:
 | `PostToolFailureResults.Context` | Add recovery context |
 | `StopResults.FollowUp` | Prevent completion and request more work |
 | `SessionStartResults.Context` | Add startup context |
+
+On Claude and Copilot stop events, check `Turn.StopHookActive` (native
+`stop_hook_active`) before emitting another `FollowUp`. Cursor uses
+`Turn.LoopCount` / hooks.json `loop_limit` instead; see
+[Cursor stop follow-up loops](agents/cursor.md#stop-follow-up-loops) and
 
 Known limitations are part of the contract:
 
