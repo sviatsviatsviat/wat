@@ -11,7 +11,6 @@ Read these committed references before changing behavior:
 - [Using wat](docs/usage.md) for CLI behavior.
 - [Agent protocols](docs/agent-formats.md) for codec and normalization facts.
 - [Cursor protocols](docs/agents/cursor.md) for Cursor-native host behavior.
-  behavior.
 - [Contributing](CONTRIBUTING.md) for tests, docs, changelog, commits, and CI.
 
 ## Package map
