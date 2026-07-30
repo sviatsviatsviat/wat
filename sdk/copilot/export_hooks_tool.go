@@ -40,5 +40,7 @@ type PermissionRequest = permissionrequest.Event
 // PermissionRequestOutput is the response for PermissionRequest events.
 type PermissionRequestOutput = permissionrequest.Output
 
-// PermissionRequestResults is the hook-scoped response builder for PermissionRequest.
+// PermissionRequestResults is the hook-scoped response builder for
+// PermissionRequest. Ask is a soft deny (behavior "deny", exit 0), not a user
+// confirmation prompt; prefer Deny to block or Noop to fall through.
 type PermissionRequestResults = permissionrequest.Results

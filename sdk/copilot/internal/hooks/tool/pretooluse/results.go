@@ -8,7 +8,8 @@ type Results interface {
 	Allow() Output
 	// Deny returns a deny verdict with an agent-facing reason.
 	Deny(reason string) Output
-	// Ask returns an ask verdict with an agent-facing reason.
+	// Ask returns an ask verdict with an agent-facing reason. Under Copilot
+	// cloud agent, "ask" is treated as "deny" because no user is available.
 	Ask(reason string) Output
 	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
 	Noop() Output
@@ -29,7 +30,8 @@ func (results) Deny(reason string) Output {
 	return output{decision: event.DecisionDeny, reason: reason}
 }
 
-// Ask returns an ask verdict with an agent-facing reason.
+// Ask returns an ask verdict with an agent-facing reason. Cloud agent treats
+// ask as deny.
 func (results) Ask(reason string) Output {
 	return output{decision: event.DecisionAsk, reason: reason}
 }

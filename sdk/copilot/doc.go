@@ -6,6 +6,13 @@
 // implements it) as snake_case JSON with a process exit code. Payloads must
 // include hook_event_name on the wire.
 //
+// PermissionRequest.Ask is a soft deny (behavior "deny", exit 0), not a user
+// confirmation prompt: Copilot's permissionRequest schema accepts only allow or
+// deny. Prefer Deny to block, or Noop/nil to fall through to the host permission
+// UI. Under Copilot cloud agent, permissionRequest is inert (use PreToolUse);
+// PreToolUse "ask" is treated as deny; command-hook timeouts are fail-open.
+// See docs/agents/copilot.md.
+//
 // Tool input on PreToolUse and related events is typed as [Input] with AsBash,
 // AsCreate, and related accessors (and Tool* name constants) in this package.
 //

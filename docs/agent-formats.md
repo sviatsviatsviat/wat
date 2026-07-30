@@ -109,7 +109,12 @@ Portable builders deliberately expose the intersection of native behavior:
 
 Known limitations are part of the contract:
 
-- Copilot cloud-agent handling may downgrade `Ask` to a denial.
+- Copilot cloud-agent handling treats `PreToolUse` `"ask"` as a denial (no
+  user). Native Copilot `PermissionRequest.Ask` is a soft deny
+  (`behavior:"deny"`, exit 0), not a confirmation UI; use `Noop` to fall
+  through to the host permission prompt, and prefer `Deny` to block. Cloud
+  agents do not apply `permissionRequest` (gate with `PreToolUse`). Command-hook
+  timeouts are fail-open.
 - Cursor emits `updated_input` only for generic `preToolUse`, not for its
   dedicated pre-tool events.
 - Cursor `WithUpdatedOutput` maps to `updated_mcp_tool_output` on generic
