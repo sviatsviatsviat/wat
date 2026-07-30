@@ -8,6 +8,8 @@ The documentation is organized by audience:
 | [SDK API](sdk.md) | Go developers writing portable or native hook handlers |
 | [Architecture](architecture.md) | Maintainers extending packages, events, adapters, or commands |
 | [Agent protocols](agent-formats.md) | Maintainers working on codecs, mappings, and tool normalization |
+| [Claude protocols](agents/claude.md) | Claude Code event capabilities, block/exit policy, and host footguns |
+| [Cursor protocols](agents/cursor.md) | Cursor event capabilities, permissions, and host constraints |
 | [Contributing](../CONTRIBUTING.md) | Anyone preparing a change or pull request |
 | [Changelog](../CHANGELOG.md) | User-visible changes by release |
 

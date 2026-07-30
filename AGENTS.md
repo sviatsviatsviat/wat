@@ -10,6 +10,7 @@ Read these committed references before changing behavior:
 - [SDK API](docs/sdk.md) for the public author-facing contract.
 - [Using wat](docs/usage.md) for CLI behavior.
 - [Agent protocols](docs/agent-formats.md) for codec and normalization facts.
+- [Claude protocols](docs/agents/claude.md) for Claude Code-native host behavior.
 - [Cursor protocols](docs/agents/cursor.md) for Cursor-native host behavior.
 - [Contributing](CONTRIBUTING.md) for tests, docs, changelog, commits, and CI.
 
