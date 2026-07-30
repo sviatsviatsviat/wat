@@ -45,8 +45,8 @@ type InstructionsLoaded = instructionsloaded.Event
 // ConfigChange is the ConfigChange hook event.
 type ConfigChange = configchange.Event
 
-// ConfigChangeOutput is the response for ConfigChange events.
-type ConfigChangeOutput = configchange.Output
-
 // ConfigChangeResults is the hook-scoped response builder for ConfigChange.
 type ConfigChangeResults = configchange.Results
+
+// ConfigChangeOutput is the response for ConfigChange events.
+type ConfigChangeOutput = DecisionOutput

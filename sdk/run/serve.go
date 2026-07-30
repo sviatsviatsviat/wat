@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
@@ -118,6 +119,15 @@ func writeOutput(out, errw io.Writer, dialectName string, acc hookkit.Output) in
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "run: %s: encode: %v\n", dialectName, err)
 		return 1
+	}
+	// Claude Code exit 2: host ignores stdout JSON and feeds stderr to the model.
+	if dialectName == "claude" && exitCode == 2 {
+		if len(stdout) > 0 {
+			if _, err := fmt.Fprintln(errw, strings.TrimRight(string(stdout), "\r\n")); err != nil {
+				return 1
+			}
+		}
+		return exitCode
 	}
 	if len(stdout) > 0 {
 		if _, err := out.Write(stdout); err != nil {

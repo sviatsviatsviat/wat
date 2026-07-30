@@ -31,6 +31,19 @@ func TestDecode_TeammateIdle(t *testing.T) {
 	}
 }
 
+func TestEncode_TeammateIdleBlock(t *testing.T) {
+	out, code, err := results{}.Block("keep working").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.BlockExit {
+		t.Fatalf("exit = %d, want %d", code, event.BlockExit)
+	}
+	if string(out) != "keep working" {
+		t.Fatalf("body = %q", out)
+	}
+}
+
 func init() {
 	register(testCodec)
 }

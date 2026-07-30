@@ -1,11 +1,17 @@
 package configchange
 
-// Results is the hook-scoped response builder for ConfigChange.
+import (
+	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
+)
+
+// Results is the hook-scoped response builder for this event.
 type Results interface {
-	// Block returns a block result that prevents the configuration change.
-	Block(reason string) Output
-	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
-	Noop() Output
+	// Context returns a context-injection-only ConfigChange result.
+	Context(text string) event.DecisionOutput
+	// Block returns a decision:"block" result that rejects the config change
+	// (except policy_settings, which Claude does not allow hooks to block).
+	// Encodes with SuccessExit; Claude processes JSON only on exit 0.
+	Block(reason string) event.DecisionOutput
 	isResults()
 }
 
@@ -13,12 +19,12 @@ type results struct{}
 
 func (results) isResults() {}
 
-// Block returns a block result that prevents the configuration change.
-func (results) Block(reason string) Output {
-	return output{block: true, reason: reason}
+// Context returns a context-injection-only ConfigChange result.
+func (results) Context(text string) event.DecisionOutput {
+	return event.ContextDecision(event.ConfigChange, text)
 }
 
-// Noop returns an empty response (silent stdout).
-func (results) Noop() Output {
-	return output{}
+// Block returns a decision:"block" result that rejects the config change.
+func (results) Block(reason string) event.DecisionOutput {
+	return event.BlockDecision(event.ConfigChange, reason)
 }

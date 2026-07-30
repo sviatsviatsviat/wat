@@ -40,6 +40,23 @@ func TestEncode_PostToolUseFailureContext(t *testing.T) {
 	}
 }
 
+func TestEncode_PostToolUseFailureBlock(t *testing.T) {
+	out, code, err := results{}.Block("unsafe failure output").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d, want %d", code, event.SuccessExit)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["decision"] != "block" || got["reason"] != "unsafe failure output" {
+		t.Fatalf("got %s", out)
+	}
+}
+
 func init() {
 	register(testCodec)
 }

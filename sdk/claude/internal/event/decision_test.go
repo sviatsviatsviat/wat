@@ -68,3 +68,53 @@ func TestDecisionOutput_MergeBlockWins(t *testing.T) {
 		t.Fatal("expected Stop after block")
 	}
 }
+
+func TestExitBlockOutput_Block(t *testing.T) {
+	out, code, err := BlockExitBlock(TeammateIdle, "keep working").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != BlockExit {
+		t.Fatalf("exit = %d, want %d", code, BlockExit)
+	}
+	if string(out) != "keep working" {
+		t.Fatalf("stdout body = %q", out)
+	}
+}
+
+func TestExitBlockOutput_Context(t *testing.T) {
+	out, code, err := ContextExitBlock(TaskCreated, "logged").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != SuccessExit {
+		t.Fatalf("exit = %d, want %d", code, SuccessExit)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	hso := got["hookSpecificOutput"].(map[string]any)
+	if hso["additionalContext"] != "logged" {
+		t.Fatalf("got %s", out)
+	}
+}
+
+func TestExitBlockOutput_MergeBlockClearsJSON(t *testing.T) {
+	a := ContextExitBlock(TaskCompleted, "ctx")
+	b := BlockExitBlock(TaskCompleted, "not done")
+	merged, _, err := a.Merge(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, code, err := merged.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != BlockExit {
+		t.Fatalf("exit = %d, want %d", code, BlockExit)
+	}
+	if string(out) != "not done" {
+		t.Fatalf("body = %q", out)
+	}
+}

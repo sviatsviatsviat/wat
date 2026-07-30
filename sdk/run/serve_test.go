@@ -164,6 +164,25 @@ func TestServe_FoldsOutputsEncodeOnce(t *testing.T) {
 	}
 }
 
+func TestServe_ClaudeBlockExitWritesStderr(t *testing.T) {
+	r, d := newTestRouter("claude", "TestEvent", nil)
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (foldOutput, error) {
+		return foldOutput{body: "keep working", exitCode: 2}, nil
+	}))
+
+	var stdout, stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &stderr, serveHints{})
+	if code != 2 {
+		t.Fatalf("exit = %d, want 2", code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty for Claude exit 2", stdout.String())
+	}
+	if got := strings.TrimSpace(stderr.String()); got != "keep working" {
+		t.Fatalf("stderr = %q, want keep working", stderr.String())
+	}
+}
+
 func TestServe_StopSkipsLaterHandlers(t *testing.T) {
 	r, d := newTestRouter("stop", "TestEvent", nil)
 	var calls atomic.Int32

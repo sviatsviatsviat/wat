@@ -17,7 +17,7 @@ func TestUseHooks_registersPreviouslyDecodeOnlyEvents(t *testing.T) {
 		PostToolBatch(func(context.Context, claude.PostToolBatch, claude.PostToolBatchResults) (claude.DecisionOutput, error) {
 			return nil, nil
 		}).
-		TeammateIdle(func(context.Context, claude.TeammateIdle, claude.TeammateIdleResults) (claude.CommonOutput, error) {
+		TeammateIdle(func(context.Context, claude.TeammateIdle, claude.TeammateIdleResults) (claude.ExitBlockOutput, error) {
 			return nil, nil
 		}).
 		ConfigChange(func(context.Context, claude.ConfigChange, claude.ConfigChangeResults) (claude.ConfigChangeOutput, error) {

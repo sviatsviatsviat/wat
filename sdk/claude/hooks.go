@@ -103,7 +103,7 @@ func (c *hooks) UserPromptSubmit(fn func(context.Context, UserPromptSubmit, User
 }
 
 // UserPromptExpansion registers a UserPromptExpansion handler on the registrar.
-func (c *hooks) UserPromptExpansion(fn func(context.Context, UserPromptExpansion, UserPromptExpansionResults) (CommonOutput, error)) *hooks {
+func (c *hooks) UserPromptExpansion(fn func(context.Context, UserPromptExpansion, UserPromptExpansionResults) (DecisionOutput, error)) *hooks {
 	return bind(c, fn, userpromptexpansion.RegisterHandler)
 }
 
@@ -148,17 +148,17 @@ func (c *hooks) SubagentStop(fn func(context.Context, SubagentStop, StopResults)
 }
 
 // TaskCreated registers a TaskCreated handler on the registrar.
-func (c *hooks) TaskCreated(fn func(context.Context, TaskCreated, TaskCreatedResults) (CommonOutput, error)) *hooks {
+func (c *hooks) TaskCreated(fn func(context.Context, TaskCreated, TaskCreatedResults) (ExitBlockOutput, error)) *hooks {
 	return bind(c, fn, taskcreated.RegisterHandler)
 }
 
 // TaskCompleted registers a TaskCompleted handler on the registrar.
-func (c *hooks) TaskCompleted(fn func(context.Context, TaskCompleted, TaskCompletedResults) (CommonOutput, error)) *hooks {
+func (c *hooks) TaskCompleted(fn func(context.Context, TaskCompleted, TaskCompletedResults) (ExitBlockOutput, error)) *hooks {
 	return bind(c, fn, taskcompleted.RegisterHandler)
 }
 
 // TeammateIdle registers a TeammateIdle handler on the registrar.
-func (c *hooks) TeammateIdle(fn func(context.Context, TeammateIdle, TeammateIdleResults) (CommonOutput, error)) *hooks {
+func (c *hooks) TeammateIdle(fn func(context.Context, TeammateIdle, TeammateIdleResults) (ExitBlockOutput, error)) *hooks {
 	return bind(c, fn, teammateidle.RegisterHandler)
 }
 
@@ -194,7 +194,7 @@ func (c *hooks) WorktreeRemove(fn func(context.Context, WorktreeRemove) error) *
 }
 
 // PreCompact registers a PreCompact handler on the registrar.
-func (c *hooks) PreCompact(fn func(context.Context, PreCompact, PreCompactResults) (CommonOutput, error)) *hooks {
+func (c *hooks) PreCompact(fn func(context.Context, PreCompact, PreCompactResults) (DecisionOutput, error)) *hooks {
 	return bind(c, fn, precompact.RegisterHandler)
 }
 
@@ -219,7 +219,7 @@ func (c *hooks) InstructionsLoaded(fn func(context.Context, InstructionsLoaded) 
 }
 
 // ConfigChange registers a ConfigChange handler on the registrar.
-func (c *hooks) ConfigChange(fn func(context.Context, ConfigChange, ConfigChangeResults) (ConfigChangeOutput, error)) *hooks {
+func (c *hooks) ConfigChange(fn func(context.Context, ConfigChange, ConfigChangeResults) (DecisionOutput, error)) *hooks {
 	return bind(c, fn, configchange.RegisterHandler)
 }
 
