@@ -6,8 +6,8 @@ import (
 
 // ExitBlockOutput is a response for TeammateIdle, TaskCreated, and TaskCompleted.
 // Context and continue:false use JSON on SuccessExit. Block encodes BlockExit with
-// a plain-text reason that run.Serve writes to stderr for Claude (stdout is ignored
-// on exit 2). Prefer Block to roll back or continue the action; use
+// a plain-text reason marked BodyOnStderr so run writes it to stderr (Claude
+// ignores stdout on exit 2). Prefer Block to roll back or continue the action; use
 // WithContinue(false) only when stopping the teammate entirely.
 type ExitBlockOutput interface {
 	hookkit.Output
@@ -101,6 +101,12 @@ func (o exitBlockOutput) Encode() ([]byte, int, error) {
 		return []byte(o.reason), BlockExit, nil
 	}
 	return MarshalHookOutput(o.eventName, o.encodeInto)
+}
+
+// BodyOnStderr reports whether Encode's body should be written to stderr.
+// BlockExit reasons go to stderr; Claude ignores stdout on exit 2.
+func (o exitBlockOutput) BodyOnStderr() bool {
+	return o.blockExit
 }
 
 // Merge combines other into this ExitBlockOutput.

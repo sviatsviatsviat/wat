@@ -19,3 +19,11 @@ type Output interface {
 	// Stop reports whether remaining handlers should be skipped.
 	Stop() bool
 }
+
+// BodyOnStderr is an optional Output extension. When BodyOnStderr returns true,
+// run writes Encode's body to stderr instead of stdout. Native outputs use this
+// when a host ignores stdout for a given exit code and reads the reason from
+// stderr (for example Claude BlockExit).
+type BodyOnStderr interface {
+	BodyOnStderr() bool
+}

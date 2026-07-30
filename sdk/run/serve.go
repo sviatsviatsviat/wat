@@ -115,25 +115,23 @@ func writeOutput(out, errw io.Writer, dialectName string, acc hookkit.Output) in
 	if acc == nil || acc.IsZero() {
 		return 0
 	}
-	stdout, exitCode, err := acc.Encode()
+	body, exitCode, err := acc.Encode()
 	if err != nil {
 		_, _ = fmt.Fprintf(errw, "run: %s: encode: %v\n", dialectName, err)
 		return 1
 	}
-	// Claude Code exit 2: host ignores stdout JSON and feeds stderr to the model.
-	if dialectName == "claude" && exitCode == 2 {
-		if len(stdout) > 0 {
-			if _, err := fmt.Fprintln(errw, strings.TrimRight(string(stdout), "\r\n")); err != nil {
-				return 1
-			}
+	if len(body) == 0 {
+		return exitCode
+	}
+	if toStderr, ok := acc.(hookkit.BodyOnStderr); ok && toStderr.BodyOnStderr() {
+		if _, err := fmt.Fprintln(errw, strings.TrimRight(string(body), "\r\n")); err != nil {
+			return 1
 		}
 		return exitCode
 	}
-	if len(stdout) > 0 {
-		if _, err := out.Write(stdout); err != nil {
-			_, _ = fmt.Fprintf(errw, "run: write stdout: %v\n", err)
-			return 1
-		}
+	if _, err := out.Write(body); err != nil {
+		_, _ = fmt.Fprintf(errw, "run: write stdout: %v\n", err)
+		return 1
 	}
 	return exitCode
 }
