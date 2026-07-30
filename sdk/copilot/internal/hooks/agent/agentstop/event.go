@@ -8,7 +8,9 @@ import (
 // Event is the Stop (agentStop) hook event.
 // When the host scopes the stop to a subagent, AgentName and/or AgentDisplayName
 // are set; hook authors should check IsSubagent (or those fields) rather than
-// expecting a separate SubagentStop wire name.
+// expecting a separate SubagentStop wire name. Explicit SubagentStop wire
+// events (including last_assistant_message / modifiedResponse) stay on the
+// SubagentStop package.
 //
 // Check StopHookActive before returning FollowUp: when true, a prior stop hook
 // already forced continuation for this turn, and another FollowUp risks a loop.

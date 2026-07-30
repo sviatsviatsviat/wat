@@ -6,8 +6,9 @@ import (
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
 
-// Output is the response for agentStop and subagentStop events.
+// Output is the response for AgentStop events.
 // Construct via Results builders. A nil value is a no-op.
+// SubagentStop uses its own Output type, which also supports modifiedResponse.
 type Output interface {
 	hookkit.Output
 	isOutput()

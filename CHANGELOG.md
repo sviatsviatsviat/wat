@@ -7,6 +7,16 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Copilot `SubagentStop` decodes `last_assistant_message` (full final subagent
+  response text) and exposes dedicated `SubagentStopResults` /
+  `SubagentStopOutput` with `FollowUp` and `ModifiedResponse` (host field
+  `modifiedResponse`). A block decision wins over a rewrite; rewrites take the
+  last non-empty value across handlers. `AgentStop` remains FollowUp-only.
+  Portable `OnSubagentStop` maps the message onto `Turn.LastAssistantMessage`
+  / `Subagent.Summary` and still exposes only `FollowUp`.
+
 ### Fixed
 
 - Copilot `PermissionRequest.Ask` is documented as a soft deny
@@ -29,6 +39,7 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   (the transport wat installs). JSON `hookSpecificOutput.worktreePath` was
   incorrect for that transport and could prevent the host from using the
   returned directory.
+
 
 ## [v0.2.0-alpha] - 2026-07-27
 
