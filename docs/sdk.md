@@ -192,6 +192,9 @@ Claude also exports typed decode models for additional native events that do
 not yet have `UseHooks` registration methods. Treat the fluent method list as
 the supported author-facing registration surface.
 
+`WorktreeCreate` is special: command hooks (what wat installs) must print a
+plain worktree path on stdout, not JSON `hookSpecificOutput`.
+
 ### GitHub Copilot
 
 | Domain | Methods |

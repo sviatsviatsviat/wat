@@ -8,6 +8,12 @@ import (
 // Output is the response for this hook event.
 // Construct via Results builders and With* methods.
 // A nil value is a no-op.
+//
+// Encode writes a plain worktree path for Claude Code command hooks (the
+// transport wat installs). HTTP hooks instead expect JSON
+// hookSpecificOutput.worktreePath; wat does not emit that form.
+// Shared Common With* fields remain for merge consistency but are not written
+// to stdout for this event.
 type Output interface {
 	hookkit.Output
 	isOutput()
@@ -65,16 +71,14 @@ func (o output) WithTerminalSequence(seq string) Output {
 	return o
 }
 
-func (o output) encodeInto(top, hso map[string]any) {
-	event.ApplyCommon(top, o.Common)
-	if o.worktreePath != "" {
-		hso["worktreePath"] = o.worktreePath
-	}
-}
-
-// Encode renders this output as Claude Code stdout JSON.
+// Encode renders this output as a plain worktree path on stdout for Claude Code
+// command hooks. An empty path is a no-op encode (nil body, exit 0); the host
+// treats a missing path as worktree-creation failure.
 func (o output) Encode() ([]byte, int, error) {
-	return event.MarshalHookOutput(event.WorktreeCreate, o.encodeInto)
+	if o.worktreePath == "" {
+		return nil, event.SuccessExit, nil
+	}
+	return []byte(o.worktreePath), event.SuccessExit, nil
 }
 
 // Merge combines other into this WorktreeCreate output.

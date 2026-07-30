@@ -1,6 +1,7 @@
 package worktreecreate
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -17,7 +18,9 @@ func TestDecode_WorktreeCreate(t *testing.T) {
 	if ev.Name != "feature-auth" {
 		t.Fatalf("Name = %q", ev.Name)
 	}
+}
 
+func TestEncode_Path_plainStdout(t *testing.T) {
 	out, code, err := results{}.Path("/tmp/wt").Encode()
 	if err != nil {
 		t.Fatal(err)
@@ -25,24 +28,65 @@ func TestDecode_WorktreeCreate(t *testing.T) {
 	if code != event.SuccessExit {
 		t.Fatalf("exit = %d, want %d", code, event.SuccessExit)
 	}
-	var got map[string]any
-	if err := json.Unmarshal(out, &got); err != nil {
+	if string(out) != "/tmp/wt" {
+		t.Fatalf("stdout = %q, want plain path", out)
+	}
+	if json.Valid(out) {
+		t.Fatalf("command-hook path must not be JSON, got %s", out)
+	}
+}
+
+func TestEncode_Path_ignoresCommonJSON(t *testing.T) {
+	out, code, err := results{}.Path("/tmp/wt").WithSystemMessage("note").WithContinue(true).Encode()
+	if err != nil {
 		t.Fatal(err)
 	}
-	hso, ok := got["hookSpecificOutput"].(map[string]any)
-	if !ok {
-		t.Fatalf("missing hookSpecificOutput: %s", out)
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d, want %d", code, event.SuccessExit)
 	}
-	if hso["hookEventName"] != event.WorktreeCreate {
-		t.Fatalf("hookEventName = %v, want %q", hso["hookEventName"], event.WorktreeCreate)
+	if string(out) != "/tmp/wt" {
+		t.Fatalf("stdout = %q, want plain path only", out)
 	}
-	if hso["worktreePath"] != "/tmp/wt" {
-		t.Fatalf("worktreePath = %v", hso["worktreePath"])
+	if bytes.Contains(out, []byte("systemMessage")) || bytes.Contains(out, []byte("hookSpecificOutput")) {
+		t.Fatalf("Common/JSON fields must not appear on command-hook stdout: %s", out)
 	}
+}
 
-	// Results has no Noop(); empty output is the zero-state contract.
+func TestEncode_emptyPath(t *testing.T) {
+	out, code, err := (output{}).Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d, want %d", code, event.SuccessExit)
+	}
+	if out != nil {
+		t.Fatalf("empty path encode = %q, want nil", out)
+	}
 	if !(output{}).IsZero() {
 		t.Fatal("empty worktree create output should be zero")
+	}
+}
+
+func TestMerge_Path_lastWins(t *testing.T) {
+	a := results{}.Path("/tmp/a")
+	b := results{}.Path("/tmp/b")
+	merged, warnings, err := a.Merge(b.(hookkit.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 1 || warnings[0] == "" {
+		t.Fatalf("warnings = %v, want overwrite warning", warnings)
+	}
+	out, code, err := merged.(Output).Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.SuccessExit {
+		t.Fatalf("exit = %d, want %d", code, event.SuccessExit)
+	}
+	if string(out) != "/tmp/b" {
+		t.Fatalf("merged path = %q, want /tmp/b", out)
 	}
 }
 
