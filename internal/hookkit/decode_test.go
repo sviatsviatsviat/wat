@@ -12,9 +12,8 @@ func TestDecodeAsAndThen(t *testing.T) {
 		Name  string `json:"name"`
 		Bound string
 	}
-	got, err := DecodeAsAndThen(json.RawMessage(`{"name":"x"}`), func(e *ev, _ []byte) error {
+	got, err := DecodeAsAndThen(json.RawMessage(`{"name":"x"}`), func(e *ev, _ []byte) {
 		e.Bound = e.Name
-		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -25,6 +24,13 @@ func TestDecodeAsAndThen(t *testing.T) {
 	_, err = DecodeAsAndThen[ev]([]byte(`{`), nil)
 	if err == nil {
 		t.Fatal("expected unmarshal error")
+	}
+
+	_, err = DecodeAsAndThenErr[ev](json.RawMessage(`{"name":"x"}`), func(*ev, []byte) error {
+		return errors.New("after failed")
+	})
+	if err == nil || err.Error() != "after failed" {
+		t.Fatalf("DecodeAsAndThenErr = %v", err)
 	}
 }
 

@@ -29,9 +29,8 @@ func (Event) EventName() string { return event.BeforeMCPExecution }
 // register registers this hook event decoder on c.
 func register(c *hookkit.Codec) {
 	c.Register(event.BeforeMCPExecution, func(raw []byte) (hookkit.Event, error) {
-		return hookkit.DecodeEvent(c, raw, func(e *Event, raw []byte) error {
+		return hookkit.DecodeEvent(c, raw, func(e *Event, raw []byte) {
 			e.BindToolInput(raw)
-			return nil
 		})
 	})
 }

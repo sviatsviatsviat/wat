@@ -34,7 +34,7 @@ func (e Event) ResultRaw() json.RawMessage {
 // register registers this hook event decoder on c.
 func register(c *hookkit.Codec) {
 	c.Register(event.PostToolUse, func(raw []byte) (hookkit.Event, error) {
-		return hookkit.DecodeEvent(c, raw, func(e *Event, payload []byte) error {
+		return hookkit.DecodeEventErr(c, raw, func(e *Event, payload []byte) error {
 			return e.BindToolInput(payload)
 		})
 	})
