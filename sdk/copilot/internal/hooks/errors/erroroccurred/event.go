@@ -1,7 +1,6 @@
 package erroroccurred
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -46,13 +45,4 @@ func (e Event) Detail() (event.ErrorDetail, bool) {
 // register registers this hook event decoder on c.
 func register(c *hookkit.Codec) {
 	c.Register(event.ErrorOccurred, hookkit.EventDecoder[Event](c))
-}
-
-// RegisterHandler registers an ErrorOccurred observe handler on reg.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
-	if fn == nil {
-		return
-	}
-	register(d.Codec())
-	hookkit.RegisterObserve(d, fn)
 }
