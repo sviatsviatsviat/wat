@@ -353,3 +353,42 @@ func TestParseServeHints(t *testing.T) {
 		t.Fatalf("got = %#v", got)
 	}
 }
+
+func TestServe_CopilotCamelCaseEmptyHandlers(t *testing.T) {
+	r, _ := newTestRouter("copilot", "PreToolUse", nil)
+	var stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"preToolUse","timestamp":"2026-01-01T00:00:00Z"}`), &bytes.Buffer{}, &stderr, serveHints{})
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `PascalCase event "PreToolUse"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestServe_CopilotPascalCaseEmptyHandlersStillOK(t *testing.T) {
+	r, _ := newTestRouter("copilot", "PreToolUse", nil)
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"SessionStart","timestamp":"2026-01-01T00:00:00Z"}`), &bytes.Buffer{}, &bytes.Buffer{}, serveHints{})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 for unhandled PascalCase event", code)
+	}
+}
+
+type camelCaseEvt struct{}
+
+func (camelCaseEvt) EventName() string { return "preToolUse" }
+
+func TestServe_CopilotUnknownCamelCaseDecode(t *testing.T) {
+	r, d := newTestRouter("copilot", "PreToolUse", nil)
+	d.Register(hookkit.Handler(func(context.Context, camelCaseEvt) (emptyOutput, error) {
+		return emptyOutput{}, nil
+	}))
+	var stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"preToolUse","timestamp":"2026-01-01T00:00:00Z"}`), &bytes.Buffer{}, &stderr, serveHints{})
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `use PascalCase "PreToolUse"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}

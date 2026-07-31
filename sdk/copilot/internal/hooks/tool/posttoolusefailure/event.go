@@ -37,8 +37,8 @@ func (e Event) ErrorMessage() string {
 // register registers this hook event decoder on c.
 func register(c *hookkit.Codec) {
 	c.Register(event.PostToolUseFailure, func(raw []byte) (hookkit.Event, error) {
-		return hookkit.DecodeEvent(c, raw, func(e *Event, payload []byte) {
-			e.BindToolInput(payload)
+		return hookkit.DecodeEvent(c, raw, func(e *Event, payload []byte) error {
+			return e.BindToolInput(payload)
 		})
 	})
 }

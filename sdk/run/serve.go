@@ -51,11 +51,24 @@ func serve(ctx context.Context, router *router, in io.Reader, out io.Writer, err
 
 	handlers := d.HandlersFor(eventName)
 	if len(handlers) == 0 {
+		if name == "copilot" {
+			if pascal, ok := copilotPascalHint(eventName); ok {
+				writeCopilotCasingReject(errw, eventName, pascal)
+				return 1
+			}
+			if pascal := copilotCaseFoldPascal(eventName); pascal != "" {
+				writeCopilotCasingReject(errw, eventName, pascal)
+				return 1
+			}
+		}
 		return 0
 	}
 
 	event, err := d.Codec().DecodeAs(raw, eventName)
 	if err != nil {
+		if name == "copilot" {
+			err = augmentCopilotUnknownEvent(err, eventName)
+		}
 		_, _ = fmt.Fprintf(errw, "run: %s: decode: %v\n", name, err)
 		return 1
 	}

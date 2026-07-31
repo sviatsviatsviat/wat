@@ -25,7 +25,7 @@ type Event struct {
 // EventName returns the hook event name.
 func (Event) EventName() string { return event.PostToolBatch }
 
-func bindToolInputs(e *Event, raw []byte) {
+func bindToolInputs(e *Event, raw []byte) error {
 	var wire struct {
 		ToolCalls []struct {
 			ToolName  string          `json:"tool_name"`
@@ -40,6 +40,7 @@ func bindToolInputs(e *Event, raw []byte) {
 		}
 		e.ToolCalls[i].ToolInput = tools.NewInput(e.ToolCalls[i].ToolName, input)
 	}
+	return nil
 }
 
 // register registers this hook event decoder on c.

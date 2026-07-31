@@ -12,8 +12,9 @@ func TestDecodeAsAndThen(t *testing.T) {
 		Name  string `json:"name"`
 		Bound string
 	}
-	got, err := DecodeAsAndThen(json.RawMessage(`{"name":"x"}`), func(e *ev, _ []byte) {
+	got, err := DecodeAsAndThen(json.RawMessage(`{"name":"x"}`), func(e *ev, _ []byte) error {
 		e.Bound = e.Name
+		return nil
 	})
 	if err != nil {
 		t.Fatal(err)

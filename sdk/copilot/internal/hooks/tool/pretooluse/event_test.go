@@ -168,6 +168,16 @@ func TestToolInput_AsBash(t *testing.T) {
 	}
 }
 
+func TestDecode_PreToolUse_MissingToolName(t *testing.T) {
+	_, err := testCodec.Decode([]byte(`{"hook_event_name":"PreToolUse","session_id":"s","timestamp":"2026-01-01T00:00:00Z","cwd":"/w","toolName":"bash","toolArgs":{"command":"pwd"}}`))
+	if err == nil {
+		t.Fatal("expected decode error for camelCase tool fields")
+	}
+	if !strings.Contains(err.Error(), "tool_name is required") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func init() {
 	register(testCodec)
 }

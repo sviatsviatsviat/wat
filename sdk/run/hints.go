@@ -3,6 +3,7 @@ package run
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 )
@@ -60,6 +61,9 @@ func resolveEvent(d *hookkit.Dialect, dialectName string, raw []byte, hints serv
 		eventName = hints.event
 		if peeked, err := hookkit.PeekHookEventName(raw); err == nil && peeked != "" && peeked != eventName {
 			_, _ = fmt.Fprintf(errw, "run: warning: --event %q disagrees with hook_event_name %q; using --event\n", eventName, peeked)
+			if dialectName == "copilot" && strings.EqualFold(peeked, eventName) && peeked != eventName {
+				_, _ = fmt.Fprintf(errw, "run: warning: Copilot event names are case-sensitive PascalCase (for example PreToolUse), not camelCase\n")
+			}
 		}
 		return eventName, 0
 	}
