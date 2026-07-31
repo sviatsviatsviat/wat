@@ -7,6 +7,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [v0.3.0-alpha] - 2026-07-31
+
 ### Added
 
 - Claude `UseHooks` registration for previously decode-only events: `Setup`,
@@ -41,6 +43,25 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `BackgroundTask` / `SessionCron` on the Claude SDK; portable stop events do
   not project these Claude-only inputs.
 
+### Changed
+
+- Copilot `SubagentStop` handlers must migrate from
+  `(context.Context, SubagentStop, StopResults) (StopOutput, error)` to
+  `(context.Context, SubagentStop, SubagentStopResults) (SubagentStopOutput,
+  error)`. `StopResults` / `StopOutput` remain AgentStop-only.
+- Claude `UserPromptExpansion` and `PreCompact` handlers now return
+  `DecisionOutput` (was `CommonOutput`) so they can use event-scoped `Block`.
+  `TaskCreated` and `TaskCompleted` handlers now return `ExitBlockOutput` (was
+  `CommonOutput`) for exit-2 `Block`.
+- Claude `TaskCreated` / `TaskCompleted` expose flat task fields (`TaskID`,
+  `TaskSubject`, …) instead of a nested `Task` blob. `Elicitation` /
+  `ElicitationResult` use `MCPServerName` (`mcp_server_name`) instead of
+  `ServerName` (`server_name`); `Elicitation` also renames `Schema` to
+  `RequestedSchema`. `StopFailure` uses `Error` / `ErrorDetails` /
+  `LastAssistantMessage` instead of `ErrorType` / `Message`.
+- Claude `WorktreeCreate` `Path` encodes as plain stdout for command hooks (the
+  transport wat installs), not JSON `hookSpecificOutput.worktreePath`.
+
 ### Fixed
 
 - Copilot `PermissionRequest.Ask` is documented as a soft deny
@@ -63,7 +84,6 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   (the transport wat installs). JSON `hookSpecificOutput.worktreePath` was
   incorrect for that transport and could prevent the host from using the
   returned directory.
-
 
 ## [v0.2.0-alpha] - 2026-07-27
 
