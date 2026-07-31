@@ -1,6 +1,8 @@
 package elicitationresult
 
 import (
+	"maps"
+
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 )
@@ -39,8 +41,9 @@ func (o output) IsZero() bool {
 }
 
 // WithContent sets form field value overrides.
+// The map is cloned so later caller mutations do not change the encoded payload.
 func (o output) WithContent(content map[string]any) Output {
-	o.content = content
+	o.content = maps.Clone(content)
 	return o
 }
 

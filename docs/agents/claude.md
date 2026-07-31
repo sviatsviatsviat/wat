@@ -39,7 +39,7 @@ hook-scoped results builder and return an output.
 | `WorktreeCreate` | Result | Must return the created worktree path; see [WorktreeCreate path return](#worktreecreate-path-return) |
 | `Elicitation` / `ElicitationResult` | Result | Accept / decline / cancel |
 | `Setup` / `CwdChanged` / `FileChanged` | Result | Context / common fields |
-| `StopFailure` / `PostCompact` / `WorktreeRemove` / `InstructionsLoaded` / `SessionEnd` | Observe | Response body unused |
+| `StopFailure` / `PostCompact` / `WorktreeRemove` / `InstructionsLoaded` | Observe | Response body unused |
 
 Treat the fluent `UseHooks` method list as the supported author-facing
 registration surface. Exact exported event fields and builders remain

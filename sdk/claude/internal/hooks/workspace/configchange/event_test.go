@@ -1,7 +1,7 @@
 package configchange
 
 import (
-	"strings"
+	"encoding/json"
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
@@ -30,7 +30,11 @@ func TestEncode_ConfigChangeBlock(t *testing.T) {
 	if code != event.SuccessExit {
 		t.Fatalf("exit = %d, want %d", code, event.SuccessExit)
 	}
-	if !strings.Contains(string(out), `"decision":"block"`) || !strings.Contains(string(out), "reject settings") {
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["decision"] != "block" || got["reason"] != "reject settings" {
 		t.Fatalf("got %s", out)
 	}
 }

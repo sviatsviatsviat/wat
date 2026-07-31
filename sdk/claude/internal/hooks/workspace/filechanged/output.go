@@ -42,13 +42,9 @@ func (o output) IsZero() bool {
 }
 
 // WithWatchPaths replaces the dynamic FileChanged watch list.
-// An empty slice clears the dynamic watch list.
+// A nil or empty slice clears the dynamic watch list (encoded as []).
 func (o output) WithWatchPaths(paths []string) Output {
-	if paths == nil {
-		o.watchPaths = []string{}
-	} else {
-		o.watchPaths = append([]string(nil), paths...)
-	}
+	o.watchPaths = append([]string{}, paths...)
 	return o
 }
 

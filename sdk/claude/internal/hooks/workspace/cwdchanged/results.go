@@ -14,12 +14,9 @@ type results struct{}
 func (results) isResults() {}
 
 // WatchPaths returns a result that replaces the dynamic FileChanged watch list.
-// An empty slice clears the dynamic watch list.
+// A nil or empty slice clears the dynamic watch list (encoded as []).
 func (results) WatchPaths(paths []string) Output {
-	if paths == nil {
-		return output{watchPaths: []string{}}
-	}
-	return output{watchPaths: append([]string(nil), paths...)}
+	return output{watchPaths: append([]string{}, paths...)}
 }
 
 // Noop returns an empty response (silent stdout).

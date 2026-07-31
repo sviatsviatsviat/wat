@@ -23,25 +23,49 @@ func TestDecode_FileChanged(t *testing.T) {
 }
 
 func TestEncode_WatchPaths(t *testing.T) {
-	out, code, err := results{}.WatchPaths([]string{"/w/.env"}).Encode()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code != event.SuccessExit {
-		t.Fatalf("exit = %d", code)
-	}
-	var got map[string]any
-	if err := json.Unmarshal(out, &got); err != nil {
-		t.Fatal(err)
-	}
-	hso, ok := got["hookSpecificOutput"].(map[string]any)
-	if !ok {
-		t.Fatalf("missing hso: %s", out)
-	}
-	paths, ok := hso["watchPaths"].([]any)
-	if !ok || len(paths) != 1 || paths[0] != "/w/.env" {
-		t.Fatalf("watchPaths = %v", hso["watchPaths"])
-	}
+	t.Run("set", func(t *testing.T) {
+		out, code, err := results{}.WatchPaths([]string{"/w/.env"}).Encode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if code != event.SuccessExit {
+			t.Fatalf("exit = %d", code)
+		}
+		var got map[string]any
+		if err := json.Unmarshal(out, &got); err != nil {
+			t.Fatal(err)
+		}
+		hso, ok := got["hookSpecificOutput"].(map[string]any)
+		if !ok {
+			t.Fatalf("missing hso: %s", out)
+		}
+		paths, ok := hso["watchPaths"].([]any)
+		if !ok || len(paths) != 1 || paths[0] != "/w/.env" {
+			t.Fatalf("watchPaths = %v", hso["watchPaths"])
+		}
+	})
+
+	t.Run("clearEmpty", func(t *testing.T) {
+		out, code, err := results{}.WatchPaths([]string{}).Encode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if code != event.SuccessExit {
+			t.Fatalf("exit = %d", code)
+		}
+		var got map[string]any
+		if err := json.Unmarshal(out, &got); err != nil {
+			t.Fatal(err)
+		}
+		hso, ok := got["hookSpecificOutput"].(map[string]any)
+		if !ok {
+			t.Fatalf("missing hso: %s", out)
+		}
+		paths, ok := hso["watchPaths"].([]any)
+		if !ok || len(paths) != 0 {
+			t.Fatalf("watchPaths = %v, want empty array", hso["watchPaths"])
+		}
+	})
 }
 
 func init() {

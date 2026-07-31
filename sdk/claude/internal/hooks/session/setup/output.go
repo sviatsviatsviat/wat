@@ -1,6 +1,8 @@
 package setup
 
 import (
+	"maps"
+
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/event"
 	"github.com/sviatsviatsviat/wat/sdk/claude/internal/runtime"
@@ -48,8 +50,9 @@ func (o output) WithAdditionalContext(text string) Output {
 }
 
 // WithEnv sets session environment variables written to CLAUDE_ENV_FILE.
+// The map is cloned so later caller mutations do not change the encoded payload.
 func (o output) WithEnv(env map[string]string) Output {
-	o.env = env
+	o.env = maps.Clone(env)
 	return o
 }
 

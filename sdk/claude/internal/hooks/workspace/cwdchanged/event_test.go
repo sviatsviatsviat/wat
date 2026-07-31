@@ -42,8 +42,30 @@ func TestEncode_WatchPaths(t *testing.T) {
 		}
 	})
 
-	t.Run("clear", func(t *testing.T) {
+	t.Run("clearNil", func(t *testing.T) {
 		out, code, err := results{}.WatchPaths(nil).Encode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if code != event.SuccessExit {
+			t.Fatalf("exit = %d", code)
+		}
+		var got map[string]any
+		if err := json.Unmarshal(out, &got); err != nil {
+			t.Fatal(err)
+		}
+		hso, ok := got["hookSpecificOutput"].(map[string]any)
+		if !ok {
+			t.Fatalf("missing hso: %s", out)
+		}
+		paths, ok := hso["watchPaths"].([]any)
+		if !ok || len(paths) != 0 {
+			t.Fatalf("watchPaths = %v, want empty array", hso["watchPaths"])
+		}
+	})
+
+	t.Run("clearEmpty", func(t *testing.T) {
+		out, code, err := results{}.WatchPaths([]string{}).Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
