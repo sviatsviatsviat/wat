@@ -8,10 +8,11 @@ import (
 // DecodeAsAndThen unmarshals raw into T, then optionally runs after with the
 // original stdin bytes (for tool-input construction and similar decode-time work).
 func DecodeAsAndThen[T any](raw []byte, after func(*T, []byte)) (T, error) {
+	if after == nil {
+		return DecodeAsAndThenErr[T](raw, nil)
+	}
 	return DecodeAsAndThenErr(raw, func(e *T, b []byte) error {
-		if after != nil {
-			after(e, b)
-		}
+		after(e, b)
 		return nil
 	})
 }

@@ -354,41 +354,17 @@ func TestParseServeHints(t *testing.T) {
 	}
 }
 
-func TestServe_CopilotCamelCaseEmptyHandlers(t *testing.T) {
-	r, _ := newTestRouter("copilot", "PreToolUse", nil)
+func TestServe_MissingHandlersAdvisor(t *testing.T) {
+	r, d := newTestRouter("testdialect", "TestEvent", nil)
+	d.SetMissingHandlers(func(eventName string) error {
+		return fmt.Errorf("no handlers for %q", eventName)
+	})
 	var stderr bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"preToolUse","timestamp":"2026-01-01T00:00:00Z"}`), &bytes.Buffer{}, &stderr, serveHints{})
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"OtherEvent"}`), &bytes.Buffer{}, &stderr, serveHints{})
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
 	}
-	if !strings.Contains(stderr.String(), `PascalCase event "PreToolUse"`) {
-		t.Fatalf("stderr = %q", stderr.String())
-	}
-}
-
-func TestServe_CopilotPascalCaseEmptyHandlersStillOK(t *testing.T) {
-	r, _ := newTestRouter("copilot", "PreToolUse", nil)
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"SessionStart","timestamp":"2026-01-01T00:00:00Z"}`), &bytes.Buffer{}, &bytes.Buffer{}, serveHints{})
-	if code != 0 {
-		t.Fatalf("exit = %d, want 0 for unhandled PascalCase event", code)
-	}
-}
-
-type camelCaseEvt struct{}
-
-func (camelCaseEvt) EventName() string { return "preToolUse" }
-
-func TestServe_CopilotUnknownCamelCaseDecode(t *testing.T) {
-	r, d := newTestRouter("copilot", "PreToolUse", nil)
-	d.Register(hookkit.Handler(func(context.Context, camelCaseEvt) (emptyOutput, error) {
-		return emptyOutput{}, nil
-	}))
-	var stderr bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"preToolUse","timestamp":"2026-01-01T00:00:00Z"}`), &bytes.Buffer{}, &stderr, serveHints{})
-	if code != 1 {
-		t.Fatalf("exit = %d, want 1", code)
-	}
-	if !strings.Contains(stderr.String(), `use PascalCase "PreToolUse"`) {
+	if !strings.Contains(stderr.String(), `no handlers for "OtherEvent"`) {
 		t.Fatalf("stderr = %q", stderr.String())
 	}
 }

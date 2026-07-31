@@ -17,9 +17,14 @@ type HookHandler interface {
 // Dialect holds the codec and handlers for one agent.
 // Registration must finish before serve; not safe for concurrent use.
 type Dialect struct {
-	codec    *Codec
-	handlers map[string][]HookHandler
+	codec           *Codec
+	handlers        map[string][]HookHandler
+	missingHandlers MissingHandlersFunc
 }
+
+// MissingHandlersFunc advises Serve when no handlers are registered for an event.
+// A non-nil error fails the run; nil keeps the default successful no-op.
+type MissingHandlersFunc func(eventName string) error
 
 // NewDialect returns a dialect that decodes with c.
 func NewDialect(c *Codec) *Dialect {
@@ -30,6 +35,22 @@ func NewDialect(c *Codec) *Dialect {
 		codec:    c,
 		handlers: make(map[string][]HookHandler),
 	}
+}
+
+// SetMissingHandlers sets the advisor used when Serve finds no handlers for an event.
+func (d *Dialect) SetMissingHandlers(fn MissingHandlersFunc) {
+	if d == nil {
+		return
+	}
+	d.missingHandlers = fn
+}
+
+// MissingHandlers runs the advisor for eventName, or returns nil when unset.
+func (d *Dialect) MissingHandlers(eventName string) error {
+	if d == nil || d.missingHandlers == nil {
+		return nil
+	}
+	return d.missingHandlers(eventName)
 }
 
 // Register appends a hook handler on d.
