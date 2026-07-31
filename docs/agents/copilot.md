@@ -58,6 +58,7 @@ Upstream CLI samples often use camelCase event ids. wat config keys,
 | `sessionStart` | `SessionStart` | `EventSessionStart` |
 | `sessionEnd` | `SessionEnd` | `EventSessionEnd` |
 | `userPromptSubmitted` | `UserPromptSubmit` | Go API `UserPromptSubmitted` / `EventUserPromptSubmitted` → wire `"UserPromptSubmit"` |
+| `userPromptTransformed` | `UserPromptTransformed` | `EventUserPromptTransformed` |
 | `preToolUse` | `PreToolUse` | `EventPreToolUse` |
 | `postToolUse` | `PostToolUse` | `EventPostToolUse` |
 | `postToolUseFailure` | `PostToolUseFailure` | `EventPostToolUseFailure` |
@@ -84,13 +85,14 @@ hook-scoped results builder and return an output.
 | `SessionStart` | Result | Optional `additional_context`; fires once per cloud job as a new session |
 | `SessionEnd` | Observe | Response body is unused |
 | `UserPromptSubmit` | Observe | Go API `UserPromptSubmitted`; observe-only today |
+| `UserPromptTransformed` | Result | Optional `modified_transformed_prompt` rewrite only (cannot block) |
 | `PreToolUse` | Result | allow / deny / ask; optional `modified_args`; cloud treats ask as deny |
 | `PostToolUse` | Result | Optional `additional_context` |
 | `PostToolUseFailure` | Result | Recovery context; command hooks may use exit 2 to carry context |
 | `PermissionRequest` | Result | `behavior` allow / deny only; **CLI only** — cloud pre-approves tools |
 | `SubagentStart` | Result | Optional context; built-in `general-purpose` agent does not emit this event |
-| `SubagentStop` | Result | `FollowUp` / noop; see stop loops |
-| `Stop` (`AgentStop`) | Result | `FollowUp` encodes `decision: "block"`; may be main-agent or subagent-scoped |
+| `SubagentStop` | Result | `FollowUp` and/or `ModifiedResponse` (`modifiedResponse`); decodes `last_assistant_message`; see stop loops |
+| `Stop` (`AgentStop`) | Result | `FollowUp` encodes `decision: "block"`; may be main-agent or subagent-scoped; decodes `stop_hook_active` |
 | `PreCompact` | Observe | Observe-only today |
 | `Notification` | Result | Optional context; **CLI only** (does not fire under cloud agent) |
 | `ErrorOccurred` | Observe | Response body is unused |
@@ -141,31 +143,36 @@ The following Copilot-specific restrictions are particularly important:
 - Copilot's `Stop` wire event can describe either the main agent or a subagent.
   The portable adapter routes by optional agent identity fields so `OnStop` and
   `OnSubagentStop` do not both handle the same payload.
-- Native-only events (`PermissionRequest`, `Notification`, `ErrorOccurred`) have
-  no portable registration.
+- Native-only events (`PermissionRequest`, `Notification`, `ErrorOccurred`,
+  `UserPromptTransformed`) have no portable registration.
 - Portable `OnUserPrompt` maps to observe-only `UserPromptSubmit` on Copilot.
 - Portable `OnPreCompact` is observe-only, matching Copilot's native observe
   handler.
+- Portable `OnSubagentStop` maps Copilot `last_assistant_message` onto
+  `Turn.LastAssistantMessage` / `Subagent.Summary` but still exposes only
+  `FollowUp` (not `ModifiedResponse`).
 - Cloud-agent handling may downgrade portable `Ask` to a denial.
 
 Observe-only portable events never emit host JSON.
 
 ## Stop follow-up loops
 
-`StopResults.FollowUp` encodes `decision: "block"` with a `reason` string and
-exit 0. Copilot forces another agent turn with that reason.
+`AgentStop` uses `StopResults.FollowUp`; `SubagentStop` uses
+`SubagentStopResults.FollowUp`. Both encode `decision: "block"` with a `reason`
+string and exit 0. Copilot forces another agent turn with that reason.
+`SubagentStop` may also rewrite the final message with `ModifiedResponse`
+(`modifiedResponse`); a FollowUp/block decision wins over a rewrite.
 
-- Input `stop_hook_active` is true when a prior stop-hook block already forced
-  continuation for this turn. Gate `FollowUp` on that signal when the payload
-  includes it (Claude exposes it today as `StopHookActive`; check `sdk/copilot`
-  godoc for current Copilot field coverage).
+- Input `stop_hook_active` (`AgentStop.StopHookActive`) is true when a prior
+  stop-hook block already forced continuation for this turn. Gate `FollowUp` on
+  that signal.
 - Copilot also overrides the hook after several consecutive block continuations
   (host runaway guard).
 - When `AgentStop` carries agent identity fields, treat it as subagent-scoped
   (`AgentStop.IsSubagent()`).
 
-Portable handlers read Claude's mapped flag as `StopEvent.Turn.StopHookActive`
-when the adapter supplies it.
+Portable handlers read the mapped flag as `StopEvent.Turn.StopHookActive` when
+the adapter supplies it.
 
 ## Field casing checklist
 
