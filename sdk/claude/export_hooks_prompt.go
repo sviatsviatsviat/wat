@@ -19,3 +19,6 @@ type UserPromptExpansion = userpromptexpansion.Event
 
 // UserPromptExpansionResults is the hook-scoped response builder for UserPromptExpansion.
 type UserPromptExpansionResults = userpromptexpansion.Results
+
+// UserPromptExpansionOutput is the response for UserPromptExpansion events.
+type UserPromptExpansionOutput = DecisionOutput

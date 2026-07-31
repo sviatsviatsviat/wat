@@ -14,7 +14,7 @@ func RegisterPreCompact(fn model.PreCompactHandler) run.Hooks {
 	if fn == nil {
 		return nil
 	}
-	return sdkclaude.UseHooks().PreCompact(func(ctx context.Context, hook sdkclaude.PreCompact, _ sdkclaude.PreCompactResults) (sdkclaude.CommonOutput, error) {
+	return sdkclaude.UseHooks().PreCompact(func(ctx context.Context, hook sdkclaude.PreCompact, _ sdkclaude.PreCompactResults) (sdkclaude.DecisionOutput, error) {
 		return nil, fn(ctx, *mapPreCompact(hook))
 	})
 }

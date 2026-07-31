@@ -9,6 +9,10 @@ import (
 type Event struct {
 	event.Envelope
 	event.ToolFields
+	// PermissionSuggestions are optional "always allow" options from the
+	// permission dialog. Echo one or more as updatedPermissions on allow to
+	// apply them without prompting the user.
+	PermissionSuggestions []event.PermissionUpdate `json:"permission_suggestions,omitempty"`
 }
 
 // EventName returns the hook event name.

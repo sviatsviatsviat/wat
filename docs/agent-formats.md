@@ -139,6 +139,8 @@ On Claude and Copilot stop events, check `Turn.StopHookActive` (native
 
 Known limitations are part of the contract:
 
+- Claude `PermissionRequest` suggestions and `updatedPermissions` are
+  Claude-native only (`sdk/claude`). There is no portable projection.
 - Copilot cloud-agent handling treats `PreToolUse` `"ask"` as a denial (no
   user). Native Copilot `PermissionRequest.Ask` is a soft deny
   (`behavior:"deny"`, exit 0), not a confirmation UI; use `Noop` to fall
@@ -158,6 +160,7 @@ Known limitations are part of the contract:
 For the complete event-by-event Cursor behavior—including observe-only
 handlers, permission encodings, matcher values, cloud availability, follow-up
 loops, and live payload differences—use the native guides:
+- [Claude protocol reference](agents/claude.md)
 - [Copilot protocol reference](agents/copilot.md)
 - [Cursor protocol reference](agents/cursor.md)
 
@@ -174,8 +177,8 @@ and tests for it.
 |---|---|---|---|
 | Event-name style | PascalCase | PascalCase | camelCase |
 | Common JSON fields | Mostly snake_case with native output conventions | snake_case | snake_case/camelCase per native schema |
-| Blocking | Usually encoded in JSON output fields; `WorktreeCreate` uses plain-path stdout and any non-zero exit | JSON decision plus native exit behavior | Permission denial may use exit 2; `beforeSubmitPrompt` uses `continue` JSON with exit 0 |
-| Handler error | Exit 1 | Exit 1 | Exit 1 (host normally treats as fail-open) |
+| Blocking | Usually JSON decision fields with exit 0; TeammateIdle/Task* `Block` uses exit 2 + stderr; `WorktreeCreate` uses plain-path stdout (see [Claude protocols](agents/claude.md)) | JSON decision plus native exit behavior | Permission denial may use exit 2; `beforeSubmitPrompt` uses `continue` JSON with exit 0 |
+| Handler error | Exit 1 (Claude fail-open except WorktreeCreate) | Exit 1 | Exit 1 (host normally treats as fail-open) |
 | Session environment | `CLAUDE_ENV_FILE` for supported output | stdout JSON | stdout JSON |
 | Project config | `.claude/settings.json` matcher groups | `.github/hooks/wat.json` flat handlers | `.cursor/hooks.json` flat handlers |
 

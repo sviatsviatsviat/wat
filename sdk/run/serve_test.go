@@ -36,10 +36,11 @@ func (emptyOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error)
 func (emptyOutput) Stop() bool { return false }
 
 type foldOutput struct {
-	body     string
-	stop     bool
-	encodes  *atomic.Int32
-	exitCode int
+	body         string
+	stop         bool
+	encodes      *atomic.Int32
+	exitCode     int
+	bodyOnStderr bool
 }
 
 func (o foldOutput) IsZero() bool { return o.body == "" && !o.stop }
@@ -50,6 +51,8 @@ func (o foldOutput) Encode() ([]byte, int, error) {
 	}
 	return []byte(o.body), o.exitCode, nil
 }
+
+func (o foldOutput) BodyOnStderr() bool { return o.bodyOnStderr }
 
 func (o foldOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 	b, ok := other.(foldOutput)
@@ -71,6 +74,7 @@ func (o foldOutput) Merge(other hookkit.Output) (hookkit.Output, []string, error
 		out.exitCode = b.exitCode
 	}
 	out.stop = o.stop || b.stop
+	out.bodyOnStderr = o.bodyOnStderr || b.bodyOnStderr
 	return out, warnings, nil
 }
 
@@ -161,6 +165,25 @@ func TestServe_FoldsOutputsEncodeOnce(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "body: overwritten by later handler") {
 		t.Fatalf("stderr = %q, want overwrite warning", stderr.String())
+	}
+}
+
+func TestServe_BodyOnStderrWritesStderr(t *testing.T) {
+	r, d := newTestRouter("any", "TestEvent", nil)
+	d.Register(hookkit.Handler(func(context.Context, testEvent) (foldOutput, error) {
+		return foldOutput{body: "keep working", exitCode: 2, bodyOnStderr: true}, nil
+	}))
+
+	var stdout, stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"TestEvent"}`), &stdout, &stderr, serveHints{})
+	if code != 2 {
+		t.Fatalf("exit = %d, want 2", code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty when BodyOnStderr", stdout.String())
+	}
+	if got := strings.TrimSpace(stderr.String()); got != "keep working" {
+		t.Fatalf("stderr = %q, want keep working", stderr.String())
 	}
 }
 

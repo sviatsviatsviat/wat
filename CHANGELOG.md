@@ -9,6 +9,22 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Claude `UseHooks` registration for previously decode-only events: `Setup`,
+  `InstructionsLoaded` (observe-only), `PostToolBatch`, `TeammateIdle`,
+  `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeRemove` (observe-only),
+  `PostCompact` (observe-only), `ElicitationResult`, and `StopFailure`
+  (observe-only). Install/doctor/`run.Inspect` advertise these when handlers
+  are registered.
+- Claude `UserPromptExpansion`, `PreCompact`, `PostToolUseFailure`,
+  `PostToolBatch`, and `ConfigChange` expose event-scoped `Block` builders that
+  encode JSON `decision:"block"` with exit 0 (`DecisionOutput`). `TeammateIdle` /
+  `TaskCreated` / `TaskCompleted` `Block` uses Claude exit 2 with stderr
+  feedback (`continue:false` still stops the teammate). Handler errors remain
+  exit 1 (fail-open for most events). See `docs/agents/claude.md`.
+- Claude `PermissionRequest` decodes optional `permission_suggestions` and can
+  return `updatedPermissions` on allow via `WithUpdatedPermissions` (same entry
+  shape: add/replace/remove rules, setMode, add/removeDirectories). Echoing a
+  suggestion applies that "always allow" option without prompting.
 - Copilot `SubagentStop` decodes `last_assistant_message` (full final subagent
   response text) and exposes dedicated `SubagentStopResults` /
   `SubagentStopOutput` with `FollowUp` and `ModifiedResponse` (host field
@@ -19,6 +35,11 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - Copilot `UserPromptTransformed` is registerable via `UseHooks().UserPromptTransformed`.
   Handlers decode `prompt` / `transformed_prompt` and may rewrite model-facing
   content with `modified_transformed_prompt` (mutation-only; cannot block).
+- Claude `Stop` and `SubagentStop` decode `background_tasks` and
+  `session_crons` (Claude Code v2.1.145+) so handlers can distinguish a finished
+  turn from a pause waiting on background work or session crons. Exported as
+  `BackgroundTask` / `SessionCron` on the Claude SDK; portable stop events do
+  not project these Claude-only inputs.
 
 ### Fixed
 

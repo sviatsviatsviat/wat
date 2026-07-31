@@ -38,6 +38,19 @@ func TestDecode_TaskCreated(t *testing.T) {
 	}
 }
 
+func TestEncode_TaskCreatedBlock(t *testing.T) {
+	out, code, err := results{}.Block("rollback task").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != event.BlockExit {
+		t.Fatalf("exit = %d, want %d", code, event.BlockExit)
+	}
+	if string(out) != "rollback task" {
+		t.Fatalf("body = %q", out)
+	}
+}
+
 func init() {
 	register(testCodec)
 }
