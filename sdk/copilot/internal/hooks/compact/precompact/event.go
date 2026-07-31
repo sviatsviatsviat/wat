@@ -1,8 +1,6 @@
 package precompact
 
 import (
-	"context"
-
 	"github.com/sviatsviatsviat/wat/internal/hookkit"
 	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/event"
 )
@@ -27,13 +25,4 @@ func (e Event) Instructions() string {
 // register registers this hook event decoder on c.
 func register(c *hookkit.Codec) {
 	c.Register(event.PreCompact, hookkit.EventDecoder[Event](c))
-}
-
-// RegisterHandler registers a PreCompact observe handler on d.
-func RegisterHandler(d *hookkit.Dialect, fn func(context.Context, Event) error) {
-	if fn == nil {
-		return
-	}
-	register(d.Codec())
-	hookkit.RegisterObserve(d, fn)
 }
