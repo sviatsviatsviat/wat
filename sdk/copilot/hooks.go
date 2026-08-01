@@ -30,10 +30,6 @@ type hooks struct {
 
 var codec = hookkit.NewCodec(runtime.Dialect, runtime.ErrEmptyPayload, runtime.ErrDecodePayload, runtime.ErrEventNameRequired)
 
-func init() {
-	runtime.RegisterCasingRejects(codec)
-}
-
 // UseHooks returns a fluent registrar for this package's Copilot dialect.
 func UseHooks() *hooks {
 	return &hooks{}

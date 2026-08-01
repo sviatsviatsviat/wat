@@ -22,7 +22,6 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- Copilot camelCase event-name decode errors mention the PascalCase wire name.
 - Copilot tool events with missing snake_case `tool_name` (for example
   camelCase-only `toolName` / `toolArgs`) return a decode error instead of
   panicking in `NewInput`.
