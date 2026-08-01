@@ -77,7 +77,7 @@ contribute registrations
   -> select dialect (hint, else detect)
   -> select event (hint, else peek hook_event_name)
   -> warn-only payload inspection when a hint disagrees
-  -> find handlers
+  -> find handlers (empty → warn on stderr, exit 0)
   -> decode once
   -> invoke and merge in order
   -> encode once

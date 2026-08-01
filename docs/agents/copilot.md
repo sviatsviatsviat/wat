@@ -87,7 +87,7 @@ hook-scoped results builder and return an output.
 | `UserPromptSubmit` | Observe | Go API `UserPromptSubmitted`; observe-only today |
 | `UserPromptTransformed` | Result | Optional `modified_transformed_prompt` rewrite only (cannot block) |
 | `PreToolUse` | Result | allow / deny / ask; optional `modified_args`; cloud treats ask as deny |
-| `PostToolUse` | Result | Optional `additional_context` |
+| `PostToolUse` | Result | Optional `additional_context` and success `modified_result` via `WithModifiedResult` (`result_type: "success"`). Failure-shaped `modified_result` is not supported until the host schema is verified — use `PostToolUseFailure` after a real tool failure |
 | `PostToolUseFailure` | Result | Recovery context; command hooks may use exit 2 to carry context |
 | `PermissionRequest` | Result | `behavior` allow / deny only; **CLI only** — cloud pre-approves tools |
 | `SubagentStart` | Result | Optional context; built-in `general-purpose` agent does not emit this event |
@@ -190,3 +190,33 @@ When reading upstream samples, map CLI camelCase fields to wat snake_case:
 
 Exact builder fields remain in `sdk/copilot` godoc. Prefer result builders over
 hand-written stdout JSON.
+
+## Matchers and typed tool inputs
+
+`wat install` writes catch-all command handlers with **no** `matcher` field so
+one `wat run` process sees every tool. Optional host `matcher` regexes in
+`.github/hooks/*.json` are supported if you edit the file yourself.
+
+PascalCase `PreToolUse` / `PermissionRequest` configs may use Claude-format
+matcher and `tool_name` values (`Bash`, `Edit`, `Write`, …). Do not copy Claude
+matcher strings onto Copilot configs without checking the host tool-name table.
+Filter in Go with `NativeToolName()` / `Input.As*` instead of install-time
+matchers when using wat-managed handlers.
+
+| Accessor | Runtime names | Claude-format / aliases |
+|---|---|---|
+| `AsBash` | `bash`, `powershell`, `shell` | `Bash` (case-insensitive) |
+| `AsView` | `view` | `Read` (`file_path`, optional `offset`/`limit`) |
+| `AsCreate` | `create` | `Write` (`file_path` / `content`) |
+| `AsEdit` | `edit`, `str_replace_editor`, `apply_patch` | `Edit` (`file_path`, `old_string`/`new_string`); text-editor `old_str`/`new_str`/`file_text`; `patch` for `apply_patch` |
+| `AsGlob` | `glob` | `Glob` |
+| `AsGrep` | `grep`, `rg` | `Grep` |
+| `AsWebFetch` | `web_fetch` | `WebFetch` |
+| `AsWebSearch` | `web_search` | `WebSearch` |
+| `AsTask` | `task` | `Agent`, `Task` |
+| `AsAskUser` | `ask_user` | `AskUserQuestion` |
+| `AsUpdateTodo` | `update_todo` | `TodoWrite` |
+
+Other tool names stay available via `Input.Name()` / `Input.Raw()`. Portable
+handlers may also use `sdk/agnostic/tools` accessors after name normalization.
+

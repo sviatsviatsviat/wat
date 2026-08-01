@@ -1,6 +1,11 @@
 package event
 
-import "github.com/sviatsviatsviat/wat/sdk/copilot/internal/tools"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/sviatsviatsviat/wat/sdk/copilot/internal/tools"
+)
 
 // ToolFields holds Copilot tool invocation wire fields shared by tool events.
 //
@@ -15,8 +20,14 @@ type ToolFields struct {
 
 // BindToolInput binds ToolInput from the tool_input object field on raw JSON.
 // Call from the DecodeEvent after-callback.
-func (t *ToolFields) BindToolInput(raw []byte) {
+// It returns an error when tool_name is missing (for example camelCase toolName
+// left the snake_case field empty).
+func (t *ToolFields) BindToolInput(raw []byte) error {
+	if strings.TrimSpace(t.ToolName) == "" {
+		return fmt.Errorf("tool_name is required (use snake_case tool_name/tool_input; camelCase toolName/toolArgs are unsupported)")
+	}
 	t.ToolInput = tools.NewInputFromPayload(t.ToolName, raw, "tool_input")
+	return nil
 }
 
 // NativeToolName returns the tool name.

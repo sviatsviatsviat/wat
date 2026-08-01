@@ -132,7 +132,8 @@ binary, and forwards `--agent` / `--event` as argv so `run.Serve` can force
 dialect and event selection. When those flags are omitted, Serve detects the
 dialect from the payload and peeks `hook_event_name`. Hint vs payload
 disagreements warn on stderr and still use the hint. The same flags also
-identify managed config entries for install and doctor.
+identify managed config entries for install and doctor. When the selected event
+has no registered handlers, Serve warns on stderr and exits 0 without decoding.
 
 On a cache miss, wat builds a bootstrap that imports `.wat/hooks.go` and calls
 `run.Serve(Hooks...)`. The cache key includes all files under `.wat/` except

@@ -19,8 +19,11 @@
 // See docs/agents/copilot.md.
 //
 // Tool input on PreToolUse and related events is typed as [Input] with AsBash,
-// AsCreate, and related accessors (and Tool* name constants) in this package.
-//
+// AsCreate, AsEdit, AsView, AsGlob, AsGrep, AsWebFetch, AsWebSearch, AsTask,
+// AsAskUser, AsUpdateTodo, and related Tool* name constants in this package.
+// Accessors accept runtime names and Claude-format names used on PascalCase
+// PreToolUse payloads (for example Bash, Edit, Glob).
+
 // Example:
 //
 //	run.Serve(

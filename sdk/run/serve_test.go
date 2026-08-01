@@ -133,12 +133,16 @@ func TestServe_DecodesOnce(t *testing.T) {
 func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 	var decodeCalls atomic.Int32
 	r, _ := newTestRouter("empty", "NoHandlers", &decodeCalls)
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &bytes.Buffer{}, serveHints{})
+	var stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &stderr, serveHints{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
 	if got := decodeCalls.Load(); got != 0 {
 		t.Fatalf("Decode calls = %d, want 0", got)
+	}
+	if got, want := stderr.String(), "run: empty: warning: no handlers for \"NoHandlers\"\n"; got != want {
+		t.Fatalf("stderr = %q, want %q", got, want)
 	}
 }
 

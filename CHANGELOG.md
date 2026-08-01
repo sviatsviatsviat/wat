@@ -7,6 +7,27 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Copilot typed tool inputs for `glob` / `grep` / `web_search` / `task` /
+  `ask_user` / `update_todo` (`AsGlob`, `AsGrep`, `AsWebSearch`, `AsTask`,
+  `AsAskUser`, `AsUpdateTodo`). Existing Copilot accessors also accept
+  Claude-format and documented alias tool names used on PascalCase
+  `PreToolUse` payloads (for example `Edit`, `Read`, `Write`, `rg`), and
+  normalize Claude / text-editor field aliases (`file_path`, `old_string`,
+  `old_str`, `file_text`, `patch`) onto the Copilot input structs.
+
+### Changed
+
+- `run.Serve` warns on stderr when no handlers are registered for the selected
+  event (still exit 0).
+
+### Fixed
+
+- Copilot tool events with missing snake_case `tool_name` (for example
+  camelCase-only `toolName` / `toolArgs`) return a decode error instead of
+  panicking in `NewInput`.
+
 ## [v0.3.0-alpha] - 2026-07-31
 
 ### Added

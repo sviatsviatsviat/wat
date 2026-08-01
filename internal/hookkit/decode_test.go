@@ -25,6 +25,13 @@ func TestDecodeAsAndThen(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected unmarshal error")
 	}
+
+	_, err = DecodeAsAndThenErr[ev](json.RawMessage(`{"name":"x"}`), func(*ev, []byte) error {
+		return errors.New("after failed")
+	})
+	if err == nil || err.Error() != "after failed" {
+		t.Fatalf("DecodeAsAndThenErr = %v", err)
+	}
 }
 
 type wireEvent struct {
