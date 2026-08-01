@@ -52,8 +52,6 @@ func (c *hooks) Contribute(reg run.Registry) {
 	if c == nil {
 		return
 	}
-	d := reg.Ensure(runtime.Dialect, detectPayload, codec)
-	d.SetMissingHandlers(runtime.AdviseMissingHandlers)
 	c.Install(reg, runtime.Dialect, detectPayload, codec)
 }
 

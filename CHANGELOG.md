@@ -15,11 +15,14 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   Claude-format and documented alias tool names used on PascalCase
   `PreToolUse` payloads (for example `Edit`, `Read`, `Write`, `rg`).
 
+### Changed
+
+- `run.Serve` warns on stderr when no handlers are registered for the selected
+  event (still exit 0).
+
 ### Fixed
 
-- Copilot camelCase (or case-folded) `hook_event_name` / `--event` values that
-  match no handlers now fail with an explicit PascalCase hint instead of a
-  silent exit 0; unknown-event decode errors mention the PascalCase name.
+- Copilot camelCase event-name decode errors mention the PascalCase wire name.
 - Copilot tool events with missing snake_case `tool_name` (for example
   camelCase-only `toolName` / `toolArgs`) return a decode error instead of
   panicking in `NewInput`.

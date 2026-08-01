@@ -51,10 +51,7 @@ func serve(ctx context.Context, router *router, in io.Reader, out io.Writer, err
 
 	handlers := d.HandlersFor(eventName)
 	if len(handlers) == 0 {
-		if err := d.MissingHandlers(eventName); err != nil {
-			_, _ = fmt.Fprintf(errw, "run: %s: %v\n", name, err)
-			return 1
-		}
+		_, _ = fmt.Fprintf(errw, "run: %s: warning: no handlers for %q\n", name, eventName)
 		return 0
 	}
 

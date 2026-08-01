@@ -133,12 +133,16 @@ func TestServe_DecodesOnce(t *testing.T) {
 func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 	var decodeCalls atomic.Int32
 	r, _ := newTestRouter("empty", "NoHandlers", &decodeCalls)
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &bytes.Buffer{}, serveHints{})
+	var stderr bytes.Buffer
+	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"NoHandlers"}`), &bytes.Buffer{}, &stderr, serveHints{})
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
 	if got := decodeCalls.Load(); got != 0 {
 		t.Fatalf("Decode calls = %d, want 0", got)
+	}
+	if !strings.Contains(stderr.String(), `warning: no handlers for "NoHandlers"`) {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
 
@@ -351,20 +355,5 @@ func TestParseServeHints(t *testing.T) {
 	got = parseServeHints(nil)
 	if got != (serveHints{}) {
 		t.Fatalf("got = %#v", got)
-	}
-}
-
-func TestServe_MissingHandlersAdvisor(t *testing.T) {
-	r, d := newTestRouter("testdialect", "TestEvent", nil)
-	d.SetMissingHandlers(func(eventName string) error {
-		return fmt.Errorf("no handlers for %q", eventName)
-	})
-	var stderr bytes.Buffer
-	code := serve(context.Background(), r, strings.NewReader(`{"hook_event_name":"OtherEvent"}`), &bytes.Buffer{}, &stderr, serveHints{})
-	if code != 1 {
-		t.Fatalf("exit = %d, want 1", code)
-	}
-	if !strings.Contains(stderr.String(), `no handlers for "OtherEvent"`) {
-		t.Fatalf("stderr = %q", stderr.String())
 	}
 }

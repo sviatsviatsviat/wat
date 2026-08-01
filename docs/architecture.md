@@ -77,16 +77,12 @@ contribute registrations
   -> select dialect (hint, else detect)
   -> select event (hint, else peek hook_event_name)
   -> warn-only payload inspection when a hint disagrees
-  -> find handlers (empty → optional dialect MissingHandlers advisor)
+  -> find handlers (empty → warn on stderr, exit 0)
   -> decode once
   -> invoke and merge in order
   -> encode once
   -> exit
 ```
-
-`run` must not import or hard-code agent SDKs. Agent-specific empty-handler
-advice (for example Copilot camelCase event rejects) belongs on the dialect via
-`hookkit.Dialect.SetMissingHandlers`, set during that SDK's `Contribute`.
 
 `Inspect` follows the same contribution path without invoking handlers and
 returns the native dialect/event manifest used by install, test, and doctor.
