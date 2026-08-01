@@ -22,6 +22,44 @@ func TestEncode_StopBlock(t *testing.T) {
 	}
 }
 
+func TestEncode_StopContext(t *testing.T) {
+	out, code, err := NewResults(event.Stop).Context("keep going").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	s := string(out)
+	if !strings.Contains(s, `"additionalContext":"keep going"`) {
+		t.Fatalf("missing additionalContext: %s", out)
+	}
+	if strings.Contains(s, `"decision"`) {
+		t.Fatalf("Context must not encode decision: %s", out)
+	}
+}
+
+func TestMerge_StopFollowUpWinsOverContext(t *testing.T) {
+	merged, _, err := NewResults(event.Stop).Context("ctx").Merge(NewResults(event.Stop).FollowUp("more").(hookkit.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _, err := merged.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(body)
+	if !strings.Contains(s, `"decision":"block"`) || !strings.Contains(s, "more") {
+		t.Fatalf("want FollowUp block: %s", body)
+	}
+	if !strings.Contains(s, `"additionalContext":"ctx"`) {
+		t.Fatalf("want preserved context: %s", body)
+	}
+	if !merged.Stop() {
+		t.Fatal("FollowUp should stop later handlers")
+	}
+}
+
 func TestDecode_Stop(t *testing.T) {
 	ev := mustDecode[Event](t, `{"session_id":"s","hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"bye"}`, event.Stop)
 	if ev.StopHookActive {

@@ -27,6 +27,10 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - Copilot tool events with missing snake_case `tool_name` (for example
   camelCase-only `toolName` / `toolArgs`) return a decode error instead of
   panicking in `NewInput`.
+- Claude PreToolUse multi-handler merge ranks `defer` above `ask` / `allow`
+  (`deny` > `defer` > `ask` > `allow`), matching live host precedence.
+- Claude Stop / SubagentStop docs and godoc: `Context` (`additionalContext`)
+  continues the turn; gate it on `StopHookActive` like `FollowUp`.
 
 ## [v0.3.0-alpha] - 2026-07-31
 

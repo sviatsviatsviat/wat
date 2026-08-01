@@ -11,7 +11,8 @@ import (
 type Output interface {
 	hookkit.Output
 	isOutput()
-	// WithAdditionalContext is non-error feedback that continues the conversation.
+	// WithAdditionalContext appends host-facing additionalContext that continues
+	// the Claude turn (same stop_hook_active loop protection as FollowUp).
 	WithAdditionalContext(text string) Output
 	// WithContinue sets whether Claude should continue the session.
 	WithContinue(v bool) Output
@@ -40,7 +41,8 @@ func (o output) IsZero() bool {
 	return o.Common.IsZero() && !o.block && o.reason == "" && o.additionalContext == ""
 }
 
-// WithAdditionalContext is non-error feedback that continues the conversation.
+// WithAdditionalContext appends host-facing additionalContext that continues
+// the Claude turn (same stop_hook_active loop protection as FollowUp).
 func (o output) WithAdditionalContext(text string) Output {
 	o.additionalContext = text
 	return o
