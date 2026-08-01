@@ -206,9 +206,9 @@ matchers when using wat-managed handlers.
 | Accessor | Runtime names | Claude-format / aliases |
 |---|---|---|
 | `AsBash` | `bash`, `powershell`, `shell` | `Bash` (case-insensitive) |
-| `AsView` | `view` | `Read` |
-| `AsCreate` | `create` | `Write` |
-| `AsEdit` | `edit`, `str_replace_editor`, `apply_patch` | `Edit` |
+| `AsView` | `view` | `Read` (`file_path`, optional `offset`/`limit`) |
+| `AsCreate` | `create` | `Write` (`file_path` / `content`) |
+| `AsEdit` | `edit`, `str_replace_editor`, `apply_patch` | `Edit` (`file_path`, `old_string`/`new_string`); text-editor `old_str`/`new_str`/`file_text`; `patch` for `apply_patch` |
 | `AsGlob` | `glob` | `Glob` |
 | `AsGrep` | `grep`, `rg` | `Grep` |
 | `AsWebFetch` | `web_fetch` | `WebFetch` |

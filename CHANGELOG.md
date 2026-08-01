@@ -13,7 +13,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `ask_user` / `update_todo` (`AsGlob`, `AsGrep`, `AsWebSearch`, `AsTask`,
   `AsAskUser`, `AsUpdateTodo`). Existing Copilot accessors also accept
   Claude-format and documented alias tool names used on PascalCase
-  `PreToolUse` payloads (for example `Edit`, `Read`, `Write`, `rg`).
+  `PreToolUse` payloads (for example `Edit`, `Read`, `Write`, `rg`), and
+  normalize Claude / text-editor field aliases (`file_path`, `old_string`,
+  `old_str`, `file_text`, `patch`) onto the Copilot input structs.
 
 ### Changed
 

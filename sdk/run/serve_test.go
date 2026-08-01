@@ -141,8 +141,8 @@ func TestServe_SkipsDecodeWhenNoHandlers(t *testing.T) {
 	if got := decodeCalls.Load(); got != 0 {
 		t.Fatalf("Decode calls = %d, want 0", got)
 	}
-	if !strings.Contains(stderr.String(), `warning: no handlers for "NoHandlers"`) {
-		t.Fatalf("stderr = %q", stderr.String())
+	if got, want := stderr.String(), "run: empty: warning: no handlers for \"NoHandlers\"\n"; got != want {
+		t.Fatalf("stderr = %q, want %q", got, want)
 	}
 }
 

@@ -40,10 +40,10 @@ func TestAsAccessors_RuntimeAndClaudeNames(t *testing.T) {
 		{
 			name: "view_read",
 			tool: "Read",
-			raw:  `{"path":"/a"}`,
+			raw:  `{"file_path":"/a","offset":2,"limit":5}`,
 			check: func(in Input, t *testing.T) {
 				got, ok := in.AsView()
-				if !ok || got.Path != "/a" {
+				if !ok || got.Path != "/a" || got.Offset != 2 || got.Limit != 5 {
 					t.Fatalf("AsView = %+v, %v", got, ok)
 				}
 			},
@@ -52,7 +52,7 @@ func TestAsAccessors_RuntimeAndClaudeNames(t *testing.T) {
 		{
 			name: "create_write",
 			tool: "Write",
-			raw:  `{"path":"/a","content":"x"}`,
+			raw:  `{"file_path":"/a","content":"x"}`,
 			check: func(in Input, t *testing.T) {
 				got, ok := in.AsCreate()
 				if !ok || got.Path != "/a" || got.Content != "x" {
@@ -63,10 +63,10 @@ func TestAsAccessors_RuntimeAndClaudeNames(t *testing.T) {
 		{
 			name: "edit_alias",
 			tool: "str_replace_editor",
-			raw:  `{"path":"/a","content":"y"}`,
+			raw:  `{"path":"/a","old_str":"x","new_str":"y"}`,
 			check: func(in Input, t *testing.T) {
 				got, ok := in.AsEdit()
-				if !ok || got.Content != "y" {
+				if !ok || got.Path != "/a" || got.OldString != "x" || got.NewString != "y" {
 					t.Fatalf("AsEdit = %+v, %v", got, ok)
 				}
 			},
@@ -74,10 +74,66 @@ func TestAsAccessors_RuntimeAndClaudeNames(t *testing.T) {
 		{
 			name: "edit_claude",
 			tool: "Edit",
-			raw:  `{"path":"/a"}`,
+			raw:  `{"file_path":"/a","old_string":"x","new_string":"y"}`,
 			check: func(in Input, t *testing.T) {
-				if _, ok := in.AsEdit(); !ok {
-					t.Fatal("AsEdit want ok for Edit")
+				got, ok := in.AsEdit()
+				if !ok || got.Path != "/a" || got.OldString != "x" || got.NewString != "y" {
+					t.Fatalf("AsEdit = %+v, %v", got, ok)
+				}
+			},
+		},
+		{
+			name: "edit_apply_patch",
+			tool: "apply_patch",
+			raw:  `{"patch":"*** Begin Patch\n*** End Patch"}`,
+			check: func(in Input, t *testing.T) {
+				got, ok := in.AsEdit()
+				if !ok || got.Patch == "" {
+					t.Fatalf("AsEdit = %+v, %v", got, ok)
+				}
+			},
+		},
+		{
+			name: "edit_file_text",
+			tool: "str_replace_editor",
+			raw:  `{"path":"/a","file_text":"hello"}`,
+			check: func(in Input, t *testing.T) {
+				got, ok := in.AsEdit()
+				if !ok || got.Path != "/a" || got.Content != "hello" {
+					t.Fatalf("AsEdit = %+v, %v", got, ok)
+				}
+			},
+		},
+		{
+			name: "view_runtime",
+			tool: "view",
+			raw:  `{"path":"/b"}`,
+			check: func(in Input, t *testing.T) {
+				got, ok := in.AsView()
+				if !ok || got.Path != "/b" {
+					t.Fatalf("AsView = %+v, %v", got, ok)
+				}
+			},
+		},
+		{
+			name: "create_runtime",
+			tool: "create",
+			raw:  `{"path":"/b","content":"z"}`,
+			check: func(in Input, t *testing.T) {
+				got, ok := in.AsCreate()
+				if !ok || got.Path != "/b" || got.Content != "z" {
+					t.Fatalf("AsCreate = %+v, %v", got, ok)
+				}
+			},
+		},
+		{
+			name: "edit_runtime",
+			tool: "edit",
+			raw:  `{"path":"/b","content":"z"}`,
+			check: func(in Input, t *testing.T) {
+				got, ok := in.AsEdit()
+				if !ok || got.Path != "/b" || got.Content != "z" {
+					t.Fatalf("AsEdit = %+v, %v", got, ok)
 				}
 			},
 		},
