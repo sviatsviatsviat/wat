@@ -89,6 +89,55 @@ func TestMerge_PreToolUse_denyBeatsAllowAndStops(t *testing.T) {
 	}
 }
 
+func TestMerge_PreToolUse_deferBeatsAskAndAllow(t *testing.T) {
+	merged, _, err := results{}.Ask("confirm").Merge(results{}.Defer().(hookkit.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := merged.(output)
+	if out.decision != event.DecisionDefer {
+		t.Fatalf("decision = %q, want defer", out.decision)
+	}
+	if merged.Stop() {
+		t.Fatal("defer should not stop")
+	}
+
+	merged, _, err = results{}.Defer().Merge(results{}.Allow().(hookkit.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if merged.(output).decision != event.DecisionDefer {
+		t.Fatalf("decision = %q, want defer over allow", merged.(output).decision)
+	}
+}
+
+func TestMerge_PreToolUse_denyBeatsDefer(t *testing.T) {
+	merged, _, err := results{}.Defer().Merge(results{}.Deny("nope").(hookkit.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := merged.(output)
+	if out.decision != event.DecisionDeny || out.reason != "nope" {
+		t.Fatalf("decision = %q reason = %q", out.decision, out.reason)
+	}
+	if !merged.Stop() {
+		t.Fatal("deny should stop")
+	}
+}
+
+func TestEncode_PreToolDefer(t *testing.T) {
+	body, code, err := results{}.Defer().Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	if !strings.Contains(string(body), `"permissionDecision":"defer"`) {
+		t.Fatalf("body = %s", body)
+	}
+}
+
 func TestMerge_PreToolUse_updatedInputOverwriteWarns(t *testing.T) {
 	first := map[string]any{"command": "echo a"}
 	second := map[string]any{"command": "echo b"}

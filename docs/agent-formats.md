@@ -133,7 +133,10 @@ Portable builders deliberately expose the intersection of native behavior:
 | `SessionStartResults.Context` | Add startup context |
 
 On Claude and Copilot stop events, check `Turn.StopHookActive` (native
-`stop_hook_active`) before emitting another `FollowUp`. Cursor uses
+`stop_hook_active`) before emitting another `FollowUp`. On Claude, also gate
+native `StopResults.Context` / `SubagentStop` `Context` the same way —
+`additionalContext` continues the turn with the same loop protections as
+`decision: "block"`. Cursor uses
 `Turn.LoopCount` / hooks.json `loop_limit` instead; see
 [Cursor stop follow-up loops](agents/cursor.md#stop-follow-up-loops) and
 

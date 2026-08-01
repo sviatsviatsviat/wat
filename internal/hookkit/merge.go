@@ -112,10 +112,13 @@ func MergeRankedString(dstDecision, dstDetail, srcDecision, srcDetail string, ra
 	return decision, detail
 }
 
-// PermissionRankString returns deny > ask > allow > unknown for permission labels.
+// PermissionRankString returns deny > defer > ask > allow > unknown for
+// permission labels (Claude PreToolUse host mux order).
 func PermissionRankString(s string) int {
 	switch strings.ToLower(s) {
 	case "deny":
+		return 4
+	case "defer":
 		return 3
 	case "ask":
 		return 2

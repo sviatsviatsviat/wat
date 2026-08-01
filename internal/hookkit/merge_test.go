@@ -105,12 +105,25 @@ func TestMergeRankedString(t *testing.T) {
 	if d != "deny" || r != "" {
 		t.Fatalf("clear reason: %q %q", d, r)
 	}
+	d, r = MergeRankedString("ask", "confirm", "defer", "", PermissionRankString)
+	if d != "defer" || r != "" {
+		t.Fatalf("defer beats ask: %q %q", d, r)
+	}
+	d, r = MergeRankedString("defer", "", "allow", "ok", PermissionRankString)
+	if d != "defer" || r != "" {
+		t.Fatalf("defer beats allow: %q %q", d, r)
+	}
+	d, r = MergeRankedString("defer", "", "deny", "no", PermissionRankString)
+	if d != "deny" || r != "no" {
+		t.Fatalf("deny beats defer: %q %q", d, r)
+	}
 }
 
 func TestPermissionRankString(t *testing.T) {
-	if PermissionRankString("deny") <= PermissionRankString("ask") ||
+	if PermissionRankString("deny") <= PermissionRankString("defer") ||
+		PermissionRankString("defer") <= PermissionRankString("ask") ||
 		PermissionRankString("ask") <= PermissionRankString("allow") {
-		t.Fatal("expected deny > ask > allow")
+		t.Fatal("expected deny > defer > ask > allow")
 	}
 }
 

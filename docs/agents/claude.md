@@ -23,7 +23,7 @@ hook-scoped results builder and return an output.
 | `SessionEnd` | Observe | Response body is unused |
 | `UserPromptSubmit` | Result | `Block` writes top-level `decision: "block"` with exit 0; context and common fields also supported |
 | `UserPromptExpansion` | Result | Context injection and `Block` (`decision: "block"`, exit 0) |
-| `PreToolUse` | Result | Allow / deny / ask via `hookSpecificOutput.permissionDecision`; optional `updatedInput` and `additionalContext` |
+| `PreToolUse` | Result | Allow / deny / ask / defer via `hookSpecificOutput.permissionDecision`; optional `updatedInput` and `additionalContext` |
 | `PostToolUse` | Result | Context and optional `decision: "block"` |
 | `PostToolUseFailure` | Result | Recovery context and `Block` (`decision: "block"`, exit 0) |
 | `PermissionRequest` | Result | `behavior` allow / deny on behalf of the user; optional interrupt |
@@ -31,7 +31,7 @@ hook-scoped results builder and return an output.
 | `SubagentStart` | Result | Context injection; exit 2 does not cancel the subagent |
 | `SubagentStop` | Result | `FollowUp` / `Context`; honors `stop_hook_active` |
 | `TaskCreated` / `TaskCompleted` / `TeammateIdle` | Result | Context injection; `Block` uses exit 2 + stderr (prefer over `WithContinue(false)`, which stops the teammate) |
-| `Stop` | Result | `FollowUp` encodes `decision: "block"`; `Context` is non-blocking feedback |
+| `Stop` | Result | `FollowUp` encodes `decision: "block"`; `Context` encodes `additionalContext` and also continues the turn |
 | `Notification` | Result | Context / common fields |
 | `MessageDisplay` | Result | Display-content override only; cannot block the message |
 | `PreCompact` | Result | Context injection and `Block` (`decision: "block"`, exit 0) |
@@ -62,7 +62,7 @@ builders deny or block.
 |---|---|---|
 | `PreToolUse` | allow / deny / ask / defer | Prefer `Deny` / `Ask` / `Defer` builders over exit 2. Empty / nil stdout leaves the normal permission flow |
 | `PermissionRequest` | allow / deny only | No ask value. `Deny` short-circuits the permission dialog; empty output lets Claude prompt the user |
-| `UserPromptSubmit` / `UserPromptExpansion` / `PostToolUse` / `PostToolUseFailure` / `PostToolBatch` / `ConfigChange` / `PreCompact` / `Stop` / `SubagentStop` | top-level `decision: "block"` | Encoded by `Block` or `FollowUp` with exit 0 |
+| `UserPromptSubmit` / `UserPromptExpansion` / `PostToolUse` / `PostToolUseFailure` / `PostToolBatch` / `ConfigChange` / `PreCompact` / `Stop` / `SubagentStop` | top-level `decision: "block"` | Encoded by `Block` (where present) or `FollowUp` with exit 0 |
 | `TeammateIdle` / `TaskCreated` / `TaskCompleted` | exit 2 + stderr via `Block`; `WithContinue(false)` stops the teammate | Prefer `Block` when rolling back idle/create/complete without stopping the teammate |
 | `PermissionDenied` | `retry` | Observational after denial; use `Retry()` to tell the model it may retry |
 
@@ -112,17 +112,25 @@ Observe-only portable events never emit host JSON.
 
 ## Stop follow-up loops
 
-`StopResults.FollowUp` encodes top-level `decision: "block"` with a `reason`
-and exit 0. Claude forces another turn with that reason.
+Both Claude stop builders can force another turn:
 
-- Input `stop_hook_active` is true when a prior stop-hook block already forced
-  continuation for this turn. It is exposed as `Stop.StopHookActive` /
+| Builder | Wire | Host effect |
+|---|---|---|
+| `StopResults.FollowUp(reason)` | top-level `decision: "block"` + `reason`, exit 0 | Continues the turn with that reason |
+| `StopResults.Context(text)` | `hookSpecificOutput.additionalContext`, exit 0 | Continues the turn with injected context (“Stop hook feedback”) |
+
+Unlike `SessionStart.Context`, Stop `Context` is **not** observe-only feedback.
+The host applies the same loop protections as `decision: "block"`:
+`stop_hook_active` and a consecutive-continuation cap (about eight turns).
+
+- Input `stop_hook_active` is true when a prior stop-hook continuation already
+  forced another turn. It is exposed as `Stop.StopHookActive` /
   `SubagentStop.StopHookActive`.
-- Gate `FollowUp` on `StopHookActive` to avoid runaway continuation loops.
-- `StopResults.Context` injects non-blocking `additionalContext` and does not
-  prevent completion.
+- Gate **both** `FollowUp` and `Context` on `StopHookActive` to avoid runaway
+  continuation loops.
 
-Portable handlers read the same signal as `StopEvent.Turn.StopHookActive`.
+Portable handlers read the same signal as `StopEvent.Turn.StopHookActive` and
+only expose `FollowUp` (Claude-native `Context` stays on `sdk/claude`).
 
 ## Payload details
 
@@ -138,8 +146,10 @@ Portable handlers read the same signal as `StopEvent.Turn.StopHookActive`.
 ### Tool and permission events
 
 - `PreToolUse` uses `hookSpecificOutput.permissionDecision` values `allow`,
-  `deny`, and `ask` (legacy top-level `decision` values are deprecated for this
-  event on the host).
+  `deny`, `ask`, and `defer` (legacy top-level `decision` values are deprecated
+  for this event on the host). When multiple handlers return different
+  decisions, wat merge order matches the host: `deny` > `defer` > `ask` >
+  `allow`.
 - `PermissionRequest` runs only when Claude is about to prompt (or would
   auto-deny without a prompt). The SDK decodes optional `permission_suggestions`
   and can emit `updatedPermissions` / `updatedInput` on allow via
@@ -173,5 +183,6 @@ wat decodes that as nil slices.
 `sdk/claude` exposes them on `Stop` / `SubagentStop` as `BackgroundTasks` and
 `SessionCrons` (`BackgroundTask` / `SessionCron`). Portable `OnStop` /
 `OnSubagentStop` do not project these Claude-only inputs. Use native Claude
-handlers when FollowUp / continue logic must branch on background or cron
-state, and still honor `stop_hook_active` to avoid runaway continuation loops.
+handlers when FollowUp / Context / continue logic must branch on background or
+cron state, and still honor `stop_hook_active` before either continuation
+builder to avoid runaway loops.
