@@ -175,6 +175,46 @@ func TestInit_preservesExistingGitignore(t *testing.T) {
 	}
 }
 
+func TestInit_addsGitignoreWhenHooksExistWithoutForce(t *testing.T) {
+	dir := t.TempDir()
+	deps := DefaultDeps()
+	deps.Command = func(string, ...string) *exec.Cmd {
+		return exec.Command("go", "version")
+	}
+	watDir := filepath.Join(dir, ".wat")
+	if err := os.MkdirAll(watDir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	hooksPath := filepath.Join(watDir, "hooks.go")
+	originalHooks := []byte("package hooks\n")
+	if err := os.WriteFile(hooksPath, originalHooks, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	err := Init(dir, false, "v0.0.0-test", deps, io.Discard, io.Discard)
+	if err == nil {
+		t.Fatal("expected overwrite error")
+	}
+	if !strings.Contains(err.Error(), "--force") {
+		t.Fatalf("error = %q", err.Error())
+	}
+
+	gitignore, err := os.ReadFile(filepath.Join(watDir, ".gitignore"))
+	if err != nil {
+		t.Fatalf("missing .gitignore after non-force re-run: %v", err)
+	}
+	if !strings.Contains(string(gitignore), ".cache/") {
+		t.Fatalf(".gitignore = %s", gitignore)
+	}
+	hooks, err := os.ReadFile(hooksPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(hooks) != string(originalHooks) {
+		t.Fatalf("hooks.go overwritten: %q", hooks)
+	}
+}
+
 func TestWriteFileIfMissing_rejectsDirectory(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "session_start.json")

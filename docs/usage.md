@@ -70,10 +70,11 @@ Initialization:
   missing (one `session_start` case per agent);
 - runs `go mod tidy` inside `.wat/`.
 
-Re-running `wat init` preserves an existing `go.mod` and `.gitignore`, and
-refuses to overwrite `hooks.go` unless `--force` is set. Starter fixtures use
-write-if-missing, so custom cases under `.wat/testdata/` are kept. Use
-`wat init --force` only when replacing `hooks.go` is intended.
+Re-running `wat init` preserves an existing `go.mod` and `.gitignore`. A missing
+`.gitignore` is still created on a non-force re-run. Re-runs refuse to overwrite
+`hooks.go` unless `--force` is set. Starter fixtures use write-if-missing, so
+custom cases under `.wat/testdata/` are kept. Use `wat init --force` only when
+replacing `hooks.go` is intended.
 
 The generated file is an importable package, not a `main` package. Its required
 contract is:
