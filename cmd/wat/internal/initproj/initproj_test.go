@@ -88,6 +88,13 @@ func TestInit_createsScaffold(t *testing.T) {
 	if !strings.Contains(string(goMod), "github.com/sviatsviatsviat/wat v0.0.0-test-000000000000") {
 		t.Fatalf("go.mod = %s", goMod)
 	}
+	gitignore, err := os.ReadFile(filepath.Join(dir, ".wat", ".gitignore"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(gitignore), ".cache/") {
+		t.Fatalf(".gitignore = %s", gitignore)
+	}
 	if gotCmdName != "go" || len(gotCmdArgs) != 2 || gotCmdArgs[0] != "mod" || gotCmdArgs[1] != "tidy" {
 		t.Fatalf("expected go mod tidy, got %s %v", gotCmdName, gotCmdArgs)
 	}
@@ -139,6 +146,32 @@ func TestInit_refusesOverwriteWithoutForce(t *testing.T) {
 	}
 	if err := Init(dir, true, "v0.0.0-test", deps, io.Discard, io.Discard); err != nil {
 		t.Fatalf("Init with force: %v", err)
+	}
+}
+
+func TestInit_preservesExistingGitignore(t *testing.T) {
+	dir := t.TempDir()
+	deps := DefaultDeps()
+	deps.Command = func(string, ...string) *exec.Cmd {
+		return exec.Command("go", "version")
+	}
+	watDir := filepath.Join(dir, ".wat")
+	if err := os.MkdirAll(watDir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	custom := []byte("# custom\n*.tmp\n")
+	if err := os.WriteFile(filepath.Join(watDir, ".gitignore"), custom, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Init(dir, true, "v0.0.0-test", deps, io.Discard, io.Discard); err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join(watDir, ".gitignore"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(custom) {
+		t.Fatalf(".gitignore overwritten: %q", got)
 	}
 }
 

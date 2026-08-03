@@ -16,6 +16,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
   `PreToolUse` payloads (for example `Edit`, `Read`, `Write`, `rg`), and
   normalize Claude / text-editor field aliases (`file_path`, `old_string`,
   `old_str`, `file_text`, `patch`) onto the Copilot input structs.
+- `wat init` writes `.wat/.gitignore` (ignoring `.cache/`) when missing so the
+  hook build cache is not committed by default.
 
 ### Changed
 

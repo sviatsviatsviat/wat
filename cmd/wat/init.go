@@ -13,8 +13,8 @@ func newInitCmd() *subcommandRunner {
 	return &subcommandRunner{
 		name:    "init",
 		summary: "scaffold a .wat/ hook project",
-		long: "Create .wat/go.mod and .wat/hooks.go under the optional path (default: current working directory).\n\n" +
-			"Safe to re-run: existing files are preserved, except .wat/hooks.go which requires --force to overwrite.",
+		long: "Create .wat/go.mod, .wat/hooks.go, and .wat/.gitignore under the optional path (default: current working directory).\n\n" +
+			"Safe to re-run: existing go.mod, .gitignore, and testdata fixtures are preserved; .wat/hooks.go requires --force to overwrite.",
 		fs: fs,
 		run: func() int {
 			args := fs.Args()
