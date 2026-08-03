@@ -33,7 +33,8 @@ func DefaultDeps() Deps {
 	}
 }
 
-// Init scaffolds .wat/go.mod, .wat/hooks.go, and starter fixtures under root.
+// Init scaffolds .wat/go.mod, .wat/hooks.go, .wat/.gitignore, and starter
+// fixtures under root.
 func Init(root string, force bool, version string, deps Deps, out, errOut io.Writer) error {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
@@ -59,6 +60,10 @@ func Init(root string, force bool, version string, deps Deps, out, errOut io.Wri
 		return err
 	}
 	if err := writeFileIfMissing(goModPath, []byte(goModText), deps); err != nil {
+		return err
+	}
+
+	if err := writeFileIfMissing(filepath.Join(watDir, ".gitignore"), []byte(Gitignore), deps); err != nil {
 		return err
 	}
 
@@ -147,6 +152,11 @@ var Hooks = []run.Hooks{
 		return r.Context("wat hooks are active"), nil
 	}),
 }
+`
+
+// Gitignore is the default .wat/.gitignore scaffold body (write-if-missing).
+const Gitignore = `# Hook build cache (wat run / wat install / wat test).
+.cache/
 `
 
 type starterFile struct {

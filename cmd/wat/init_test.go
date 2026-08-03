@@ -42,6 +42,13 @@ func TestInitProject_createsWatDirAndFiles(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, ".wat", ".cache")); err != nil {
 		t.Fatalf("missing .wat/.cache/: %v", err)
 	}
+	gitignore, err := os.ReadFile(filepath.Join(dir, ".wat", ".gitignore"))
+	if err != nil {
+		t.Fatalf("read .gitignore: %v", err)
+	}
+	if !strings.Contains(string(gitignore), ".cache/") {
+		t.Fatalf(".gitignore = %s", gitignore)
+	}
 	hooksPath := filepath.Join(dir, ".wat", "hooks.go")
 	hooks, err := os.ReadFile(hooksPath)
 	if err != nil {
