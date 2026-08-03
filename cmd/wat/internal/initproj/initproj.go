@@ -47,6 +47,12 @@ func Init(root string, force bool, version string, deps Deps, out, errOut io.Wri
 		return fmt.Errorf("create %s: %w", cacheDir, err)
 	}
 
+	// Write-if-missing before the hooks.go force guard so older projects pick up
+	// .gitignore on a non-force re-run without overwriting hooks.go.
+	if err := writeFileIfMissing(filepath.Join(watDir, ".gitignore"), []byte(Gitignore), deps); err != nil {
+		return err
+	}
+
 	hooksPath := filepath.Join(watDir, project.HooksFile)
 	if _, err := deps.Stat(hooksPath); err == nil && !force {
 		return fmt.Errorf("%s exists; re-run with --force to overwrite", hooksPath)
@@ -60,10 +66,6 @@ func Init(root string, force bool, version string, deps Deps, out, errOut io.Wri
 		return err
 	}
 	if err := writeFileIfMissing(goModPath, []byte(goModText), deps); err != nil {
-		return err
-	}
-
-	if err := writeFileIfMissing(filepath.Join(watDir, ".gitignore"), []byte(Gitignore), deps); err != nil {
 		return err
 	}
 
