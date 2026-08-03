@@ -21,7 +21,12 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 - `run.Serve` warns on stderr when no handlers are registered for the selected
   event (still exit 0).
-
+- Renamed soft-deny builders that were misleadingly named `Ask`:
+  `copilot.PermissionRequestResults.SoftDeny`,
+  `cursor.BeforeReadFileResults.SoftDeny`, and
+  `cursor.SubagentStartResults.SoftDeny`. Real wire-`"ask"` builders
+  (`claude`/`copilot`/`cursor` PreTool / shell / MCP `Ask`, and portable
+  `PreToolResults.Ask`) keep the `Ask` name.
 ### Fixed
 
 - Copilot tool events with missing snake_case `tool_name` (for example

@@ -25,29 +25,29 @@ func TestEncode_PermissionRequestDenyInterrupt(t *testing.T) {
 	}
 }
 
-func TestEncode_PermissionRequestAsk_softDenyNotUserPrompt(t *testing.T) {
-	// Ask must not encode a confirmation / "ask" decision: Copilot's
+func TestEncode_PermissionRequestSoftDeny_notUserPrompt(t *testing.T) {
+	// SoftDeny must not encode a confirmation / "ask" decision: Copilot's
 	// permissionRequest schema is allow|deny only. Soft deny is behavior deny
 	// with exit 0; Noop/empty stdout is the fall-through to user prompting.
-	out, code, err := results{}.Ask("needs user confirmation").Encode()
+	out, code, err := results{}.SoftDeny("needs user confirmation").Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if code != 0 {
-		t.Fatalf("Ask soft deny code=%d, want 0 (not WarnExit)", code)
+		t.Fatalf("SoftDeny code=%d, want 0 (not WarnExit)", code)
 	}
 	got := string(out)
 	if !strings.Contains(got, `"behavior":"deny"`) {
-		t.Fatalf("Ask must encode soft deny: %s", got)
+		t.Fatalf("SoftDeny must encode soft deny: %s", got)
 	}
 	if strings.Contains(got, `"ask"`) {
-		t.Fatalf("Ask must not encode ask on the wire: %s", got)
+		t.Fatalf("SoftDeny must not encode ask on the wire: %s", got)
 	}
 	if !strings.Contains(got, `"message":"needs user confirmation"`) {
-		t.Fatalf("Ask must keep message: %s", got)
+		t.Fatalf("SoftDeny must keep message: %s", got)
 	}
-	if (results{}).Ask("x").Stop() {
-		t.Fatal("Ask soft deny must not Stop remaining handlers")
+	if (results{}).SoftDeny("x").Stop() {
+		t.Fatal("SoftDeny must not Stop remaining handlers")
 	}
 
 	denyOut, denyCode, err := results{}.Deny("blocked").Encode()
@@ -103,17 +103,17 @@ func TestMerge_PermissionRequest(t *testing.T) {
 			wantInterrupt: false,
 		},
 		{
-			name:          "ask_soft_deny",
+			name:          "soft_deny",
 			a:             results{}.Allow(),
-			b:             results{}.Ask("confirm"),
+			b:             results{}.SoftDeny("confirm"),
 			wantBehavior:  "deny",
 			wantMessage:   "confirm",
 			wantSuppress:  true,
 			wantInterrupt: false,
 		},
 		{
-			name:          "hard_deny_beats_ask",
-			a:             results{}.Ask("soft"),
+			name:          "hard_deny_beats_soft_deny",
+			a:             results{}.SoftDeny("soft"),
 			b:             results{}.Deny("hard"),
 			wantBehavior:  "deny",
 			wantMessage:   "hard",
@@ -121,9 +121,9 @@ func TestMerge_PermissionRequest(t *testing.T) {
 			wantInterrupt: false,
 		},
 		{
-			name:          "ask_then_ask_keeps_suppress",
-			a:             results{}.Ask("a"),
-			b:             results{}.Ask("b"),
+			name:          "soft_then_soft_keeps_suppress",
+			a:             results{}.SoftDeny("a"),
+			b:             results{}.SoftDeny("b"),
 			wantBehavior:  "deny",
 			wantMessage:   "b",
 			wantSuppress:  true,
@@ -164,7 +164,7 @@ func TestStop_PermissionRequest(t *testing.T) {
 		want bool
 	}{
 		{name: "hard_deny", out: results{}.Deny("no"), want: true},
-		{name: "ask_soft_deny", out: results{}.Ask("confirm"), want: false},
+		{name: "soft_deny", out: results{}.SoftDeny("confirm"), want: false},
 		{name: "allow", out: results{}.Allow(), want: false},
 		{name: "noop", out: results{}.Noop(), want: false},
 	}

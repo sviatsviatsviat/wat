@@ -100,28 +100,27 @@ hook-scoped results builder and return an output.
 Cloud availability and timeout policy are host constraints, not fields added by
 wat. Exact exported builders remain documented in `sdk/copilot` godoc.
 
-## Permission and Ask semantics
+## Permission and Ask / SoftDeny semantics
 
 Copilot permission behavior is event-specific. Do not assume that `Ask` opens a
-confirmation UI.
+confirmation UI. On `PermissionRequest`, use `SoftDeny` when you mean soft deny.
 
-| Event | Schema decisions | Ask / soft-deny host behavior | Deny encoding (`sdk/copilot`) | Notes |
+| Event | Schema decisions | Ask / SoftDeny host behavior | Deny encoding (`sdk/copilot`) | Notes |
 |---|---|---|---|---|
-| `PermissionRequest` | `behavior` allow \| deny only | **Soft deny** — `Ask` encodes `"behavior":"deny"` with exit 0 (no WarnExit) and does not `Stop` later handlers. It does **not** escalate to the user | `behavior` + `message`, WarnExit (2); `Stop` skips remaining handlers | Prefer `Deny` to block. Prefer `Noop` / nil / empty stdout to fall through to the host permission service (rules, session approvals, **user prompting**). Optional `interrupt` with deny stops the session |
+| `PermissionRequest` | `behavior` allow \| deny only | **Soft deny** — `SoftDeny` encodes `"behavior":"deny"` with exit 0 (no WarnExit) and does not `Stop` later handlers. It does **not** escalate to the user | `behavior` + `message`, WarnExit (2); `Stop` skips remaining handlers | Prefer `Deny` to block. Prefer `Noop` / nil / empty stdout to fall through to the host permission service (rules, session approvals, **user prompting**). Optional `interrupt` with deny stops the session |
 | `PreToolUse` | `permission_decision` allow \| deny \| ask | Encodes `"ask"` on the wire. **Cloud agent treats ask as deny** (no user) | deny + reason; exit 0 for structured JSON | Prefer `Allow` / `Deny` when gating must not depend on a user |
 
-### `PermissionRequest.Ask` footgun
+### `PermissionRequest.SoftDeny`
 
-Authors often read `Ask` as “prompt the user.” On Copilot `PermissionRequest`,
-the schema has no ask value. The SDK keeps `Ask` as an explicit soft deny for
-compatibility with older handlers:
+On Copilot `PermissionRequest`, the schema has no ask value. The SDK exposes
+`SoftDeny` (not `Ask`) for the exit-0 soft deny path:
 
 - Wire: `"behavior":"deny"` plus optional `message`
 - Process exit: `0` (unlike hard `Deny`, which uses WarnExit `2`)
 - Merge / `Stop`: soft deny does not stop remaining handlers; hard `Deny` does
 
 To let Copilot prompt the user (or apply its normal permission rules), return
-`Noop()`, `nil`, or empty stdout—not `Ask`.
+`Noop()`, `nil`, or empty stdout—not `SoftDeny`.
 
 ## Cloud agent and timeouts
 
