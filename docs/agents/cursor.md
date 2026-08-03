@@ -62,9 +62,9 @@ Deny encoding works for every event.
 | `beforeShellExecution` | allow / deny / ask | **Enforced** (user approval) via `Ask` | `agent_message`, exit 2 by default; `WithUserMessage` for client-facing copy | Same Ask enforcement as `beforeMCPExecution` |
 | `beforeMCPExecution` | allow / deny / ask | **Enforced** (user approval) via `Ask` | `agent_message`, exit 2 by default; `WithUserMessage` for client-facing copy | Contrasts with `preToolUse` |
 | `preToolUse` | allow / deny / ask | **Not enforced** today — `Ask` still encodes `"ask"` | `agent_message`, exit 2 | Prefer `Allow`/`Deny` to gate |
-| `beforeReadFile` | allow / deny (+ optional `user_message`) | **No ask** — use `SoftDeny` (same as `Deny`) | `user_message`, exit 0 (no `agent_message`) | Prefer `Deny` / `SoftDeny` |
+| `beforeReadFile` | allow / deny (+ optional `user_message`) | **SDK:** no `Ask` builder — use `SoftDeny` (same as `Deny`). **Host:** a raw `"ask"` on the wire is coerced to deny | `user_message`, exit 0 (no `agent_message`) | Prefer `Deny` / `SoftDeny` |
 | `beforeTabFileRead` | allow / deny only | **N/A** (no ask API) | Permission-only JSON, exit 0 (no message fields) | Chained message and `updated_input` helpers are ignored on the wire |
-| `subagentStart` | allow / deny | **No ask** — use `SoftDeny` (same as `Deny`) | `user_message`, exit 0 (no `agent_message`) | Prefer `Deny` / `SoftDeny`; exit 2 would re-wrap stdout as the user message |
+| `subagentStart` | allow / deny | **SDK:** no `Ask` builder — use `SoftDeny` (same as `Deny`). **Host:** a raw `"ask"` on the wire is treated as deny | `user_message`, exit 0 (no `agent_message`) | Prefer `Deny` / `SoftDeny`; exit 2 would re-wrap stdout as the user message |
 
 Cursor defaults hook failures to fail-open. Set `failClosed: true` on the
 `beforeMCPExecution` hooks.json handler when a crash, timeout, or invalid

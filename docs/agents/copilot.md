@@ -103,17 +103,18 @@ wat. Exact exported builders remain documented in `sdk/copilot` godoc.
 ## Permission and Ask / SoftDeny semantics
 
 Copilot permission behavior is event-specific. Do not assume that `Ask` opens a
-confirmation UI. On `PermissionRequest`, use `SoftDeny` when you mean soft deny.
+confirmation UI. On `PermissionRequest`, use `PermissionRequestResults.SoftDeny`
+when you mean soft deny.
 
 | Event | Schema decisions | Ask / SoftDeny host behavior | Deny encoding (`sdk/copilot`) | Notes |
 |---|---|---|---|---|
-| `PermissionRequest` | `behavior` allow \| deny only | **Soft deny** — `SoftDeny` encodes `"behavior":"deny"` with exit 0 (no WarnExit) and does not `Stop` later handlers. It does **not** escalate to the user | `behavior` + `message`, WarnExit (2); `Stop` skips remaining handlers | Prefer `Deny` to block. Prefer `Noop` / nil / empty stdout to fall through to the host permission service (rules, session approvals, **user prompting**). Optional `interrupt` with deny stops the session |
+| `PermissionRequest` | `behavior` allow \| deny only | **Soft deny** — `PermissionRequestResults.SoftDeny` encodes `"behavior":"deny"` with exit 0 (no WarnExit) and does not `Stop` later handlers. It does **not** escalate to the user | `behavior` + `message`, WarnExit (2); `Stop` skips remaining handlers | Prefer `Deny` to block. Prefer `Noop` / nil / empty stdout to fall through to the host permission service (rules, session approvals, **user prompting**). Optional `interrupt` with deny stops the session |
 | `PreToolUse` | `permission_decision` allow \| deny \| ask | Encodes `"ask"` on the wire. **Cloud agent treats ask as deny** (no user) | deny + reason; exit 0 for structured JSON | Prefer `Allow` / `Deny` when gating must not depend on a user |
 
-### `PermissionRequest.SoftDeny`
+### `PermissionRequestResults.SoftDeny`
 
 On Copilot `PermissionRequest`, the schema has no ask value. The SDK exposes
-`SoftDeny` (not `Ask`) for the exit-0 soft deny path:
+`PermissionRequestResults.SoftDeny` (not `Ask`) for the exit-0 soft deny path:
 
 - Wire: `"behavior":"deny"` plus optional `message`
 - Process exit: `0` (unlike hard `Deny`, which uses WarnExit `2`)

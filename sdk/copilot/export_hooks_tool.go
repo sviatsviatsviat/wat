@@ -41,6 +41,7 @@ type PermissionRequest = permissionrequest.Event
 type PermissionRequestOutput = permissionrequest.Output
 
 // PermissionRequestResults is the hook-scoped response builder for
-// PermissionRequest. SoftDeny is a soft deny (behavior "deny", exit 0), not a
-// user confirmation prompt; prefer Deny to block or Noop to fall through.
+// PermissionRequest. PermissionRequestResults.SoftDeny is a soft deny
+// (behavior "deny", exit 0), not a user confirmation prompt; prefer Deny to
+// block or Noop to fall through.
 type PermissionRequestResults = permissionrequest.Results
