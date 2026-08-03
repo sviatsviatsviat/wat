@@ -11,7 +11,7 @@
 // implements it) as snake_case JSON with a process exit code. Payloads must
 // include hook_event_name on the wire.
 //
-// PermissionRequest.Ask is a soft deny (behavior "deny", exit 0), not a user
+// PermissionRequest.SoftDeny is a soft deny (behavior "deny", exit 0), not a user
 // confirmation prompt: Copilot's permissionRequest schema accepts only allow or
 // deny. Prefer Deny to block, or Noop/nil to fall through to the host permission
 // UI. Under Copilot cloud agent, permissionRequest is inert (use PreToolUse);

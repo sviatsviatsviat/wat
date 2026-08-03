@@ -28,7 +28,8 @@ type StopResults = stopevent.Results
 type SubagentStart = subagentstart.Event
 
 // SubagentStartResults is the hook-scoped response builder for SubagentStart.
-// Deny writes user_message and exits 0 (Cursor's subagentStart schema).
+// Deny and SoftDeny write user_message and exit 0 (Cursor's subagentStart schema
+// has no ask value).
 type SubagentStartResults = subagentstart.Results
 
 // SubagentStop is the subagentStop hook event, including Cursor telemetry

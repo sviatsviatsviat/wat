@@ -11,9 +11,9 @@ type Results interface {
 	// user_message with process exit 0 so the host applies the JSON permission
 	// field instead of treating exit 2 stdout as the message body.
 	Deny(userMessage string) event.PermissionOutput
-	// Ask returns a deny-style verdict with a user-facing message. Cursor does not
-	// support "ask" on beforeReadFile; prefer Deny.
-	Ask(userMessage string) event.PermissionOutput
+	// SoftDeny returns the same encoding as Deny. Cursor's beforeReadFile schema
+	// has no "ask" value; SoftDeny exists so authors do not reach for a prompt API.
+	SoftDeny(userMessage string) event.PermissionOutput
 	// Noop returns an empty response (silent stdout). Prefer nil from handlers when not chaining With*.
 	Noop() event.PermissionOutput
 	isResults()
@@ -28,7 +28,7 @@ func (results) Deny(userMessage string) event.PermissionOutput {
 	return event.GateResults{}.DenyUserMessage(userMessage)
 }
 
-// Ask returns the same encoding as Deny for beforeReadFile.
-func (results) Ask(userMessage string) event.PermissionOutput {
+// SoftDeny returns the same encoding as Deny for beforeReadFile.
+func (results) SoftDeny(userMessage string) event.PermissionOutput {
 	return event.GateResults{}.DenyUserMessage(userMessage)
 }

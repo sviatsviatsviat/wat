@@ -88,7 +88,7 @@ func (o output) Merge(other hookkit.Output) (hookkit.Output, []string, error) {
 }
 
 // Stop reports whether remaining handlers should be skipped.
-// Hard Deny stops; Ask soft-deny (suppressWarnExit) does not.
+// Hard Deny stops; SoftDeny (suppressWarnExit) does not.
 func (o output) Stop() bool {
 	return o.behavior == "deny" && !o.suppressWarnExit
 }

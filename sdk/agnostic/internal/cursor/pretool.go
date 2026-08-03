@@ -173,9 +173,10 @@ func (w beforeReadResults) Deny(reason string) model.PreToolResult {
 	return permissionResult{native: w.native.Deny(reason)}
 }
 
-// Ask returns a deny-style verdict; Cursor beforeReadFile does not support ask.
+// Ask returns a deny-style verdict; Cursor beforeReadFile has no ask value, so
+// this maps to SoftDeny (same encoding as Deny).
 func (w beforeReadResults) Ask(reason string) model.PreToolResult {
-	return permissionResult{native: w.native.Ask(reason)}
+	return permissionResult{native: w.native.SoftDeny(reason)}
 }
 
 type permissionResult struct {

@@ -76,6 +76,23 @@ func TestEncode_SubagentStartDeny_userMessageExitZero(t *testing.T) {
 	}
 }
 
+func TestEncode_SubagentStartSoftDeny_sameAsDeny(t *testing.T) {
+	out, code, err := results{}.SoftDeny("blocked").Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0", code)
+	}
+	got := string(out)
+	if !strings.Contains(got, `"permission":"deny"`) || !strings.Contains(got, `"user_message":"blocked"`) {
+		t.Fatalf("SoftDeny = %s", got)
+	}
+	if strings.Contains(got, `"permission":"ask"`) {
+		t.Fatalf("subagentStart must not emit ask: %s", got)
+	}
+}
+
 func TestDecode_SubagentStart_liveDefaultSentinel(t *testing.T) {
 	ev := mustDecode[Event](t, `{
 		"hook_event_name":"subagentStart",

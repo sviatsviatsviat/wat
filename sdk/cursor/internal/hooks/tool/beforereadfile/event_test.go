@@ -51,8 +51,8 @@ func TestEncode_BeforeReadFileDeny_userMessageExitZero(t *testing.T) {
 	}
 }
 
-func TestEncode_BeforeReadFileAsk_coercesToDenyUserMessage(t *testing.T) {
-	out, code, err := results{}.Ask("confirm read").Encode()
+func TestEncode_BeforeReadFileSoftDeny_userMessage(t *testing.T) {
+	out, code, err := results{}.SoftDeny("confirm read").Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestEncode_BeforeReadFileAsk_coercesToDenyUserMessage(t *testing.T) {
 	}
 	got := string(out)
 	if !strings.Contains(got, `"permission":"deny"`) {
-		t.Fatalf("Ask must encode as deny: %s", got)
+		t.Fatalf("SoftDeny must encode as deny: %s", got)
 	}
 	if !strings.Contains(got, `"user_message":"confirm read"`) {
 		t.Fatalf("missing user_message: %s", got)
@@ -70,7 +70,7 @@ func TestEncode_BeforeReadFileAsk_coercesToDenyUserMessage(t *testing.T) {
 		t.Fatalf("beforeReadFile must not emit ask: %s", got)
 	}
 	if strings.Contains(got, "agent_message") {
-		t.Fatalf("beforeReadFile Ask must not emit agent_message: %s", got)
+		t.Fatalf("beforeReadFile SoftDeny must not emit agent_message: %s", got)
 	}
 }
 
