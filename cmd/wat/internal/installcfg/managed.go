@@ -55,8 +55,8 @@ func isWatRunExecutable(command, watAbs string) bool {
 }
 
 // WatRunCommand builds the shell command wat install writes for an agent event.
-// Absolute wat paths that contain whitespace are double-quoted so host shells
-// can invoke them on Windows and Unix.
+// Paths that contain whitespace or shell metacharacters are double-quoted with
+// escapes so host shells invoke the installed binary literally.
 func WatRunCommand(watAbs, agent, event string) string {
 	return fmt.Sprintf("%s run --agent %s --event %s", quoteShellArg(watAbs), agent, event)
 }
@@ -68,12 +68,27 @@ func quoteShellArg(s string) string {
 	if !needsShellQuotes(s) {
 		return s
 	}
-	return `"` + strings.ReplaceAll(s, `"`, `\"`) + `"`
+	var b strings.Builder
+	b.Grow(len(s) + 2)
+	b.WriteByte('"')
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '\\', '"', '$', '`':
+			b.WriteByte('\\')
+		}
+		b.WriteByte(s[i])
+	}
+	b.WriteByte('"')
+	return b.String()
 }
 
 func needsShellQuotes(s string) bool {
 	for _, r := range s {
-		if unicode.IsSpace(r) || r == '"' || r == '\'' {
+		if unicode.IsSpace(r) {
+			return true
+		}
+		switch r {
+		case '"', '\'', '$', '`', '\\', ';', '|', '&', '(', ')', '<', '>', '*', '?', '[', ']', '{', '}', '~', '#', '!':
 			return true
 		}
 	}
@@ -110,11 +125,14 @@ func splitCommandFields(command string) []string {
 				inQuote = false
 				continue
 			}
-			// Only \" is an escape so Windows paths keep backslashes.
-			if c == '\\' && quote == '"' && i+1 < len(command) && command[i+1] == '"' {
-				b.WriteByte('"')
-				i++
-				continue
+			if c == '\\' && quote == '"' && i+1 < len(command) {
+				next := command[i+1]
+				switch next {
+				case '"', '\\', '$', '`':
+					b.WriteByte(next)
+					i++
+					continue
+				}
 			}
 			b.WriteByte(c)
 			continue

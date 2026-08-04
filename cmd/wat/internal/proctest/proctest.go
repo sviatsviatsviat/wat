@@ -1,8 +1,3 @@
-// Package proctest provides cross-platform subprocess stubs for CLI tests.
-//
-// Import this package only from *_test.go files. When a child process is
-// started with WAT_PROCTEST_MODE set, init exits before tests run so the
-// current test binary can stand in for Unix utilities such as echo and sleep.
 package proctest
 
 import (
@@ -19,7 +14,10 @@ const (
 	envPath = "WAT_PROCTEST_PATH"
 )
 
-func init() {
+// MaybeExit runs the subprocess helper when WAT_PROCTEST_MODE is set, then
+// exits. Call it from TestMain before m.Run so package init stays side-effect
+// free.
+func MaybeExit() {
 	switch os.Getenv(envMode) {
 	case "println":
 		fmt.Println(os.Getenv(envOut))
