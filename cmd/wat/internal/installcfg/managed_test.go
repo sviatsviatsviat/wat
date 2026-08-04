@@ -28,6 +28,41 @@ func TestWatRunCommand_quotesPathsWithSpaces(t *testing.T) {
 	}
 }
 
+func TestWatRunCommand_escapesShellMetacharacters(t *testing.T) {
+	tests := []struct {
+		name   string
+		watAbs string
+		want   string
+	}{
+		{
+			name:   "dollar",
+			watAbs: `/opt/$HOME/wat`,
+			want:   `"/opt/\$HOME/wat" run --agent claude --event PreToolUse`,
+		},
+		{
+			name:   "backticks",
+			watAbs: "/tmp/wat`id`.bin",
+			want:   "\"/tmp/wat\\`id\\`.bin\" run --agent claude --event PreToolUse",
+		},
+		{
+			name:   "windows backslashes",
+			watAbs: `C:\Tools\wat\wat.exe`,
+			want:   `"C:\\Tools\\wat\\wat.exe" run --agent claude --event PreToolUse`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := WatRunCommand(tt.watAbs, "claude", "PreToolUse")
+			if got != tt.want {
+				t.Fatalf("WatRunCommand = %q, want %q", got, tt.want)
+			}
+			if !IsWatManagedCommand(got, "claude", "PreToolUse", tt.watAbs) {
+				t.Fatalf("escaped command not recognized as managed: %q", got)
+			}
+		})
+	}
+}
+
 func TestIsWatManagedCommand_exactEvent(t *testing.T) {
 	watAbs := "/usr/bin/wat"
 	if !IsWatManagedCommand(watAbs+" run --agent claude --event PostToolUse", "claude", "PostToolUse", watAbs) {

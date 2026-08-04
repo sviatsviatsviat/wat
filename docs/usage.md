@@ -103,7 +103,8 @@ wat install [--agent all|claude|copilot|cursor] [--wat-path path]
 
 The default is `--agent all`. When `--wat-path` is omitted, `wat` resolves
 itself from `PATH` and writes an absolute path into each managed command.
-Paths that contain whitespace are double-quoted so host shells can invoke them.
+Paths that contain whitespace or shell metacharacters are double-quoted with
+escapes so host shells invoke the binary literally.
 
 Installation builds the hook project, inspects the exported `Hooks`, expands
 portable handlers to native events, and reconciles only wat-managed command

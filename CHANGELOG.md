@@ -19,8 +19,9 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 - `wat init` writes `.wat/.gitignore` (ignoring `.cache/`) when missing so the
   hook build cache is not committed by default.
 - `wat install` double-quotes the absolute `wat` path in managed hook commands
-  when it contains whitespace, so Windows installs under paths like
-  `Program Files` remain invokable.
+  when it contains whitespace or shell metacharacters (`$`, backticks,
+  backslashes, …), escaping those characters so host shells invoke the binary
+  literally (including Windows installs under paths like `Program Files`).
 
 ### Changed
 
