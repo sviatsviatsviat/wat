@@ -5,7 +5,9 @@ hook project.
 
 ## Requirements and installation
 
-`wat` and generated hook projects require Go 1.26. Install the CLI with:
+`wat` and generated hook projects require Go 1.26. The CLI runs on Linux,
+macOS, and Windows; CI exercises `go test ./...` and `go build ./cmd/wat` on
+Ubuntu and Windows. Install the CLI with:
 
 ```bash
 go install github.com/sviatsviatsviat/wat/cmd/wat@v0.3.0-alpha
@@ -100,7 +102,8 @@ wat install [--agent all|claude|copilot|cursor] [--wat-path path]
 ```
 
 The default is `--agent all`. When `--wat-path` is omitted, `wat` resolves
-itself from `PATH`.
+itself from `PATH` and writes an absolute path into each managed command.
+Paths that contain whitespace are double-quoted so host shells can invoke them.
 
 Installation builds the hook project, inspects the exported `Hooks`, expands
 portable handlers to native events, and reconciles only wat-managed command
@@ -162,8 +165,12 @@ identity comes from `--event` when set, otherwise from the fixture’s
 forwarded to the hooks binary as a dispatch hint (same as `wat run`). Use `-`
 to read the fixture from stdin:
 
-```bash
+```powershell
 Get-Content fixture.json | wat test --agent cursor --fixture -
+```
+
+```bash
+cat fixture.json | wat test --agent cursor --fixture -
 ```
 
 The report includes the fixture dialect/event, hook stdout, a recognized

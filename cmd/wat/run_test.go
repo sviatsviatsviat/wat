@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookrun"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/proctest"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/project"
 )
 
@@ -53,13 +54,13 @@ func TestRunHook_walkUpFindsWatDir(t *testing.T) {
 		if name == "go" && len(args) > 0 && args[0] == "build" {
 			for i := 0; i+1 < len(args); i++ {
 				if args[i] == "-o" {
-					if err := os.WriteFile(args[i+1], []byte("#!/bin/true\n"), 0o755); err != nil {
+					if err := os.WriteFile(args[i+1], []byte("fake"), 0o755); err != nil {
 						t.Fatalf("stage fake binary: %v", err)
 					}
 					break
 				}
 			}
-			return exec.Command("true")
+			return proctest.ExitZero()
 		}
 		return exec.Command("go", "version")
 	}
@@ -96,7 +97,7 @@ func TestRunHook_buildFailureExitCode(t *testing.T) {
 	deps.WriteFile = func(string, []byte, os.FileMode) error { return nil }
 	deps.Command = func(name string, args ...string) *exec.Cmd {
 		if name == "go" && len(args) >= 2 && args[0] == "env" {
-			return exec.Command("echo", "go1.26.0")
+			return proctest.Println("go1.26.0")
 		}
 		// buildHookBinary uses CombinedOutput; return a command guaranteed to fail.
 		return exec.Command("go", "not-a-command")
@@ -132,9 +133,9 @@ func BenchmarkRunHook_cacheHitOverhead(b *testing.B) {
 	deps.ReadFile = func(string) ([]byte, error) { return []byte("x"), nil }
 	deps.Command = func(name string, args ...string) *exec.Cmd {
 		if name == "go" {
-			return exec.Command("echo", "go1.26.0")
+			return proctest.Println("go1.26.0")
 		}
-		return exec.Command("true")
+		return proctest.ExitZero()
 	}
 	deps.RunCmd = func(*exec.Cmd) error { return nil }
 
@@ -180,7 +181,7 @@ func TestRunHook_execExitCodePassthrough(t *testing.T) {
 	deps.ReadFile = func(string) ([]byte, error) { return []byte("x"), nil }
 	deps.Command = func(name string, args ...string) *exec.Cmd {
 		if name == "go" {
-			return exec.Command("echo", "go1.26.0")
+			return proctest.Println("go1.26.0")
 		}
 		cmd := exec.Command(os.Args[0], "-test.run=^TestRunHookExecExitHelper$")
 		cmd.Env = append(os.Environ(), "WAT_TEST_HELPER_EXIT=7")

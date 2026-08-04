@@ -2,13 +2,14 @@ package doctor
 
 import (
 	"errors"
-	"os/exec"
 	"testing"
 	"time"
+
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/proctest"
 )
 
 func TestCombinedOutputWithTimeout_success(t *testing.T) {
-	cmd := exec.Command("echo", "ok")
+	cmd := proctest.Println("ok")
 	out, err := combinedOutputWithTimeout(cmd, time.Second)
 	if err != nil {
 		t.Fatal(err)
@@ -19,7 +20,7 @@ func TestCombinedOutputWithTimeout_success(t *testing.T) {
 }
 
 func TestCombinedOutputWithTimeout_timeout(t *testing.T) {
-	cmd := exec.Command("sleep", "2")
+	cmd := proctest.Sleep()
 	_, err := combinedOutputWithTimeout(cmd, 50*time.Millisecond)
 	if !errors.Is(err, errCommandTimeout) {
 		t.Fatalf("err = %v, want timeout", err)

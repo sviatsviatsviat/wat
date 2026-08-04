@@ -61,8 +61,9 @@ golangci-lint run ./...
 go build ./cmd/wat
 ```
 
-The Linux environment matters because some CLI tests execute Unix utilities
-such as `echo` and `sleep`.
+The Linux Dev Container remains the authoritative full-suite host (lint,
+govulncheck, and the `.wat/testdata` fixture loop). CI also runs `go test ./...`
+and `go build ./cmd/wat` on Windows so CLI and e2e stay hermetic there.
 
 ## Updating the environment
 

@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"unicode"
 )
 
 // ParseWatRunFlags extracts --agent and --event from a wat run shell command.
 func ParseWatRunFlags(command string) (agent, event string, ok bool) {
-	fields := strings.Fields(command)
+	fields := splitCommandFields(command)
 	for i := 0; i < len(fields)-1; i++ {
 		switch fields[i] {
 		case "--agent":
@@ -40,20 +41,94 @@ func IsWatManagedAgentCommand(command, agent, watAbs string) bool {
 }
 
 func isWatRunExecutable(command, watAbs string) bool {
-	fields := strings.Fields(strings.TrimSpace(command))
+	fields := splitCommandFields(strings.TrimSpace(command))
 	if len(fields) != 6 || fields[1] != "run" {
 		return false
 	}
-	program := strings.Trim(fields[0], `"'`)
+	program := fields[0]
 	watAbs = strings.TrimSpace(watAbs)
 	if program == watAbs {
 		return true
 	}
-	base := strings.TrimSuffix(strings.ToLower(filepath.Base(program)), ".exe")
+	base := strings.TrimSuffix(strings.ToLower(commandBaseName(program)), ".exe")
 	return base == "wat"
 }
 
 // WatRunCommand builds the shell command wat install writes for an agent event.
+// Absolute wat paths that contain whitespace are double-quoted so host shells
+// can invoke them on Windows and Unix.
 func WatRunCommand(watAbs, agent, event string) string {
-	return fmt.Sprintf("%s run --agent %s --event %s", watAbs, agent, event)
+	return fmt.Sprintf("%s run --agent %s --event %s", quoteShellArg(watAbs), agent, event)
+}
+
+func quoteShellArg(s string) string {
+	if s == "" {
+		return `""`
+	}
+	if !needsShellQuotes(s) {
+		return s
+	}
+	return `"` + strings.ReplaceAll(s, `"`, `\"`) + `"`
+}
+
+func needsShellQuotes(s string) bool {
+	for _, r := range s {
+		if unicode.IsSpace(r) || r == '"' || r == '\'' {
+			return true
+		}
+	}
+	return false
+}
+
+// commandBaseName returns the final path element, treating both / and \ as
+// separators so Windows install commands parse correctly on any GOOS.
+func commandBaseName(program string) string {
+	program = strings.ReplaceAll(program, "\\", "/")
+	return filepath.Base(program)
+}
+
+// splitCommandFields splits a shell-like command into arguments, honoring
+// simple single- and double-quoted segments used by wat install.
+func splitCommandFields(command string) []string {
+	var fields []string
+	var b strings.Builder
+	inQuote := false
+	var quote byte
+
+	flush := func() {
+		if b.Len() == 0 {
+			return
+		}
+		fields = append(fields, b.String())
+		b.Reset()
+	}
+
+	for i := 0; i < len(command); i++ {
+		c := command[i]
+		if inQuote {
+			if c == quote {
+				inQuote = false
+				continue
+			}
+			// Only \" is an escape so Windows paths keep backslashes.
+			if c == '\\' && quote == '"' && i+1 < len(command) && command[i+1] == '"' {
+				b.WriteByte('"')
+				i++
+				continue
+			}
+			b.WriteByte(c)
+			continue
+		}
+		switch c {
+		case ' ', '\t', '\n', '\r':
+			flush()
+		case '"', '\'':
+			inQuote = true
+			quote = c
+		default:
+			b.WriteByte(c)
+		}
+	}
+	flush()
+	return fields
 }

@@ -14,6 +14,7 @@ import (
 	hostclaude "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/claude"
 	hostcursor "github.com/sviatsviatsviat/wat/cmd/wat/internal/hostconfig/cursor"
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/installcfg"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/proctest"
 	"github.com/sviatsviatsviat/wat/sdk/claude"
 	"github.com/sviatsviatsviat/wat/sdk/copilot"
 	"github.com/sviatsviatsviat/wat/sdk/cursor"
@@ -353,21 +354,21 @@ func doctorTestDeps(t *testing.T, project, watAbs string, goCfg doctorTestGoDeps
 	}
 	deps.Command = func(name string, args ...string) *exec.Cmd {
 		if name == "go" && len(args) >= 2 && args[0] == "env" && args[1] == "GOVERSION" {
-			return exec.Command("echo", "go1.26.0")
+			return proctest.Println("go1.26.0")
 		}
 		if name == "go" && len(args) > 0 && args[0] == "version" {
-			return exec.Command("echo", goCfg.goVersion)
+			return proctest.Println(goCfg.goVersion)
 		}
 		if name == "go" && len(args) >= 3 && args[0] == "build" {
 			if goCfg.buildOK {
 				out := args[2]
-				return exec.Command("sh", "-c", "mkdir -p "+filepath.Dir(out)+" && touch "+out)
+				return proctest.Touch(out)
 			}
 			msg := goCfg.buildErr
 			if msg == "" {
 				msg = "build failed"
 			}
-			return exec.Command("sh", "-c", "echo "+msg+" >&2; exit 1")
+			return proctest.Fail(msg)
 		}
 		return exec.Command(name, args...)
 	}
