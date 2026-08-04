@@ -7,6 +7,8 @@ The project intends to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [v0.4.0-alpha] - 2026-08-04
+
 ### Added
 
 - Copilot typed tool inputs for `glob` / `grep` / `web_search` / `task` /
