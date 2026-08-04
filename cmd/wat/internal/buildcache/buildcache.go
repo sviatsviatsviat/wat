@@ -292,7 +292,7 @@ func build(watDir, binPath string, deps Deps, errOut io.Writer) bool {
 
 	cmd := deps.Command("go", "build", "-o", tmpBinPath, bootstrapDir)
 	cmd.Dir = watDir
-	cmd.Env = pinnedBuildEnv(os.Environ(), settings)
+	cmd.Env = pinnedBuildEnv(commandEnv(cmd), settings)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if len(out) > 0 {
@@ -341,7 +341,7 @@ func currentModulePath(watDir string, deps Deps, settings buildSettings) (string
 	// invalid multi-line import path for the generated bootstrap.
 	cmd := deps.Command("go", "list", "-f={{.Module.Path}}", ".")
 	cmd.Dir = watDir
-	cmd.Env = pinnedBuildEnv(os.Environ(), settings)
+	cmd.Env = pinnedBuildEnv(commandEnv(cmd), settings)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("resolve hook module path: %w", err)
@@ -363,6 +363,16 @@ func pinnedBuildEnv(base []string, settings buildSettings) []string {
 	env = setEnv(env, "GOFLAGS", settings.goflags)
 	env = setEnv(env, "CGO_ENABLED", settings.cgoEnabled)
 	return env
+}
+
+// commandEnv returns cmd.Env when the Command factory already set one, otherwise
+// the process environment. Preserving a pre-set Env keeps test stubs and custom
+// factories working when build pins GOOS/GOARCH.
+func commandEnv(cmd *exec.Cmd) []string {
+	if cmd != nil && cmd.Env != nil {
+		return cmd.Env
+	}
+	return os.Environ()
 }
 
 func setEnv(env []string, key, value string) []string {

@@ -1,11 +1,30 @@
 package installcfg
 
-import "testing"
+import (
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func TestParseWatRunFlags(t *testing.T) {
 	agent, event, ok := ParseWatRunFlags("/usr/bin/wat run --agent claude --event PreToolUse")
 	if !ok || agent != "claude" || event != "PreToolUse" {
 		t.Fatalf("got %q %q %v", agent, event, ok)
+	}
+}
+
+func TestWatRunCommand_quotesPathsWithSpaces(t *testing.T) {
+	watAbs := filepath.Join("C:", "Program Files", "wat", "wat.exe")
+	got := WatRunCommand(watAbs, "claude", "PreToolUse")
+	if !strings.HasPrefix(got, `"`) || !strings.Contains(got, `" run --agent claude --event PreToolUse`) {
+		t.Fatalf("WatRunCommand = %q", got)
+	}
+	if !IsWatManagedCommand(got, "claude", "PreToolUse", watAbs) {
+		t.Fatalf("quoted command not recognized as managed: %q", got)
+	}
+	plain := WatRunCommand(`/usr/bin/wat`, "cursor", "sessionStart")
+	if plain != `/usr/bin/wat run --agent cursor --event sessionStart` {
+		t.Fatalf("plain WatRunCommand = %q", plain)
 	}
 }
 
@@ -42,6 +61,11 @@ func TestIsWatManagedCommand_recognizesQuotedAndBasename(t *testing.T) {
 		{
 			name:    "quoted absolute path",
 			command: `"/usr/local/bin/wat" run --agent claude --event PreToolUse`,
+			want:    true,
+		},
+		{
+			name:    "quoted path with spaces",
+			command: `"C:\Program Files\wat\wat.exe" run --agent claude --event PreToolUse`,
 			want:    true,
 		},
 		{

@@ -74,7 +74,8 @@ func moduleRoot(t *testing.T) string {
 		t.Fatalf("go env GOMOD: %v", err)
 	}
 	mod := strings.TrimSpace(string(out))
-	if mod == "" || mod == "/dev/null" {
+	// go env GOMOD reports /dev/null on Unix and NUL on Windows when outside a module.
+	if mod == "" || mod == "/dev/null" || strings.EqualFold(mod, "NUL") {
 		t.Fatal("not inside a Go module")
 	}
 	return filepath.Dir(mod)

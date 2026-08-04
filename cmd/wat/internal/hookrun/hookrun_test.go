@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/sviatsviatsviat/wat/cmd/wat/internal/hookrun"
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/proctest"
 )
 
 func TestHintArgs(t *testing.T) {
@@ -47,23 +48,23 @@ func TestRun_forwardsHintArgs(t *testing.T) {
 		if name == "go" {
 			switch {
 			case len(args) >= 1 && args[0] == "env":
-				return exec.Command("echo", "go1.26.0")
+				return proctest.Println("go1.26.0")
 			case len(args) >= 1 && args[0] == "list":
-				return exec.Command("echo", "wat-hooks")
+				return proctest.Println("wat-hooks")
 			case len(args) > 0 && args[0] == "build":
 				for i := 0; i+1 < len(args); i++ {
 					if args[i] == "-o" {
-						if err := os.WriteFile(args[i+1], []byte("#!/bin/true\n"), 0o755); err != nil {
+						if err := os.WriteFile(args[i+1], []byte("fake"), 0o755); err != nil {
 							t.Fatalf("stage fake binary: %v", err)
 						}
 						break
 					}
 				}
-				return exec.Command("true")
+				return proctest.ExitZero()
 			}
 		}
 		gotArgs = append([]string{name}, args...)
-		return exec.Command("true")
+		return proctest.ExitZero()
 	}
 	deps.RunCmd = func(*exec.Cmd) error { return nil }
 

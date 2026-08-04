@@ -14,9 +14,10 @@ authoritative full verification suite. The Dev Container stores the workspace
 in the `wat-workspace` Docker volume at `/workspaces/wat`; it is not a Windows
 bind mount.
 
-A local Go environment is useful for editing and focused package tests, but
-some CLI tests execute Unix utilities such as `echo` and `sleep` and therefore
-are not currently Windows-hermetic.
+A local Go environment is useful for editing and focused package tests. CI runs
+`go test ./...` and `go build ./cmd/wat` on both Ubuntu and Windows so the CLI
+and e2e suites stay Windows-hermetic. Linux remains authoritative for
+golangci-lint, govulncheck, and the `.wat/testdata` fixture loop.
 
 Install the pinned linter when working outside the container:
 

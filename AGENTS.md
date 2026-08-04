@@ -74,8 +74,8 @@ go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 Use focused package tests while iterating, then run the complete suite
 (including `./e2e`). New public behavior requires real behavior tests and
 documentation in the same change. The Linux Dev Container is the authoritative
-full-suite environment; some CLI and e2e tests rely on Unix utilities and are
-not Windows-hermetic.
+full-suite environment (lint, govulncheck, `.wat` fixture loop). CI also runs
+`go test ./...` and `go build ./cmd/wat` on Windows for CLI and e2e coverage.
 
 ## Change hygiene
 

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sviatsviatsviat/wat/cmd/wat/internal/proctest"
 	"github.com/sviatsviatsviat/wat/sdk/run"
 )
 
@@ -58,7 +59,7 @@ func TestLoadBinary_rejectsInvalidRegistration(t *testing.T) {
 
 func TestLoadBinary_timesOut(t *testing.T) {
 	command := func(string, ...string) *exec.Cmd {
-		return exec.Command("sleep", "10")
+		return proctest.Sleep()
 	}
 
 	old := LoadTimeout
