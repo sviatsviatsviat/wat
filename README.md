@@ -14,7 +14,7 @@ The project currently requires Go 1.26.
 Install the CLI:
 
 ```bash
-go install github.com/sviatsviatsviat/wat/cmd/wat@v0.3.0-alpha
+go install github.com/sviatsviatsviat/wat/cmd/wat@v0.4.0-alpha
 ```
 
 From a repository checkout, `go install ./cmd/wat` also works (build with VCS
@@ -67,7 +67,7 @@ Run the command from a directory inside the target project, or set
 
 | Command | Purpose |
 |---|---|
-| `wat init [path]` | Create `.wat/` module, hooks scaffold, starter testdata, and cache dir |
+| `wat init [path]` | Create `.wat/` module, hooks scaffold, `.gitignore`, starter testdata, and cache dir |
 | `wat install` | Reconcile registered native events into the selected agent configs |
 | `wat run` | Build on a cache miss, then execute the hook process against stdin |
 | `wat test` | Run a fixture (optional expect sidecar) and print a report |
