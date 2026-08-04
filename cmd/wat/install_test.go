@@ -59,8 +59,9 @@ func TestInstallProject_freshInstallAll(t *testing.T) {
 			for _, raw := range g.Hooks {
 				h := parseHandler[hostclaude.Handler](t, raw)
 				if strings.Contains(h.Command, "run --agent claude --event "+event) {
-					if !strings.HasPrefix(h.Command, watAbs+" ") {
-						t.Fatalf("claude command should use watAbs prefix: %q", h.Command)
+					want := installcfg.WatRunCommand(watAbs, "claude", event)
+					if h.Command != want {
+						t.Fatalf("claude command = %q, want %q", h.Command, want)
 					}
 					foundClaude = true
 				}
