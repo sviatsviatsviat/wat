@@ -18,7 +18,7 @@
   },
   "postStartCommand": "sudo chown -R vscode:vscode /home/vscode/.claude && (test -f go.mod && go mod download || true)",
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1.1.0": {
+    "ghcr.io/devcontainers/features/github-cli:1.1.1": {
       "version": "2.96.0"
     },
     "ghcr.io/devcontainers-extra/features/golangci-lint:1.0.0": {
